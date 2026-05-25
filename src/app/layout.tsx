@@ -1,20 +1,18 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+const plusJakartaSans = Plus_Jakarta_Sans({
+  variable: "--font-sans",
+  subsets: ["latin", "vietnamese"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "IceBot Admin Portal",
-  description: "Centralized management console for IceBot Kiosks and Mobile system.",
+  title: "IceBot Admin Dashboard",
+  description:
+    "Trung tâm giám sát và quản lý hệ thống trạm bán kem tự động IceBot.",
 };
 
 export default function RootLayout({
@@ -23,11 +21,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col">{children}</body>
+    <html lang="vi" className={`${plusJakartaSans.variable} h-full`}>
+      <body className="min-h-full bg-background text-foreground font-sans antialiased">
+        {children}
+      </body>
     </html>
   );
 }
