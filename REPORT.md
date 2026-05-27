@@ -26,6 +26,42 @@ Status: <done|partial>
 
 ## Task Log (Mới nhất -> cũ hơn)
 
+### Task: `/menu` Management Products and Menus read-only API integration
+Time: 2026-05-27 23:11
+Status: done
+
+1. What was implemented
+- Thay placeholder `/menu` bằng màn hình read-only sử dụng hai API thật: `GET /api/v1/management/menus` và `GET /api/v1/management/products`.
+- Dựng flow `Page -> Hook -> Service -> API` với tìm kiếm dùng chung, refresh, phân trang riêng và loading/error/empty state riêng cho từng nhóm dữ liệu.
+- Hiển thị thực đơn cùng preview `items[]`, và danh mục sản phẩm cùng preview `variants[]` từ nested data trong response backend.
+
+2. Files created/modified
+- Created: `src/types/menu-management.ts`, `src/lib/services/menu-management.ts`, `src/hooks/use-menu-management.ts`
+- Created: `src/components/features/menu/catalog-tables.tsx`
+- Modified: `src/app/(dashboard)/menu/page.tsx`, `API_INTEGRATION_MATRIX.md`, `REPORT.md`
+
+3. Important design/architecture decisions
+- `/menu` là composed view gồm hai panel riêng: `Menus` biểu diễn lớp thực đơn bán hàng, còn `Products` biểu diễn danh mục/biến thể nguồn; không trộn hai domain thành một model.
+- Task chỉ nối hai list `GET`; detail, create, edit, status, availability và delete endpoints không được bật UI.
+- Service dùng lại `axiosClient` hiện có; auth/session/interceptor/RBAC core và backend không thay đổi.
+- Route hiện hữu dành cho `ADMIN | MANAGER` khớp policy backend `menus.manage` và `products.manage` cho `SystemAdmin | Manager`.
+
+4. How to test it
+- Chạy backend API và cấu hình `NEXT_PUBLIC_API_URL`, sau đó chạy `npm run dev`.
+- Đăng nhập bằng account `SystemAdmin` hoặc `Manager`, truy cập `/menu` và xác nhận hai panel tải dữ liệu riêng.
+- Kiểm tra tìm kiếm áp dụng cho cả Products/Menus, refresh và phân trang độc lập ở mỗi panel.
+- Kiểm tra các badge trạng thái menu, trạng thái khả dụng sản phẩm, giá tiền, scope, preview items/variants và loading/error/empty states.
+- Đăng nhập `LocationOwner` và xác nhận route `/menu` vẫn bị RBAC hiện hữu chặn.
+- Quality gates đã chạy thành công: `npm run lint` và `npm run build`.
+
+5. Known issues or assumptions
+- Số liệu trạng thái trên summary card là dữ liệu của trang hiện tại, còn tổng bản ghi lấy từ pagination backend.
+- Scope query theo `organizationId`/`storeId`/`kioskId` chưa có control UI trong task read-only này.
+- Write/detail endpoints đã có contract rõ nhưng cố ý chưa tích hợp vì không nằm trong scope.
+
+6. Recommended next task
+- Khi được yêu cầu, bổ sung detail/action có kiểm soát cho `/menu`, hoặc chọn integration backend tiếp theo dựa trên route plan và contract đã xác minh.
+
 ### Task: `/users` Management Accounts list API integration
 Time: 2026-05-27 22:38
 Status: done

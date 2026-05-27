@@ -61,11 +61,11 @@ All endpoints below use policy `accounts.manage`, registered for backend role `S
 
 ## Product Catalog And Menu Management
 
-Products and menus are separate backend resources. The frontend `/menu` feature will need to decide whether its screen composes both resources or is split into product catalog and sellable menus inside one route.
+Products and menus are separate backend resources. The frontend `/menu` screen now composes both as two read-only panels: sellable menus remain separate from the product catalog source.
 
 | API group | Endpoint | Method | Auth required? | Allowed roles / policy | Request shape | Response shape | Frontend route/module | Integration status | Note / risk |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Products | `/api/v1/management/products?search&organizationId&storeId&kioskId&pageNumber&pageSize` | `GET` | Yes | `products.manage`: `SystemAdmin`, `Manager` | Query filters and pagination | `PagedResult<ProductResult>` | `/menu` catalog section | `ready-to-integrate` | `LocationOwner` cannot call this policy. |
+| Products | `/api/v1/management/products?search&organizationId&storeId&kioskId&pageNumber&pageSize` | `GET` | Yes | `products.manage`: `SystemAdmin`, `Manager` | Query filters and pagination | `PagedResult<ProductResult>` | `/menu` catalog section | `integrated` | Read-only panel shows products and nested variants; `LocationOwner` cannot call this policy. |
 | Products | `/api/v1/management/products/{productId}` | `GET` | Yes | `products.manage`: `SystemAdmin`, `Manager` | Path `productId: guid` | `ApiResult<ProductResult>` | `/menu` product detail/edit | `ready-to-integrate` | Product includes variants. |
 | Products | `/api/v1/management/products` | `POST` | Yes | `products.manage`: `SystemAdmin`, `Manager` | `CreateProductRequest` with optional `variants[]` | `ApiResult<ProductResult>` | `/menu` product create | `ready-to-integrate` | Supports tenant scope fields; scope enforcement caveat applies. |
 | Products | `/api/v1/management/products/{productId}` | `PUT` | Yes | `products.manage`: `SystemAdmin`, `Manager` | `UpdateProductRequest` | `ApiResult<ProductResult>` | `/menu` product edit | `ready-to-integrate` | No current UI. |
@@ -75,7 +75,7 @@ Products and menus are separate backend resources. The frontend `/menu` feature 
 | Product variants | `/api/v1/management/products/{productId}/variants/{variantId}` | `PUT` | Yes | `products.manage`: `SystemAdmin`, `Manager` | `UpdateProductVariantRequest` | `ApiResult<ProductVariantResult>` | `/menu` variant edit | `ready-to-integrate` | Nested resource. |
 | Product variants | `/api/v1/management/products/{productId}/variants/{variantId}/availability` | `PATCH` | Yes | `products.manage`: `SystemAdmin`, `Manager` | `{ isAvailable: boolean }` | `ApiResult<ProductVariantResult>` | `/menu` variant availability | `ready-to-integrate` | Suitable for toggle action. |
 | Product variants | `/api/v1/management/products/{productId}/variants/{variantId}` | `DELETE` | Yes | `products.manage`: `SystemAdmin`, `Manager` | None | `ApiResult<boolean>` | `/menu` variant remove | `ready-to-integrate` | No current UI. |
-| Menus | `/api/v1/management/menus?search&organizationId&storeId&kioskId&pageNumber&pageSize` | `GET` | Yes | `menus.manage`: `SystemAdmin`, `Manager` | Query filters and pagination | `PagedResult<MenuResult>` | `/menu` sellable menu list | `ready-to-integrate` | Backend menu is sellable offer layer, not product entity. |
+| Menus | `/api/v1/management/menus?search&organizationId&storeId&kioskId&pageNumber&pageSize` | `GET` | Yes | `menus.manage`: `SystemAdmin`, `Manager` | Query filters and pagination | `PagedResult<MenuResult>` | `/menu` sellable menu list | `integrated` | Read-only panel shows menus and nested items; menu remains separate from product entity. |
 | Menus | `/api/v1/management/menus/{menuId}` | `GET` | Yes | `menus.manage`: `SystemAdmin`, `Manager` | Path `menuId: guid` | `ApiResult<MenuResult>` | `/menu` menu detail/edit | `ready-to-integrate` | Menu includes items. |
 | Menus | `/api/v1/management/menus` | `POST` | Yes | `menus.manage`: `SystemAdmin`, `Manager` | `CreateMenuRequest` | `ApiResult<MenuResult>` | `/menu` menu create | `ready-to-integrate` | Tenant scope fields are part of contract. |
 | Menus | `/api/v1/management/menus/{menuId}` | `PUT` | Yes | `menus.manage`: `SystemAdmin`, `Manager` | `UpdateMenuRequest` | `ApiResult<MenuResult>` | `/menu` menu edit | `ready-to-integrate` | No current UI. |
@@ -116,7 +116,7 @@ Products and menus are separate backend resources. The frontend `/menu` feature 
 | --- | --- | --- | --- |
 | Auth/session | Login, logout, restore and refresh already wired | Authentication and `/me` contracts verified | Keep existing foundation; later add recovery/profile only if requested. |
 | `/users` | Read-only API-backed account list implemented | Full `/management/accounts` CRUD/role endpoints verified | Detail and account management actions remain deferred until requested. |
-| `/menu` | Placeholder page | Full products and menus management endpoints verified | Integrate after deciding one-route composition of Products vs Menus. |
+| `/menu` | Read-only composed view with separate Menu and Product panels implemented | Full products and menus management endpoints verified | Detail and write actions remain deferred until requested. |
 | Payment configuration | No dedicated route | `/management/payment-methods` verified | Defer until product decides where configuration belongs; do not force into `/transactions`. |
 | `/kiosks`, `/kiosks/[id]` | Mock-first UI already exists | No management kiosk/telemetry API | Keep mock-first. |
 | `/inventory` | Placeholder page | No API controller verified | Keep placeholder/mock-first. |
@@ -135,6 +135,6 @@ Products and menus are separate backend resources. The frontend `/menu` feature 
 ## Proposed Approval-Gated Implementation Order
 
 1. Extend `/users` with deliberate management actions only when approved; the read-only account list is already integrated with Admin-only access.
-2. Integrate `/menu` after confirming whether the route should present both Products and Menus in one feature surface.
+2. Extend `/menu` with detail or deliberate write actions only when requested; the two read-only list panels are already integrated without merging domain models.
 3. Defer payment-method management until a route placement is approved.
 4. Retain mock-first kiosk pages and placeholders for inventory, maintenance, reports and transactions until matching management APIs exist.
