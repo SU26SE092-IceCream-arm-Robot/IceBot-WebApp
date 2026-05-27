@@ -49,8 +49,8 @@ All endpoints below use policy `accounts.manage`, registered for backend role `S
 
 | API group | Endpoint | Method | Auth required? | Allowed roles / policy | Request shape | Response shape | Frontend route/module | Integration status | Note / risk |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Management accounts | `/api/v1/management/accounts?search&status&pageNumber&pageSize` | `GET` | Yes | `accounts.manage`: `SystemAdmin` | Query filters and pagination | `PagedResult<InternalAccountResult>` | `/users` list | `ready-to-integrate` | Best immediate dashboard integration candidate. |
-| Management accounts | `/api/v1/management/accounts/{accountId}` | `GET` | Yes | `accounts.manage`: `SystemAdmin` | Path `accountId: guid` | `ApiResult<InternalAccountResult>` | `/users` detail/dialog | `ready-to-integrate` | No users UI implemented yet. |
+| Management accounts | `/api/v1/management/accounts?search&status&pageNumber&pageSize` | `GET` | Yes | `accounts.manage`: `SystemAdmin` | Query filters and pagination | `PagedResult<InternalAccountResult>` | `/users` list | `integrated` | Read-only list uses real API with search, status filter and pagination. |
+| Management accounts | `/api/v1/management/accounts/{accountId}` | `GET` | Yes | `accounts.manage`: `SystemAdmin` | Path `accountId: guid` | `ApiResult<InternalAccountResult>` | `/users` detail/dialog | `ready-to-integrate` | No detail/action UI in current task. |
 | Management accounts | `/api/v1/management/accounts` | `POST` | Yes | `accounts.manage`: `SystemAdmin` | `CreateInternalAccountRequest` | `ApiResult<InternalAccountResult>` | `/users` create | `ready-to-integrate` | Request may assign role scopes on creation. |
 | Management accounts | `/api/v1/management/accounts/{accountId}` | `PUT` | Yes | `accounts.manage`: `SystemAdmin` | `UpdateInternalAccountRequest` | `ApiResult<InternalAccountResult>` | `/users` edit | `ready-to-integrate` | Must preserve backend role codes in request data. |
 | Management accounts | `/api/v1/management/accounts/{accountId}/disable` | `PATCH` | Yes | `accounts.manage`: `SystemAdmin` | None | `ApiResult<InternalAccountResult>` | `/users` disable | `ready-to-integrate` | Disable is not delete. |
@@ -115,7 +115,7 @@ Products and menus are separate backend resources. The frontend `/menu` feature 
 | Frontend module | Current frontend status | Verified backend support | Proposed next integration |
 | --- | --- | --- | --- |
 | Auth/session | Login, logout, restore and refresh already wired | Authentication and `/me` contracts verified | Keep existing foundation; later add recovery/profile only if requested. |
-| `/users` | Placeholder page | Full `/management/accounts` CRUD/role endpoints verified | Integrate first after approval; policy aligns with Admin-only route. |
+| `/users` | Read-only API-backed account list implemented | Full `/management/accounts` CRUD/role endpoints verified | Detail and account management actions remain deferred until requested. |
 | `/menu` | Placeholder page | Full products and menus management endpoints verified | Integrate after deciding one-route composition of Products vs Menus. |
 | Payment configuration | No dedicated route | `/management/payment-methods` verified | Defer until product decides where configuration belongs; do not force into `/transactions`. |
 | `/kiosks`, `/kiosks/[id]` | Mock-first UI already exists | No management kiosk/telemetry API | Keep mock-first. |
@@ -134,8 +134,7 @@ Products and menus are separate backend resources. The frontend `/menu` feature 
 
 ## Proposed Approval-Gated Implementation Order
 
-1. Integrate `/users` service/hook/types against `/api/v1/management/accounts`, preserving Admin-only access already defined in frontend RBAC.
+1. Extend `/users` with deliberate management actions only when approved; the read-only account list is already integrated with Admin-only access.
 2. Integrate `/menu` after confirming whether the route should present both Products and Menus in one feature surface.
 3. Defer payment-method management until a route placement is approved.
 4. Retain mock-first kiosk pages and placeholders for inventory, maintenance, reports and transactions until matching management APIs exist.
-

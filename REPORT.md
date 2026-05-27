@@ -26,6 +26,42 @@ Status: <done|partial>
 
 ## Task Log (Mới nhất -> cũ hơn)
 
+### Task: `/users` Management Accounts list API integration
+Time: 2026-05-27 22:38
+Status: done
+
+1. What was implemented
+- Thay placeholder `/users` bằng màn danh sách tài khoản nội bộ sử dụng API thật `GET /api/v1/management/accounts`.
+- Dựng flow `Page -> Hook -> Service -> API` cho accounts, hỗ trợ tìm kiếm, lọc trạng thái, phân trang và refresh dữ liệu.
+- Hiển thị account identity, trạng thái, role scope và phương thức đăng nhập với loading/error/empty states tối thiểu.
+
+2. Files created/modified
+- Created: `src/types/accounts.ts`, `src/lib/services/accounts.ts`, `src/hooks/use-accounts.ts`
+- Created: `src/components/features/users/accounts-table.tsx`
+- Modified: `src/app/(dashboard)/users/page.tsx`, `API_INTEGRATION_MATRIX.md`, `REPORT.md`
+
+3. Important design/architecture decisions
+- Chỉ tích hợp list/read endpoint trong task này; không tự mở rộng thành CRUD, disable, password hoặc role-assignment actions.
+- Service dùng lại `axiosClient` hiện hữu để kế thừa authenticated bearer/refresh handling; auth/session/interceptor/RBAC core không thay đổi.
+- Quyền được giữ nhất quán ở hai lớp: frontend route `/users` chỉ dành cho `ADMIN`, backend endpoint được bảo vệ bằng policy `accounts.manage` dành cho `SystemAdmin`.
+- UI dùng semantic tokens và light theme theo design system; không dùng hardcoded color trong `className`.
+
+4. How to test it
+- Chạy backend API và cấu hình `NEXT_PUBLIC_API_URL`, sau đó chạy `npm run dev`.
+- Đăng nhập tài khoản backend có role `SystemAdmin`, truy cập `/users` và xác nhận danh sách account tải từ API.
+- Kiểm tra tìm kiếm theo username/email/tên, bộ lọc trạng thái, nút làm mới và phân trang.
+- Kiểm tra loading/error/empty state bằng dữ liệu hoặc tình huống API tương ứng.
+- Đăng nhập role không phải Admin và xác nhận route `/users` vẫn bị dashboard RBAC chặn theo foundation hiện hữu.
+- Quality gates đã chạy thành công: `npm run lint` và `npm run build`.
+
+5. Known issues or assumptions
+- Endpoint detail và các write endpoint accounts đã có contract nhưng chưa được nối UI trong scope read-only hiện tại.
+- Backend `accounts.manage` chỉ cấp cho `SystemAdmin`; UI không cố mô phỏng quyền ghi cho các dashboard role khác.
+- Việc xác nhận response runtime yêu cầu backend đang chạy với tài khoản seed có quyền phù hợp.
+
+6. Recommended next task
+- Khi được yêu cầu, bổ sung account management actions trên `/users` theo endpoint đã audit, hoặc chuyển sang tích hợp `/menu` sau khi chốt composition Product/Menu.
+
 ### Task: Authentication/Authorization foundation - direct browser API integration
 Time: 2026-05-27 21:41
 Status: done
