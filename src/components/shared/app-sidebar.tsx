@@ -16,7 +16,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { getVisibleRoutes } from "@/lib/rbac";
-import type { DashboardRoutePath, Role } from "@/types";
+import type { DashboardRole, DashboardRoutePath } from "@/types";
 
 interface SidebarItem {
   href: DashboardRoutePath;
@@ -35,7 +35,7 @@ const SIDEBAR_ITEMS: readonly SidebarItem[] = [
 ];
 
 interface AppSidebarProps {
-  role: Role;
+  role: DashboardRole;
   collapsed: boolean;
   onToggleCollapsed: () => void;
 }

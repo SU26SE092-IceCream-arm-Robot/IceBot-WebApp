@@ -1,33 +1,22 @@
 "use client";
 
-import { Bell } from "lucide-react";
+import { Bell, LogOut } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import type { DashboardUser, Role } from "@/types";
-
-const ROLE_OPTIONS: { value: Role; label: string }[] = [
-  { value: "ADMIN", label: "Admin" },
-  { value: "MANAGER", label: "Manager" },
-  { value: "LOCATION_OWNER", label: "Location Owner" },
-];
+import type { DashboardUser } from "@/types";
 
 interface TopbarProps {
   currentUser: DashboardUser;
-  onRoleChange: (role: Role) => void;
+  onLogout: () => Promise<void>;
 }
 
-function isRole(value: string | null): value is Role {
-  return value === "ADMIN" || value === "MANAGER" || value === "LOCATION_OWNER";
-}
+const ROLE_LABELS = {
+  ADMIN: "Admin",
+  MANAGER: "Manager",
+  LOCATION_OWNER: "Location Owner",
+} as const;
 
-export function Topbar({ currentUser, onRoleChange }: TopbarProps) {
+export function Topbar({ currentUser, onLogout }: TopbarProps) {
   return (
     <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-card px-4 lg:px-6">
       <div className="w-60 lg:w-96">
@@ -35,26 +24,6 @@ export function Topbar({ currentUser, onRoleChange }: TopbarProps) {
       </div>
 
       <div className="flex items-center gap-3">
-        <Select
-          value={currentUser.role}
-          onValueChange={(value) => {
-            if (isRole(value)) {
-              onRoleChange(value);
-            }
-          }}
-        >
-          <SelectTrigger className="w-[170px]">
-            <SelectValue placeholder="Chọn role" />
-          </SelectTrigger>
-          <SelectContent>
-            {ROLE_OPTIONS.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
         <button
           type="button"
           className="relative rounded-md p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
@@ -75,10 +44,20 @@ export function Topbar({ currentUser, onRoleChange }: TopbarProps) {
               {currentUser.name}
             </span>
             <span className="block text-[11px] leading-tight text-muted-foreground">
-              {currentUser.role}
+              {ROLE_LABELS[currentUser.role]}
             </span>
           </div>
         </div>
+
+        <button
+          type="button"
+          onClick={() => void onLogout()}
+          className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          title="Đăng xuất"
+          aria-label="Đăng xuất"
+        >
+          <LogOut size={18} />
+        </button>
       </div>
     </header>
   );

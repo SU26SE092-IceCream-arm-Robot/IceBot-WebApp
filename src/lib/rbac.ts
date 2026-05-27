@@ -1,6 +1,6 @@
-import type { DashboardPermission, DashboardRoutePath, Role } from "@/types";
+import type { DashboardPermission, DashboardRole, DashboardRoutePath } from "@/types";
 
-export const PERMISSIONS: Record<DashboardPermission, readonly Role[]> = {
+export const PERMISSIONS: Record<DashboardPermission, readonly DashboardRole[]> = {
   "kiosks.view": ["ADMIN", "MANAGER", "LOCATION_OWNER"],
   "kiosks.control": ["ADMIN", "MANAGER"],
   "inventory.view": ["ADMIN", "MANAGER"],
@@ -38,15 +38,15 @@ const DASHBOARD_ROUTES: readonly DashboardRoutePath[] = [
 
 const DASHBOARD_ROUTE_SET: ReadonlySet<string> = new Set(DASHBOARD_ROUTES);
 
-export function hasPermission(role: Role, permission: DashboardPermission): boolean {
+export function hasPermission(role: DashboardRole, permission: DashboardPermission): boolean {
   return PERMISSIONS[permission].includes(role);
 }
 
-export function canAccessRoute(role: Role, routePath: DashboardRoutePath): boolean {
+export function canAccessRoute(role: DashboardRole, routePath: DashboardRoutePath): boolean {
   return hasPermission(role, ROUTE_PERMISSIONS[routePath]);
 }
 
-export function getVisibleRoutes(role: Role): DashboardRoutePath[] {
+export function getVisibleRoutes(role: DashboardRole): DashboardRoutePath[] {
   return DASHBOARD_ROUTES.filter((routePath) => canAccessRoute(role, routePath));
 }
 

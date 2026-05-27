@@ -26,6 +26,56 @@ Status: <done|partial>
 
 ## Task Log (Mới nhất -> cũ hơn)
 
+### Task: Authentication/Authorization foundation - direct browser API integration
+Time: 2026-05-27 21:41
+Status: done
+
+1. What was implemented
+- Implement local password authentication foundation theo backend contract thực tế: login, session restore qua `/me`, refresh token rotation, logout bằng revoke refresh token.
+- Tạo route `/login` và login form theo IceBot Design System; thay dashboard mock-role guard bằng authenticated session guard.
+- Hiển thị màn hình từ chối truy cập cho account có session hợp lệ nhưng không thuộc dashboard roles (`Staff`/`Technician`).
+- Cập nhật topbar hiển thị user thật và action đăng xuất; bỏ role selector giả lập khỏi luồng runtime.
+- Nối Fleet Monitor mock data vào authenticated `DashboardUser`; `LocationOwner.storeId` tạm được map thành location scope để lọc UI.
+- Bật middleware CORS backend cho direct browser API calls trong phase demo.
+
+2. Files created/modified
+- Created: `src/app/(auth)/login/page.tsx`
+- Created: `src/components/features/auth/login-form.tsx`
+- Created: `src/hooks/use-auth.tsx`
+- Created: `src/lib/auth-session.ts`
+- Created: `src/lib/services/auth.ts`
+- Modified: `src/types/index.ts`, `src/lib/axios-client.ts`, `src/app/layout.tsx`
+- Modified: `src/app/(dashboard)/layout.tsx`, `src/components/shared/app-sidebar.tsx`, `src/components/shared/topbar.tsx`
+- Modified: `src/hooks/use-kiosks.ts`, `src/lib/rbac.ts`, `src/lib/services/kiosks.ts`, `REPORT.md`
+- Modified backend: `Projects_Backend/IceBot-Backend/IceBot/WebAPI/Program.cs`
+
+3. Important design/architecture decisions
+- Phase demo dùng direct browser API integration: access token và refresh token được lưu trong browser `localStorage` để phục vụ luồng restore/refresh.
+- Browser token storage là chiến lược demo/dev, không phải thiết kế production; production cần chuyển refresh token sang `HttpOnly` cookie qua BFF/session boundary.
+- Role mapping duy nhất cho dashboard: `SystemAdmin -> ADMIN`, `Manager -> MANAGER`, `LocationOwner -> LOCATION_OWNER`; `Staff` và `Technician` giữ session nhưng không được vào dashboard.
+- LOCATION_OWNER filtering hiện là UI-only mapping từ backend `storeId` sang frontend location scope; backend authorization vẫn phải enforce resource scope về sau.
+- `/kiosks` tiếp tục dùng mock data; task này không mở rộng module hoặc route nghiệp vụ.
+
+4. How to test it
+- Set `NEXT_PUBLIC_API_URL` trỏ tới WebAPI đang chạy, ví dụ `http://localhost:5188`, rồi chạy backend và `npm run dev`.
+- Mở `/kiosks` khi chưa đăng nhập và xác nhận được chuyển về `/login`.
+- Đăng nhập bằng account backend có role `SystemAdmin`, `Manager` hoặc `LocationOwner`; xác nhận vào dashboard, sidebar theo quyền và topbar hiển thị tài khoản thật.
+- Reload browser sau đăng nhập và xác nhận session được restore qua `/api/v1/me`.
+- Đợi access token hết hạn hoặc giả lập request nhận `401`; xác nhận frontend gọi `/authentication/refresh` một lần và retry request.
+- Bấm đăng xuất; xác nhận gọi revoke, xóa session browser và quay về `/login`.
+- Đăng nhập account chỉ có `Staff`/`Technician`; xác nhận thấy màn hình `Không có quyền truy cập`.
+- Quality gates: `npm run lint` pass, `npm run build` pass, `dotnet build IceBot\IceBot.slnx` pass.
+
+5. Known issues or assumptions
+- Refresh token đang nằm trong browser storage và có rủi ro XSS trong môi trường production.
+- CORS backend hiện dùng policy `AllowAnyOrigin` sẵn có để hỗ trợ demo; production cần giới hạn frontend origins.
+- Backend hiện mới kiểm tra role presence, chưa enforce scoped resource authorization theo `StoreId`/`KioskId`.
+- Dữ liệu `/kiosks` vẫn là mock; backend `storeId` phải khớp mock `locationId` thì Location Owner mới thấy card trong demo.
+- Backend build pass với 2 warning có sẵn về API `GoogleCredential` obsolete trong Firebase integration, ngoài scope local password auth.
+
+6. Recommended next task
+- Hoàn thiện backend scoped management API contract cho Fleet Monitor hoặc thống nhất mapping seed store/kiosk để kiểm thử quyền `LOCATION_OWNER` bằng dữ liệu thực.
+
 ### Task: Documentation alignment theo Report 1 + lọc scope Report 2
 Time: 2026-05-25 20:52
 Status: done

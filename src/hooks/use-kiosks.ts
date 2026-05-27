@@ -1,12 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
-import {
-  getMockCurrentUser,
-  getMockRole,
-  getMockRoleChangedEventName,
-} from "@/lib/mock-current-user";
+import { useAuth } from "@/hooks/use-auth";
 import { getFleetKiosks } from "@/lib/services/kiosks";
 import type {
   DashboardUser,
@@ -15,7 +11,7 @@ import type {
   KioskLocationOption,
   KioskStatusFilter,
   KioskSummary,
-  Role,
+  DashboardRole,
 } from "@/types";
 
 const INITIAL_FILTERS: KioskFilters = {
@@ -25,8 +21,8 @@ const INITIAL_FILTERS: KioskFilters = {
 };
 
 export interface UseKiosksResult {
-  role: Role;
-  currentUser: DashboardUser;
+  role: DashboardRole | null;
+  currentUser: DashboardUser | null;
   kiosks: Kiosk[];
   summary: KioskSummary;
   locations: KioskLocationOption[];
@@ -53,7 +49,8 @@ function isStatusFilter(value: string | null): value is KioskStatusFilter {
 }
 
 export function useKiosks(): UseKiosksResult {
-  const [role, setRole] = useState<Role>(() => getMockRole());
+  const { currentUser } = useAuth();
+  const role = currentUser?.role ?? null;
   const [filters, setFilters] = useState<KioskFilters>(INITIAL_FILTERS);
   const [kiosks, setKiosks] = useState<Kiosk[]>([]);
   const [summary, setSummary] = useState<KioskSummary>(EMPTY_SUMMARY);
@@ -62,16 +59,23 @@ export function useKiosks(): UseKiosksResult {
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const currentUser = useMemo(() => getMockCurrentUser(role), [role]);
-
   const fetchKiosks = useCallback(async () => {
     setIsLoading(true);
     setErrorMessage(null);
 
+    if (!role) {
+      setKiosks([]);
+      setSummary(EMPTY_SUMMARY);
+      setLocations([]);
+      setScopedCount(0);
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const result = await getFleetKiosks({
         role,
-        locationIds: currentUser.locationIds,
+        locationIds: currentUser?.locationIds,
         filters,
       });
 
@@ -88,7 +92,7 @@ export function useKiosks(): UseKiosksResult {
     } finally {
       setIsLoading(false);
     }
-  }, [currentUser.locationIds, filters, role]);
+  }, [currentUser, filters, role]);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -99,22 +103,6 @@ export function useKiosks(): UseKiosksResult {
       window.clearTimeout(timeoutId);
     };
   }, [fetchKiosks]);
-
-  useEffect(() => {
-    const syncRoleFromStorage = () => {
-      setRole(getMockRole());
-    };
-
-    const roleChangedEventName = getMockRoleChangedEventName();
-
-    window.addEventListener("storage", syncRoleFromStorage);
-    window.addEventListener(roleChangedEventName, syncRoleFromStorage);
-
-    return () => {
-      window.removeEventListener("storage", syncRoleFromStorage);
-      window.removeEventListener(roleChangedEventName, syncRoleFromStorage);
-    };
-  }, []);
 
   const setSearchTerm = useCallback((value: string) => {
     setFilters((previous) => ({ ...previous, searchTerm: value }));

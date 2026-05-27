@@ -1,4 +1,13 @@
-export type Role = "ADMIN" | "MANAGER" | "LOCATION_OWNER";
+export type DashboardRole = "ADMIN" | "MANAGER" | "LOCATION_OWNER";
+
+export type Role = DashboardRole;
+
+export type BackendRoleCode =
+  | "SystemAdmin"
+  | "Manager"
+  | "LocationOwner"
+  | "Staff"
+  | "Technician";
 
 export type DashboardRoutePath =
   | "/kiosks"
@@ -28,10 +37,64 @@ export interface DashboardUser {
   id: string;
   name: string;
   email: string;
-  role: Role;
+  role: DashboardRole;
   locationId?: string;
   locationIds?: string[];
   avatarInitials: string;
+}
+
+export interface ApiResult<T> {
+  succeeded: boolean;
+  statusCode: number;
+  message?: string;
+  data?: T;
+  details?: Record<string, unknown>;
+  validationErrors?: Record<string, string[]>;
+  businessError?: string;
+  systemError?: string;
+}
+
+export interface AccountRoleScope {
+  roleCode: BackendRoleCode;
+  organizationId?: string | null;
+  storeId?: string | null;
+  kioskId?: string | null;
+}
+
+export interface AuthSessionAccount {
+  id: string;
+  userName: string;
+  email: string;
+  fullName?: string | null;
+  imageUrl?: string | null;
+  roles: AccountRoleScope[];
+  status: string;
+  localLoginEnabled: boolean;
+  googleLoginEnabled: boolean;
+}
+
+export interface AuthenticatedAccountResult extends AuthSessionAccount {
+  accessToken: string;
+  refreshToken: string;
+  fullName: string;
+  address?: string | null;
+  gender: string;
+}
+
+export interface CurrentAccountResult extends AuthSessionAccount {
+  emailConfirmed: boolean;
+  phoneNumber?: string | null;
+  phoneNumberConfirmed: boolean;
+  address?: string | null;
+  gender: string;
+  googleEmail?: string | null;
+  lastLoginAt?: string | null;
+}
+
+export interface AuthSession {
+  accessToken: string;
+  refreshToken: string;
+  account: AuthSessionAccount;
 }
 
 export interface DashboardNavItem {

@@ -4,13 +4,13 @@ import type {
   KioskFilters,
   KioskLocationOption,
   KioskSummary,
-  Role,
+  DashboardRole,
 } from "@/types";
 
 const MOCK_DELAY_MS = 300;
 
 export interface GetFleetKiosksParams {
-  role: Role;
+  role: DashboardRole;
   locationIds?: string[];
   filters: KioskFilters;
 }
@@ -32,7 +32,7 @@ function normalizeKeyword(value: string): string {
   return value.trim().toLowerCase();
 }
 
-function applyRoleScope(kiosks: Kiosk[], role: Role, locationIds?: string[]): Kiosk[] {
+function applyRoleScope(kiosks: Kiosk[], role: DashboardRole, locationIds?: string[]): Kiosk[] {
   if (role !== "LOCATION_OWNER") {
     return kiosks;
   }

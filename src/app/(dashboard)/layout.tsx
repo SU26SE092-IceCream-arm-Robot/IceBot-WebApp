@@ -1,46 +1,106 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
+import { LoaderCircle, ShieldAlert } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 
 import { AppSidebar } from "@/components/shared/app-sidebar";
 import { Topbar } from "@/components/shared/topbar";
-import { getMockCurrentUser, getMockRole, setMockRole } from "@/lib/mock-current-user";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAuth } from "@/hooks/use-auth";
 import { canAccessRoute, isDashboardRoutePath } from "@/lib/rbac";
-import type { Role } from "@/types";
 
 export default function DashboardLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const [role, setRole] = useState<Role>(() => getMockRole());
+  const { status, currentUser, session, logout } = useAuth();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
 
   useEffect(() => {
-    setMockRole(role);
-  }, [role]);
+    if (status === "unauthenticated") {
+      router.replace("/login");
+      return;
+    }
 
-  useEffect(() => {
-    if (isDashboardRoutePath(pathname) && !canAccessRoute(role, pathname)) {
+    if (
+      status === "authenticated" &&
+      currentUser &&
+      isDashboardRoutePath(pathname) &&
+      !canAccessRoute(currentUser.role, pathname)
+    ) {
       router.replace("/kiosks");
     }
-  }, [pathname, role, router]);
+  }, [currentUser, pathname, router, status]);
 
-  const currentUser = useMemo(() => getMockCurrentUser(role), [role]);
+  if (status === "loading" || status === "unauthenticated") {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-background">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <LoaderCircle className="size-4 animate-spin" />
+          Đang xác thực phiên đăng nhập...
+        </div>
+      </main>
+    );
+  }
+
+  if (status === "forbidden" || !currentUser) {
+    const assignedRoles = session?.account.roles.map((roleScope) => roleScope.roleCode).join(", ");
+
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-background px-4">
+        <Card className="w-full max-w-md border border-border">
+          <CardHeader>
+            <div className="mb-3 flex size-11 items-center justify-center rounded-xl bg-destructive/10 text-destructive">
+              <ShieldAlert className="size-5" />
+            </div>
+            <CardTitle className="text-xl font-bold tracking-tight">Không có quyền truy cập</CardTitle>
+            <CardDescription>
+              Tài khoản đã đăng nhập nhưng không thuộc nhóm người dùng Admin Dashboard.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {assignedRoles && (
+              <p className="rounded-md bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+                Role backend: <span className="font-medium text-foreground">{assignedRoles}</span>
+              </p>
+            )}
+            <Button
+              className="w-full"
+              variant="outline"
+              onClick={async () => {
+                await logout();
+                router.replace("/login");
+              }}
+            >
+              Đăng xuất
+            </Button>
+          </CardContent>
+        </Card>
+      </main>
+    );
+  }
 
   return (
     <div className="flex h-screen overflow-hidden">
       <AppSidebar
         role={currentUser.role}
         collapsed={sidebarCollapsed}
-        onToggleCollapsed={() => setSidebarCollapsed((prev) => !prev)}
+        onToggleCollapsed={() => setSidebarCollapsed((previous) => !previous)}
       />
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <Topbar currentUser={currentUser} onRoleChange={setRole} />
+        <Topbar
+          currentUser={currentUser}
+          onLogout={async () => {
+            await logout();
+            router.replace("/login");
+          }}
+        />
         <main className="flex-1 overflow-y-auto p-6 lg:p-8">{children}</main>
       </div>
     </div>
