@@ -1,6 +1,8 @@
-import { Layers3, Package2 } from "lucide-react";
+import { CirclePause, CirclePlay, Eye, Layers3, Package2 } from "lucide-react";
 
+import { getNextMenuStatus } from "@/components/features/menu/catalog-dialogs";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -77,32 +79,59 @@ function getItemStatusLabel(status: MenuItemStatus): string {
 }
 
 function MenuStatusBadge({ status }: { status: MenuStatus }) {
-  if (status === "Active") {
-    return <Badge variant="default">{getMenuStatusLabel(status)}</Badge>;
+  switch (status) {
+    case "Active":
+      return (
+        <Badge className="border-0 bg-success/10 text-success">
+          {getMenuStatusLabel(status)}
+        </Badge>
+      );
+    case "Draft":
+    case "Paused":
+      return (
+        <Badge className="border-0 bg-warning/10 text-warning">
+          {getMenuStatusLabel(status)}
+        </Badge>
+      );
+    case "Archived":
+      return (
+        <Badge className="border-0 bg-muted text-muted-foreground">
+          {getMenuStatusLabel(status)}
+        </Badge>
+      );
   }
-
-  if (status === "Paused") {
-    return (
-      <Badge variant="outline" className="border-warning/30 bg-warning/10 text-warning">
-        {getMenuStatusLabel(status)}
-      </Badge>
-    );
-  }
-
-  return <Badge variant="secondary">{getMenuStatusLabel(status)}</Badge>;
 }
 
 function ItemBadge({ name, status }: { name: string; status: MenuItemStatus }) {
-  const variant = status === "Active" ? "outline" : "secondary";
+  const statusClassName = {
+    Active: "border-0 bg-success/10 text-success",
+    Draft: "border-0 bg-warning/10 text-warning",
+    Unavailable: "border-0 bg-muted text-muted-foreground",
+    Archived: "border-0 bg-muted text-muted-foreground",
+  }[status];
 
   return (
-    <Badge variant={variant}>
+    <Badge className={statusClassName}>
       {name} / {getItemStatusLabel(status)}
     </Badge>
   );
 }
 
-export function MenusTable({ menus }: { menus: MenuResult[] }) {
+interface MenusTableProps {
+  canManage: boolean;
+  menuActionId: string | null;
+  menus: MenuResult[];
+  onToggleStatus: (menu: MenuResult, status: MenuStatus) => void;
+  onView: (menuId: string) => void;
+}
+
+export function MenusTable({
+  canManage,
+  menuActionId,
+  menus,
+  onToggleStatus,
+  onView,
+}: MenusTableProps) {
   return (
     <Table>
       <TableHeader>
@@ -111,7 +140,8 @@ export function MenusTable({ menus }: { menus: MenuResult[] }) {
           <TableHead>Trạng thái</TableHead>
           <TableHead>Phạm vi</TableHead>
           <TableHead>Món hiển thị</TableHead>
-          <TableHead className="px-5">Hiệu lực</TableHead>
+          <TableHead>Hiệu lực</TableHead>
+          <TableHead className="px-5 text-right">Thao tác</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -145,10 +175,44 @@ export function MenusTable({ menus }: { menus: MenuResult[] }) {
                 </div>
               )}
             </TableCell>
-            <TableCell className="px-5">
+            <TableCell>
               <div className="space-y-1 text-xs text-muted-foreground">
                 <p className="tabular-nums">Từ: {formatDate(menu.effectiveFrom)}</p>
                 <p className="tabular-nums">Đến: {formatDate(menu.effectiveTo)}</p>
+              </div>
+            </TableCell>
+            <TableCell className="px-5">
+              <div className="flex justify-end gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 text-xs"
+                  onClick={() => onView(menu.id)}
+                >
+                  <Eye className="size-3.5" />
+                  Xem chi tiết
+                </Button>
+                {canManage && getNextMenuStatus(menu.status) ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 text-xs"
+                    isLoading={menuActionId === menu.id}
+                    onClick={() => {
+                      const nextStatus = getNextMenuStatus(menu.status);
+                      if (nextStatus) {
+                        onToggleStatus(menu, nextStatus);
+                      }
+                    }}
+                  >
+                    {getNextMenuStatus(menu.status) === "Active" ? (
+                      <CirclePlay className="size-3.5" />
+                    ) : (
+                      <CirclePause className="size-3.5" />
+                    )}
+                    {getNextMenuStatus(menu.status) === "Active" ? "Kích hoạt" : "Tạm dừng"}
+                  </Button>
+                ) : null}
               </div>
             </TableCell>
           </TableRow>
@@ -158,7 +222,21 @@ export function MenusTable({ menus }: { menus: MenuResult[] }) {
   );
 }
 
-export function ProductsTable({ products }: { products: ProductResult[] }) {
+interface ProductsTableProps {
+  canManage: boolean;
+  productActionId: string | null;
+  products: ProductResult[];
+  onToggleAvailability: (product: ProductResult) => void;
+  onView: (productId: string) => void;
+}
+
+export function ProductsTable({
+  canManage,
+  productActionId,
+  products,
+  onToggleAvailability,
+  onView,
+}: ProductsTableProps) {
   return (
     <Table>
       <TableHeader>
@@ -167,7 +245,8 @@ export function ProductsTable({ products }: { products: ProductResult[] }) {
           <TableHead>Khả dụng</TableHead>
           <TableHead>Phạm vi</TableHead>
           <TableHead>Biến thể</TableHead>
-          <TableHead className="px-5 text-right">Giá cơ bản</TableHead>
+          <TableHead className="text-right">Giá cơ bản</TableHead>
+          <TableHead className="px-5 text-right">Thao tác</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -188,9 +267,9 @@ export function ProductsTable({ products }: { products: ProductResult[] }) {
             </TableCell>
             <TableCell>
               {product.isAvailable ? (
-                <Badge variant="default">Đang bán</Badge>
+                <Badge className="border-0 bg-success/10 text-success">Đang bán</Badge>
               ) : (
-                <Badge variant="secondary">Ngừng bán</Badge>
+                <Badge className="border-0 bg-muted text-muted-foreground">Ngừng bán</Badge>
               )}
             </TableCell>
             <TableCell>
@@ -202,7 +281,14 @@ export function ProductsTable({ products }: { products: ProductResult[] }) {
               ) : (
                 <div className="flex max-w-80 flex-wrap gap-1.5">
                   {product.variants.slice(0, 2).map((variant) => (
-                    <Badge key={variant.id} variant={variant.isAvailable ? "outline" : "secondary"}>
+                    <Badge
+                      key={variant.id}
+                      className={
+                        variant.isAvailable
+                          ? "border-0 bg-success/10 text-success"
+                          : "border-0 bg-muted text-muted-foreground"
+                      }
+                    >
                       {variant.displayName?.trim() || variant.name}
                     </Badge>
                   ))}
@@ -214,10 +300,34 @@ export function ProductsTable({ products }: { products: ProductResult[] }) {
                 </div>
               )}
             </TableCell>
-            <TableCell className="px-5 text-right">
+            <TableCell className="text-right">
               <span className="tabular-nums font-medium text-foreground">
                 {formatMoney(product.basePrice, product.currency)}
               </span>
+            </TableCell>
+            <TableCell className="px-5">
+              <div className="flex justify-end gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 text-xs"
+                  onClick={() => onView(product.id)}
+                >
+                  <Eye className="size-3.5" />
+                  Xem chi tiết
+                </Button>
+                {canManage ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 text-xs"
+                    isLoading={productActionId === product.id}
+                    onClick={() => onToggleAvailability(product)}
+                  >
+                    {product.isAvailable ? "Tắt bán" : "Bật bán"}
+                  </Button>
+                ) : null}
+              </div>
             </TableCell>
           </TableRow>
         ))}
@@ -229,7 +339,7 @@ export function ProductsTable({ products }: { products: ProductResult[] }) {
 export function CatalogEmptyMarker({ label }: { label: string }) {
   return (
     <div className="flex flex-col items-center gap-3 px-5 py-10 text-center">
-      <span className="flex size-12 items-center justify-center rounded-xl bg-secondary text-secondary-foreground">
+      <span className="flex size-12 items-center justify-center rounded-xl bg-muted text-muted-foreground">
         <Layers3 className="size-5" />
       </span>
       <p className="text-sm font-medium text-foreground">Không có {label} phù hợp</p>

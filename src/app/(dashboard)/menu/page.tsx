@@ -4,23 +4,34 @@ import {
   AlertTriangle,
   ChevronLeft,
   ChevronRight,
+  CircleCheckBig,
   IceCreamBowl,
+  Layers3,
+  PackageCheck,
   RefreshCw,
   Search,
   ShoppingBasket,
+  type LucideIcon,
 } from "lucide-react";
 
+import {
+  CatalogActionDialog,
+  MenuDetailDialog,
+  ProductDetailDialog,
+} from "@/components/features/menu/catalog-dialogs";
 import {
   CatalogEmptyMarker,
   MenusTable,
   ProductsTable,
 } from "@/components/features/menu/catalog-tables";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { useAuth } from "@/hooks/use-auth";
 import { useMenuManagement, type MenuCollectionState } from "@/hooks/use-menu-management";
+import { hasPermission } from "@/lib/rbac";
 import type {
+  MenuStatus,
   MenuManagementPagination,
   MenuResult,
   ProductResult,
@@ -45,6 +56,52 @@ function CatalogLoadingTable() {
         </div>
       ))}
     </div>
+  );
+}
+
+type StatTone = "primary" | "success";
+
+const STAT_TONES: Record<StatTone, { iconClassName: string; valueClassName: string }> = {
+  primary: {
+    iconClassName: "bg-primary/10 text-primary",
+    valueClassName: "text-foreground",
+  },
+  success: {
+    iconClassName: "bg-success/10 text-success",
+    valueClassName: "text-success",
+  },
+};
+
+function StatCard({
+  icon: Icon,
+  label,
+  supportingText,
+  tone,
+  value,
+}: {
+  icon: LucideIcon;
+  label: string;
+  supportingText: string;
+  tone: StatTone;
+  value: number;
+}) {
+  const toneClasses = STAT_TONES[tone];
+
+  return (
+    <Card className="rounded-xl border border-border bg-card shadow-none hover:border-primary/20">
+      <CardContent className="p-4">
+        <div className="mb-3 flex items-center justify-between">
+          <p className="text-xs font-medium text-muted-foreground">{label}</p>
+          <span className={`flex size-8 items-center justify-center rounded-lg ${toneClasses.iconClassName}`}>
+            <Icon className="size-4" />
+          </span>
+        </div>
+        <p className={`tabular-nums text-3xl font-bold tracking-tight ${toneClasses.valueClassName}`}>
+          {value}
+        </p>
+        <p className="mt-1 text-xs text-muted-foreground">{supportingText}</p>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -103,14 +160,22 @@ function MenusPanel({
   onRetry,
   onPrevious,
   onNext,
+  canManage,
+  menuActionId,
+  onView,
+  onToggleStatus,
 }: {
   collection: MenuCollectionState<MenuResult>;
   onRetry: () => Promise<void>;
   onPrevious: () => void;
   onNext: () => void;
+  canManage: boolean;
+  menuActionId: string | null;
+  onView: (menuId: string) => void;
+  onToggleStatus: (menu: MenuResult, status: MenuStatus) => void;
 }) {
   return (
-    <Card className="border-border/80 shadow-none">
+    <Card className="rounded-xl border border-border bg-card shadow-none">
       <CardHeader className="border-b border-border pb-4">
         <div className="flex items-start gap-3">
           <span className="mt-0.5 flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -130,7 +195,13 @@ function MenusPanel({
         ) : collection.data.length === 0 ? (
           <CatalogEmptyMarker label="thực đơn" />
         ) : (
-          <MenusTable menus={collection.data} />
+          <MenusTable
+            canManage={canManage}
+            menuActionId={menuActionId}
+            menus={collection.data}
+            onToggleStatus={onToggleStatus}
+            onView={onView}
+          />
         )}
       </div>
       <PaginationControls
@@ -148,14 +219,22 @@ function ProductsPanel({
   onRetry,
   onPrevious,
   onNext,
+  canManage,
+  productActionId,
+  onView,
+  onToggleAvailability,
 }: {
   collection: MenuCollectionState<ProductResult>;
   onRetry: () => Promise<void>;
   onPrevious: () => void;
   onNext: () => void;
+  canManage: boolean;
+  productActionId: string | null;
+  onView: (productId: string) => void;
+  onToggleAvailability: (product: ProductResult) => void;
 }) {
   return (
-    <Card className="border-border/80 shadow-none">
+    <Card className="rounded-xl border border-border bg-card shadow-none">
       <CardHeader className="border-b border-border pb-4">
         <div className="flex items-start gap-3">
           <span className="mt-0.5 flex size-9 items-center justify-center rounded-lg bg-secondary text-secondary-foreground">
@@ -175,7 +254,13 @@ function ProductsPanel({
         ) : collection.data.length === 0 ? (
           <CatalogEmptyMarker label="sản phẩm" />
         ) : (
-          <ProductsTable products={collection.data} />
+          <ProductsTable
+            canManage={canManage}
+            productActionId={productActionId}
+            products={collection.data}
+            onToggleAvailability={onToggleAvailability}
+            onView={onView}
+          />
         )}
       </div>
       <PaginationControls
@@ -189,10 +274,27 @@ function ProductsPanel({
 }
 
 export default function MenuPage() {
+  const { currentUser } = useAuth();
   const {
     searchTerm,
     menus,
     products,
+    selectedProduct,
+    selectedMenu,
+    pendingAction,
+    isProductDetailOpen,
+    isProductDetailLoading,
+    productDetailError,
+    isMenuDetailOpen,
+    isMenuDetailLoading,
+    menuDetailError,
+    isActionDialogOpen,
+    productActionId,
+    variantActionId,
+    menuActionId,
+    menuItemActionId,
+    actionError,
+    successMessage,
     setSearchTerm,
     clearSearch,
     previousMenusPage,
@@ -200,28 +302,54 @@ export default function MenuPage() {
     previousProductsPage,
     nextProductsPage,
     refresh,
+    openProductDetail,
+    setProductDetailOpen,
+    openMenuDetail,
+    setMenuDetailOpen,
+    requestProductAvailability,
+    requestVariantAvailability,
+    requestMenuStatus,
+    requestMenuItemStatus,
+    setActionDialogOpen,
+    confirmAction,
+    clearSuccessMessage,
   } = useMenuManagement();
 
+  const canManage = currentUser
+    ? hasPermission(currentUser.role, "menu.edit")
+    : false;
+  const isActionSubmitting =
+    productActionId !== null ||
+    variantActionId !== null ||
+    menuActionId !== null ||
+    menuItemActionId !== null;
   const activeMenusOnPage = menus.data.filter((menu) => menu.status === "Active").length;
   const availableProductsOnPage = products.data.filter((product) => product.isAvailable).length;
 
   return (
     <div className="space-y-7">
-      <section className="flex flex-col gap-5 border-b border-border pb-6 lg:flex-row lg:items-end lg:justify-between">
+      {successMessage ? (
+        <div
+          role="status"
+          className="flex items-center justify-between gap-3 rounded-lg border border-success/30 bg-success/5 px-4 py-3 text-sm text-success"
+        >
+          <span>{successMessage}</span>
+          <Button variant="ghost" size="sm" className="h-7 text-success" onClick={clearSuccessMessage}>
+            Đóng
+          </Button>
+        </div>
+      ) : null}
+
+      <section className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="max-w-2xl space-y-3">
-          <Badge variant="outline" className="gap-2 border-primary/20 bg-primary/5 text-primary">
-            <IceCreamBowl className="size-3" />
-            Danh mục và menu bán hàng
-          </Badge>
-          <div className="space-y-2">
-            <h1 className="text-3xl font-semibold tracking-tight text-foreground">Thực đơn</h1>
-            <p className="text-sm leading-6 text-muted-foreground">
-              Theo dõi danh mục sản phẩm và các thực đơn đang phân phối tới kênh bán của IceBot.
-            </p>
-          </div>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Thực đơn</h1>
+          <p className="text-sm text-muted-foreground">
+            Theo dõi danh mục sản phẩm và các thực đơn đang phân phối tới kênh bán của IceBot.
+          </p>
         </div>
         <Button
           variant="outline"
+          size="sm"
           onClick={() => void refresh()}
           isLoading={menus.isLoading || products.isLoading}
         >
@@ -230,74 +358,109 @@ export default function MenuPage() {
         </Button>
       </section>
 
-      <section className="grid gap-4 sm:grid-cols-4">
-        <Card className="border-border/80 shadow-none">
-          <CardContent className="space-y-2 p-5">
-            <p className="text-sm text-muted-foreground">Tổng thực đơn</p>
-            <p className="tabular-nums text-3xl font-semibold tracking-tight text-foreground">
-              {menus.pagination.totalCount}
-            </p>
-            <p className="text-xs text-muted-foreground">Theo kết quả đang lọc</p>
-          </CardContent>
-        </Card>
-        <Card className="border-border/80 shadow-none">
-          <CardContent className="space-y-2 p-5">
-            <p className="text-sm text-muted-foreground">Đang bán trên trang</p>
-            <p className="tabular-nums text-3xl font-semibold tracking-tight text-primary">
-              {activeMenusOnPage}
-            </p>
-            <p className="text-xs text-muted-foreground">Thực đơn đang ở trạng thái bán</p>
-          </CardContent>
-        </Card>
-        <Card className="border-border/80 shadow-none">
-          <CardContent className="space-y-2 p-5">
-            <p className="text-sm text-muted-foreground">Tổng sản phẩm</p>
-            <p className="tabular-nums text-3xl font-semibold tracking-tight text-foreground">
-              {products.pagination.totalCount}
-            </p>
-            <p className="text-xs text-muted-foreground">Danh mục hiện có</p>
-          </CardContent>
-        </Card>
-        <Card className="border-border/80 shadow-none">
-          <CardContent className="space-y-2 p-5">
-            <p className="text-sm text-muted-foreground">Khả dụng trên trang</p>
-            <p className="tabular-nums text-3xl font-semibold tracking-tight text-primary">
-              {availableProductsOnPage}
-            </p>
-            <p className="text-xs text-muted-foreground">Sản phẩm đang bán</p>
-          </CardContent>
-        </Card>
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard
+          icon={Layers3}
+          label="Tổng thực đơn"
+          value={menus.pagination.totalCount}
+          supportingText="Theo kết quả đang lọc"
+          tone="primary"
+        />
+        <StatCard
+          icon={CircleCheckBig}
+          label="Đang bán trên trang"
+          value={activeMenusOnPage}
+          supportingText="Thực đơn đang ở trạng thái bán"
+          tone="success"
+        />
+        <StatCard
+          icon={IceCreamBowl}
+          label="Tổng sản phẩm"
+          value={products.pagination.totalCount}
+          supportingText="Danh mục hiện có"
+          tone="primary"
+        />
+        <StatCard
+          icon={PackageCheck}
+          label="Khả dụng trên trang"
+          value={availableProductsOnPage}
+          supportingText="Sản phẩm đang bán"
+          tone="success"
+        />
       </section>
 
-      <Card className="border-border/80 shadow-none">
-        <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center">
+      <Card className="rounded-xl border border-border bg-card shadow-none">
+        <CardContent className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center">
           <div className="relative flex-1">
-            <Search className="pointer-events-none absolute top-2.5 left-3 size-4 text-muted-foreground" />
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
               placeholder="Tìm theo tên hoặc mã sản phẩm / thực đơn..."
-              className="pl-9"
+              className="h-8 pl-8 text-sm"
             />
           </div>
-          <Button variant="outline" onClick={clearSearch}>
+          <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={clearSearch}>
             Xóa tìm kiếm
           </Button>
         </CardContent>
       </Card>
 
       <MenusPanel
+        canManage={canManage}
         collection={menus}
+        menuActionId={menuActionId}
         onRetry={refresh}
         onPrevious={previousMenusPage}
         onNext={nextMenusPage}
+        onView={(menuId) => void openMenuDetail(menuId)}
+        onToggleStatus={requestMenuStatus}
       />
 
       <ProductsPanel
+        canManage={canManage}
         collection={products}
+        productActionId={productActionId}
         onRetry={refresh}
         onPrevious={previousProductsPage}
         onNext={nextProductsPage}
+        onView={(productId) => void openProductDetail(productId)}
+        onToggleAvailability={requestProductAvailability}
+      />
+
+      <ProductDetailDialog
+        canManage={canManage}
+        errorMessage={productDetailError}
+        isLoading={isProductDetailLoading}
+        open={isProductDetailOpen}
+        product={selectedProduct}
+        productActionId={productActionId}
+        variantActionId={variantActionId}
+        onOpenChange={setProductDetailOpen}
+        onToggleProduct={requestProductAvailability}
+        onToggleVariant={requestVariantAvailability}
+      />
+
+      <MenuDetailDialog
+        canManage={canManage}
+        errorMessage={menuDetailError}
+        isLoading={isMenuDetailLoading}
+        menu={selectedMenu}
+        menuActionId={menuActionId}
+        menuItemActionId={menuItemActionId}
+        open={isMenuDetailOpen}
+        onOpenChange={setMenuDetailOpen}
+        onToggleMenu={requestMenuStatus}
+        onToggleMenuItem={requestMenuItemStatus}
+      />
+
+      <CatalogActionDialog
+        action={pendingAction}
+        errorMessage={actionError}
+        isSubmitting={isActionSubmitting}
+        open={isActionDialogOpen}
+        onConfirm={() => void confirmAction()}
+        onOpenChange={setActionDialogOpen}
       />
     </div>
   );
