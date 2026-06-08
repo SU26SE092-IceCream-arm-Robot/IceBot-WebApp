@@ -4,14 +4,25 @@ import {
   AlertTriangle,
   ChevronLeft,
   ChevronRight,
+  ContactRound,
   RefreshCw,
   Search,
-  ShieldCheck,
+  UserPlus,
+  UserRoundCheck,
   UsersRound,
+  type LucideIcon,
 } from "lucide-react";
 
 import { AccountsTable } from "@/components/features/users/accounts-table";
-import { Badge } from "@/components/ui/badge";
+import {
+  AccountDetailDialog,
+  DisableAccountDialog,
+} from "@/components/features/users/account-dialogs";
+import {
+  CreateAccountDialog,
+  InvitationResultDialog,
+  RegenerateInvitationDialog,
+} from "@/components/features/users/invitation-dialogs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -23,6 +34,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAccounts } from "@/hooks/use-accounts";
+import { useAuth } from "@/hooks/use-auth";
 import type { ManagementAccountStatusFilter } from "@/types/accounts";
 
 const STATUS_OPTIONS: { value: ManagementAccountStatusFilter; label: string }[] = [
@@ -31,6 +43,7 @@ const STATUS_OPTIONS: { value: ManagementAccountStatusFilter; label: string }[] 
   { value: "PendingVerification", label: "Chờ xác minh" },
   { value: "Suspended", label: "Tạm khóa" },
   { value: "Disabled", label: "Vô hiệu hóa" },
+  { value: "Invited", label: "Đã mời" },
 ];
 
 function isAccountStatusFilter(value: string | null): value is ManagementAccountStatusFilter {
@@ -56,79 +69,173 @@ function AccountsLoadingTable() {
   );
 }
 
+type StatTone = "primary" | "success" | "muted";
+
+const STAT_TONES: Record<StatTone, { iconClassName: string; valueClassName: string }> = {
+  primary: {
+    iconClassName: "bg-primary/10 text-primary",
+    valueClassName: "text-foreground",
+  },
+  success: {
+    iconClassName: "bg-success/10 text-success",
+    valueClassName: "text-success",
+  },
+  muted: {
+    iconClassName: "bg-muted text-muted-foreground",
+    valueClassName: "text-foreground",
+  },
+};
+
+function StatCard({
+  icon: Icon,
+  label,
+  supportingText,
+  tone,
+  value,
+}: {
+  icon: LucideIcon;
+  label: string;
+  supportingText: string;
+  tone: StatTone;
+  value: number;
+}) {
+  const toneClasses = STAT_TONES[tone];
+
+  return (
+    <Card className="rounded-xl border border-border bg-card shadow-none hover:border-primary/20">
+      <CardContent className="p-4">
+        <div className="mb-3 flex items-center justify-between">
+          <p className="text-xs font-medium text-muted-foreground">{label}</p>
+          <span className={`flex size-8 items-center justify-center rounded-lg ${toneClasses.iconClassName}`}>
+            <Icon className="size-4" />
+          </span>
+        </div>
+        <p className={`tabular-nums text-3xl font-bold tracking-tight ${toneClasses.valueClassName}`}>
+          {value}
+        </p>
+        <p className="mt-1 text-xs text-muted-foreground">{supportingText}</p>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function UsersPage() {
+  const { currentUser } = useAuth();
   const {
     accounts,
     query,
     pagination,
     isLoading,
     errorMessage,
+    selectedAccount,
+    accountPendingDisable,
+    isDetailOpen,
+    isDetailLoading,
+    detailErrorMessage,
+    isDisableOpen,
+    isDisabling,
+    disableErrorMessage,
+    isCreateOpen,
+    isCreating,
+    createErrorMessage,
+    accountPendingInvitation,
+    isRegenerateOpen,
+    isRegenerating,
+    regenerateErrorMessage,
+    regenerateSendEmail,
+    invitationResult,
+    invitationAccount,
+    invitationResultMode,
+    isInvitationResultOpen,
+    successMessage,
     setSearchTerm,
     setStatus,
     clearFilters,
     previousPage,
     nextPage,
     refresh,
+    openAccountDetail,
+    setDetailOpen,
+    requestDisableAccount,
+    setDisableOpen,
+    confirmDisableAccount,
+    setCreateOpen,
+    submitCreateAccount,
+    requestRegenerateInvitation,
+    setRegenerateOpen,
+    setRegenerateSendEmail,
+    confirmRegenerateInvitation,
+    setInvitationResultOpen,
+    clearSuccessMessage,
   } = useAccounts();
 
+  const canManageAccounts = currentUser?.role === "ADMIN";
   const roleCount = accounts.reduce((count, account) => count + account.roles.length, 0);
   const activeOnPage = accounts.filter((account) => account.status === "Active").length;
 
   return (
     <div className="space-y-7">
-      <section className="flex flex-col gap-5 border-b border-border pb-6 lg:flex-row lg:items-end lg:justify-between">
-        <div className="max-w-2xl space-y-3">
-          <Badge variant="outline" className="gap-2 border-primary/20 bg-primary/5 text-primary">
-            <ShieldCheck className="size-3" />
-            Chỉ dành cho SystemAdmin
-          </Badge>
-          <div className="space-y-2">
-            <h1 className="text-3xl font-semibold tracking-tight text-foreground">Quản lý tài khoản</h1>
-            <p className="text-sm leading-6 text-muted-foreground">
-              Theo dõi tài khoản nội bộ và phạm vi vai trò được cấp trong hệ thống IceBot.
-            </p>
-          </div>
+      {successMessage ? (
+        <div
+          role="status"
+          className="flex items-center justify-between gap-3 rounded-lg border border-success/30 bg-success/5 px-4 py-3 text-sm text-success"
+        >
+          <span>{successMessage}</span>
+          <Button variant="ghost" size="sm" className="h-7 text-success" onClick={clearSuccessMessage}>
+            Đóng
+          </Button>
         </div>
-        <Button variant="outline" onClick={() => void refresh()} isLoading={isLoading}>
-          <RefreshCw className="size-4" />
-          Làm mới
-        </Button>
+      ) : null}
+
+      <section className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div className="max-w-2xl space-y-3">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Quản lý tài khoản</h1>
+          <p className="text-sm text-muted-foreground">
+            Theo dõi tài khoản nội bộ và phạm vi vai trò được cấp trong hệ thống IceBot.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" size="sm" onClick={() => void refresh()} isLoading={isLoading}>
+            <RefreshCw className="size-4" />
+            Làm mới
+          </Button>
+          {canManageAccounts ? (
+            <Button size="sm" onClick={() => setCreateOpen(true)}>
+              <UserPlus className="size-4" />
+              Tạo tài khoản
+            </Button>
+          ) : null}
+        </div>
       </section>
 
-      <section className="grid gap-4 sm:grid-cols-3">
-        <Card className="border-border/80 shadow-none">
-          <CardContent className="space-y-2 p-5">
-            <p className="text-sm text-muted-foreground">Tổng tài khoản</p>
-            <p className="tabular-nums text-3xl font-semibold tracking-tight text-foreground">
-              {pagination.totalCount}
-            </p>
-            <p className="text-xs text-muted-foreground">Theo kết quả đang lọc</p>
-          </CardContent>
-        </Card>
-        <Card className="border-border/80 shadow-none">
-          <CardContent className="space-y-2 p-5">
-            <p className="text-sm text-muted-foreground">Hoạt động trên trang</p>
-            <p className="tabular-nums text-3xl font-semibold tracking-tight text-primary">
-              {activeOnPage}
-            </p>
-            <p className="text-xs text-muted-foreground">Trong trang dữ liệu hiện tại</p>
-          </CardContent>
-        </Card>
-        <Card className="border-border/80 shadow-none">
-          <CardContent className="space-y-2 p-5">
-            <p className="text-sm text-muted-foreground">Role scope hiển thị</p>
-            <p className="tabular-nums text-3xl font-semibold tracking-tight text-foreground">
-              {roleCount}
-            </p>
-            <p className="text-xs text-muted-foreground">Phân quyền trên trang hiện tại</p>
-          </CardContent>
-        </Card>
+      <section className="grid gap-3 sm:grid-cols-3">
+        <StatCard
+          icon={UsersRound}
+          label="Tổng tài khoản"
+          value={pagination.totalCount}
+          supportingText="Theo kết quả đang lọc"
+          tone="primary"
+        />
+        <StatCard
+          icon={UserRoundCheck}
+          label="Hoạt động trên trang"
+          value={activeOnPage}
+          supportingText="Trong trang dữ liệu hiện tại"
+          tone="success"
+        />
+        <StatCard
+          icon={ContactRound}
+          label="Role scope hiển thị"
+          value={roleCount}
+          supportingText="Phân quyền trên trang hiện tại"
+          tone="muted"
+        />
       </section>
 
-      <Card className="border-border/80 shadow-none">
+      <Card className="rounded-xl border border-border bg-card shadow-none">
         <CardHeader className="border-b border-border pb-4">
           <div className="flex items-start gap-3">
-            <span className="mt-0.5 flex size-9 items-center justify-center rounded-lg bg-secondary text-secondary-foreground">
+            <span className="mt-0.5 flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
               <UsersRound className="size-4" />
             </span>
             <div>
@@ -140,15 +247,15 @@ export default function UsersPage() {
           </div>
         </CardHeader>
 
-        <CardContent className="space-y-4 p-5">
-          <div className="grid gap-3 sm:grid-cols-[minmax(240px,1fr)_220px_auto]">
+        <CardContent className="border-b border-border p-4">
+          <div className="grid gap-2 md:grid-cols-[minmax(240px,1fr)_220px_auto]">
             <div className="relative">
-              <Search className="pointer-events-none absolute top-2.5 left-3 size-4 text-muted-foreground" />
+              <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
               <Input
-                value={query.searchTerm}
-                onChange={(event) => setSearchTerm(event.target.value)}
-                placeholder="Tìm tên, username hoặc email..."
-                className="pl-9"
+              value={query.searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              placeholder="Tìm tên, username hoặc email..."
+              className="h-8 pl-8 text-sm"
               />
             </div>
             <Select
@@ -159,7 +266,7 @@ export default function UsersPage() {
                 }
               }}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="h-8 w-full text-xs">
                 <SelectValue placeholder="Lọc trạng thái" />
               </SelectTrigger>
               <SelectContent>
@@ -170,13 +277,13 @@ export default function UsersPage() {
                 ))}
               </SelectContent>
             </Select>
-            <Button variant="outline" onClick={clearFilters}>
+            <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={clearFilters}>
               Xóa lọc
             </Button>
           </div>
         </CardContent>
 
-        <div className="border-t border-border">
+        <div>
           {isLoading ? (
             <AccountsLoadingTable />
           ) : errorMessage ? (
@@ -194,7 +301,7 @@ export default function UsersPage() {
             </div>
           ) : accounts.length === 0 ? (
             <div className="flex flex-col items-center gap-3 p-10 text-center">
-              <span className="flex size-12 items-center justify-center rounded-xl bg-secondary text-muted-foreground">
+              <span className="flex size-12 items-center justify-center rounded-xl bg-muted text-muted-foreground">
                 <UsersRound className="size-5" />
               </span>
               <p className="text-sm font-medium text-foreground">Không có tài khoản phù hợp</p>
@@ -203,7 +310,14 @@ export default function UsersPage() {
               </p>
             </div>
           ) : (
-            <AccountsTable accounts={accounts} />
+            <AccountsTable
+              accounts={accounts}
+              canManageAccounts={canManageAccounts}
+              currentAccountId={currentUser?.id}
+              onViewAccount={(accountId) => void openAccountDetail(accountId)}
+              onDisableAccount={requestDisableAccount}
+              onRegenerateInvitation={requestRegenerateInvitation}
+            />
           )}
         </div>
 
@@ -226,6 +340,50 @@ export default function UsersPage() {
           </div>
         </div>
       </Card>
+
+      <AccountDetailDialog
+        account={selectedAccount}
+        errorMessage={detailErrorMessage}
+        isLoading={isDetailLoading}
+        open={isDetailOpen}
+        onOpenChange={setDetailOpen}
+      />
+
+      <DisableAccountDialog
+        account={accountPendingDisable}
+        errorMessage={disableErrorMessage}
+        isSubmitting={isDisabling}
+        open={isDisableOpen}
+        onConfirm={() => void confirmDisableAccount()}
+        onOpenChange={setDisableOpen}
+      />
+
+      <CreateAccountDialog
+        errorMessage={createErrorMessage}
+        isSubmitting={isCreating}
+        open={isCreateOpen}
+        onOpenChange={setCreateOpen}
+        onSubmit={submitCreateAccount}
+      />
+
+      <RegenerateInvitationDialog
+        account={accountPendingInvitation}
+        errorMessage={regenerateErrorMessage}
+        isSubmitting={isRegenerating}
+        open={isRegenerateOpen}
+        sendEmail={regenerateSendEmail}
+        onConfirm={() => void confirmRegenerateInvitation()}
+        onOpenChange={setRegenerateOpen}
+        onSendEmailChange={setRegenerateSendEmail}
+      />
+
+      <InvitationResultDialog
+        account={invitationAccount}
+        mode={invitationResultMode}
+        open={isInvitationResultOpen}
+        result={invitationResult}
+        onOpenChange={setInvitationResultOpen}
+      />
     </div>
   );
 }

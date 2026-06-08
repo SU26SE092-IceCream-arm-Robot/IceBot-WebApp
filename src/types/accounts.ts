@@ -4,7 +4,8 @@ export type ManagementAccountStatus =
   | "Active"
   | "PendingVerification"
   | "Suspended"
-  | "Disabled";
+  | "Disabled"
+  | "Invited";
 
 export type ManagementAccountStatusFilter = "ALL" | ManagementAccountStatus;
 
@@ -23,7 +24,57 @@ export interface InternalAccountResult {
   status: ManagementAccountStatus;
   localLoginEnabled: boolean;
   googleLoginEnabled: boolean;
+  invitation?: InternalAccountInvitationResult | null;
   roles: InternalAccountRoleResult[];
+}
+
+export interface InternalAccountInvitationResult {
+  invitationToken: string;
+  invitationUrl?: string | null;
+  expiresAt: string;
+  emailSent: boolean;
+}
+
+export interface AccountInvitationResult extends InternalAccountInvitationResult {
+  accountId: string;
+}
+
+export interface AcceptInvitationResult {
+  accepted: boolean;
+  localLoginEnabled: boolean;
+  googleLoginEnabled: boolean;
+}
+
+export interface AccountRoleScopeRequest {
+  roleCode: string;
+  organizationId?: string | null;
+  storeId?: string | null;
+  kioskId?: string | null;
+}
+
+export interface CreateInternalAccountRequest {
+  userName: string;
+  email: string;
+  fullName?: string | null;
+  phoneNumber?: string | null;
+  address?: string | null;
+  gender?: string;
+  localLoginEnabled: boolean;
+  initialPassword?: string | null;
+  googleLoginEnabled: boolean;
+  googleEmail?: string | null;
+  createInvitation: boolean;
+  sendInvitationEmail: boolean;
+  roles: AccountRoleScopeRequest[];
+}
+
+export interface CreateAccountInvitationRequest {
+  sendEmail: boolean;
+}
+
+export interface AcceptInvitationRequest {
+  token: string;
+  newPassword: string;
 }
 
 export interface PaginationMeta {

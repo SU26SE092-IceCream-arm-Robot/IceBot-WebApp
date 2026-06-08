@@ -1,6 +1,7 @@
-import { KeyRound, Mail, ShieldCheck } from "lucide-react";
+import { Eye, KeyRound, Mail, RefreshCw, ShieldCheck, UserRoundX } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -17,11 +18,17 @@ import type {
 
 interface AccountsTableProps {
   accounts: InternalAccountResult[];
+  canManageAccounts: boolean;
+  currentAccountId?: string;
+  onDisableAccount: (account: InternalAccountResult) => void;
+  onRegenerateInvitation: (account: InternalAccountResult) => void;
+  onViewAccount: (accountId: string) => void;
 }
 
 const ROLE_LABELS: Record<string, string> = {
   SystemAdmin: "Admin",
   Manager: "Manager",
+  OrgAdmin: "Org Admin",
   LocationOwner: "Location Owner",
   Staff: "Staff",
   Technician: "Technician",
@@ -37,23 +44,44 @@ function getStatusLabel(status: ManagementAccountStatus): string {
       return "Tạm khóa";
     case "Disabled":
       return "Vô hiệu hóa";
+    case "Invited":
+      return "Đã mời";
   }
 }
 
 function StatusBadge({ status }: { status: ManagementAccountStatus }) {
-  if (status === "Active") {
-    return <Badge variant="default">{getStatusLabel(status)}</Badge>;
+  switch (status) {
+    case "Active":
+      return (
+        <Badge className="border-0 bg-success/10 text-success">
+          {getStatusLabel(status)}
+        </Badge>
+      );
+    case "PendingVerification":
+      return (
+        <Badge className="border-0 bg-warning/10 text-warning">
+          {getStatusLabel(status)}
+        </Badge>
+      );
+    case "Suspended":
+      return (
+        <Badge className="border-0 bg-muted text-muted-foreground">
+          {getStatusLabel(status)}
+        </Badge>
+      );
+    case "Disabled":
+      return (
+        <Badge className="border-0 bg-destructive/10 text-destructive">
+          {getStatusLabel(status)}
+        </Badge>
+      );
+    case "Invited":
+      return (
+        <Badge className="border-0 bg-primary/10 text-primary">
+          {getStatusLabel(status)}
+        </Badge>
+      );
   }
-
-  if (status === "Suspended") {
-    return (
-      <Badge variant="outline" className="border-warning/30 bg-warning/10 text-warning">
-        {getStatusLabel(status)}
-      </Badge>
-    );
-  }
-
-  return <Badge variant="secondary">{getStatusLabel(status)}</Badge>;
 }
 
 function ScopeLabel({ role }: { role: InternalAccountRoleResult }) {
@@ -106,7 +134,14 @@ function LoginMethods({ account }: { account: InternalAccountResult }) {
   );
 }
 
-export function AccountsTable({ accounts }: AccountsTableProps) {
+export function AccountsTable({
+  accounts,
+  canManageAccounts,
+  currentAccountId,
+  onDisableAccount,
+  onRegenerateInvitation,
+  onViewAccount,
+}: AccountsTableProps) {
   return (
     <Table>
       <TableHeader>
@@ -115,7 +150,8 @@ export function AccountsTable({ accounts }: AccountsTableProps) {
           <TableHead>Trạng thái</TableHead>
           <TableHead>Vai trò & phạm vi</TableHead>
           <TableHead>Đăng nhập</TableHead>
-          <TableHead className="px-5">ID</TableHead>
+          <TableHead>ID</TableHead>
+          <TableHead className="px-5 text-right">Thao tác</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -126,7 +162,7 @@ export function AccountsTable({ accounts }: AccountsTableProps) {
                 <p className="font-medium text-foreground">
                   {account.fullName?.trim() || account.userName}
                 </p>
-                <p className="text-xs text-muted-foreground">{account.email}</p>
+                <p className="text-sm text-muted-foreground">{account.email}</p>
               </div>
             </TableCell>
             <TableCell>
@@ -142,7 +178,7 @@ export function AccountsTable({ accounts }: AccountsTableProps) {
                       key={`${role.roleCode}-${role.organizationId ?? ""}-${role.storeId ?? ""}-${role.kioskId ?? ""}-${index}`}
                       className="flex flex-wrap items-center gap-2"
                     >
-                      <Badge variant="secondary" className="gap-1">
+                      <Badge className="gap-1 border-0 bg-primary/10 text-primary">
                         <ShieldCheck className="size-3" />
                         {ROLE_LABELS[role.roleCode] ?? role.roleCode}
                       </Badge>
@@ -155,8 +191,53 @@ export function AccountsTable({ accounts }: AccountsTableProps) {
             <TableCell>
               <LoginMethods account={account} />
             </TableCell>
-            <TableCell className="px-5">
+            <TableCell>
               <span className="tabular-nums text-xs text-muted-foreground">{account.id.slice(0, 8)}</span>
+            </TableCell>
+            <TableCell className="px-5">
+              <div className="flex justify-end gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 text-xs"
+                  onClick={() => onViewAccount(account.id)}
+                >
+                  <Eye className="size-3.5" />
+                  Xem chi tiết
+                </Button>
+                {canManageAccounts ? (
+                  <>
+                    {account.status === "Invited" ? (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 text-xs text-primary hover:bg-primary/10 hover:text-primary"
+                        onClick={() => onRegenerateInvitation(account)}
+                      >
+                        <RefreshCw className="size-3.5" />
+                        Tạo lại lời mời
+                      </Button>
+                    ) : null}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
+                      disabled={account.id === currentAccountId || account.status === "Disabled"}
+                      title={
+                        account.id === currentAccountId
+                          ? "Không thể vô hiệu hóa tài khoản đang đăng nhập"
+                          : account.status === "Disabled"
+                            ? "Tài khoản đã bị vô hiệu hóa"
+                            : "Vô hiệu hóa tài khoản"
+                      }
+                      onClick={() => onDisableAccount(account)}
+                    >
+                      <UserRoundX className="size-3.5" />
+                      Vô hiệu hóa
+                    </Button>
+                  </>
+                ) : null}
+              </div>
             </TableCell>
           </TableRow>
         ))}
