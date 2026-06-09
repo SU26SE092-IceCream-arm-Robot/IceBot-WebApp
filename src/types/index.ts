@@ -1,3 +1,13 @@
+import type { KioskLifecycleStatus } from "@/types/kiosk-management";
+
+export type {
+  KioskLifecycleStatus,
+  KioskResult,
+  ManagementKiosksQuery,
+  ManagementStoresQuery,
+  StoreResult,
+} from "@/types/kiosk-management";
+
 export type DashboardRole = "ADMIN" | "MANAGER" | "LOCATION_OWNER";
 
 export type Role = DashboardRole;
@@ -5,6 +15,7 @@ export type Role = DashboardRole;
 export type BackendRoleCode =
   | "SystemAdmin"
   | "Manager"
+  | "OrgAdmin"
   | "LocationOwner"
   | "Staff"
   | "Technician";
@@ -118,10 +129,16 @@ export interface KioskHardwareState {
 }
 
 export interface Kiosk {
+  managementId?: string;
   kioskId: string;
   name: string;
+  organizationId?: string;
   locationId: string;
   locationName: string;
+  address?: string | null;
+  serialNumber?: string | null;
+  lifecycleStatus?: KioskLifecycleStatus;
+  lastOnlineAt?: string | null;
   status: KioskStatus;
   hardwareState: KioskHardwareState;
   currentOrderId?: string;
