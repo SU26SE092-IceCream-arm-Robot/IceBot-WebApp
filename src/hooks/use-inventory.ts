@@ -11,7 +11,7 @@ import {
 import {
   getKioskManagementErrorMessage,
   getManagementKiosks,
-} from "@/lib/services/kiosks";
+} from "@/lib/services/kiosk-management";
 import {
   getManagementStores,
   getStoresErrorMessage,
