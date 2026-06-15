@@ -96,3 +96,50 @@ export interface ManagementAccountsQuery {
   pageNumber: number;
   pageSize: number;
 }
+
+export type ManagementScopeType =
+  | "Global"
+  | "Organization"
+  | "Store"
+  | "Kiosk"
+  | "Device";
+
+export interface ManagementRoleResult {
+  code: string;
+  name: string;
+  description?: string | null;
+  isSystemRole: boolean;
+  isAssignable: boolean;
+  allowedScopeTypes: ManagementScopeType[];
+  requiresScope: boolean;
+}
+
+export interface RoleScopeKiosk {
+  id: string;
+  organizationId: string;
+  storeId: string;
+  code: string;
+  name: string;
+}
+
+export interface RoleScopeStore {
+  id: string;
+  organizationId: string;
+  code: string;
+  name: string;
+  kiosks: RoleScopeKiosk[];
+}
+
+export interface RoleScopeOrganization {
+  id: string;
+  code: string;
+  name: string;
+  stores: RoleScopeStore[];
+}
+
+export interface RoleScopeOptionsResult {
+  roleCode: string;
+  allowedScopeTypes: ManagementScopeType[];
+  requiresScope: boolean;
+  organizations: RoleScopeOrganization[];
+}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import axios from "axios";
 
 import {
@@ -12,13 +12,20 @@ import {
   listManagementAccounts,
   regenerateInvitation,
 } from "@/lib/services/accounts";
+import {
+  getManagementRoles,
+  getRolesErrorMessage,
+  getRoleScopeOptions,
+} from "@/lib/services/roles";
 import type {
   AccountInvitationResult,
   CreateInternalAccountRequest,
   InternalAccountResult,
   ManagementAccountStatusFilter,
   ManagementAccountsQuery,
+  ManagementRoleResult,
   PaginationMeta,
+  RoleScopeOptionsResult,
 } from "@/types/accounts";
 
 const DEFAULT_PAGE_SIZE = 10;
@@ -56,6 +63,13 @@ export interface UseAccountsResult {
   isCreateOpen: boolean;
   isCreating: boolean;
   createErrorMessage: string | null;
+  managementRoles: ManagementRoleResult[];
+  createRoleCode: string;
+  isRoleCatalogLoading: boolean;
+  roleCatalogErrorMessage: string | null;
+  roleScopeOptions: RoleScopeOptionsResult | null;
+  isRoleScopeLoading: boolean;
+  roleScopeErrorMessage: string | null;
   accountPendingInvitation: InternalAccountResult | null;
   isRegenerateOpen: boolean;
   isRegenerating: boolean;
@@ -78,6 +92,7 @@ export interface UseAccountsResult {
   setDisableOpen: (open: boolean) => void;
   confirmDisableAccount: () => Promise<void>;
   setCreateOpen: (open: boolean) => void;
+  selectCreateRole: (roleCode: string) => void;
   submitCreateAccount: (request: CreateInternalAccountRequest) => Promise<boolean>;
   requestRegenerateInvitation: (account: InternalAccountResult) => void;
   setRegenerateOpen: (open: boolean) => void;
@@ -105,6 +120,16 @@ export function useAccounts(): UseAccountsResult {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [createErrorMessage, setCreateErrorMessage] = useState<string | null>(null);
+  const [managementRoles, setManagementRoles] = useState<ManagementRoleResult[]>([]);
+  const [createRoleCode, setCreateRoleCode] = useState("");
+  const [isRoleCatalogLoading, setIsRoleCatalogLoading] = useState(false);
+  const [roleCatalogErrorMessage, setRoleCatalogErrorMessage] = useState<string | null>(null);
+  const [roleScopeOptions, setRoleScopeOptions] = useState<RoleScopeOptionsResult | null>(null);
+  const [isRoleScopeLoading, setIsRoleScopeLoading] = useState(false);
+  const [roleScopeErrorMessage, setRoleScopeErrorMessage] = useState<string | null>(null);
+  const roleScopeCacheRef = useRef(new Map<string, RoleScopeOptionsResult>());
+  const roleCatalogRequestIdRef = useRef(0);
+  const roleScopeRequestIdRef = useRef(0);
   const [accountPendingInvitation, setAccountPendingInvitation] =
     useState<InternalAccountResult | null>(null);
   const [isRegenerateOpen, setIsRegenerateOpen] = useState(false);
@@ -275,6 +300,85 @@ export function useAccounts(): UseAccountsResult {
     }
   }, [accountPendingDisable, isDisabling]);
 
+  const loadRoleScopeOptions = useCallback(async (roleCode: string) => {
+    const requestId = ++roleScopeRequestIdRef.current;
+    setCreateRoleCode(roleCode);
+    setRoleScopeOptions(null);
+    setRoleScopeErrorMessage(null);
+
+    const cachedOptions = roleScopeCacheRef.current.get(roleCode);
+    if (cachedOptions) {
+      setRoleScopeOptions(cachedOptions);
+      setIsRoleScopeLoading(false);
+      return;
+    }
+
+    setIsRoleScopeLoading(true);
+    try {
+      const options = await getRoleScopeOptions(roleCode);
+      if (requestId !== roleScopeRequestIdRef.current) {
+        return;
+      }
+
+      roleScopeCacheRef.current.set(roleCode, options);
+      setRoleScopeOptions(options);
+    } catch (error) {
+      if (requestId !== roleScopeRequestIdRef.current) {
+        return;
+      }
+
+      setRoleScopeErrorMessage(
+        getRolesErrorMessage(error, "Không thể tải phạm vi cho vai trò đã chọn.")
+      );
+    } finally {
+      if (requestId === roleScopeRequestIdRef.current) {
+        setIsRoleScopeLoading(false);
+      }
+    }
+  }, []);
+
+  const loadRoleCatalog = useCallback(async () => {
+    const requestId = ++roleCatalogRequestIdRef.current;
+    ++roleScopeRequestIdRef.current;
+    setManagementRoles([]);
+    setCreateRoleCode("");
+    setRoleScopeOptions(null);
+    setRoleCatalogErrorMessage(null);
+    setRoleScopeErrorMessage(null);
+    setIsRoleCatalogLoading(true);
+    setIsRoleScopeLoading(false);
+
+    try {
+      const roles = await getManagementRoles();
+      if (requestId !== roleCatalogRequestIdRef.current) {
+        return;
+      }
+
+      const assignableRoles = roles.filter((role) => role.isAssignable);
+      setManagementRoles(assignableRoles);
+
+      const firstRole = assignableRoles[0];
+      if (!firstRole) {
+        setRoleCatalogErrorMessage("Backend không trả vai trò nào có thể gán.");
+        return;
+      }
+
+      await loadRoleScopeOptions(firstRole.code);
+    } catch (error) {
+      if (requestId !== roleCatalogRequestIdRef.current) {
+        return;
+      }
+
+      setRoleCatalogErrorMessage(
+        getRolesErrorMessage(error, "Không thể tải danh sách vai trò.")
+      );
+    } finally {
+      if (requestId === roleCatalogRequestIdRef.current) {
+        setIsRoleCatalogLoading(false);
+      }
+    }
+  }, [loadRoleScopeOptions]);
+
   const setCreateOpen = useCallback(
     (open: boolean) => {
       if (!open && isCreating) {
@@ -282,11 +386,35 @@ export function useAccounts(): UseAccountsResult {
       }
 
       setIsCreateOpen(open);
-      if (!open) {
-        setCreateErrorMessage(null);
+      setCreateErrorMessage(null);
+
+      if (open) {
+        void loadRoleCatalog();
+        return;
       }
+
+      ++roleCatalogRequestIdRef.current;
+      ++roleScopeRequestIdRef.current;
+      setManagementRoles([]);
+      setCreateRoleCode("");
+      setRoleScopeOptions(null);
+      setRoleCatalogErrorMessage(null);
+      setRoleScopeErrorMessage(null);
+      setIsRoleCatalogLoading(false);
+      setIsRoleScopeLoading(false);
     },
-    [isCreating]
+    [isCreating, loadRoleCatalog]
+  );
+
+  const selectCreateRole = useCallback(
+    (roleCode: string) => {
+      if (!managementRoles.some((role) => role.code === roleCode)) {
+        return;
+      }
+
+      void loadRoleScopeOptions(roleCode);
+    },
+    [loadRoleScopeOptions, managementRoles]
   );
 
   const submitCreateAccount = useCallback(
@@ -421,6 +549,13 @@ export function useAccounts(): UseAccountsResult {
     isCreateOpen,
     isCreating,
     createErrorMessage,
+    managementRoles,
+    createRoleCode,
+    isRoleCatalogLoading,
+    roleCatalogErrorMessage,
+    roleScopeOptions,
+    isRoleScopeLoading,
+    roleScopeErrorMessage,
     accountPendingInvitation,
     isRegenerateOpen,
     isRegenerating,
@@ -443,6 +578,7 @@ export function useAccounts(): UseAccountsResult {
     setDisableOpen,
     confirmDisableAccount,
     setCreateOpen,
+    selectCreateRole,
     submitCreateAccount,
     requestRegenerateInvitation,
     setRegenerateOpen,

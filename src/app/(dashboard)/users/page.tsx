@@ -138,6 +138,13 @@ export default function UsersPage() {
     isCreateOpen,
     isCreating,
     createErrorMessage,
+    managementRoles,
+    createRoleCode,
+    isRoleCatalogLoading,
+    roleCatalogErrorMessage,
+    roleScopeOptions,
+    isRoleScopeLoading,
+    roleScopeErrorMessage,
     accountPendingInvitation,
     isRegenerateOpen,
     isRegenerating,
@@ -160,6 +167,7 @@ export default function UsersPage() {
     setDisableOpen,
     confirmDisableAccount,
     setCreateOpen,
+    selectCreateRole,
     submitCreateAccount,
     requestRegenerateInvitation,
     setRegenerateOpen,
@@ -361,8 +369,16 @@ export default function UsersPage() {
       <CreateAccountDialog
         errorMessage={createErrorMessage}
         isSubmitting={isCreating}
+        managementRoles={managementRoles}
         open={isCreateOpen}
+        roleCode={createRoleCode}
+        roleCatalogErrorMessage={roleCatalogErrorMessage}
+        roleScopeErrorMessage={roleScopeErrorMessage}
+        roleScopeOptions={roleScopeOptions}
+        isRoleCatalogLoading={isRoleCatalogLoading}
+        isRoleScopeLoading={isRoleScopeLoading}
         onOpenChange={setCreateOpen}
+        onRoleChange={selectCreateRole}
         onSubmit={submitCreateAccount}
       />
 

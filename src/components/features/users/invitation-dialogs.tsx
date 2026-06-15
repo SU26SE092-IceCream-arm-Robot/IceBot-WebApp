@@ -32,13 +32,24 @@ import type {
   AccountInvitationResult,
   CreateInternalAccountRequest,
   InternalAccountResult,
+  ManagementRoleResult,
+  ManagementScopeType,
+  RoleScopeOptionsResult,
 } from "@/types/accounts";
 
 interface CreateAccountDialogProps {
   errorMessage: string | null;
   isSubmitting: boolean;
+  managementRoles: ManagementRoleResult[];
   open: boolean;
+  roleCode: string;
+  roleCatalogErrorMessage: string | null;
+  roleScopeErrorMessage: string | null;
+  roleScopeOptions: RoleScopeOptionsResult | null;
+  isRoleCatalogLoading: boolean;
+  isRoleScopeLoading: boolean;
   onOpenChange: (open: boolean) => void;
+  onRoleChange: (roleCode: string) => void;
   onSubmit: (request: CreateInternalAccountRequest) => Promise<boolean>;
 }
 
@@ -61,14 +72,22 @@ interface InvitationResultDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const ROLE_OPTIONS = [
-  { value: "SystemAdmin", label: "Admin hệ thống" },
-  { value: "Manager", label: "Quản lý" },
-  { value: "OrgAdmin", label: "Quản trị tổ chức" },
-  { value: "LocationOwner", label: "Chủ địa điểm" },
-  { value: "Staff", label: "Nhân viên" },
-  { value: "Technician", label: "Kỹ thuật viên" },
-] as const;
+type AssignableScopeType = Extract<
+  ManagementScopeType,
+  "Organization" | "Store" | "Kiosk"
+>;
+
+const SCOPE_TYPE_LABELS: Record<AssignableScopeType, string> = {
+  Organization: "Tổ chức",
+  Store: "Cửa hàng",
+  Kiosk: "Kiosk",
+};
+
+function isAssignableScopeType(
+  value: string | null
+): value is AssignableScopeType {
+  return value === "Organization" || value === "Store" || value === "Kiosk";
+}
 
 function FormField({
   children,
@@ -128,25 +147,83 @@ function CheckboxField({
 export function CreateAccountDialog({
   errorMessage,
   isSubmitting,
+  managementRoles,
   open,
+  roleCode,
+  roleCatalogErrorMessage,
+  roleScopeErrorMessage,
+  roleScopeOptions,
+  isRoleCatalogLoading,
+  isRoleScopeLoading,
   onOpenChange,
+  onRoleChange,
   onSubmit,
 }: CreateAccountDialogProps) {
   const [fullName, setFullName] = useState("");
   const [userName, setUserName] = useState("");
   const [email, setEmail] = useState("");
-  const [roleCode, setRoleCode] = useState("Manager");
+  const [scopeType, setScopeType] = useState<AssignableScopeType | "">("");
+  const [organizationId, setOrganizationId] = useState("");
+  const [storeId, setStoreId] = useState("");
+  const [kioskId, setKioskId] = useState("");
   const [localLoginEnabled, setLocalLoginEnabled] = useState(true);
   const [googleLoginEnabled, setGoogleLoginEnabled] = useState(false);
   const [googleEmail, setGoogleEmail] = useState("");
   const [sendInvitationEmail, setSendInvitationEmail] = useState(true);
   const [validationMessage, setValidationMessage] = useState<string | null>(null);
 
+  const selectedRole =
+    managementRoles.find((role) => role.code === roleCode) ?? null;
+  const selectableScopeTypes = (roleScopeOptions?.allowedScopeTypes ?? []).filter(
+    (scope): scope is AssignableScopeType => isAssignableScopeType(scope)
+  );
+  const selectedOrganization =
+    roleScopeOptions?.organizations.find(
+      (organization) => organization.id === organizationId
+    ) ?? null;
+  const availableStores = selectedOrganization?.stores ?? [];
+  const selectedStore =
+    availableStores.find((store) => store.id === storeId) ?? null;
+  const availableKiosks = selectedStore?.kiosks ?? [];
+  const scopeOptionsReady =
+    Boolean(roleCode) && roleScopeOptions?.roleCode === roleCode;
+  const effectiveScopeType =
+    selectableScopeTypes.length === 1 ? selectableScopeTypes[0] : scopeType;
+  const hasValidScopeType =
+    effectiveScopeType !== "" &&
+    selectableScopeTypes.includes(effectiveScopeType);
+  const scopeSelectionComplete =
+    scopeOptionsReady &&
+    (!roleScopeOptions?.requiresScope ||
+      (hasValidScopeType &&
+        Boolean(organizationId) &&
+        (effectiveScopeType === "Organization" || Boolean(storeId)) &&
+        (effectiveScopeType !== "Kiosk" || Boolean(kioskId))));
+  const formBlocked =
+    isSubmitting ||
+    isRoleCatalogLoading ||
+    isRoleScopeLoading ||
+    Boolean(roleCatalogErrorMessage) ||
+    Boolean(roleScopeErrorMessage) ||
+    !selectedRole ||
+    !scopeSelectionComplete;
+
+  function resetScopeSelection() {
+    setScopeType("");
+    setOrganizationId("");
+    setStoreId("");
+    setKioskId("");
+    setValidationMessage(null);
+  }
+
   function resetForm() {
     setFullName("");
     setUserName("");
     setEmail("");
-    setRoleCode("Manager");
+    setScopeType("");
+    setOrganizationId("");
+    setStoreId("");
+    setKioskId("");
     setLocalLoginEnabled(true);
     setGoogleLoginEnabled(false);
     setGoogleEmail("");
@@ -180,6 +257,44 @@ export function CreateAccountDialog({
       return;
     }
 
+    if (
+      !selectedRole ||
+      !roleScopeOptions ||
+      roleScopeOptions.roleCode !== roleCode
+    ) {
+      setValidationMessage("Vui lòng chọn một vai trò hợp lệ từ hệ thống.");
+      return;
+    }
+
+    if (roleScopeOptions.requiresScope) {
+      if (
+        !effectiveScopeType ||
+        !selectableScopeTypes.includes(effectiveScopeType)
+      ) {
+        setValidationMessage("Vui lòng chọn loại phạm vi cho vai trò.");
+        return;
+      }
+
+      if (!organizationId) {
+        setValidationMessage("Vui lòng chọn tổ chức.");
+        return;
+      }
+
+      if (
+        (effectiveScopeType === "Store" ||
+          effectiveScopeType === "Kiosk") &&
+        !storeId
+      ) {
+        setValidationMessage("Vui lòng chọn cửa hàng.");
+        return;
+      }
+
+      if (effectiveScopeType === "Kiosk" && !kioskId) {
+        setValidationMessage("Vui lòng chọn kiosk.");
+        return;
+      }
+    }
+
     const succeeded = await onSubmit({
       userName: userName.trim(),
       email: email.trim(),
@@ -194,9 +309,16 @@ export function CreateAccountDialog({
       roles: [
         {
           roleCode,
-          organizationId: null,
-          storeId: null,
-          kioskId: null,
+          organizationId:
+            roleScopeOptions.requiresScope && effectiveScopeType
+              ? organizationId
+              : null,
+          storeId:
+            effectiveScopeType === "Store" ||
+            effectiveScopeType === "Kiosk"
+              ? storeId
+              : null,
+          kioskId: effectiveScopeType === "Kiosk" ? kioskId : null,
         },
       ],
     });
@@ -257,20 +379,174 @@ export function CreateAccountDialog({
           </div>
           <div className="sm:col-span-2">
             <FormField htmlFor="roleCode" label="Vai trò">
-              <Select value={roleCode} onValueChange={(value) => setRoleCode(value ?? "Manager")}>
+              <Select
+                value={roleCode || null}
+                disabled={isSubmitting || isRoleCatalogLoading || managementRoles.length === 0}
+                onValueChange={(value) => {
+                  if (value) {
+                    resetScopeSelection();
+                    onRoleChange(value);
+                  }
+                }}
+              >
                 <SelectTrigger id="roleCode" className="w-full">
-                  <SelectValue />
+                  <SelectValue
+                    placeholder={
+                      isRoleCatalogLoading
+                        ? "Đang tải vai trò..."
+                        : "Chọn vai trò"
+                    }
+                  />
                 </SelectTrigger>
                 <SelectContent>
-                  {ROLE_OPTIONS.map((role) => (
-                    <SelectItem key={role.value} value={role.value}>
-                      {role.label}
+                  {managementRoles.map((role) => (
+                    <SelectItem key={role.code} value={role.code}>
+                      {role.name} ({role.code})
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              {selectedRole?.description ? (
+                <p className="text-xs leading-5 text-muted-foreground">
+                  {selectedRole.description}
+                </p>
+              ) : null}
             </FormField>
           </div>
+
+          {isRoleScopeLoading ? (
+            <div className="space-y-2 rounded-lg border border-border bg-muted/20 p-3 sm:col-span-2">
+              <div className="h-3 w-32 animate-pulse rounded bg-muted" />
+              <div className="h-8 w-full animate-pulse rounded bg-muted/60" />
+            </div>
+          ) : roleScopeOptions?.requiresScope ? (
+            <div className="grid gap-4 rounded-lg border border-border bg-muted/20 p-3 sm:col-span-2 sm:grid-cols-2">
+              {selectableScopeTypes.length > 1 ? (
+                <FormField htmlFor="scopeType" label="Loại phạm vi">
+                  <Select
+                    value={scopeType || null}
+                    disabled={isSubmitting}
+                    onValueChange={(value) => {
+                      if (isAssignableScopeType(value)) {
+                        setScopeType(value);
+                        setOrganizationId("");
+                        setStoreId("");
+                        setKioskId("");
+                        setValidationMessage(null);
+                      }
+                    }}
+                  >
+                    <SelectTrigger id="scopeType" className="w-full">
+                      <SelectValue placeholder="Chọn loại phạm vi" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {selectableScopeTypes.map((scope) => (
+                        <SelectItem key={scope} value={scope}>
+                          {SCOPE_TYPE_LABELS[scope]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormField>
+              ) : (
+                <div className="space-y-1 sm:col-span-2">
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Phạm vi yêu cầu
+                  </p>
+                  <p className="text-sm font-medium text-foreground">
+                    {effectiveScopeType
+                      ? SCOPE_TYPE_LABELS[effectiveScopeType]
+                      : "Không được hỗ trợ"}
+                  </p>
+                </div>
+              )}
+
+              {effectiveScopeType ? (
+                <FormField htmlFor="organizationId" label="Tổ chức">
+                  <Select
+                    value={organizationId || null}
+                    disabled={
+                      isSubmitting || roleScopeOptions.organizations.length === 0
+                    }
+                    onValueChange={(value) => {
+                      setOrganizationId(value ?? "");
+                      setStoreId("");
+                      setKioskId("");
+                      setValidationMessage(null);
+                    }}
+                  >
+                    <SelectTrigger id="organizationId" className="w-full">
+                      <SelectValue placeholder="Chọn tổ chức" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {roleScopeOptions.organizations.map((organization) => (
+                        <SelectItem key={organization.id} value={organization.id}>
+                          {organization.name} ({organization.code})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormField>
+              ) : null}
+
+              {(effectiveScopeType === "Store" ||
+                effectiveScopeType === "Kiosk") &&
+              organizationId ? (
+                <FormField htmlFor="storeId" label="Cửa hàng">
+                  <Select
+                    value={storeId || null}
+                    disabled={isSubmitting || availableStores.length === 0}
+                    onValueChange={(value) => {
+                      setStoreId(value ?? "");
+                      setKioskId("");
+                      setValidationMessage(null);
+                    }}
+                  >
+                    <SelectTrigger id="storeId" className="w-full">
+                      <SelectValue placeholder="Chọn cửa hàng" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableStores.map((store) => (
+                        <SelectItem key={store.id} value={store.id}>
+                          {store.name} ({store.code})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormField>
+              ) : null}
+
+              {effectiveScopeType === "Kiosk" && storeId ? (
+                <div className="sm:col-span-2">
+                  <FormField htmlFor="kioskId" label="Kiosk">
+                    <Select
+                      value={kioskId || null}
+                      disabled={isSubmitting || availableKiosks.length === 0}
+                      onValueChange={(value) => {
+                        setKioskId(value ?? "");
+                        setValidationMessage(null);
+                      }}
+                    >
+                      <SelectTrigger id="kioskId" className="w-full">
+                        <SelectValue placeholder="Chọn kiosk" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableKiosks.map((kiosk) => (
+                          <SelectItem key={kiosk.id} value={kiosk.id}>
+                            {kiosk.name} ({kiosk.code})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FormField>
+                </div>
+              ) : null}
+            </div>
+          ) : scopeOptionsReady ? (
+            <p className="rounded-lg border border-border bg-muted/20 p-3 text-xs text-muted-foreground sm:col-span-2">
+              Vai trò này áp dụng toàn hệ thống và không yêu cầu phạm vi tổ chức, cửa hàng hoặc kiosk.
+            </p>
+          ) : null}
 
           <div className="space-y-3 sm:col-span-2">
             <CheckboxField
@@ -312,10 +588,18 @@ export function CreateAccountDialog({
             />
           </div>
 
-          {validationMessage || errorMessage ? (
+          {validationMessage ||
+          roleCatalogErrorMessage ||
+          roleScopeErrorMessage ||
+          errorMessage ? (
             <div className="flex gap-3 rounded-lg border border-destructive/30 bg-destructive/5 p-3 sm:col-span-2">
               <AlertTriangle className="mt-0.5 size-4 shrink-0 text-destructive" />
-              <p className="text-sm text-destructive">{validationMessage || errorMessage}</p>
+              <p className="text-sm text-destructive">
+                {validationMessage ||
+                  roleCatalogErrorMessage ||
+                  roleScopeErrorMessage ||
+                  errorMessage}
+              </p>
             </div>
           ) : null}
         </form>
@@ -324,7 +608,12 @@ export function CreateAccountDialog({
           <Button variant="outline" disabled={isSubmitting} onClick={() => handleOpenChange(false)}>
             Hủy
           </Button>
-          <Button type="submit" form="create-account-form" isLoading={isSubmitting}>
+          <Button
+            type="submit"
+            form="create-account-form"
+            isLoading={isSubmitting}
+            disabled={formBlocked}
+          >
             <Send className="size-4" />
             Tạo và gửi lời mời
           </Button>
