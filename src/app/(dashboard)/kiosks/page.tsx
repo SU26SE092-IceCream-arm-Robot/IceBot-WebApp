@@ -1,13 +1,11 @@
 "use client";
 
 import {
-  Activity,
   AlertTriangle,
   MapPin,
   Monitor,
   RefreshCw,
   Search,
-  ShieldCheck,
   SlidersHorizontal,
   Wifi,
   Wrench,
@@ -27,7 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { isStatusFilter, useKiosks } from "@/hooks/use-kiosks";
-import type { DashboardRole, KioskStatusFilter } from "@/types";
+import type { KioskStatusFilter } from "@/types";
 
 const STATUS_OPTIONS: { value: KioskStatusFilter; label: string }[] = [
   { value: "ALL", label: "Tất cả trạng thái" },
@@ -36,12 +34,6 @@ const STATUS_OPTIONS: { value: KioskStatusFilter; label: string }[] = [
   { value: "MAINTENANCE", label: "Bảo trì" },
   { value: "ERROR", label: "Đang lỗi" },
 ];
-
-const ROLE_LABELS: Record<DashboardRole, string> = {
-  ADMIN: "Quản trị viên",
-  MANAGER: "Quản lý vận hành",
-  LOCATION_OWNER: "Chủ địa điểm",
-};
 
 type SummaryTone = "neutral" | "primary" | "destructive" | "muted";
 
@@ -119,13 +111,14 @@ function StatusLegend({
 
 export default function KiosksPage() {
   const {
-    role,
     kiosks,
     summary,
     locations,
     filters,
     isLoading,
     errorMessage,
+    metadataWarning,
+    metadataSource,
     scopedCount,
     setSearchTerm,
     setStatusFilter,
@@ -134,16 +127,10 @@ export default function KiosksPage() {
     refresh,
   } = useKiosks();
 
-  const scopeLabel = role ? ROLE_LABELS[role] : "Đang xác minh";
-
   return (
     <div className="space-y-7">
-      <section className="flex flex-col gap-5 border-b border-border pb-6 xl:flex-row xl:items-end xl:justify-between">
+      <section className="border-b border-border pb-6">
         <div className="max-w-2xl space-y-3">
-          <Badge variant="outline" className="gap-2 border-primary/20 bg-primary/5 text-primary">
-            <Activity className="size-3" />
-            Fleet Monitor
-          </Badge>
           <div className="space-y-2">
             <h1 className="text-3xl font-semibold tracking-tight text-foreground">Giám sát Kiosk</h1>
             <p className="text-sm leading-6 text-muted-foreground">
@@ -151,24 +138,35 @@ export default function KiosksPage() {
             </p>
           </div>
         </div>
-
-        <Card className="w-full border-border/80 bg-card shadow-none xl:max-w-sm">
-          <CardContent className="flex items-center gap-4 p-4">
-            <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-              <ShieldCheck className="size-5" />
-            </span>
-            <div className="min-w-0 space-y-1">
-              <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
-                Phạm vi truy cập
-              </p>
-              <p className="truncate text-sm font-semibold text-foreground">{scopeLabel}</p>
-              <p className="text-xs text-muted-foreground">
-                <span className="tabular-nums font-medium text-foreground">{scopedCount}</span> kiosk trong phạm vi
-              </p>
-            </div>
-          </CardContent>
-        </Card>
       </section>
+
+      <div
+        className={
+          metadataWarning
+            ? "rounded-lg border border-warning/30 bg-warning/5 px-4 py-3"
+            : "rounded-lg border border-border bg-muted/20 px-4 py-3"
+        }
+        role="status"
+      >
+        <div className="flex items-start gap-3">
+          {metadataWarning ? (
+            <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" />
+          ) : (
+            <Monitor className="mt-0.5 size-4 shrink-0 text-primary" />
+          )}
+          <div className="space-y-1 text-xs text-muted-foreground">
+            <p className="font-medium text-foreground">
+              {metadataSource === "API"
+                ? "Metadata kiosk lấy từ API quản lý."
+                : "Metadata kiosk đang dùng dữ liệu mô phỏng."}
+            </p>
+            {metadataWarning ? <p>{metadataWarning}</p> : null}
+            <p>
+              Telemetry vận hành như robot, nhiệt độ, nguyên liệu và đơn hiện tại vẫn là dữ liệu mô phỏng.
+            </p>
+          </div>
+        </div>
+      </div>
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <SummaryCard

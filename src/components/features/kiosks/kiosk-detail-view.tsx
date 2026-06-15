@@ -33,6 +33,7 @@ import { useKioskDetail } from "@/hooks/use-kiosk-detail";
 import { hasPermission } from "@/lib/rbac";
 import { cn } from "@/lib/utils";
 import type { KioskStatus, RobotArmStatus } from "@/types";
+import type { KioskLifecycleStatus } from "@/types/kiosk-management";
 import type {
   KioskDetail,
   KioskEvent,
@@ -133,6 +134,25 @@ function getSeverityLabel(severity: KioskEventSeverity): string {
       return "Cảnh báo";
     case "INFO":
       return "Thông tin";
+  }
+}
+
+function getLifecycleLabel(status?: KioskLifecycleStatus): string {
+  switch (status) {
+    case "Provisioning":
+      return "Đang cấu hình";
+    case "Active":
+      return "Đang hoạt động";
+    case "Offline":
+      return "Ngoại tuyến";
+    case "Maintenance":
+      return "Bảo trì";
+    case "Disabled":
+      return "Đã vô hiệu hóa";
+    case "Retired":
+      return "Ngừng sử dụng";
+    default:
+      return "Chưa cập nhật";
   }
 }
 
@@ -504,7 +524,15 @@ function InventoryPanel({ kiosk }: { kiosk: KioskDetail }) {
 }
 
 export function KioskDetailView({ kioskId }: KioskDetailViewProps) {
-  const { kiosk, role, state, errorMessage, refresh } = useKioskDetail(kioskId);
+  const {
+    kiosk,
+    role,
+    state,
+    errorMessage,
+    metadataSource,
+    metadataWarning,
+    refresh,
+  } = useKioskDetail(kioskId);
   const [commandNotice, setCommandNotice] = useState<string | null>(null);
   const canControl = role ? hasPermission(role, "kiosks.control") : false;
 
@@ -551,6 +579,35 @@ export function KioskDetailView({ kioskId }: KioskDetailViewProps) {
     <div className="space-y-6">
       <DetailHeader kiosk={kiosk} onRefresh={() => void refresh()} />
 
+      <div
+        className={cn(
+          "rounded-lg border px-4 py-3",
+          metadataWarning
+            ? "border-warning/30 bg-warning/5"
+            : "border-border bg-muted/20",
+        )}
+        role="status"
+      >
+        <div className="flex items-start gap-3">
+          {metadataWarning ? (
+            <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" />
+          ) : (
+            <Cpu className="mt-0.5 size-4 shrink-0 text-primary" />
+          )}
+          <div className="space-y-1 text-xs text-muted-foreground">
+            <p className="font-medium text-foreground">
+              {metadataSource === "API"
+                ? "Thông tin định danh và vòng đời kiosk lấy từ API quản lý."
+                : "Thông tin kiosk đang dùng dữ liệu mô phỏng."}
+            </p>
+            {metadataWarning ? <p>{metadataWarning}</p> : null}
+            <p>
+              Robot, nhiệt độ, mức nguyên liệu, đơn hiện tại, lịch sử sự kiện và bảng điều khiển vẫn là dữ liệu mock/demo.
+            </p>
+          </div>
+        </div>
+      </div>
+
       <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
         <CurrentStatusPanel kiosk={kiosk} />
         <InventoryPanel kiosk={kiosk} />
@@ -570,20 +627,39 @@ export function KioskDetailView({ kioskId }: KioskDetailViewProps) {
         />
         <Card className="border-border/80 shadow-none">
           <CardHeader className="border-b border-border pb-4">
-            <CardTitle className="text-base">Thông tin thiết bị</CardTitle>
+            <div className="flex items-center justify-between gap-3">
+              <CardTitle className="text-base">Metadata quản lý</CardTitle>
+              <Badge variant="outline">
+                {metadataSource === "API" ? "API quản lý" : "Dữ liệu mô phỏng"}
+              </Badge>
+            </div>
           </CardHeader>
           <CardContent className="space-y-4 p-5 text-sm">
             <div className="flex items-center justify-between gap-3">
-              <span className="text-muted-foreground">Chế độ</span>
-              <Badge variant="outline">{kiosk.operationMode}</Badge>
-            </div>
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-muted-foreground">Firmware</span>
-              <span className="tabular-nums font-medium text-foreground">{kiosk.firmwareVersion}</span>
+              <span className="text-muted-foreground">Vòng đời</span>
+              <Badge variant="outline">{getLifecycleLabel(kiosk.lifecycleStatus)}</Badge>
             </div>
             <div className="flex items-center justify-between gap-3">
               <span className="text-muted-foreground">Serial</span>
-              <span className="tabular-nums font-medium text-foreground">{kiosk.deviceSerial}</span>
+              <span className="tabular-nums text-right font-medium text-foreground">
+                {kiosk.serialNumber ?? kiosk.deviceSerial}
+              </span>
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-muted-foreground">Cửa hàng</span>
+              <span className="text-right font-medium text-foreground">{kiosk.locationName}</span>
+            </div>
+            <div className="flex items-start justify-between gap-3">
+              <span className="text-muted-foreground">Địa chỉ</span>
+              <span className="max-w-48 text-right font-medium text-foreground">
+                {kiosk.address ?? "Chưa cập nhật"}
+              </span>
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-muted-foreground">Online gần nhất</span>
+              <span className="tabular-nums text-right font-medium text-foreground">
+                {kiosk.lastOnlineAt ? formatTimestamp(kiosk.lastOnlineAt) : "Chưa cập nhật"}
+              </span>
             </div>
           </CardContent>
         </Card>
