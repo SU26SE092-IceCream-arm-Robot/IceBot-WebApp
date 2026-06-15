@@ -11,16 +11,18 @@ import {
   readAuthSession,
   writeAuthSession,
 } from "@/lib/auth-session";
+import {
+  API_BASE_URL,
+  normalizeApiRequestPath,
+} from "@/lib/api-base-url";
 import { refreshAccessToken } from "@/lib/services/auth";
-
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://api.icebot.com";
 
 interface RetryableRequestConfig extends InternalAxiosRequestConfig {
   _retry?: boolean;
 }
 
 const axiosClient: AxiosInstance = axios.create({
-  baseURL: BASE_URL,
+  baseURL: API_BASE_URL,
   timeout: 15000,
   headers: {
     "Content-Type": "application/json",
@@ -37,7 +39,10 @@ function redirectToLogin(): void {
 }
 
 function isAuthenticationRequest(url?: string): boolean {
-  return Boolean(url?.includes("/api/v1/authentication/"));
+  return Boolean(
+    url?.includes("/api/v1/authentication/") ||
+      url?.includes("/v1/authentication/"),
+  );
 }
 
 async function rotateBrowserSession(): Promise<string> {
@@ -52,6 +57,8 @@ async function rotateBrowserSession(): Promise<string> {
 }
 
 axiosClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+  config.url = normalizeApiRequestPath(config.url);
+
   const accessToken = getStoredAccessToken();
   if (accessToken) {
     config.headers.Authorization = `Bearer ${accessToken}`;

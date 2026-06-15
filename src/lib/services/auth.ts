@@ -1,5 +1,9 @@
 import axios from "axios";
 
+import {
+  API_BASE_URL,
+  normalizeApiRequestPath,
+} from "@/lib/api-base-url";
 import { createSessionFromLogin } from "@/lib/auth-session";
 import type {
   ApiResult,
@@ -8,15 +12,18 @@ import type {
   CurrentAccountResult,
 } from "@/types";
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://api.icebot.com";
-
 const authHttpClient = axios.create({
-  baseURL: BASE_URL,
+  baseURL: API_BASE_URL,
   timeout: 15000,
   headers: {
     "Content-Type": "application/json",
     Accept: "application/json",
   },
+});
+
+authHttpClient.interceptors.request.use((config) => {
+  config.url = normalizeApiRequestPath(config.url);
+  return config;
 });
 
 export interface LoginRequest {
