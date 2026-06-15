@@ -3,7 +3,10 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { useAuth } from "@/hooks/use-auth";
-import { getKioskDetail } from "@/lib/services/kiosk-detail";
+import {
+  getKioskDetail,
+  type KioskDetailMetadataSource,
+} from "@/lib/services/kiosk-detail";
 import type { DashboardRole } from "@/types";
 import type { KioskDetail } from "@/types/kiosk-detail";
 
@@ -14,6 +17,8 @@ export interface UseKioskDetailResult {
   role: DashboardRole | null;
   state: KioskDetailViewState;
   errorMessage: string | null;
+  metadataSource: KioskDetailMetadataSource;
+  metadataWarning: string | null;
   refresh: () => Promise<void>;
 }
 
@@ -22,30 +27,44 @@ export function useKioskDetail(kioskId: string): UseKioskDetailResult {
   const [kiosk, setKiosk] = useState<KioskDetail | null>(null);
   const [state, setState] = useState<KioskDetailViewState>("LOADING");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [metadataSource, setMetadataSource] =
+    useState<KioskDetailMetadataSource>("MOCK");
+  const [metadataWarning, setMetadataWarning] = useState<string | null>(null);
 
   const fetchKiosk = useCallback(async () => {
     setState("LOADING");
     setErrorMessage(null);
+    setMetadataWarning(null);
 
     if (!currentUser) {
       setKiosk(null);
+      setState("FORBIDDEN");
       return;
     }
 
     try {
-      const result = await getKioskDetail({
+      const params = {
         kioskId,
         role: currentUser.role,
         locationIds: currentUser.locationIds,
-      });
+      };
+      const result = await getKioskDetail(params);
 
       if (result.outcome === "SUCCESS") {
         setKiosk(result.kiosk);
+        setMetadataSource(result.metadataSource);
+        setMetadataWarning(result.metadataWarning ?? null);
         setState("READY");
         return;
       }
 
       setKiosk(null);
+      if (result.outcome === "ERROR") {
+        setErrorMessage(result.message);
+        setState("ERROR");
+        return;
+      }
+
       setState(result.outcome);
     } catch {
       setKiosk(null);
@@ -69,6 +88,8 @@ export function useKioskDetail(kioskId: string): UseKioskDetailResult {
     role: currentUser?.role ?? null,
     state,
     errorMessage,
+    metadataSource,
+    metadataWarning,
     refresh: fetchKiosk,
   };
 }

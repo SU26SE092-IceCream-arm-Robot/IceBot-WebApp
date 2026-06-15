@@ -1,18 +1,21 @@
+import { toKioskFleetViewModel } from "@/lib/adapters/kiosk-fleet";
 import { MOCK_KIOSKS } from "@/lib/mocks/kiosks";
+import { getManagementKiosks } from "@/lib/services/kiosk-management";
+import { getManagementStores } from "@/lib/services/stores";
 import type {
+  DashboardRole,
   Kiosk,
   KioskFilters,
   KioskLocationOption,
   KioskSummary,
-  DashboardRole,
 } from "@/types";
+import type { StoreResult } from "@/types/kiosk-management";
 
 const MOCK_DELAY_MS = 300;
 
-export interface GetFleetKiosksParams {
+export interface GetMockFleetKiosksParams {
   role: DashboardRole;
   locationIds?: string[];
-  filters: KioskFilters;
 }
 
 export interface FleetKiosksResult {
@@ -32,7 +35,11 @@ function normalizeKeyword(value: string): string {
   return value.trim().toLowerCase();
 }
 
-function applyRoleScope(kiosks: Kiosk[], role: DashboardRole, locationIds?: string[]): Kiosk[] {
+function applyRoleScope(
+  kiosks: Kiosk[],
+  role: DashboardRole,
+  locationIds?: string[],
+): Kiosk[] {
   if (role !== "LOCATION_OWNER") {
     return kiosks;
   }
@@ -77,36 +84,58 @@ function applyFilters(kiosks: Kiosk[], filters: KioskFilters): Kiosk[] {
         return true;
       }
 
-      const searchableText = `${kiosk.kioskId} ${kiosk.name} ${kiosk.locationName}`.toLowerCase();
+      const searchableText =
+        `${kiosk.kioskId} ${kiosk.name} ${kiosk.locationName} ${kiosk.serialNumber ?? ""}`.toLowerCase();
       return searchableText.includes(keyword);
     })
     .filter((kiosk) => {
       if (filters.status === "ALL") {
         return true;
       }
+
       return kiosk.status === filters.status;
     })
     .filter((kiosk) => {
       if (filters.locationId === "ALL") {
         return true;
       }
+
       return kiosk.locationId === filters.locationId;
     })
     .sort((a, b) => a.kioskId.localeCompare(b.kioskId));
 }
 
-export async function getFleetKiosks(params: GetFleetKiosksParams): Promise<FleetKiosksResult> {
+export async function getManagementFleetKiosks(
+  signal?: AbortSignal,
+): Promise<Kiosk[]> {
+  const [metadata, stores] = await Promise.all([
+    getManagementKiosks({}, signal),
+    getManagementStores({}, signal),
+  ]);
+  const storesById = new Map<string, StoreResult>(
+    stores.map((store) => [store.id, store]),
+  );
+
+  return metadata.map((kiosk) =>
+    toKioskFleetViewModel(kiosk, storesById.get(kiosk.storeId)),
+  );
+}
+
+export async function getMockFleetKiosks(
+  params: GetMockFleetKiosksParams,
+): Promise<Kiosk[]> {
   await delay(MOCK_DELAY_MS);
+  return applyRoleScope(MOCK_KIOSKS, params.role, params.locationIds);
+}
 
-  const scopedKiosks = applyRoleScope(MOCK_KIOSKS, params.role, params.locationIds);
-  const filteredKiosks = applyFilters(scopedKiosks, params.filters);
-  const summary = buildSummary(scopedKiosks);
-  const locations = buildLocations(scopedKiosks);
-
+export function buildFleetKiosksResult(
+  scopedKiosks: Kiosk[],
+  filters: KioskFilters,
+): FleetKiosksResult {
   return {
     scopedKiosks,
-    filteredKiosks,
-    locations,
-    summary,
+    filteredKiosks: applyFilters(scopedKiosks, filters),
+    locations: buildLocations(scopedKiosks),
+    summary: buildSummary(scopedKiosks),
   };
 }

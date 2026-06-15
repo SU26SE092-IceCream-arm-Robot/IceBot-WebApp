@@ -261,7 +261,7 @@ export function KioskCard({ kiosk }: KioskCardProps) {
 
         <div className="border-t border-border pt-3">
           <Link
-            href={`/kiosks/${encodeURIComponent(kiosk.kioskId)}`}
+            href={`/kiosks/${encodeURIComponent(kiosk.managementId ?? kiosk.kioskId)}`}
             className={cn(
               buttonVariants({ variant: "ghost", size: "sm" }),
               "w-full justify-between text-muted-foreground hover:text-foreground"

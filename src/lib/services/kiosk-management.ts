@@ -35,6 +35,18 @@ export async function getManagementKiosks(
   return requireData(response.data, "Không thể tải danh sách kiosk quản lý.");
 }
 
+export async function getManagementKioskById(
+  kioskId: string,
+  signal?: AbortSignal,
+): Promise<KioskResult> {
+  const response = await axiosClient.get<ApiResult<KioskResult>>(
+    `/api/v1/management/kiosks/${encodeURIComponent(kioskId)}`,
+    { signal },
+  );
+
+  return requireData(response.data, "Không thể tải metadata kiosk.");
+}
+
 export function getKioskManagementErrorMessage(
   error: unknown,
   fallbackMessage = "Không thể tải dữ liệu kiosk quản lý.",
