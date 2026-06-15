@@ -26,7 +26,7 @@ function mapBackendRole(roleCode: string): DashboardRole | null {
     return "MANAGER";
   }
 
-  if (roleCode === "LocationOwner") {
+  if (roleCode === "OrgAdmin" || roleCode === "LocationOwner") {
     return "LOCATION_OWNER";
   }
 
