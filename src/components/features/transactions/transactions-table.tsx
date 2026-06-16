@@ -1,4 +1,4 @@
-import { Eye, Headset, ReceiptText } from "lucide-react";
+import { Ban, Eye, Headset, ReceiptText, RotateCcw } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -121,11 +121,17 @@ export function PaymentStatusBadge({ status }: { status: PaymentStatus }) {
 
 interface TransactionsTableProps {
   orders: OrderResult[];
+  canManageOrders: boolean;
+  onCancelOrder: (order: OrderResult) => void;
+  onMarkRefundRequired: (order: OrderResult) => void;
   onViewDetail: (orderId: string) => void;
 }
 
 export function TransactionsTable({
   orders,
+  canManageOrders,
+  onCancelOrder,
+  onMarkRefundRequired,
   onViewDetail,
 }: TransactionsTableProps) {
   return (
@@ -138,7 +144,7 @@ export function TransactionsTable({
           <TableHead className="w-[15%] text-center">Thanh toán</TableHead>
           <TableHead className="w-[13%] text-right">Tổng tiền</TableHead>
           <TableHead className="w-[14%] text-center">Hỗ trợ</TableHead>
-          <TableHead className="w-[8%] px-4 text-center">Chi tiết</TableHead>
+          <TableHead className="w-[8%] px-4 text-center">Thao tác</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -192,17 +198,45 @@ export function TransactionsTable({
               )}
             </TableCell>
             <TableCell className="px-4 py-2.5 text-center">
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-sm"
-                className="rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
-                title={`Xem chi tiết ${order.orderNumber}`}
-                aria-label={`Xem chi tiết ${order.orderNumber}`}
-                onClick={() => onViewDetail(order.id)}
-              >
-                <Eye className="size-4" />
-              </Button>
+              <div className="flex items-center justify-center gap-1.5">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  className="rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
+                  title={`Xem chi tiết ${order.orderNumber}`}
+                  aria-label={`Xem chi tiết ${order.orderNumber}`}
+                  onClick={() => onViewDetail(order.id)}
+                >
+                  <Eye className="size-4" />
+                </Button>
+                {canManageOrders && order.paymentStatus === "Paid" && order.status !== "Completed" && order.status !== "Cancelled" ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
+                    className="rounded-lg text-warning hover:bg-warning/10 hover:text-warning"
+                    title={`Đánh dấu ${order.orderNumber} cần hoàn tiền`}
+                    aria-label={`Đánh dấu ${order.orderNumber} cần hoàn tiền`}
+                    onClick={() => onMarkRefundRequired(order)}
+                  >
+                    <RotateCcw className="size-4" />
+                  </Button>
+                ) : null}
+                {canManageOrders && order.paymentStatus !== "Paid" && order.status !== "Completed" && order.status !== "Cancelled" ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
+                    className="rounded-lg text-destructive hover:bg-destructive/10 hover:text-destructive"
+                    title={`Hủy ${order.orderNumber}`}
+                    aria-label={`Hủy ${order.orderNumber}`}
+                    onClick={() => onCancelOrder(order)}
+                  >
+                    <Ban className="size-4" />
+                  </Button>
+                ) : null}
+              </div>
             </TableCell>
           </TableRow>
         ))}

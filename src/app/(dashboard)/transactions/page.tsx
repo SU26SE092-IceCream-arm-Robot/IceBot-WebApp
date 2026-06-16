@@ -12,7 +12,10 @@ import {
   XCircle,
 } from "lucide-react";
 
-import { TransactionDetailDialog } from "@/components/features/transactions/transaction-dialogs";
+import {
+  OrderActionDialog,
+  TransactionDetailDialog,
+} from "@/components/features/transactions/transaction-dialogs";
 import {
   ORDER_STATUS_LABELS,
   PAYMENT_STATUS_LABELS,
@@ -28,6 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useAuth } from "@/hooks/use-auth";
 import { useTransactions } from "@/hooks/use-transactions";
 import type {
   OrderStatus,
@@ -140,6 +144,7 @@ function TransactionsLoadingTable() {
 }
 
 export default function TransactionsPage() {
+  const { currentUser } = useAuth();
   const {
     orders,
     statusHistory,
@@ -149,6 +154,13 @@ export default function TransactionsPage() {
     isDetailOpen,
     isDetailLoading,
     detailErrorMessage,
+    orderPendingAction,
+    actionReason,
+    actionErrorMessage,
+    actionSuccessMessage,
+    isCancelOpen,
+    isRefundRequiredOpen,
+    isActionSubmitting,
     setSearchTerm,
     setStatusFilter,
     setPaymentStatusFilter,
@@ -159,11 +171,38 @@ export default function TransactionsPage() {
     nextHistoryPage,
     openOrderDetail,
     setDetailOpen,
+    requestCancelOrder,
+    requestRefundRequired,
+    setActionReason,
+    setCancelOpen,
+    setRefundRequiredOpen,
+    confirmCancelOrder,
+    confirmRefundRequired,
+    clearActionSuccessMessage,
     refresh,
   } = useTransactions();
+  const canManageOrders =
+    currentUser?.role === "ADMIN" || currentUser?.role === "MANAGER";
 
   return (
     <div className="space-y-7">
+      {actionSuccessMessage ? (
+        <div
+          role="status"
+          className="flex items-center justify-between gap-3 rounded-lg border border-success/30 bg-success/5 px-4 py-3 text-sm text-success"
+        >
+          <span>{actionSuccessMessage}</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-success hover:bg-success/10 hover:text-success"
+            onClick={clearActionSuccessMessage}
+          >
+            Đóng
+          </Button>
+        </div>
+      ) : null}
+
       <section className="flex flex-col gap-4 border-b border-border pb-6 lg:flex-row lg:items-end lg:justify-between">
         <div className="max-w-2xl space-y-2">
           <h1 className="text-3xl font-semibold tracking-tight text-foreground">
@@ -324,6 +363,9 @@ export default function TransactionsPage() {
           ) : (
             <TransactionsTable
               orders={orders.data}
+              canManageOrders={canManageOrders}
+              onCancelOrder={requestCancelOrder}
+              onMarkRefundRequired={requestRefundRequired}
               onViewDetail={(orderId) => void openOrderDetail(orderId)}
             />
           )}
@@ -380,6 +422,30 @@ export default function TransactionsPage() {
         onOpenChange={setDetailOpen}
         onPreviousHistoryPage={previousHistoryPage}
         onNextHistoryPage={nextHistoryPage}
+      />
+
+      <OrderActionDialog
+        action="cancel"
+        errorMessage={actionErrorMessage}
+        isSubmitting={isActionSubmitting}
+        open={isCancelOpen}
+        order={orderPendingAction}
+        reason={actionReason}
+        onConfirm={() => void confirmCancelOrder()}
+        onOpenChange={setCancelOpen}
+        onReasonChange={setActionReason}
+      />
+
+      <OrderActionDialog
+        action="refund-required"
+        errorMessage={actionErrorMessage}
+        isSubmitting={isActionSubmitting}
+        open={isRefundRequiredOpen}
+        order={orderPendingAction}
+        reason={actionReason}
+        onConfirm={() => void confirmRefundRequired()}
+        onOpenChange={setRefundRequiredOpen}
+        onReasonChange={setActionReason}
       />
     </div>
   );

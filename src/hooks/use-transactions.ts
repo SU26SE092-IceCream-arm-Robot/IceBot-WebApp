@@ -4,10 +4,12 @@ import axios from "axios";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import {
+  cancelManagementOrder,
   getManagementOrderById,
   getManagementOrderStatusHistory,
   getTransactionsErrorMessage,
   listManagementOrders,
+  markManagementOrderRefundRequired,
 } from "@/lib/services/transactions";
 import type {
   OrderResult,
@@ -58,6 +60,13 @@ export interface UseTransactionsResult {
   isDetailOpen: boolean;
   isDetailLoading: boolean;
   detailErrorMessage: string | null;
+  orderPendingAction: OrderResult | null;
+  actionReason: string;
+  actionErrorMessage: string | null;
+  actionSuccessMessage: string | null;
+  isCancelOpen: boolean;
+  isRefundRequiredOpen: boolean;
+  isActionSubmitting: boolean;
   setSearchTerm: (value: string) => void;
   setStatusFilter: (value: OrderStatusFilter) => void;
   setPaymentStatusFilter: (value: PaymentStatusFilter) => void;
@@ -68,6 +77,14 @@ export interface UseTransactionsResult {
   nextHistoryPage: () => void;
   openOrderDetail: (orderId: string) => Promise<void>;
   setDetailOpen: (open: boolean) => void;
+  requestCancelOrder: (order: OrderResult) => void;
+  requestRefundRequired: (order: OrderResult) => void;
+  setActionReason: (value: string) => void;
+  setCancelOpen: (open: boolean) => void;
+  setRefundRequiredOpen: (open: boolean) => void;
+  confirmCancelOrder: () => Promise<void>;
+  confirmRefundRequired: () => Promise<void>;
+  clearActionSuccessMessage: () => void;
   refresh: () => Promise<void>;
 }
 
@@ -77,8 +94,20 @@ export function useTransactions(): UseTransactionsResult {
   const [historyPage, setHistoryPage] = useState(1);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<OrderResult | null>(null);
+  const [orderPendingAction, setOrderPendingAction] =
+    useState<OrderResult | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isDetailLoading, setIsDetailLoading] = useState(false);
+  const [isCancelOpen, setIsCancelOpen] = useState(false);
+  const [isRefundRequiredOpen, setIsRefundRequiredOpen] = useState(false);
+  const [isActionSubmitting, setIsActionSubmitting] = useState(false);
+  const [actionReason, setActionReason] = useState("");
+  const [actionErrorMessage, setActionErrorMessage] = useState<string | null>(
+    null,
+  );
+  const [actionSuccessMessage, setActionSuccessMessage] = useState<string | null>(
+    null,
+  );
   const [detailErrorMessage, setDetailErrorMessage] = useState<string | null>(
     null,
   );
@@ -312,6 +341,140 @@ export function useTransactions(): UseTransactionsResult {
     }
   }, []);
 
+  const updateOrderInState = useCallback((updatedOrder: OrderResult) => {
+    setOrders((current) => ({
+      ...current,
+      data: current.data.map((order) =>
+        order.id === updatedOrder.id ? updatedOrder : order,
+      ),
+    }));
+    setSelectedOrder((current) =>
+      current?.id === updatedOrder.id ? updatedOrder : current,
+    );
+  }, []);
+
+  const resetActionState = useCallback(() => {
+    setOrderPendingAction(null);
+    setActionReason("");
+    setActionErrorMessage(null);
+  }, []);
+
+  const requestCancelOrder = useCallback((order: OrderResult) => {
+    setOrderPendingAction(order);
+    setActionReason("");
+    setActionErrorMessage(null);
+    setIsCancelOpen(true);
+  }, []);
+
+  const requestRefundRequired = useCallback((order: OrderResult) => {
+    setOrderPendingAction(order);
+    setActionReason("");
+    setActionErrorMessage(null);
+    setIsRefundRequiredOpen(true);
+  }, []);
+
+  const setCancelOpen = useCallback(
+    (open: boolean) => {
+      setIsCancelOpen(open);
+      if (!open && !isActionSubmitting) {
+        resetActionState();
+      }
+    },
+    [isActionSubmitting, resetActionState],
+  );
+
+  const setRefundRequiredOpen = useCallback(
+    (open: boolean) => {
+      setIsRefundRequiredOpen(open);
+      if (!open && !isActionSubmitting) {
+        resetActionState();
+      }
+    },
+    [isActionSubmitting, resetActionState],
+  );
+
+  const confirmCancelOrder = useCallback(async () => {
+    if (!orderPendingAction) {
+      return;
+    }
+
+    setIsActionSubmitting(true);
+    setActionErrorMessage(null);
+
+    try {
+      const updatedOrder = await cancelManagementOrder(orderPendingAction.id, {
+        reason: actionReason.trim() || null,
+      });
+      updateOrderInState(updatedOrder);
+      setActionSuccessMessage(`Đã hủy giao dịch ${updatedOrder.orderNumber}.`);
+      setIsCancelOpen(false);
+      resetActionState();
+      if (isDetailOpen) {
+        await fetchStatusHistory(updatedOrder.id);
+      }
+    } catch (error) {
+      setActionErrorMessage(
+        getTransactionsErrorMessage(error, "Không thể hủy giao dịch."),
+      );
+    } finally {
+      setIsActionSubmitting(false);
+    }
+  }, [
+    actionReason,
+    fetchStatusHistory,
+    isDetailOpen,
+    orderPendingAction,
+    resetActionState,
+    updateOrderInState,
+  ]);
+
+  const confirmRefundRequired = useCallback(async () => {
+    if (!orderPendingAction) {
+      return;
+    }
+
+    const reason = actionReason.trim();
+    if (!reason) {
+      setActionErrorMessage("Vui lòng nhập lý do cần hoàn tiền.");
+      return;
+    }
+
+    setIsActionSubmitting(true);
+    setActionErrorMessage(null);
+
+    try {
+      const updatedOrder = await markManagementOrderRefundRequired(
+        orderPendingAction.id,
+        { reason },
+      );
+      updateOrderInState(updatedOrder);
+      setActionSuccessMessage(
+        `Đã đánh dấu giao dịch ${updatedOrder.orderNumber} cần hoàn tiền.`,
+      );
+      setIsRefundRequiredOpen(false);
+      resetActionState();
+      if (isDetailOpen) {
+        await fetchStatusHistory(updatedOrder.id);
+      }
+    } catch (error) {
+      setActionErrorMessage(
+        getTransactionsErrorMessage(
+          error,
+          "Không thể đánh dấu giao dịch cần hoàn tiền.",
+        ),
+      );
+    } finally {
+      setIsActionSubmitting(false);
+    }
+  }, [
+    actionReason,
+    fetchStatusHistory,
+    isDetailOpen,
+    orderPendingAction,
+    resetActionState,
+    updateOrderInState,
+  ]);
+
   return {
     orders,
     statusHistory,
@@ -321,6 +484,13 @@ export function useTransactions(): UseTransactionsResult {
     isDetailOpen,
     isDetailLoading,
     detailErrorMessage,
+    orderPendingAction,
+    actionReason,
+    actionErrorMessage,
+    actionSuccessMessage,
+    isCancelOpen,
+    isRefundRequiredOpen,
+    isActionSubmitting,
     setSearchTerm,
     setStatusFilter,
     setPaymentStatusFilter,
@@ -332,6 +502,14 @@ export function useTransactions(): UseTransactionsResult {
     nextHistoryPage: () => setHistoryPage((current) => current + 1),
     openOrderDetail,
     setDetailOpen,
+    requestCancelOrder,
+    requestRefundRequired,
+    setActionReason,
+    setCancelOpen,
+    setRefundRequiredOpen,
+    confirmCancelOrder,
+    confirmRefundRequired,
+    clearActionSuccessMessage: () => setActionSuccessMessage(null),
     refresh: async () => {
       await fetchOrders();
       if (selectedOrderId && isDetailOpen) {

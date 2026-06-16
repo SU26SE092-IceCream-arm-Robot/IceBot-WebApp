@@ -2,10 +2,12 @@
 
 import {
   AlertTriangle,
+  Ban,
   CalendarClock,
   History,
   PackageCheck,
   ReceiptText,
+  RotateCcw,
 } from "lucide-react";
 
 import {
@@ -43,6 +45,18 @@ interface TransactionDetailDialogProps {
   onOpenChange: (open: boolean) => void;
   onPreviousHistoryPage: () => void;
   onNextHistoryPage: () => void;
+}
+
+interface OrderActionDialogProps {
+  action: "cancel" | "refund-required";
+  errorMessage: string | null;
+  isSubmitting: boolean;
+  open: boolean;
+  order: OrderResult | null;
+  reason: string;
+  onConfirm: () => void;
+  onOpenChange: (open: boolean) => void;
+  onReasonChange: (value: string) => void;
 }
 
 function DetailTile({
@@ -282,6 +296,104 @@ export function TransactionDetailDialog({
         ) : null}
 
         <DialogFooter className="bg-background" showCloseButton />
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+export function OrderActionDialog({
+  action,
+  errorMessage,
+  isSubmitting,
+  open,
+  order,
+  reason,
+  onConfirm,
+  onOpenChange,
+  onReasonChange,
+}: OrderActionDialogProps) {
+  const isRefundRequired = action === "refund-required";
+  const Icon = isRefundRequired ? RotateCcw : Ban;
+  const title = isRefundRequired
+    ? "Đánh dấu cần hoàn tiền?"
+    : "Hủy giao dịch?";
+  const description = isRefundRequired
+    ? "Giao dịch đã thanh toán sẽ chuyển sang trạng thái cần hoàn tiền để xử lý thủ công."
+    : "Giao dịch chưa thanh toán sẽ bị hủy và không tiếp tục xử lý.";
+  const buttonLabel = isRefundRequired ? "Đánh dấu" : "Hủy giao dịch";
+  const toneClassName = isRefundRequired
+    ? "border-warning/20 bg-warning/10 text-warning"
+    : "border-destructive/20 bg-destructive/10 text-destructive";
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent showCloseButton={!isSubmitting}>
+        <DialogHeader className="gap-3">
+          <span
+            className={`flex size-10 items-center justify-center rounded-xl border ${toneClassName}`}
+          >
+            <Icon className="size-5" />
+          </span>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>
+            {description}
+            {order ? (
+              <>
+                {" "}
+                Đơn{" "}
+                <span className="font-medium text-foreground">
+                  {order.orderNumber}
+                </span>
+                .
+              </>
+            ) : null}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-2">
+          <label
+            htmlFor={`transaction-${action}-reason`}
+            className="text-xs font-medium uppercase tracking-wide text-muted-foreground"
+          >
+            Lý do {isRefundRequired ? "bắt buộc" : "tùy chọn"}
+          </label>
+          <textarea
+            id={`transaction-${action}-reason`}
+            value={reason}
+            onChange={(event) => onReasonChange(event.target.value)}
+            placeholder={
+              isRefundRequired
+                ? "Nhập lý do cần hoàn tiền..."
+                : "Nhập lý do hủy nếu cần..."
+            }
+            className="min-h-24 w-full resize-none rounded-lg border border-input bg-card px-3 py-2 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={isSubmitting}
+          />
+        </div>
+
+        {errorMessage ? (
+          <div className="flex gap-3 rounded-lg border border-destructive/30 bg-destructive/5 p-3">
+            <AlertTriangle className="mt-0.5 size-4 shrink-0 text-destructive" />
+            <p className="text-sm text-destructive">{errorMessage}</p>
+          </div>
+        ) : null}
+
+        <DialogFooter>
+          <Button
+            variant="outline"
+            disabled={isSubmitting}
+            onClick={() => onOpenChange(false)}
+          >
+            Đóng
+          </Button>
+          <Button
+            variant={isRefundRequired ? "default" : "destructive"}
+            isLoading={isSubmitting}
+            onClick={onConfirm}
+          >
+            {buttonLabel}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

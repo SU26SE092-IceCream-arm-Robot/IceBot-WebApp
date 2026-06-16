@@ -129,6 +129,10 @@ export interface OrderStatusHistoryQuery {
   pageSize: number;
 }
 
+export interface ManagementOrderReasonRequest {
+  reason?: string | null;
+}
+
 export interface TransactionsSummary {
   total: number;
   paidOnPage: number;

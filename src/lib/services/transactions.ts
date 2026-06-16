@@ -4,6 +4,7 @@ import axiosClient from "@/lib/axios-client";
 import type { ApiResult } from "@/types";
 import type {
   ManagementOrdersQuery,
+  ManagementOrderReasonRequest,
   OrderResult,
   OrderStatusHistoryQuery,
   OrderStatusHistoryResult,
@@ -87,6 +88,33 @@ export async function getManagementOrderStatusHistory(
   return requirePagedData(
     response.data,
     "Không thể tải lịch sử trạng thái giao dịch.",
+  );
+}
+
+export async function cancelManagementOrder(
+  orderId: string,
+  request: ManagementOrderReasonRequest,
+): Promise<OrderResult> {
+  const response = await axiosClient.patch<ApiResult<OrderResult>>(
+    `/api/v1/management/orders/${encodeURIComponent(orderId)}/cancel`,
+    request,
+  );
+
+  return requireData(response.data, "Không thể hủy giao dịch.");
+}
+
+export async function markManagementOrderRefundRequired(
+  orderId: string,
+  request: ManagementOrderReasonRequest,
+): Promise<OrderResult> {
+  const response = await axiosClient.patch<ApiResult<OrderResult>>(
+    `/api/v1/management/orders/${encodeURIComponent(orderId)}/refund-required`,
+    request,
+  );
+
+  return requireData(
+    response.data,
+    "Không thể đánh dấu giao dịch cần hoàn tiền.",
   );
 }
 
