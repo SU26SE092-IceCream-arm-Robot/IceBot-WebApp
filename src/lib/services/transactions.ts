@@ -5,9 +5,11 @@ import type { ApiResult } from "@/types";
 import type {
   ManagementOrdersQuery,
   ManagementOrderReasonRequest,
+  ManagementRefundsQuery,
   OrderResult,
   OrderStatusHistoryQuery,
   OrderStatusHistoryResult,
+  RefundResult,
   TransactionsPagedResult,
 } from "@/types/transactions";
 
@@ -35,6 +37,18 @@ function buildOrdersParams(query: ManagementOrdersQuery) {
     search: query.searchTerm?.trim() || undefined,
     status: query.status,
     paymentStatus: query.paymentStatus,
+    organizationId: query.organizationId,
+    storeId: query.storeId,
+    kioskId: query.kioskId,
+    pageNumber: query.pageNumber,
+    pageSize: query.pageSize,
+  };
+}
+
+function buildRefundsParams(query: ManagementRefundsQuery) {
+  return {
+    search: query.searchTerm?.trim() || undefined,
+    status: query.status,
     organizationId: query.organizationId,
     storeId: query.storeId,
     kioskId: query.kioskId,
@@ -89,6 +103,36 @@ export async function getManagementOrderStatusHistory(
     response.data,
     "Không thể tải lịch sử trạng thái giao dịch.",
   );
+}
+
+export async function listManagementRefunds(
+  query: ManagementRefundsQuery,
+  signal?: AbortSignal,
+): Promise<TransactionsPagedResult<RefundResult>> {
+  const response = await axiosClient.get<TransactionsPagedResult<RefundResult>>(
+    "/api/v1/management/refunds",
+    {
+      params: buildRefundsParams(query),
+      signal,
+    },
+  );
+
+  return requirePagedData(
+    response.data,
+    "Không thể tải danh sách hoàn tiền.",
+  );
+}
+
+export async function getManagementRefundById(
+  refundId: string,
+  signal?: AbortSignal,
+): Promise<RefundResult> {
+  const response = await axiosClient.get<ApiResult<RefundResult>>(
+    `/api/v1/management/refunds/${encodeURIComponent(refundId)}`,
+    { signal },
+  );
+
+  return requireData(response.data, "Không thể tải chi tiết hoàn tiền.");
 }
 
 export async function cancelManagementOrder(

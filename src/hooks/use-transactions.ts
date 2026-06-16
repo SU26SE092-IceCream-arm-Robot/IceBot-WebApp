@@ -5,9 +5,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import {
   cancelManagementOrder,
+  getManagementRefundById,
   getManagementOrderById,
   getManagementOrderStatusHistory,
   getTransactionsErrorMessage,
+  listManagementRefunds,
   listManagementOrders,
   markManagementOrderRefundRequired,
 } from "@/lib/services/transactions";
@@ -16,18 +18,28 @@ import type {
   OrderStatusFilter,
   OrderStatusHistoryResult,
   PaymentStatusFilter,
+  RefundResult,
+  RefundsFilters,
+  RefundStatusFilter,
+  RefundsSummary,
   TransactionsFilters,
   TransactionsPaginationMeta,
   TransactionsSummary,
 } from "@/types/transactions";
 
 const ORDERS_PAGE_SIZE = 10;
+const REFUNDS_PAGE_SIZE = 10;
 const HISTORY_PAGE_SIZE = 8;
 
 const INITIAL_FILTERS: TransactionsFilters = {
   searchTerm: "",
   status: "ALL",
   paymentStatus: "ALL",
+};
+
+const INITIAL_REFUND_FILTERS: RefundsFilters = {
+  searchTerm: "",
+  status: "ALL",
 };
 
 function emptyPagination(
@@ -53,13 +65,20 @@ interface TransactionsCollectionState<T> {
 
 export interface UseTransactionsResult {
   orders: TransactionsCollectionState<OrderResult>;
+  refunds: TransactionsCollectionState<RefundResult>;
   statusHistory: TransactionsCollectionState<OrderStatusHistoryResult>;
   filters: TransactionsFilters;
+  refundFilters: RefundsFilters;
   summary: TransactionsSummary;
+  refundsSummary: RefundsSummary;
   selectedOrder: OrderResult | null;
+  selectedRefund: RefundResult | null;
   isDetailOpen: boolean;
   isDetailLoading: boolean;
   detailErrorMessage: string | null;
+  isRefundDetailOpen: boolean;
+  isRefundDetailLoading: boolean;
+  refundDetailErrorMessage: string | null;
   orderPendingAction: OrderResult | null;
   actionReason: string;
   actionErrorMessage: string | null;
@@ -70,13 +89,20 @@ export interface UseTransactionsResult {
   setSearchTerm: (value: string) => void;
   setStatusFilter: (value: OrderStatusFilter) => void;
   setPaymentStatusFilter: (value: PaymentStatusFilter) => void;
+  setRefundSearchTerm: (value: string) => void;
+  setRefundStatusFilter: (value: RefundStatusFilter) => void;
   clearFilters: () => void;
+  clearRefundFilters: () => void;
   previousPage: () => void;
   nextPage: () => void;
+  previousRefundPage: () => void;
+  nextRefundPage: () => void;
   previousHistoryPage: () => void;
   nextHistoryPage: () => void;
   openOrderDetail: (orderId: string) => Promise<void>;
+  openRefundDetail: (refundId: string) => Promise<void>;
   setDetailOpen: (open: boolean) => void;
+  setRefundDetailOpen: (open: boolean) => void;
   requestCancelOrder: (order: OrderResult) => void;
   requestRefundRequired: (order: OrderResult) => void;
   setActionReason: (value: string) => void;
@@ -90,14 +116,22 @@ export interface UseTransactionsResult {
 
 export function useTransactions(): UseTransactionsResult {
   const [filters, setFilters] = useState<TransactionsFilters>(INITIAL_FILTERS);
+  const [refundFilters, setRefundFilters] =
+    useState<RefundsFilters>(INITIAL_REFUND_FILTERS);
   const [page, setPage] = useState(1);
+  const [refundPage, setRefundPage] = useState(1);
   const [historyPage, setHistoryPage] = useState(1);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<OrderResult | null>(null);
+  const [selectedRefund, setSelectedRefund] = useState<RefundResult | null>(
+    null,
+  );
   const [orderPendingAction, setOrderPendingAction] =
     useState<OrderResult | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isDetailLoading, setIsDetailLoading] = useState(false);
+  const [isRefundDetailOpen, setIsRefundDetailOpen] = useState(false);
+  const [isRefundDetailLoading, setIsRefundDetailLoading] = useState(false);
   const [isCancelOpen, setIsCancelOpen] = useState(false);
   const [isRefundRequiredOpen, setIsRefundRequiredOpen] = useState(false);
   const [isActionSubmitting, setIsActionSubmitting] = useState(false);
@@ -111,11 +145,22 @@ export function useTransactions(): UseTransactionsResult {
   const [detailErrorMessage, setDetailErrorMessage] = useState<string | null>(
     null,
   );
+  const [refundDetailErrorMessage, setRefundDetailErrorMessage] = useState<
+    string | null
+  >(null);
   const [orders, setOrders] = useState<
     TransactionsCollectionState<OrderResult>
   >({
     data: [],
     pagination: emptyPagination(1, ORDERS_PAGE_SIZE),
+    isLoading: true,
+    errorMessage: null,
+  });
+  const [refunds, setRefunds] = useState<
+    TransactionsCollectionState<RefundResult>
+  >({
+    data: [],
+    pagination: emptyPagination(1, REFUNDS_PAGE_SIZE),
     isLoading: true,
     errorMessage: null,
   });
@@ -227,6 +272,55 @@ export function useTransactions(): UseTransactionsResult {
     [historyPage],
   );
 
+  const fetchRefunds = useCallback(
+    async (signal?: AbortSignal) => {
+      setRefunds((current) => ({
+        ...current,
+        isLoading: true,
+        errorMessage: null,
+      }));
+
+      try {
+        const result = await listManagementRefunds(
+          {
+            searchTerm: refundFilters.searchTerm,
+            status:
+              refundFilters.status === "ALL" ? undefined : refundFilters.status,
+            pageNumber: refundPage,
+            pageSize: REFUNDS_PAGE_SIZE,
+          },
+          signal,
+        );
+
+        if (signal?.aborted) {
+          return;
+        }
+
+        setRefunds({
+          data: result.data ?? [],
+          pagination: result.pagination,
+          isLoading: false,
+          errorMessage: null,
+        });
+      } catch (error) {
+        if (axios.isCancel(error) || signal?.aborted) {
+          return;
+        }
+
+        setRefunds({
+          data: [],
+          pagination: emptyPagination(refundPage, REFUNDS_PAGE_SIZE),
+          isLoading: false,
+          errorMessage: getTransactionsErrorMessage(
+            error,
+            "Không thể tải danh sách hoàn tiền.",
+          ),
+        });
+      }
+    },
+    [refundFilters.searchTerm, refundFilters.status, refundPage],
+  );
+
   useEffect(() => {
     const controller = new AbortController();
     const timeoutId = window.setTimeout(() => {
@@ -238,6 +332,18 @@ export function useTransactions(): UseTransactionsResult {
       controller.abort();
     };
   }, [fetchOrders]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => {
+      void fetchRefunds(controller.signal);
+    }, 0);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+      controller.abort();
+    };
+  }, [fetchRefunds]);
 
   useEffect(() => {
     if (!selectedOrderId || !isDetailOpen) {
@@ -274,6 +380,20 @@ export function useTransactions(): UseTransactionsResult {
     [orders.data, orders.pagination.totalCount],
   );
 
+  const refundsSummary = useMemo<RefundsSummary>(
+    () => ({
+      total: refunds.pagination.totalCount,
+      requestedOnPage: refunds.data.filter((refund) => refund.status === "Requested")
+        .length,
+      processedOnPage: refunds.data.filter((refund) => refund.status === "Processed")
+        .length,
+      failedOrRejectedOnPage: refunds.data.filter(
+        (refund) => refund.status === "Failed" || refund.status === "Rejected",
+      ).length,
+    }),
+    [refunds.data, refunds.pagination.totalCount],
+  );
+
   const setSearchTerm = useCallback((value: string) => {
     setFilters((current) => ({ ...current, searchTerm: value }));
     setPage(1);
@@ -289,9 +409,24 @@ export function useTransactions(): UseTransactionsResult {
     setPage(1);
   }, []);
 
+  const setRefundSearchTerm = useCallback((value: string) => {
+    setRefundFilters((current) => ({ ...current, searchTerm: value }));
+    setRefundPage(1);
+  }, []);
+
+  const setRefundStatusFilter = useCallback((value: RefundStatusFilter) => {
+    setRefundFilters((current) => ({ ...current, status: value }));
+    setRefundPage(1);
+  }, []);
+
   const clearFilters = useCallback(() => {
     setFilters(INITIAL_FILTERS);
     setPage(1);
+  }, []);
+
+  const clearRefundFilters = useCallback(() => {
+    setRefundFilters(INITIAL_REFUND_FILTERS);
+    setRefundPage(1);
   }, []);
 
   const openOrderDetail = useCallback(
@@ -326,6 +461,27 @@ export function useTransactions(): UseTransactionsResult {
     [],
   );
 
+  const openRefundDetail = useCallback(async (refundId: string) => {
+    setSelectedRefund(null);
+    setIsRefundDetailOpen(true);
+    setIsRefundDetailLoading(true);
+    setRefundDetailErrorMessage(null);
+
+    try {
+      const refund = await getManagementRefundById(refundId);
+      setSelectedRefund(refund);
+    } catch (error) {
+      setRefundDetailErrorMessage(
+        getTransactionsErrorMessage(
+          error,
+          "Không thể tải chi tiết hoàn tiền.",
+        ),
+      );
+    } finally {
+      setIsRefundDetailLoading(false);
+    }
+  }, []);
+
   const setDetailOpen = useCallback((open: boolean) => {
     setIsDetailOpen(open);
     if (!open) {
@@ -338,6 +494,14 @@ export function useTransactions(): UseTransactionsResult {
         isLoading: false,
         errorMessage: null,
       });
+    }
+  }, []);
+
+  const setRefundDetailOpen = useCallback((open: boolean) => {
+    setIsRefundDetailOpen(open);
+    if (!open) {
+      setSelectedRefund(null);
+      setRefundDetailErrorMessage(null);
     }
   }, []);
 
@@ -477,13 +641,20 @@ export function useTransactions(): UseTransactionsResult {
 
   return {
     orders,
+    refunds,
     statusHistory,
     filters,
+    refundFilters,
     summary,
+    refundsSummary,
     selectedOrder,
+    selectedRefund,
     isDetailOpen,
     isDetailLoading,
     detailErrorMessage,
+    isRefundDetailOpen,
+    isRefundDetailLoading,
+    refundDetailErrorMessage,
     orderPendingAction,
     actionReason,
     actionErrorMessage,
@@ -494,14 +665,22 @@ export function useTransactions(): UseTransactionsResult {
     setSearchTerm,
     setStatusFilter,
     setPaymentStatusFilter,
+    setRefundSearchTerm,
+    setRefundStatusFilter,
     clearFilters,
+    clearRefundFilters,
     previousPage: () => setPage((current) => Math.max(current - 1, 1)),
     nextPage: () => setPage((current) => current + 1),
+    previousRefundPage: () =>
+      setRefundPage((current) => Math.max(current - 1, 1)),
+    nextRefundPage: () => setRefundPage((current) => current + 1),
     previousHistoryPage: () =>
       setHistoryPage((current) => Math.max(current - 1, 1)),
     nextHistoryPage: () => setHistoryPage((current) => current + 1),
     openOrderDetail,
+    openRefundDetail,
     setDetailOpen,
+    setRefundDetailOpen,
     requestCancelOrder,
     requestRefundRequired,
     setActionReason,
@@ -511,7 +690,7 @@ export function useTransactions(): UseTransactionsResult {
     confirmRefundRequired,
     clearActionSuccessMessage: () => setActionSuccessMessage(null),
     refresh: async () => {
-      await fetchOrders();
+      await Promise.all([fetchOrders(), fetchRefunds()]);
       if (selectedOrderId && isDetailOpen) {
         await fetchStatusHistory(selectedOrderId);
       }

@@ -10,6 +10,7 @@ import {
   RotateCcw,
 } from "lucide-react";
 
+import { RefundStatusBadge } from "@/components/features/transactions/refunds-table";
 import {
   ORDER_STATUS_LABELS,
   OrderStatusBadge,
@@ -30,6 +31,7 @@ import {
 import type {
   OrderResult,
   OrderStatusHistoryResult,
+  RefundResult,
   TransactionsPaginationMeta,
 } from "@/types/transactions";
 
@@ -57,6 +59,14 @@ interface OrderActionDialogProps {
   onConfirm: () => void;
   onOpenChange: (open: boolean) => void;
   onReasonChange: (value: string) => void;
+}
+
+interface RefundDetailDialogProps {
+  errorMessage: string | null;
+  isLoading: boolean;
+  open: boolean;
+  refund: RefundResult | null;
+  onOpenChange: (open: boolean) => void;
 }
 
 function DetailTile({
@@ -394,6 +404,106 @@ export function OrderActionDialog({
             {buttonLabel}
           </Button>
         </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+export function RefundDetailDialog({
+  errorMessage,
+  isLoading,
+  open,
+  refund,
+  onOpenChange,
+}: RefundDetailDialogProps) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-2xl">
+        <DialogHeader className="gap-3">
+          <div className="flex items-start gap-3">
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-warning/20 bg-warning/10 text-warning">
+              <RotateCcw className="size-5" />
+            </span>
+            <div className="min-w-0 space-y-1">
+              <DialogTitle>Chi tiết hoàn tiền</DialogTitle>
+              <DialogDescription>
+                Dữ liệu thật từ Management Refunds API, chỉ hiển thị read-only.
+              </DialogDescription>
+            </div>
+          </div>
+        </DialogHeader>
+
+        {isLoading ? (
+          <div className="space-y-4 py-2">
+            {Array.from({ length: 5 }).map((_, index) => (
+              <div key={`refund-detail-skeleton-${index}`} className="space-y-2">
+                <div className="h-3 w-24 animate-pulse rounded bg-muted" />
+                <div className="h-5 w-full animate-pulse rounded bg-muted/60" />
+              </div>
+            ))}
+          </div>
+        ) : errorMessage ? (
+          <div className="flex gap-3 rounded-lg border border-destructive/30 bg-destructive/5 p-4">
+            <AlertTriangle className="mt-0.5 size-4 shrink-0 text-destructive" />
+            <p className="text-sm text-destructive">{errorMessage}</p>
+          </div>
+        ) : refund ? (
+          <div className="space-y-4 py-1">
+            <div className="rounded-xl border border-border bg-muted/15 p-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0 space-y-1">
+                  <p className="truncate text-base font-semibold text-foreground">
+                    {refund.refundNumber}
+                  </p>
+                  <p className="font-mono text-xs tabular-nums text-muted-foreground">
+                    {refund.id}
+                  </p>
+                </div>
+                <RefundStatusBadge status={refund.status} />
+              </div>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <DetailTile
+                label="Số tiền"
+                value={
+                  <span className="tabular-nums">
+                    {formatTransactionMoney(refund.amount, refund.currency)}
+                  </span>
+                }
+              />
+              <DetailTile label="Phương thức" value={refund.refundMethod} />
+              <DetailTile label="Đơn hàng" value={refund.orderNumber} />
+              <DetailTile label="Yêu cầu lúc" value={formatTransactionDate(refund.requestedAt)} />
+              <DetailTile label="Đã xử lý lúc" value={formatTransactionDate(refund.processedAt)} />
+              <DetailTile label="Từ chối lúc" value={formatTransactionDate(refund.rejectedAt)} />
+            </div>
+
+            <div className="rounded-xl border border-border bg-card p-4">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Lý do
+              </p>
+              <p className="mt-2 text-sm text-foreground">{refund.reason}</p>
+              {refund.note ? (
+                <p className="mt-2 text-sm text-muted-foreground">{refund.note}</p>
+              ) : null}
+            </div>
+
+            {refund.lastErrorCode || refund.lastErrorMessage ? (
+              <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4">
+                <p className="text-xs font-medium uppercase tracking-wide text-destructive">
+                  Lỗi gần nhất
+                </p>
+                <p className="mt-2 text-sm text-destructive">
+                  {refund.lastErrorCode ? `${refund.lastErrorCode}: ` : ""}
+                  {refund.lastErrorMessage || "Không có mô tả lỗi."}
+                </p>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+
+        <DialogFooter className="bg-background" showCloseButton />
       </DialogContent>
     </Dialog>
   );

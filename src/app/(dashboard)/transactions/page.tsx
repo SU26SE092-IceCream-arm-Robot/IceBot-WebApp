@@ -14,8 +14,13 @@ import {
 
 import {
   OrderActionDialog,
+  RefundDetailDialog,
   TransactionDetailDialog,
 } from "@/components/features/transactions/transaction-dialogs";
+import {
+  REFUND_STATUS_LABELS,
+  RefundsTable,
+} from "@/components/features/transactions/refunds-table";
 import {
   ORDER_STATUS_LABELS,
   PAYMENT_STATUS_LABELS,
@@ -38,7 +43,10 @@ import type {
   OrderStatusFilter,
   PaymentStatus,
   PaymentStatusFilter,
+  RefundStatus,
+  RefundStatusFilter,
 } from "@/types/transactions";
+import { useState } from "react";
 
 const ORDER_STATUS_OPTIONS: { value: OrderStatusFilter; label: string }[] = [
   { value: "ALL", label: "Tất cả trạng thái đơn" },
@@ -54,6 +62,13 @@ const PAYMENT_STATUS_OPTIONS: { value: PaymentStatusFilter; label: string }[] = 
   ).map(([value, label]) => ({ value, label })),
 ];
 
+const REFUND_STATUS_OPTIONS: { value: RefundStatusFilter; label: string }[] = [
+  { value: "ALL", label: "Tất cả trạng thái hoàn tiền" },
+  ...(
+    Object.entries(REFUND_STATUS_LABELS) as [RefundStatus, string][]
+  ).map(([value, label]) => ({ value, label })),
+];
+
 function isOrderStatusFilter(value: string | null): value is OrderStatusFilter {
   return ORDER_STATUS_OPTIONS.some((option) => option.value === value);
 }
@@ -63,6 +78,12 @@ function isPaymentStatusFilter(
 ): value is PaymentStatusFilter {
   return PAYMENT_STATUS_OPTIONS.some((option) => option.value === value);
 }
+
+function isRefundStatusFilter(value: string | null): value is RefundStatusFilter {
+  return REFUND_STATUS_OPTIONS.some((option) => option.value === value);
+}
+
+type TransactionsTab = "orders" | "refunds";
 
 type StatTone = "primary" | "success" | "warning" | "destructive";
 
@@ -144,16 +165,24 @@ function TransactionsLoadingTable() {
 }
 
 export default function TransactionsPage() {
+  const [activeTab, setActiveTab] = useState<TransactionsTab>("orders");
   const { currentUser } = useAuth();
   const {
     orders,
+    refunds,
     statusHistory,
     filters,
+    refundFilters,
     summary,
+    refundsSummary,
     selectedOrder,
+    selectedRefund,
     isDetailOpen,
     isDetailLoading,
     detailErrorMessage,
+    isRefundDetailOpen,
+    isRefundDetailLoading,
+    refundDetailErrorMessage,
     orderPendingAction,
     actionReason,
     actionErrorMessage,
@@ -164,13 +193,20 @@ export default function TransactionsPage() {
     setSearchTerm,
     setStatusFilter,
     setPaymentStatusFilter,
+    setRefundSearchTerm,
+    setRefundStatusFilter,
     clearFilters,
+    clearRefundFilters,
     previousPage,
     nextPage,
+    previousRefundPage,
+    nextRefundPage,
     previousHistoryPage,
     nextHistoryPage,
     openOrderDetail,
+    openRefundDetail,
     setDetailOpen,
+    setRefundDetailOpen,
     requestCancelOrder,
     requestRefundRequired,
     setActionReason,
@@ -225,33 +261,70 @@ export default function TransactionsPage() {
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           icon={ReceiptText}
-          label="Tổng giao dịch"
-          value={summary.total}
+          label={activeTab === "orders" ? "Tổng giao dịch" : "Tổng hoàn tiền"}
+          value={activeTab === "orders" ? summary.total : refundsSummary.total}
           supportingText="Theo kết quả đang lọc"
           tone="primary"
         />
         <StatCard
           icon={CreditCard}
-          label="Đã thanh toán"
-          value={summary.paidOnPage}
+          label={activeTab === "orders" ? "Đã thanh toán" : "Đã xử lý"}
+          value={
+            activeTab === "orders"
+              ? summary.paidOnPage
+              : refundsSummary.processedOnPage
+          }
           supportingText="Trong trang dữ liệu hiện tại"
           tone="success"
         />
         <StatCard
           icon={RotateCcw}
-          label="Cần hoàn tiền"
-          value={summary.refundRequiredOnPage}
-          supportingText="Đơn cần xử lý thủ công"
+          label={activeTab === "orders" ? "Cần hoàn tiền" : "Đã yêu cầu"}
+          value={
+            activeTab === "orders"
+              ? summary.refundRequiredOnPage
+              : refundsSummary.requestedOnPage
+          }
+          supportingText="Cần theo dõi thủ công"
           tone="warning"
         />
         <StatCard
           icon={XCircle}
-          label="Thất bại / hủy"
-          value={summary.failedOrCancelledOnPage}
+          label={activeTab === "orders" ? "Thất bại / hủy" : "Lỗi / từ chối"}
+          value={
+            activeTab === "orders"
+              ? summary.failedOrCancelledOnPage
+              : refundsSummary.failedOrRejectedOnPage
+          }
           supportingText="Trong trang dữ liệu hiện tại"
           tone="destructive"
         />
       </section>
+
+      <div className="inline-flex w-fit rounded-lg border border-border bg-card p-1">
+        <button
+          type="button"
+          className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+            activeTab === "orders"
+              ? "bg-primary text-primary-foreground"
+              : "text-muted-foreground hover:bg-muted/40 hover:text-foreground"
+          }`}
+          onClick={() => setActiveTab("orders")}
+        >
+          Đơn hàng
+        </button>
+        <button
+          type="button"
+          className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+            activeTab === "refunds"
+              ? "bg-primary text-primary-foreground"
+              : "text-muted-foreground hover:bg-muted/40 hover:text-foreground"
+          }`}
+          onClick={() => setActiveTab("refunds")}
+        >
+          Hoàn tiền
+        </button>
+      </div>
 
       <Card className="rounded-xl border border-border bg-card shadow-none">
         <CardHeader className="border-b border-border pb-4">
@@ -262,78 +335,122 @@ export default function TransactionsPage() {
             <div>
               <CardTitle className="text-base">Danh sách giao dịch</CardTitle>
               <CardDescription>
-                Dữ liệu thật từ Management Orders API, chỉ hiển thị read-only trong phase này.
+                {activeTab === "orders"
+                  ? "Dữ liệu thật từ Management Orders API."
+                  : "Dữ liệu thật từ Management Refunds API, chỉ hiển thị read-only trong phase này."}
               </CardDescription>
             </div>
           </div>
         </CardHeader>
 
         <CardContent className="border-b border-border p-4">
-          <div className="grid gap-2 xl:grid-cols-[minmax(260px,1fr)_220px_220px_auto]">
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={filters.searchTerm}
-                onChange={(event) => setSearchTerm(event.target.value)}
-                placeholder="Tìm mã đơn, kiosk hoặc trạng thái..."
-                className="h-9 bg-card pl-9 text-sm"
-              />
+          {activeTab === "orders" ? (
+            <div className="grid gap-2 xl:grid-cols-[minmax(260px,1fr)_220px_220px_auto]">
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={filters.searchTerm}
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                  placeholder="Tìm mã đơn, kiosk hoặc trạng thái..."
+                  className="h-9 bg-card pl-9 text-sm"
+                />
+              </div>
+              <Select
+                value={filters.status}
+                onValueChange={(value) => {
+                  if (isOrderStatusFilter(value)) {
+                    setStatusFilter(value);
+                  }
+                }}
+              >
+                <SelectTrigger className="h-9 w-full bg-card">
+                  <SelectValue>
+                    {ORDER_STATUS_OPTIONS.find((option) => option.value === filters.status)?.label ??
+                      "Tất cả trạng thái đơn"}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {ORDER_STATUS_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select
+                value={filters.paymentStatus}
+                onValueChange={(value) => {
+                  if (isPaymentStatusFilter(value)) {
+                    setPaymentStatusFilter(value);
+                  }
+                }}
+              >
+                <SelectTrigger className="h-9 w-full bg-card">
+                  <SelectValue>
+                    {PAYMENT_STATUS_OPTIONS.find(
+                      (option) => option.value === filters.paymentStatus,
+                    )?.label ?? "Tất cả thanh toán"}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {PAYMENT_STATUS_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button variant="outline" size="sm" onClick={clearFilters}>
+                Xóa lọc
+              </Button>
             </div>
-            <Select
-              value={filters.status}
-              onValueChange={(value) => {
-                if (isOrderStatusFilter(value)) {
-                  setStatusFilter(value);
-                }
-              }}
-            >
-              <SelectTrigger className="h-9 w-full bg-card">
-                <SelectValue>
-                  {ORDER_STATUS_OPTIONS.find((option) => option.value === filters.status)?.label ??
-                    "Tất cả trạng thái đơn"}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                {ORDER_STATUS_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select
-              value={filters.paymentStatus}
-              onValueChange={(value) => {
-                if (isPaymentStatusFilter(value)) {
-                  setPaymentStatusFilter(value);
-                }
-              }}
-            >
-              <SelectTrigger className="h-9 w-full bg-card">
-                <SelectValue>
-                  {PAYMENT_STATUS_OPTIONS.find(
-                    (option) => option.value === filters.paymentStatus,
-                  )?.label ?? "Tất cả thanh toán"}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                {PAYMENT_STATUS_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button variant="outline" size="sm" onClick={clearFilters}>
-              Xóa lọc
-            </Button>
-          </div>
+          ) : (
+            <div className="grid gap-2 lg:grid-cols-[minmax(260px,1fr)_260px_auto]">
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={refundFilters.searchTerm}
+                  onChange={(event) => setRefundSearchTerm(event.target.value)}
+                  placeholder="Tìm mã hoàn tiền, đơn hàng hoặc lý do..."
+                  className="h-9 bg-card pl-9 text-sm"
+                />
+              </div>
+              <Select
+                value={refundFilters.status}
+                onValueChange={(value) => {
+                  if (isRefundStatusFilter(value)) {
+                    setRefundStatusFilter(value);
+                  }
+                }}
+              >
+                <SelectTrigger className="h-9 w-full bg-card">
+                  <SelectValue>
+                    {REFUND_STATUS_OPTIONS.find(
+                      (option) => option.value === refundFilters.status,
+                    )?.label ?? "Tất cả trạng thái hoàn tiền"}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {REFUND_STATUS_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button variant="outline" size="sm" onClick={clearRefundFilters}>
+                Xóa lọc
+              </Button>
+            </div>
+          )}
         </CardContent>
 
         <div>
-          {orders.isLoading ? (
+          {activeTab === "orders" && orders.isLoading ? (
             <TransactionsLoadingTable />
-          ) : orders.errorMessage ? (
+          ) : activeTab === "refunds" && refunds.isLoading ? (
+            <TransactionsLoadingTable />
+          ) : activeTab === "orders" && orders.errorMessage ? (
             <div className="flex flex-col items-center gap-4 p-10 text-center">
               <span className="flex size-12 items-center justify-center rounded-xl bg-destructive/10 text-destructive">
                 <AlertTriangle className="size-5" />
@@ -348,7 +465,22 @@ export default function TransactionsPage() {
                 Thử lại
               </Button>
             </div>
-          ) : orders.data.length === 0 ? (
+          ) : activeTab === "refunds" && refunds.errorMessage ? (
+            <div className="flex flex-col items-center gap-4 p-10 text-center">
+              <span className="flex size-12 items-center justify-center rounded-xl bg-destructive/10 text-destructive">
+                <AlertTriangle className="size-5" />
+              </span>
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-destructive">
+                  Không thể tải hoàn tiền
+                </p>
+                <p className="text-sm text-muted-foreground">{refunds.errorMessage}</p>
+              </div>
+              <Button variant="destructive" onClick={() => void refresh()}>
+                Thử lại
+              </Button>
+            </div>
+          ) : activeTab === "orders" && orders.data.length === 0 ? (
             <div className="flex flex-col items-center gap-3 p-10 text-center">
               <span className="flex size-12 items-center justify-center rounded-xl border border-border bg-muted/20 text-muted-foreground">
                 <ReceiptText className="size-5" />
@@ -360,13 +492,30 @@ export default function TransactionsPage() {
                 Thử thay đổi từ khóa, trạng thái đơn hoặc trạng thái thanh toán.
               </p>
             </div>
-          ) : (
+          ) : activeTab === "refunds" && refunds.data.length === 0 ? (
+            <div className="flex flex-col items-center gap-3 p-10 text-center">
+              <span className="flex size-12 items-center justify-center rounded-xl border border-border bg-muted/20 text-muted-foreground">
+                <RotateCcw className="size-5" />
+              </span>
+              <p className="text-sm font-medium text-foreground">
+                Không có hoàn tiền phù hợp
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Thử thay đổi từ khóa hoặc trạng thái hoàn tiền.
+              </p>
+            </div>
+          ) : activeTab === "orders" ? (
             <TransactionsTable
               orders={orders.data}
               canManageOrders={canManageOrders}
               onCancelOrder={requestCancelOrder}
               onMarkRefundRequired={requestRefundRequired}
               onViewDetail={(orderId) => void openOrderDetail(orderId)}
+            />
+          ) : (
+            <RefundsTable
+              refunds={refunds.data}
+              onViewDetail={(refundId) => void openRefundDetail(refundId)}
             />
           )}
         </div>
@@ -375,24 +524,35 @@ export default function TransactionsPage() {
           <p className="text-muted-foreground">
             Trang{" "}
             <span className="tabular-nums font-medium text-foreground">
-              {orders.pagination.page}
+              {activeTab === "orders" ? orders.pagination.page : refunds.pagination.page}
             </span>{" "}
             /{" "}
             <span className="tabular-nums font-medium text-foreground">
-              {Math.max(orders.pagination.totalPages, 1)}
+              {Math.max(
+                activeTab === "orders"
+                  ? orders.pagination.totalPages
+                  : refunds.pagination.totalPages,
+                1,
+              )}
             </span>
             {" - "}
             <span className="tabular-nums font-medium text-foreground">
-              {orders.pagination.totalCount}
+              {activeTab === "orders"
+                ? orders.pagination.totalCount
+                : refunds.pagination.totalCount}
             </span>{" "}
-            giao dịch
+            {activeTab === "orders" ? "giao dịch" : "hoàn tiền"}
           </p>
           <div className="flex gap-2">
             <Button
               variant="outline"
               size="sm"
-              disabled={!orders.pagination.hasPrevious || orders.isLoading}
-              onClick={previousPage}
+              disabled={
+                activeTab === "orders"
+                  ? !orders.pagination.hasPrevious || orders.isLoading
+                  : !refunds.pagination.hasPrevious || refunds.isLoading
+              }
+              onClick={activeTab === "orders" ? previousPage : previousRefundPage}
             >
               <ChevronLeft className="size-4" />
               Trước
@@ -400,8 +560,12 @@ export default function TransactionsPage() {
             <Button
               variant="outline"
               size="sm"
-              disabled={!orders.pagination.hasNext || orders.isLoading}
-              onClick={nextPage}
+              disabled={
+                activeTab === "orders"
+                  ? !orders.pagination.hasNext || orders.isLoading
+                  : !refunds.pagination.hasNext || refunds.isLoading
+              }
+              onClick={activeTab === "orders" ? nextPage : nextRefundPage}
             >
               Sau
               <ChevronRight className="size-4" />
@@ -422,6 +586,14 @@ export default function TransactionsPage() {
         onOpenChange={setDetailOpen}
         onPreviousHistoryPage={previousHistoryPage}
         onNextHistoryPage={nextHistoryPage}
+      />
+
+      <RefundDetailDialog
+        errorMessage={refundDetailErrorMessage}
+        isLoading={isRefundDetailLoading}
+        open={isRefundDetailOpen}
+        refund={selectedRefund}
+        onOpenChange={setRefundDetailOpen}
       />
 
       <OrderActionDialog

@@ -33,6 +33,14 @@ export type PaymentStatus =
   | "Failed"
   | "Cancelled";
 
+export type RefundStatus =
+  | "Requested"
+  | "Processing"
+  | "Processed"
+  | "Rejected"
+  | "Failed"
+  | "Cancelled";
+
 export type OrderItemStatus =
   | "Pending"
   | "Accepted"
@@ -44,6 +52,8 @@ export type OrderItemStatus =
 export type OrderStatusFilter = "ALL" | OrderStatus;
 
 export type PaymentStatusFilter = "ALL" | PaymentStatus;
+
+export type RefundStatusFilter = "ALL" | RefundStatus;
 
 export interface OrderItemResult {
   id: string;
@@ -107,10 +117,37 @@ export interface OrderStatusHistoryResult {
   changedAt: string;
 }
 
+export interface RefundResult {
+  id: string;
+  paymentTransactionId: string;
+  refundNumber: string;
+  providerRefundId?: string | null;
+  amount: number;
+  currency: string;
+  reason: string;
+  status: RefundStatus;
+  requestedAt: string;
+  processedAt?: string | null;
+  rejectedAt?: string | null;
+  lastErrorCode?: string | null;
+  lastErrorMessage?: string | null;
+  orderId: string;
+  orderNumber: string;
+  refundMethod: string;
+  voucherCode?: string | null;
+  voucherValue?: number | null;
+  note?: string | null;
+}
+
 export interface TransactionsFilters {
   searchTerm: string;
   status: OrderStatusFilter;
   paymentStatus: PaymentStatusFilter;
+}
+
+export interface RefundsFilters {
+  searchTerm: string;
+  status: RefundStatusFilter;
 }
 
 export interface ManagementOrdersQuery {
@@ -129,6 +166,16 @@ export interface OrderStatusHistoryQuery {
   pageSize: number;
 }
 
+export interface ManagementRefundsQuery {
+  searchTerm?: string;
+  status?: RefundStatus;
+  organizationId?: string;
+  storeId?: string;
+  kioskId?: string;
+  pageNumber: number;
+  pageSize: number;
+}
+
 export interface ManagementOrderReasonRequest {
   reason?: string | null;
 }
@@ -138,6 +185,13 @@ export interface TransactionsSummary {
   paidOnPage: number;
   refundRequiredOnPage: number;
   failedOrCancelledOnPage: number;
+}
+
+export interface RefundsSummary {
+  total: number;
+  requestedOnPage: number;
+  processedOnPage: number;
+  failedOrRejectedOnPage: number;
 }
 
 export type TransactionsPaginationMeta = PaginationMeta;
