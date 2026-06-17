@@ -43,3 +43,8 @@ next-env.d.ts
 # Local Agent Memory
 .project-memory/
 AGENTS.md
+
+# Local Markdown docs
+*.md
+!README.md
+!**/README.md
