@@ -2,7 +2,6 @@
 
 import {
   AlertTriangle,
-  MapPin,
   Monitor,
   RefreshCw,
   Search,
@@ -13,7 +12,6 @@ import {
 } from "lucide-react";
 
 import { KioskCard } from "@/components/features/kiosks/kiosk-card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -35,7 +33,7 @@ const STATUS_OPTIONS: { value: KioskStatusFilter; label: string }[] = [
   { value: "ERROR", label: "Đang lỗi" },
 ];
 
-type SummaryTone = "neutral" | "primary" | "destructive" | "muted";
+type SummaryTone = "neutral" | "primary" | "destructive" | "warning";
 
 const SUMMARY_TONES: Record<
   SummaryTone,
@@ -53,9 +51,9 @@ const SUMMARY_TONES: Record<
     iconClassName: "bg-destructive/10 text-destructive",
     valueClassName: "text-destructive",
   },
-  muted: {
-    iconClassName: "bg-muted text-muted-foreground",
-    valueClassName: "text-muted-foreground",
+  warning: {
+    iconClassName: "bg-warning/10 text-warning",
+    valueClassName: "text-warning",
   },
 };
 
@@ -117,8 +115,6 @@ export default function KiosksPage() {
     filters,
     isLoading,
     errorMessage,
-    metadataWarning,
-    metadataSource,
     scopedCount,
     setSearchTerm,
     setStatusFilter,
@@ -139,34 +135,6 @@ export default function KiosksPage() {
           </div>
         </div>
       </section>
-
-      <div
-        className={
-          metadataWarning
-            ? "rounded-lg border border-warning/30 bg-warning/5 px-4 py-3"
-            : "rounded-lg border border-border bg-muted/20 px-4 py-3"
-        }
-        role="status"
-      >
-        <div className="flex items-start gap-3">
-          {metadataWarning ? (
-            <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" />
-          ) : (
-            <Monitor className="mt-0.5 size-4 shrink-0 text-primary" />
-          )}
-          <div className="space-y-1 text-xs text-muted-foreground">
-            <p className="font-medium text-foreground">
-              {metadataSource === "API"
-                ? "Metadata kiosk lấy từ API quản lý."
-                : "Metadata kiosk đang dùng dữ liệu mô phỏng."}
-            </p>
-            {metadataWarning ? <p>{metadataWarning}</p> : null}
-            <p>
-              Telemetry vận hành như robot, nhiệt độ, nguyên liệu và đơn hiện tại vẫn là dữ liệu mô phỏng.
-            </p>
-          </div>
-        </div>
-      </div>
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <SummaryCard
@@ -195,29 +163,23 @@ export default function KiosksPage() {
           label="Đang bảo trì"
           value={summary.maintenance}
           supportingText="Tạm ngưng phục vụ"
-          tone="muted"
+          tone="warning"
         />
       </section>
 
       <Card className="border-border/80 bg-card shadow-none">
         <CardHeader className="border-b border-border pb-4">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="flex items-start gap-3">
-              <span className="mt-0.5 flex size-9 items-center justify-center rounded-lg bg-secondary text-secondary-foreground">
-                <SlidersHorizontal className="size-4" />
-              </span>
-              <div className="space-y-1">
-                <CardTitle className="text-base">Bộ lọc giám sát</CardTitle>
-                <CardDescription>
-                  Hiển thị <span className="tabular-nums font-medium text-foreground">{kiosks.length}</span> trên{" "}
-                  <span className="tabular-nums font-medium text-foreground">{scopedCount}</span> kiosk có thể truy cập.
-                </CardDescription>
-              </div>
+          <div className="flex items-start gap-3">
+            <span className="mt-0.5 flex size-10 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
+              <SlidersHorizontal className="size-5" />
+            </span>
+            <div className="space-y-1">
+              <CardTitle className="text-base">Bộ lọc giám sát</CardTitle>
+              <CardDescription>
+                Hiển thị <span className="tabular-nums font-medium text-foreground">{kiosks.length}</span> trên{" "}
+                <span className="tabular-nums font-medium text-foreground">{scopedCount}</span> kiosk có thể truy cập.
+              </CardDescription>
             </div>
-            <Badge variant="secondary" className="gap-1.5">
-              <MapPin className="size-3" />
-              {filters.locationId === "ALL" ? "Mọi địa điểm" : "Đã lọc địa điểm"}
-            </Badge>
           </div>
         </CardHeader>
         <CardContent className="space-y-4 p-5">
@@ -228,7 +190,7 @@ export default function KiosksPage() {
                 value={filters.searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
                 placeholder="Tìm kiosk ID, tên máy hoặc địa điểm..."
-                className="pl-9"
+                className="h-9 bg-card pl-9"
               />
             </div>
 
@@ -240,8 +202,11 @@ export default function KiosksPage() {
                 }
               }}
             >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Lọc trạng thái" />
+              <SelectTrigger className="h-9 w-full bg-card">
+                <SelectValue>
+                  {STATUS_OPTIONS.find((option) => option.value === filters.status)?.label ??
+                    "Tất cả trạng thái"}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {STATUS_OPTIONS.map((option) => (
@@ -253,8 +218,14 @@ export default function KiosksPage() {
             </Select>
 
             <Select value={filters.locationId} onValueChange={setLocationFilter}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Lọc địa điểm" />
+              <SelectTrigger className="h-9 w-full bg-card">
+                <SelectValue>
+                  {filters.locationId === "ALL"
+                    ? "Tất cả địa điểm"
+                    : locations.find(
+                        (location) => location.locationId === filters.locationId,
+                      )?.locationName ?? "Tất cả địa điểm"}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL">Tất cả địa điểm</SelectItem>
@@ -267,10 +238,16 @@ export default function KiosksPage() {
             </Select>
 
             <div className="flex gap-2 lg:justify-end">
-              <Button variant="outline" onClick={clearFilters}>
+              <Button variant="outline" size="sm" className="h-9" onClick={clearFilters}>
                 Xóa lọc
               </Button>
-              <Button variant="secondary" onClick={() => void refresh()} aria-label="Tải lại dữ liệu kiosk">
+              <Button
+                variant="secondary"
+                size="icon-sm"
+                className="size-9"
+                onClick={() => void refresh()}
+                aria-label="Tải lại dữ liệu kiosk"
+              >
                 <RefreshCw className="size-4" />
               </Button>
             </div>
@@ -324,7 +301,7 @@ export default function KiosksPage() {
         ) : kiosks.length === 0 ? (
           <Card className="border-border/80 shadow-none">
             <CardContent className="flex flex-col items-center gap-3 p-10 text-center">
-              <span className="flex size-12 items-center justify-center rounded-xl bg-secondary text-muted-foreground">
+              <span className="flex size-12 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
                 <Search className="size-5" />
               </span>
               <p className="text-sm font-medium text-foreground">Không có kiosk phù hợp</p>

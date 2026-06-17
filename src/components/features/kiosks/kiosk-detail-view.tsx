@@ -498,7 +498,12 @@ function InventoryPanel({ kiosk }: { kiosk: KioskDetail }) {
       <CardContent className="space-y-5 p-5">
         <div className={cn("flex items-center justify-between rounded-xl border border-border bg-background/70 p-4", cupsWarning && "border-warning/40 bg-warning/5")}>
           <div className="flex items-center gap-3">
-            <span className={cn("flex size-10 items-center justify-center rounded-lg bg-secondary text-muted-foreground", cupsWarning && "bg-warning/10 text-warning")}>
+            <span
+              className={cn(
+                "flex size-10 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary",
+                cupsWarning && "border-warning/20 bg-warning/10 text-warning"
+              )}
+            >
               <CupSoda className="size-5" />
             </span>
             <div>

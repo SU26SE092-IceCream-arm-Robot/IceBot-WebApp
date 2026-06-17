@@ -5,7 +5,6 @@ import { LoaderCircle, ShieldAlert } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 
 import { AppSidebar } from "@/components/shared/app-sidebar";
-import { Topbar } from "@/components/shared/topbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/hooks/use-auth";
@@ -88,19 +87,16 @@ export default function DashboardLayout({
   return (
     <div className="flex h-screen overflow-hidden">
       <AppSidebar
-        role={currentUser.role}
+        currentUser={currentUser}
         collapsed={sidebarCollapsed}
         onToggleCollapsed={() => setSidebarCollapsed((previous) => !previous)}
+        onLogout={async () => {
+          await logout();
+          router.replace("/login");
+        }}
       />
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <Topbar
-          currentUser={currentUser}
-          onLogout={async () => {
-            await logout();
-            router.replace("/login");
-          }}
-        />
         <main className="flex-1 overflow-y-auto p-6 lg:p-8">{children}</main>
       </div>
     </div>

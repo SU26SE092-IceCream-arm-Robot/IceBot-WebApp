@@ -24,7 +24,7 @@ const LEVEL_LABELS: Record<IngredientLevelStatus, string> = {
 };
 
 const LEVEL_CLASS_NAMES: Record<IngredientLevelStatus, string> = {
-  Unknown: "border-border bg-muted text-muted-foreground",
+  Unknown: "border-border bg-muted/20 text-muted-foreground",
   Low: "border-warning/20 bg-warning/10 text-warning",
   Medium: "border-primary/20 bg-primary/10 text-primary",
   Full: "border-success/20 bg-success/10 text-success",

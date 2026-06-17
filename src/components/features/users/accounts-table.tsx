@@ -65,7 +65,7 @@ function StatusBadge({ status }: { status: ManagementAccountStatus }) {
       );
     case "Suspended":
       return (
-        <Badge className="border-0 bg-muted text-muted-foreground">
+        <Badge className="border border-warning/20 bg-warning/10 text-warning">
           {getStatusLabel(status)}
         </Badge>
       );
@@ -114,18 +114,18 @@ function ScopeLabel({ role }: { role: InternalAccountRoleResult }) {
 
 function LoginMethods({ account }: { account: InternalAccountResult }) {
   return (
-    <div className="flex flex-wrap gap-1.5">
+    <div className="flex flex-wrap justify-center gap-1.5">
       {account.localLoginEnabled ? (
-        <Badge variant="outline" className="gap-1">
-          <KeyRound className="size-3" />
-          Mật khẩu
-        </Badge>
+          <Badge variant="outline" className="gap-1 border-primary/20 bg-primary/10 text-primary">
+            <KeyRound className="size-3" />
+            Mật khẩu
+          </Badge>
       ) : null}
       {account.googleLoginEnabled ? (
-        <Badge variant="outline" className="gap-1">
-          <Mail className="size-3" />
-          Google
-        </Badge>
+          <Badge variant="outline" className="gap-1 border-primary/20 bg-primary/10 text-primary">
+            <Mail className="size-3" />
+            Google
+          </Badge>
       ) : null}
       {!account.localLoginEnabled && !account.googleLoginEnabled ? (
         <span className="text-xs text-muted-foreground">Chưa bật</span>
@@ -147,11 +147,11 @@ export function AccountsTable({
       <TableHeader>
         <TableRow>
           <TableHead className="px-5">Tài khoản</TableHead>
-          <TableHead>Trạng thái</TableHead>
-          <TableHead>Vai trò & phạm vi</TableHead>
-          <TableHead>Đăng nhập</TableHead>
-          <TableHead>ID</TableHead>
-          <TableHead className="px-5 text-right">Thao tác</TableHead>
+          <TableHead className="text-center">Trạng thái</TableHead>
+          <TableHead className="text-center">Vai trò & phạm vi</TableHead>
+          <TableHead className="text-center">Đăng nhập</TableHead>
+          <TableHead className="text-center">ID</TableHead>
+          <TableHead className="px-5 text-center">Thao tác</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -165,10 +165,10 @@ export function AccountsTable({
                 <p className="text-sm text-muted-foreground">{account.email}</p>
               </div>
             </TableCell>
-            <TableCell>
+            <TableCell className="text-center">
               <StatusBadge status={account.status} />
             </TableCell>
-            <TableCell>
+            <TableCell className="text-center">
               <div className="space-y-2">
                 {account.roles.length === 0 ? (
                   <span className="text-xs text-muted-foreground">Chưa gán role</span>
@@ -176,7 +176,7 @@ export function AccountsTable({
                   account.roles.map((role, index) => (
                     <div
                       key={`${role.roleCode}-${role.organizationId ?? ""}-${role.storeId ?? ""}-${role.kioskId ?? ""}-${index}`}
-                      className="flex flex-wrap items-center gap-2"
+                      className="flex flex-wrap items-center justify-center gap-2"
                     >
                       <Badge className="gap-1 border-0 bg-primary/10 text-primary">
                         <ShieldCheck className="size-3" />
@@ -188,41 +188,44 @@ export function AccountsTable({
                 )}
               </div>
             </TableCell>
-            <TableCell>
+            <TableCell className="text-center">
               <LoginMethods account={account} />
             </TableCell>
-            <TableCell>
-              <span className="tabular-nums text-xs text-muted-foreground">{account.id.slice(0, 8)}</span>
+            <TableCell className="text-center">
+              <span className="font-mono tabular-nums text-xs text-muted-foreground">{account.id.slice(0, 8)}</span>
             </TableCell>
             <TableCell className="px-5">
-              <div className="flex justify-end gap-1">
+              <div className="flex items-center justify-center gap-1.5">
                 <Button
                   variant="ghost"
-                  size="sm"
-                  className="h-8 text-xs"
+                  size="icon-sm"
+                  className="rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
+                  aria-label={`Xem chi tiết ${account.fullName?.trim() || account.userName}`}
+                  title="Xem chi tiết"
                   onClick={() => onViewAccount(account.id)}
                 >
-                  <Eye className="size-3.5" />
-                  Xem chi tiết
+                  <Eye className="size-4" />
                 </Button>
                 {canManageAccounts ? (
                   <>
                     {account.status === "Invited" ? (
                       <Button
                         variant="ghost"
-                        size="sm"
-                        className="h-8 text-xs text-primary hover:bg-primary/10 hover:text-primary"
+                        size="icon-sm"
+                        className="rounded-lg text-primary hover:bg-primary/10 hover:text-primary"
+                        aria-label={`Tạo lại lời mời cho ${account.fullName?.trim() || account.userName}`}
+                        title="Tạo lại lời mời"
                         onClick={() => onRegenerateInvitation(account)}
                       >
-                        <RefreshCw className="size-3.5" />
-                        Tạo lại lời mời
+                        <RefreshCw className="size-4" />
                       </Button>
                     ) : null}
                     <Button
                       variant="ghost"
-                      size="sm"
-                      className="h-8 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
+                      size="icon-sm"
+                      className="rounded-lg text-destructive hover:bg-destructive/10 hover:text-destructive"
                       disabled={account.id === currentAccountId || account.status === "Disabled"}
+                      aria-label={`Vô hiệu hóa ${account.fullName?.trim() || account.userName}`}
                       title={
                         account.id === currentAccountId
                           ? "Không thể vô hiệu hóa tài khoản đang đăng nhập"
@@ -232,8 +235,7 @@ export function AccountsTable({
                       }
                       onClick={() => onDisableAccount(account)}
                     >
-                      <UserRoundX className="size-3.5" />
-                      Vô hiệu hóa
+                      <UserRoundX className="size-4" />
                     </Button>
                   </>
                 ) : null}

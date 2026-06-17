@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, KeyRound, Mail, ShieldCheck, UserRoundX } from "lucide-react";
+import { AlertTriangle, IdCard, KeyRound, Mail, ShieldCheck, UserRound, UserRoundX } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -44,18 +44,22 @@ const ROLE_LABELS: Record<string, string> = {
   Technician: "Kỹ thuật viên",
 };
 
-function getStatusLabel(status: ManagementAccountStatus): string {
+function StatusBadge({ status }: { status: ManagementAccountStatus }) {
   switch (status) {
     case "Active":
-      return "Hoạt động";
+      return <Badge className="border border-success/20 bg-success/10 text-success">Hoạt động</Badge>;
     case "PendingVerification":
-      return "Chờ xác minh";
+      return <Badge className="border border-warning/20 bg-warning/10 text-warning">Chờ xác minh</Badge>;
     case "Suspended":
-      return "Tạm khóa";
+      return <Badge className="border border-warning/20 bg-warning/10 text-warning">Tạm khóa</Badge>;
     case "Disabled":
-      return "Vô hiệu hóa";
+      return (
+        <Badge className="border border-destructive/20 bg-destructive/10 text-destructive">
+          Vô hiệu hóa
+        </Badge>
+      );
     case "Invited":
-      return "Đã mời";
+      return <Badge className="border border-primary/20 bg-primary/10 text-primary">Đã mời</Badge>;
   }
 }
 
@@ -80,9 +84,9 @@ function DetailField({
   children: React.ReactNode;
 }) {
   return (
-    <div className="space-y-1">
+    <div className="rounded-xl border border-border bg-card p-3">
       <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
-      <div className="text-sm text-foreground">{children}</div>
+      <div className="mt-1 text-sm font-medium text-foreground">{children}</div>
     </div>
   );
 }
@@ -97,11 +101,18 @@ export function AccountDetailDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>Chi tiết tài khoản</DialogTitle>
-          <DialogDescription>
-            Thông tin mới nhất từ Management Accounts API.
-          </DialogDescription>
+        <DialogHeader className="gap-3">
+          <div className="flex items-start gap-3">
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
+              <UserRound className="size-5" />
+            </span>
+            <div className="min-w-0 space-y-1">
+              <DialogTitle>Chi tiết tài khoản</DialogTitle>
+              <DialogDescription>
+                Thông tin mới nhất từ Management Accounts API.
+              </DialogDescription>
+            </div>
+          </div>
         </DialogHeader>
 
         {isLoading ? (
@@ -119,36 +130,54 @@ export function AccountDetailDialog({
             <p className="text-sm text-destructive">{errorMessage}</p>
           </div>
         ) : account ? (
-          <div className="grid gap-5 py-2 sm:grid-cols-2">
-            <DetailField label="Họ tên">
-              {account.fullName?.trim() || "Chưa cập nhật"}
-            </DetailField>
-            <DetailField label="Username">
-              <span className="tabular-nums">{account.userName || "Chưa cập nhật"}</span>
-            </DetailField>
-            <DetailField label="Email">{account.email || "Chưa cập nhật"}</DetailField>
-            <DetailField label="Trạng thái">
-              <Badge variant="outline">{getStatusLabel(account.status)}</Badge>
-            </DetailField>
-            <DetailField label="Phương thức đăng nhập">
+          <div className="space-y-4 py-1">
+            <div className="rounded-xl border border-border bg-muted/15 p-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0 space-y-1">
+                  <p className="truncate text-base font-semibold text-foreground">
+                    {account.fullName?.trim() || account.userName || "Chưa cập nhật"}
+                  </p>
+                  <p className="truncate text-sm text-muted-foreground">{account.email || "Chưa cập nhật"}</p>
+                </div>
+                <StatusBadge status={account.status} />
+              </div>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <DetailField label="Username">
+                <span className="tabular-nums">{account.userName || "Chưa cập nhật"}</span>
+              </DetailField>
+              <DetailField label="ID">
+                <span className="break-all font-mono text-xs tabular-nums">{account.id}</span>
+              </DetailField>
+            </div>
+
+            <div className="rounded-xl border border-border bg-card p-4">
+              <div className="mb-3 flex items-center gap-2">
+                <span className="flex size-8 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary">
+                  <IdCard className="size-4" />
+                </span>
+                <p className="text-sm font-semibold text-foreground">Phương thức đăng nhập</p>
+              </div>
               <div className="flex flex-wrap gap-2">
-                <Badge variant="outline" className="gap-1">
+                <Badge variant="outline" className="gap-1 border-primary/20 bg-primary/10 text-primary">
                   <KeyRound className="size-3" />
                   Mật khẩu: {account.localLoginEnabled ? "Bật" : "Tắt"}
                 </Badge>
-                <Badge variant="outline" className="gap-1">
+                <Badge variant="outline" className="gap-1 border-primary/20 bg-primary/10 text-primary">
                   <Mail className="size-3" />
                   Google: {account.googleLoginEnabled ? "Bật" : "Tắt"}
                 </Badge>
               </div>
-            </DetailField>
-            <DetailField label="ID">
-              <span className="break-all tabular-nums text-xs">{account.id}</span>
-            </DetailField>
-            <div className="space-y-2 sm:col-span-2">
-              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Vai trò và phạm vi
-              </p>
+            </div>
+
+            <div className="rounded-xl border border-border bg-card p-4">
+              <div className="mb-3 flex items-center gap-2">
+                <span className="flex size-8 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary">
+                  <ShieldCheck className="size-4" />
+                </span>
+                <p className="text-sm font-semibold text-foreground">Vai trò và phạm vi</p>
+              </div>
               {account.roles.length === 0 ? (
                 <p className="text-sm text-muted-foreground">Chưa gán vai trò.</p>
               ) : (
@@ -156,13 +185,13 @@ export function AccountDetailDialog({
                   {account.roles.map((role, index) => (
                     <div
                       key={`${role.roleCode}-${role.organizationId ?? ""}-${role.storeId ?? ""}-${role.kioskId ?? ""}-${index}`}
-                      className="flex flex-col gap-1 rounded-lg border border-border bg-muted/30 p-3 sm:flex-row sm:items-center sm:justify-between"
+                      className="flex flex-col gap-2 rounded-lg border border-border bg-muted/15 p-3 sm:flex-row sm:items-center sm:justify-between"
                     >
-                      <Badge className="w-fit gap-1 border-0 bg-primary/10 text-primary">
+                      <Badge className="w-fit gap-1 border border-primary/20 bg-primary/10 text-primary">
                         <ShieldCheck className="size-3" />
                         {ROLE_LABELS[role.roleCode] ?? role.roleCode}
                       </Badge>
-                      <span className="break-all tabular-nums text-xs text-muted-foreground">
+                      <span className="break-all text-xs text-muted-foreground sm:text-right">
                         {getScopeLabel(role)}
                       </span>
                     </div>
@@ -173,7 +202,7 @@ export function AccountDetailDialog({
           </div>
         ) : null}
 
-        <DialogFooter showCloseButton />
+        <DialogFooter className="bg-background" showCloseButton />
       </DialogContent>
     </Dialog>
   );

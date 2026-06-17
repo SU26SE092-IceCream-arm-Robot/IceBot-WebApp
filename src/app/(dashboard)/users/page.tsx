@@ -69,7 +69,7 @@ function AccountsLoadingTable() {
   );
 }
 
-type StatTone = "primary" | "success" | "muted";
+type StatTone = "primary" | "success" | "warning";
 
 const STAT_TONES: Record<StatTone, { iconClassName: string; valueClassName: string }> = {
   primary: {
@@ -80,8 +80,8 @@ const STAT_TONES: Record<StatTone, { iconClassName: string; valueClassName: stri
     iconClassName: "bg-success/10 text-success",
     valueClassName: "text-success",
   },
-  muted: {
-    iconClassName: "bg-muted text-muted-foreground",
+  warning: {
+    iconClassName: "bg-warning/10 text-warning",
     valueClassName: "text-foreground",
   },
 };
@@ -102,15 +102,15 @@ function StatCard({
   const toneClasses = STAT_TONES[tone];
 
   return (
-    <Card className="rounded-xl border border-border bg-card shadow-none hover:border-primary/20">
-      <CardContent className="p-4">
-        <div className="mb-3 flex items-center justify-between">
-          <p className="text-xs font-medium text-muted-foreground">{label}</p>
-          <span className={`flex size-8 items-center justify-center rounded-lg ${toneClasses.iconClassName}`}>
-            <Icon className="size-4" />
+    <Card className="rounded-xl border border-border/80 bg-card shadow-none">
+      <CardContent className="p-5">
+        <div className="mb-3 flex items-center justify-between gap-4">
+          <p className="text-sm font-medium text-muted-foreground">{label}</p>
+          <span className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${toneClasses.iconClassName}`}>
+            <Icon className="size-5" />
           </span>
         </div>
-        <p className={`tabular-nums text-3xl font-bold tracking-tight ${toneClasses.valueClassName}`}>
+        <p className={`tabular-nums text-3xl font-semibold tracking-tight ${toneClasses.valueClassName}`}>
           {value}
         </p>
         <p className="mt-1 text-xs text-muted-foreground">{supportingText}</p>
@@ -195,20 +195,20 @@ export default function UsersPage() {
         </div>
       ) : null}
 
-      <section className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div className="max-w-2xl space-y-3">
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Quản lý tài khoản</h1>
-          <p className="text-sm text-muted-foreground">
+      <section className="flex flex-col gap-4 border-b border-border pb-6 lg:flex-row lg:items-end lg:justify-between">
+        <div className="max-w-2xl space-y-2">
+          <h1 className="text-3xl font-semibold tracking-tight text-foreground">Quản lý tài khoản</h1>
+          <p className="text-sm leading-6 text-muted-foreground">
             Theo dõi tài khoản nội bộ và phạm vi vai trò được cấp trong hệ thống IceBot.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" size="sm" onClick={() => void refresh()} isLoading={isLoading}>
+          <Button variant="outline" className="h-10" onClick={() => void refresh()} isLoading={isLoading}>
             <RefreshCw className="size-4" />
             Làm mới
           </Button>
           {canManageAccounts ? (
-            <Button size="sm" onClick={() => setCreateOpen(true)}>
+            <Button className="h-10" onClick={() => setCreateOpen(true)}>
               <UserPlus className="size-4" />
               Tạo tài khoản
             </Button>
@@ -216,7 +216,7 @@ export default function UsersPage() {
         </div>
       </section>
 
-      <section className="grid gap-3 sm:grid-cols-3">
+      <section className="grid gap-4 sm:grid-cols-3">
         <StatCard
           icon={UsersRound}
           label="Tổng tài khoản"
@@ -236,15 +236,15 @@ export default function UsersPage() {
           label="Role scope hiển thị"
           value={roleCount}
           supportingText="Phân quyền trên trang hiện tại"
-          tone="muted"
+          tone="warning"
         />
       </section>
 
       <Card className="rounded-xl border border-border bg-card shadow-none">
         <CardHeader className="border-b border-border pb-4">
           <div className="flex items-start gap-3">
-            <span className="mt-0.5 flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <UsersRound className="size-4" />
+            <span className="mt-0.5 flex size-10 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
+              <UsersRound className="size-5" />
             </span>
             <div>
               <CardTitle className="text-base">Danh sách tài khoản nội bộ</CardTitle>
@@ -263,7 +263,7 @@ export default function UsersPage() {
               value={query.searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
               placeholder="Tìm tên, username hoặc email..."
-              className="h-8 pl-8 text-sm"
+              className="h-9 bg-card pl-9 text-sm"
               />
             </div>
             <Select
@@ -274,8 +274,11 @@ export default function UsersPage() {
                 }
               }}
             >
-              <SelectTrigger className="h-8 w-full text-xs">
-                <SelectValue placeholder="Lọc trạng thái" />
+              <SelectTrigger className="h-9 w-full bg-card">
+                <SelectValue>
+                  {STATUS_OPTIONS.find((option) => option.value === query.status)?.label ??
+                    "Tất cả trạng thái"}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {STATUS_OPTIONS.map((option) => (
@@ -285,7 +288,7 @@ export default function UsersPage() {
                 ))}
               </SelectContent>
             </Select>
-            <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={clearFilters}>
+            <Button variant="outline" size="sm" className="h-9" onClick={clearFilters}>
               Xóa lọc
             </Button>
           </div>
@@ -309,7 +312,7 @@ export default function UsersPage() {
             </div>
           ) : accounts.length === 0 ? (
             <div className="flex flex-col items-center gap-3 p-10 text-center">
-              <span className="flex size-12 items-center justify-center rounded-xl bg-muted text-muted-foreground">
+              <span className="flex size-12 items-center justify-center rounded-xl border border-border bg-muted/20 text-muted-foreground">
                 <UsersRound className="size-5" />
               </span>
               <p className="text-sm font-medium text-foreground">Không có tài khoản phù hợp</p>

@@ -95,7 +95,7 @@ function MenuStatusBadge({ status }: { status: MenuStatus }) {
       );
     case "Archived":
       return (
-        <Badge className="border-0 bg-muted text-muted-foreground">
+        <Badge className="border border-border bg-muted/20 text-muted-foreground">
           {getMenuStatusLabel(status)}
         </Badge>
       );
@@ -106,8 +106,8 @@ function ItemBadge({ name, status }: { name: string; status: MenuItemStatus }) {
   const statusClassName = {
     Active: "border-0 bg-success/10 text-success",
     Draft: "border-0 bg-warning/10 text-warning",
-    Unavailable: "border-0 bg-muted text-muted-foreground",
-    Archived: "border-0 bg-muted text-muted-foreground",
+    Unavailable: "border border-border bg-muted/20 text-muted-foreground",
+    Archived: "border border-border bg-muted/20 text-muted-foreground",
   }[status];
 
   return (
@@ -254,7 +254,7 @@ export function ProductsTable({
           <TableRow key={product.id}>
             <TableCell className="px-5">
               <div className="flex items-start gap-3">
-                <span className="mt-0.5 flex size-8 items-center justify-center rounded-lg bg-secondary text-secondary-foreground">
+                <span className="mt-0.5 flex size-9 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
                   <Package2 className="size-4" />
                 </span>
                 <div className="space-y-1">
@@ -269,7 +269,7 @@ export function ProductsTable({
               {product.isAvailable ? (
                 <Badge className="border-0 bg-success/10 text-success">Đang bán</Badge>
               ) : (
-                <Badge className="border-0 bg-muted text-muted-foreground">Ngừng bán</Badge>
+                <Badge className="border border-border bg-muted/20 text-muted-foreground">Ngừng bán</Badge>
               )}
             </TableCell>
             <TableCell>
@@ -286,7 +286,7 @@ export function ProductsTable({
                       className={
                         variant.isAvailable
                           ? "border-0 bg-success/10 text-success"
-                          : "border-0 bg-muted text-muted-foreground"
+                          : "border border-border bg-muted/20 text-muted-foreground"
                       }
                     >
                       {variant.displayName?.trim() || variant.name}
@@ -339,7 +339,7 @@ export function ProductsTable({
 export function CatalogEmptyMarker({ label }: { label: string }) {
   return (
     <div className="flex flex-col items-center gap-3 px-5 py-10 text-center">
-      <span className="flex size-12 items-center justify-center rounded-xl bg-muted text-muted-foreground">
+      <span className="flex size-12 items-center justify-center rounded-xl border border-border bg-muted/20 text-muted-foreground">
         <Layers3 className="size-5" />
       </span>
       <p className="text-sm font-medium text-foreground">Không có {label} phù hợp</p>

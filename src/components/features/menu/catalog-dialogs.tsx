@@ -186,7 +186,7 @@ function AvailabilityBadge({ isAvailable }: { isAvailable: boolean }) {
   return isAvailable ? (
     <Badge className="border-0 bg-success/10 text-success">Đang bán</Badge>
   ) : (
-    <Badge className="border-0 bg-muted text-muted-foreground">Ngừng bán</Badge>
+    <Badge className="border border-border bg-muted/20 text-muted-foreground">Ngừng bán</Badge>
   );
 }
 

@@ -62,7 +62,7 @@ const STAT_TONES: Record<StatTone, string> = {
   primary: "border-primary/20 bg-primary/10 text-primary",
   success: "border-success/20 bg-success/10 text-success",
   warning: "border-warning/20 bg-warning/10 text-warning",
-  muted: "border-border bg-muted text-muted-foreground",
+  muted: "border-border bg-muted/20 text-muted-foreground",
 };
 
 function StatCard({
@@ -84,9 +84,9 @@ function StatCard({
         <div className="flex items-center justify-between gap-4">
           <p className="text-sm font-medium text-muted-foreground">{label}</p>
           <span
-            className={`flex size-9 shrink-0 items-center justify-center rounded-xl border ${STAT_TONES[tone]}`}
+            className={`flex size-10 shrink-0 items-center justify-center rounded-xl border ${STAT_TONES[tone]}`}
           >
-            <Icon className="size-[18px]" strokeWidth={1.8} />
+            <Icon className="size-5" strokeWidth={1.8} />
           </span>
         </div>
         <p className="mt-3 text-3xl font-semibold leading-none tracking-tight tabular-nums text-foreground">
@@ -158,7 +158,7 @@ function EmptyState({
 }) {
   return (
     <div className="flex flex-col items-center gap-3 px-6 py-12 text-center">
-      <span className="flex size-12 items-center justify-center rounded-xl bg-muted text-muted-foreground">
+      <span className="flex size-12 items-center justify-center rounded-xl border border-border bg-muted/20 text-muted-foreground">
         <Warehouse className="size-5" />
       </span>
       <div className="space-y-1">
@@ -258,21 +258,20 @@ export default function InventoryPage() {
   const isRefreshing = dispensers.isLoading || movements.isLoading;
 
   return (
-    <div className="space-y-5">
-      <section className="flex flex-col gap-4 border-b border-border/80 pb-4 lg:flex-row lg:items-center lg:justify-between">
-        <div className="max-w-2xl space-y-1.5">
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+    <div className="space-y-7">
+      <section className="flex flex-col gap-4 border-b border-border pb-6 lg:flex-row lg:items-end lg:justify-between">
+        <div className="max-w-2xl space-y-2">
+          <h1 className="text-3xl font-semibold tracking-tight text-foreground">
             Quản lý tồn kho
           </h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm leading-6 text-muted-foreground">
             Theo dõi lượng nguyên liệu trong từng bộ phân phối và lịch sử biến
             động theo phạm vi được cấp.
           </p>
         </div>
         <Button
           variant="outline"
-          size="sm"
-          className="h-9 w-fit"
+          className="h-10 w-fit"
           isLoading={isRefreshing}
           onClick={() => void refresh()}
         >
@@ -288,7 +287,7 @@ export default function InventoryPage() {
         </div>
       ) : null}
 
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           icon={Boxes}
           label="Tổng bộ phân phối"
@@ -322,8 +321,8 @@ export default function InventoryPage() {
       <Card className="gap-0 rounded-xl border border-border/80 bg-card py-0 shadow-none">
         <CardHeader className="border-b border-border px-4 py-4">
           <div className="flex items-start gap-3">
-            <span className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
-              <SlidersHorizontal className="size-[18px]" />
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
+              <SlidersHorizontal className="size-5" />
             </span>
             <div className="space-y-0.5">
               <CardTitle className="text-base font-semibold">
@@ -435,8 +434,8 @@ export default function InventoryPage() {
         <CardHeader className="border-b border-border px-4 py-4">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
-              <span className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
-                <Warehouse className="size-[18px]" />
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
+                <Warehouse className="size-5" />
               </span>
               <div className="space-y-0.5">
                 <CardTitle className="text-base font-semibold">
@@ -498,8 +497,8 @@ export default function InventoryPage() {
       <Card className="gap-0 rounded-xl border border-border/80 bg-card py-0 shadow-none">
         <CardHeader className="border-b border-border px-4 py-4">
           <div className="flex items-center gap-3">
-            <span className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-warning/20 bg-warning/10 text-warning">
-              <RefreshCw className="size-[18px]" />
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-warning/20 bg-warning/10 text-warning">
+              <RefreshCw className="size-5" />
             </span>
             <div className="space-y-0.5">
               <CardTitle className="text-base font-semibold">

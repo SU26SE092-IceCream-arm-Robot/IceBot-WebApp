@@ -1,11 +1,14 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
   BarChart3,
+  Bell,
   ChevronLeft,
   ChevronRight,
   IceCream,
+  LogOut,
   Monitor,
   Package,
   ShoppingCart,
@@ -16,7 +19,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { getVisibleRoutes } from "@/lib/rbac";
-import type { DashboardRole, DashboardRoutePath } from "@/types";
+import type { DashboardRoutePath, DashboardUser } from "@/types";
 
 interface SidebarItem {
   href: DashboardRoutePath;
@@ -35,36 +38,75 @@ const SIDEBAR_ITEMS: readonly SidebarItem[] = [
 ];
 
 interface AppSidebarProps {
-  role: DashboardRole;
+  currentUser: DashboardUser;
   collapsed: boolean;
   onToggleCollapsed: () => void;
+  onLogout: () => Promise<void>;
 }
 
-export function AppSidebar({ role, collapsed, onToggleCollapsed }: AppSidebarProps) {
+const ROLE_LABELS = {
+  ADMIN: "System Admin",
+  MANAGER: "Manager",
+  LOCATION_OWNER: "Location Owner",
+} as const;
+
+export function AppSidebar({
+  currentUser,
+  collapsed,
+  onToggleCollapsed,
+  onLogout,
+}: AppSidebarProps) {
   const pathname = usePathname();
-  const visibleRoutes = new Set(getVisibleRoutes(role));
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const accountAreaRef = useRef<HTMLDivElement>(null);
+  const visibleRoutes = new Set(getVisibleRoutes(currentUser.role));
 
   const visibleItems = SIDEBAR_ITEMS.filter((item) => visibleRoutes.has(item.href));
+
+  useEffect(() => {
+    if (!accountMenuOpen) {
+      return;
+    }
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (
+        accountAreaRef.current &&
+        !accountAreaRef.current.contains(event.target as Node)
+      ) {
+        setAccountMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    return () => document.removeEventListener("pointerdown", handlePointerDown);
+  }, [accountMenuOpen]);
 
   return (
     <aside
       className={`${
         collapsed ? "w-16" : "w-60"
-      } flex shrink-0 flex-col justify-between border-r border-border bg-card transition-all duration-200`}
+      } relative flex shrink-0 flex-col border-r border-border bg-card transition-all duration-300 ease-out`}
     >
-      <div>
-        <div className="flex h-14 items-center gap-3 border-b border-border px-4">
+      <div className="min-w-0 flex-1">
+        <div
+          className={`flex h-14 items-center border-b border-border transition-all duration-300 ease-out ${
+            collapsed ? "justify-center px-2" : "gap-3 px-4"
+          }`}
+        >
           <div className="shrink-0 rounded-lg bg-primary p-1.5 text-primary-foreground">
             <IceCream size={18} />
           </div>
-          {!collapsed && (
-            <div className="overflow-hidden">
-              <span className="text-sm font-bold tracking-tight text-foreground">ICEBOT</span>
-              <span className="block text-[10px] font-medium leading-tight text-muted-foreground">
-                Admin Dashboard
-              </span>
-            </div>
-          )}
+          <div
+            className={`overflow-hidden whitespace-nowrap transition-all duration-200 ease-out ${
+              collapsed ? "w-0 -translate-x-1 opacity-0" : "w-36 translate-x-0 opacity-100"
+            }`}
+            aria-hidden={collapsed}
+          >
+            <span className="text-sm font-bold tracking-tight text-foreground">ICEBOT</span>
+            <span className="block text-[10px] font-medium leading-tight text-muted-foreground">
+              Admin Dashboard
+            </span>
+          </div>
         </div>
 
         <nav className="mt-4 space-y-0.5 px-2">
@@ -77,7 +119,7 @@ export function AppSidebar({ role, collapsed, onToggleCollapsed }: AppSidebarPro
                 key={item.href}
                 href={item.href}
                 title={collapsed ? item.label : undefined}
-                className={`flex w-full items-center gap-3 rounded-md text-sm font-medium transition-colors ${
+                className={`flex w-full items-center gap-3 rounded-md text-sm font-medium transition-all duration-200 ease-out ${
                   collapsed ? "justify-center px-0 py-2.5" : "px-3 py-2"
                 } ${
                   isActive
@@ -86,23 +128,105 @@ export function AppSidebar({ role, collapsed, onToggleCollapsed }: AppSidebarPro
                 }`}
               >
                 <Icon size={18} className="shrink-0" />
-                {!collapsed && <span>{item.label}</span>}
+                <span
+                  className={`overflow-hidden whitespace-nowrap transition-all duration-200 ease-out ${
+                    collapsed ? "w-0 opacity-0" : "w-auto opacity-100"
+                  }`}
+                >
+                  {item.label}
+                </span>
               </Link>
             );
           })}
         </nav>
       </div>
 
-      <div className="border-t border-border p-2">
+      <div
+        ref={accountAreaRef}
+        className={`relative border-t border-border p-2 ${
+          collapsed ? "space-y-2" : "flex items-center gap-2"
+        }`}
+      >
+        {accountMenuOpen ? (
+          <div
+            className={`absolute z-30 rounded-xl border border-border bg-card p-2 shadow-md animate-in fade-in-0 zoom-in-95 slide-in-from-bottom-2 duration-150 ${
+              collapsed
+                ? "bottom-2 left-full ml-3 w-64"
+                : "right-2 bottom-full mb-2 left-2"
+            }`}
+          >
+            <div className="space-y-1 px-2 py-2">
+              <p className="truncate text-sm font-semibold text-foreground">
+                {currentUser.name}
+              </p>
+              <p className="truncate text-xs text-muted-foreground">
+                {currentUser.email}
+              </p>
+              <p className="text-xs font-medium text-primary">
+                {ROLE_LABELS[currentUser.role]}
+              </p>
+            </div>
+            <div className="my-1 h-px bg-border" />
+            <button
+              type="button"
+              onClick={() => void onLogout()}
+              className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-sm text-destructive transition-colors hover:bg-destructive/10"
+            >
+              <LogOut className="size-4" />
+              Đăng xuất
+            </button>
+          </div>
+        ) : null}
+
         <button
           type="button"
-          onClick={onToggleCollapsed}
-          className="flex w-full items-center justify-center rounded-md p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-          title={collapsed ? "Mở rộng sidebar" : "Thu gọn sidebar"}
+          className={`relative flex shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground ${
+            collapsed ? "mx-auto size-9" : "size-9"
+          }`}
+          title="Thông báo"
+          aria-label="Thông báo"
         >
-          {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+          <Bell className="size-4" />
+          <span className="absolute top-2 right-2 size-1.5 rounded-full bg-destructive" />
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setAccountMenuOpen((open) => !open)}
+          className={`flex min-w-0 items-center rounded-lg text-left transition-colors hover:bg-accent ${
+            collapsed ? "mx-auto size-9 justify-center" : "flex-1 gap-2.5 px-2 py-1.5"
+          }`}
+          aria-expanded={accountMenuOpen}
+          aria-haspopup="menu"
+          title={collapsed ? currentUser.name : undefined}
+        >
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-xs font-bold text-primary">
+            {currentUser.avatarInitials}
+          </span>
+          <span
+            className={`min-w-0 overflow-hidden transition-all duration-200 ease-out ${
+              collapsed ? "w-0 opacity-0" : "flex-1 opacity-100"
+            }`}
+          >
+            <span className="block truncate text-sm font-medium text-foreground">
+              {currentUser.name}
+            </span>
+            <span className="block truncate text-[11px] text-muted-foreground">
+              {ROLE_LABELS[currentUser.role]}
+            </span>
+          </span>
         </button>
       </div>
+
+      <button
+        type="button"
+        onClick={onToggleCollapsed}
+        className="absolute top-7 right-0 z-10 flex size-7 translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-card text-muted-foreground shadow-sm transition-all duration-200 ease-out hover:border-primary/30 hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+        title={collapsed ? "Mở rộng sidebar" : "Thu gọn sidebar"}
+        aria-label={collapsed ? "Mở rộng sidebar" : "Thu gọn sidebar"}
+      >
+        {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+      </button>
     </aside>
   );
 }

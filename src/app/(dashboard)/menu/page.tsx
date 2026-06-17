@@ -88,15 +88,15 @@ function StatCard({
   const toneClasses = STAT_TONES[tone];
 
   return (
-    <Card className="rounded-xl border border-border bg-card shadow-none hover:border-primary/20">
-      <CardContent className="p-4">
-        <div className="mb-3 flex items-center justify-between">
-          <p className="text-xs font-medium text-muted-foreground">{label}</p>
-          <span className={`flex size-8 items-center justify-center rounded-lg ${toneClasses.iconClassName}`}>
-            <Icon className="size-4" />
+    <Card className="rounded-xl border border-border/80 bg-card shadow-none">
+      <CardContent className="p-5">
+        <div className="mb-3 flex items-center justify-between gap-4">
+          <p className="text-sm font-medium text-muted-foreground">{label}</p>
+          <span className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${toneClasses.iconClassName}`}>
+            <Icon className="size-5" />
           </span>
         </div>
-        <p className={`tabular-nums text-3xl font-bold tracking-tight ${toneClasses.valueClassName}`}>
+        <p className={`tabular-nums text-3xl font-semibold tracking-tight ${toneClasses.valueClassName}`}>
           {value}
         </p>
         <p className="mt-1 text-xs text-muted-foreground">{supportingText}</p>
@@ -340,16 +340,16 @@ export default function MenuPage() {
         </div>
       ) : null}
 
-      <section className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div className="max-w-2xl space-y-3">
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Thực đơn</h1>
-          <p className="text-sm text-muted-foreground">
+      <section className="flex flex-col gap-4 border-b border-border pb-6 lg:flex-row lg:items-end lg:justify-between">
+        <div className="max-w-2xl space-y-2">
+          <h1 className="text-3xl font-semibold tracking-tight text-foreground">Thực đơn</h1>
+          <p className="text-sm leading-6 text-muted-foreground">
             Theo dõi danh mục sản phẩm và các thực đơn đang phân phối tới kênh bán của IceBot.
           </p>
         </div>
         <Button
           variant="outline"
-          size="sm"
+          className="h-10"
           onClick={() => void refresh()}
           isLoading={menus.isLoading || products.isLoading}
         >
@@ -358,7 +358,7 @@ export default function MenuPage() {
         </Button>
       </section>
 
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           icon={Layers3}
           label="Tổng thực đơn"
@@ -397,10 +397,10 @@ export default function MenuPage() {
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
               placeholder="Tìm theo tên hoặc mã sản phẩm / thực đơn..."
-              className="h-8 pl-8 text-sm"
+              className="h-9 bg-card pl-9 text-sm"
             />
           </div>
-          <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={clearSearch}>
+          <Button variant="outline" size="sm" className="h-9" onClick={clearSearch}>
             Xóa tìm kiếm
           </Button>
         </CardContent>
