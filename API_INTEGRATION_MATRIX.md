@@ -1,6 +1,6 @@
 # API Integration Matrix - IceBot Admin Dashboard
 
-Audit date: 2026-06-09
+Audit date: 2026-06-17
 
 ## Verified Backend Conventions
 
@@ -164,6 +164,30 @@ These values must not be cast directly to the current Fleet status model `ONLINE
 
 Although backend Kiosk policies include `Technician`, frontend `Technician` remains forbidden from the main Admin Dashboard by product decision.
 
+## Inventory Management
+
+The Inventory route is read-only in the current frontend. It shows dispenser states and stock movement history; refill/adjust/write actions remain deferred.
+
+| Endpoint | Method | Policy | Request shape | Response shape | Integration status | Note |
+| --- | --- | --- | --- | --- | --- | --- |
+| `/api/v1/management/inventory/dispenser-states?organizationId&storeId&kioskId&pageNumber&pageSize` | `GET` | Inventory management/view policy | Optional scope filters and pagination | `PagedResult<DispenserStateResult>` | `integrated` | Powers `/inventory` overview/list with loading/error/empty states and client-side filter presentation where needed. |
+| `/api/v1/management/inventory/stock-movements?organizationId&storeId&kioskId&pageNumber&pageSize` | `GET` | Inventory management/view policy | Optional scope filters and pagination | `PagedResult<StockMovementResult>` | `integrated` | Powers recent inventory movement panel. |
+
+## Order And Refund Management
+
+The Transactions route uses management APIs only. Customer checkout/payment/webhook APIs remain explicitly out of scope.
+
+| Endpoint | Method | Policy | Request shape | Response shape | Integration status | Note |
+| --- | --- | --- | --- | --- | --- | --- |
+| `/api/v1/management/orders?search&status&paymentStatus&organizationId&storeId&kioskId&pageNumber&pageSize` | `GET` | Order management/view policy | Query filters and pagination | `PagedResult<OrderResult>` | `integrated` | Powers `/transactions` order list, summary, filtering, pagination, loading/error/empty states. |
+| `/api/v1/management/orders/{orderId}` | `GET` | Order management/view policy | Path GUID | `ApiResult<OrderResult>` | `integrated` | Powers order detail dialog. |
+| `/api/v1/management/orders/{orderId}/status-history?pageNumber&pageSize` | `GET` | Order management/view policy | Path GUID plus pagination | `PagedResult<OrderStatusHistoryResult>` | `integrated` | Powers order status timeline in detail dialog. |
+| `/api/v1/management/orders/{orderId}/cancel` | `PATCH` | Order management policy | `{ reason?: string | null }` | `ApiResult<OrderResult>` | `integrated` | Admin/Manager UI exposes guarded cancellation for eligible orders with confirmation. |
+| `/api/v1/management/orders/{orderId}/refund-required` | `PATCH` | Order management policy | `{ reason?: string | null }` | `ApiResult<OrderResult>` | `integrated` | Admin/Manager UI exposes guarded refund-required marking for eligible paid orders. |
+| `/api/v1/management/refunds?search&status&organizationId&storeId&kioskId&pageNumber&pageSize` | `GET` | Refund management/view policy | Query filters and pagination | `PagedResult<RefundResult>` | `integrated` | Powers `/transactions` refund tab, summary, filtering, pagination, loading/error/empty states. |
+| `/api/v1/management/refunds/{refundId}` | `GET` | Refund management/view policy | Path GUID | `ApiResult<RefundResult>` | `integrated` | Powers refund detail dialog. |
+| Refund write actions | `PATCH/POST` | Refund management policy | Backend-specific request DTOs | Backend-specific result DTOs | `ready-to-integrate` | Processing/rejecting/cancelling refunds is intentionally deferred pending product approval. |
+
 ## Payment Methods And Customer Runtime Surface
 
 | API group | Endpoint | Method | Auth/policy | Response | Integration status | Note |
@@ -186,10 +210,10 @@ Although backend Kiosk policies include `Technician`, frontend `Technician` rema
 | `/menu` | Product/Menu lists and details; product/variant availability; menu/item status | Matching Product and Menu APIs | `integrated` | Keep create/edit/delete deferred. |
 | `/kiosks` | Real metadata with explicit mock telemetry fallback/adapter | Real Kiosk and Store metadata list; no telemetry | `partial-integration` | Metadata is integrated; preserve mock telemetry until a backend contract exists. |
 | `/kiosks/[id]` | Real metadata with mock hardware/history/control presentation | Real Kiosk and Store detail metadata; no hardware/history/control API | `partial-integration` | Metadata is integrated; UI does not claim backend control support. |
-| `/inventory` | Placeholder/mock-first | No management API | `backend-missing` | Wait for backend contract. |
+| `/inventory` | Read-only dispenser states and stock movements | Matching Inventory management APIs | `integrated` | Write actions such as refill/adjust remain deferred. |
 | `/maintenance` | Placeholder/mock-first | No management API | `backend-missing` | Wait for backend contract. |
 | `/reports` | Placeholder/mock-first | No management API | `backend-missing` | Wait for backend contract. |
-| `/transactions` | Placeholder/mock-first | No management transaction/reconciliation/refund API | `backend-missing` | Customer order APIs are not substitutes. |
+| `/transactions` | Orders list/detail/status history/actions and refunds read-only | Matching Orders and Refunds management APIs | `integrated` | Refund write actions remain deferred. |
 
 ## Verified Risks And Open Decisions
 
@@ -199,6 +223,7 @@ Although backend Kiosk policies include `Technician`, frontend `Technician` rema
 - Organization management has no approved frontend route in the current TP1 plan.
 - Store/Kiosk write actions need product approval before UI implementation.
 - Payment Methods have a valid backend contract but no approved dashboard route placement.
+- Refund write actions exist as backend/product possibilities but are not exposed by the current read-only refund UI.
 - Authentication examples in some backend documentation may use historical paths; frontend must follow current controller routes.
 - Customer/runtime/order/webhook APIs must remain outside Admin Dashboard management modules.
 
@@ -220,4 +245,5 @@ Although backend Kiosk policies include `Technician`, frontend `Technician` rema
 
 - Implement Organization/Store/Kiosk write UIs only after product approval.
 - Decide where Payment Methods configuration belongs.
-- Wait for management APIs for Inventory, Maintenance, Reports, and Transactions.
+- Decide whether refund processing/rejection/cancellation belongs in `/transactions`.
+- Wait for management APIs or approved contracts for Maintenance and Reports.
