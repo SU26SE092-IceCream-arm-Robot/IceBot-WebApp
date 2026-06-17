@@ -188,6 +188,21 @@ The Transactions route uses management APIs only. Customer checkout/payment/webh
 | `/api/v1/management/refunds/{refundId}` | `GET` | Refund management/view policy | Path GUID | `ApiResult<RefundResult>` | `integrated` | Powers refund detail dialog. |
 | Refund write actions | `PATCH/POST` | Refund management policy | Backend-specific request DTOs | Backend-specific result DTOs | `ready-to-integrate` | Processing/rejecting/cancelling refunds is intentionally deferred pending product approval. |
 
+## Maintenance Ticket Management
+
+The Maintenance route is read-only in the current frontend. It lists and displays ticket details from backend maintenance tickets; lifecycle actions remain deferred.
+
+| Endpoint | Method | Policy | Request shape | Response shape | Integration status | Note |
+| --- | --- | --- | --- | --- | --- | --- |
+| `/api/v1/management/maintenance-tickets?status&priority&organizationId&storeId&kioskId&assignedToAccountId&createdByAccountId&fromDate&toDate&pageNumber&pageSize` | `GET` | `maintenance.view`: `SystemAdmin`, `OrgAdmin`, `Manager`, `Staff`, `Technician` | Optional filters and pagination | `PagedResult<MaintenanceTicketResult>` | `integrated` | Powers `/maintenance` list, summary, backend status/priority filters, pagination, loading/error/empty states. Dashboard route still excludes Staff/Technician by frontend role policy. |
+| `/api/v1/management/maintenance-tickets/{id}` | `GET` | `maintenance.view` | Path GUID | `ApiResult<MaintenanceTicketResult>` | `integrated` | Powers read-only ticket detail dialog. |
+| `/api/v1/management/maintenance-tickets` | `POST` | `maintenance.create` | `CreateMaintenanceTicketRequest` | `ApiResult<MaintenanceTicketResult>` | `ready-to-integrate` | Create UI is intentionally deferred. |
+| `/api/v1/management/maintenance-tickets/{id}` | `PUT` | `maintenance.manage` | `UpdateMaintenanceTicketRequest` | `ApiResult<MaintenanceTicketResult>` | `ready-to-integrate` | Edit UI is intentionally deferred. |
+| `/api/v1/management/maintenance-tickets/{id}/assign` | `PATCH` | `maintenance.manage` | Assignment request DTO | `ApiResult<MaintenanceTicketResult>` | `ready-to-integrate` | Assignment workflow is deferred. |
+| `/api/v1/management/maintenance-tickets/{id}/start` | `PATCH` | `maintenance.manage` | None or lifecycle request DTO | `ApiResult<MaintenanceTicketResult>` | `ready-to-integrate` | Lifecycle action UI is deferred. |
+| `/api/v1/management/maintenance-tickets/{id}/resolve` | `PATCH` | `maintenance.manage` | Resolution request DTO | `ApiResult<MaintenanceTicketResult>` | `ready-to-integrate` | Resolution workflow is deferred. |
+| `/api/v1/management/maintenance-tickets/{id}/close` | `PATCH` | `maintenance.manage` | None or lifecycle request DTO | `ApiResult<MaintenanceTicketResult>` | `ready-to-integrate` | Close workflow is deferred. |
+| `/api/v1/management/maintenance-tickets/{id}/cancel` | `PATCH` | `maintenance.manage` | Cancel request DTO | `ApiResult<MaintenanceTicketResult>` | `ready-to-integrate` | Cancel workflow is deferred. |
 ## Payment Methods And Customer Runtime Surface
 
 | API group | Endpoint | Method | Auth/policy | Response | Integration status | Note |
@@ -246,4 +261,4 @@ The Transactions route uses management APIs only. Customer checkout/payment/webh
 - Implement Organization/Store/Kiosk write UIs only after product approval.
 - Decide where Payment Methods configuration belongs.
 - Decide whether refund processing/rejection/cancellation belongs in `/transactions`.
-- Wait for management APIs or approved contracts for Maintenance and Reports.
+- Wait for management APIs or approved contracts for Reports.
