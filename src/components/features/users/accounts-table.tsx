@@ -121,7 +121,6 @@ export function AccountsTable({
           <TableHead className="text-center">Trạng thái</TableHead>
           <TableHead className="text-center">Vai trò</TableHead>
           <TableHead className="text-center">Đăng nhập</TableHead>
-          <TableHead className="text-center">ID</TableHead>
           <TableHead className="px-5 text-center">Thao tác</TableHead>
         </TableRow>
       </TableHeader>
@@ -159,15 +158,12 @@ export function AccountsTable({
             <TableCell className="text-center">
               <LoginMethods account={account} />
             </TableCell>
-            <TableCell className="text-center">
-              <span className="font-mono tabular-nums text-xs text-muted-foreground">{account.id.slice(0, 8)}</span>
-            </TableCell>
             <TableCell className="px-5">
               <div className="flex items-center justify-center gap-1.5">
                 <Button
                   variant="ghost"
                   size="icon-sm"
-                  className="rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
+                  className="rounded-lg text-muted-foreground hover:bg-muted/35 hover:text-foreground"
                   aria-label={`Xem chi tiết ${account.fullName?.trim() || account.userName}`}
                   title="Xem chi tiết"
                   onClick={() => onViewAccount(account.id)}
@@ -180,7 +176,7 @@ export function AccountsTable({
                       <Button
                         variant="ghost"
                         size="icon-sm"
-                        className="rounded-lg text-primary hover:bg-primary/10 hover:text-primary"
+                        className="rounded-lg text-primary hover:bg-primary/5 hover:text-primary"
                         aria-label={`Tạo lại lời mời cho ${account.fullName?.trim() || account.userName}`}
                         title="Tạo lại lời mời"
                         onClick={() => onRegenerateInvitation(account)}
@@ -191,7 +187,7 @@ export function AccountsTable({
                     <Button
                       variant="ghost"
                       size="icon-sm"
-                      className="rounded-lg text-destructive hover:bg-destructive/10 hover:text-destructive"
+                      className="rounded-lg text-destructive hover:bg-destructive/5 hover:text-destructive"
                       disabled={account.id === currentAccountId || account.status === "Disabled"}
                       aria-label={`Vô hiệu hóa ${account.fullName?.trim() || account.userName}`}
                       title={

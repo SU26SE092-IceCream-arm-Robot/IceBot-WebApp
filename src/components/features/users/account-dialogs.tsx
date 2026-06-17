@@ -76,17 +76,13 @@ function getScopeLabel(role: InternalAccountRoleResult): string {
   return "Toàn hệ thống";
 }
 
-function DetailField({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
+function DetailField({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-border bg-card p-3">
-      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
-      <div className="mt-1 text-sm font-medium text-foreground">{children}</div>
+    <div className="rounded-xl border border-border/80 bg-background p-3.5">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+        {label}
+      </p>
+      <div className="mt-1.5 text-sm font-medium text-foreground">{children}</div>
     </div>
   );
 }
@@ -100,23 +96,21 @@ export function AccountDetailDialog({
 }: AccountDetailDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader className="gap-3">
+      <DialogContent className="overflow-hidden p-0 sm:max-w-xl">
+        <DialogHeader className="border-b border-border bg-gradient-to-br from-primary/10 via-card to-card p-5">
           <div className="flex items-start gap-3">
-            <span className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 text-primary">
               <UserRound className="size-5" />
             </span>
             <div className="min-w-0 space-y-1">
-              <DialogTitle>Chi tiết tài khoản</DialogTitle>
-              <DialogDescription>
-                Thông tin tài khoản nội bộ.
-              </DialogDescription>
+              <DialogTitle className="text-lg">Chi tiết tài khoản</DialogTitle>
+              <DialogDescription>Thông tin định danh, đăng nhập và vai trò.</DialogDescription>
             </div>
           </div>
         </DialogHeader>
 
         {isLoading ? (
-          <div className="space-y-4 py-2">
+          <div className="space-y-4 p-5">
             {Array.from({ length: 5 }).map((_, index) => (
               <div key={`detail-skeleton-${index}`} className="space-y-2">
                 <div className="h-3 w-24 animate-pulse rounded bg-muted" />
@@ -125,19 +119,26 @@ export function AccountDetailDialog({
             ))}
           </div>
         ) : errorMessage ? (
-          <div className="flex gap-3 rounded-lg border border-destructive/30 bg-destructive/5 p-4">
+          <div className="m-5 flex gap-3 rounded-lg border border-destructive/30 bg-destructive/5 p-4">
             <AlertTriangle className="mt-0.5 size-4 shrink-0 text-destructive" />
             <p className="text-sm text-destructive">{errorMessage}</p>
           </div>
         ) : account ? (
-          <div className="space-y-4 py-1">
-            <div className="rounded-xl border border-border bg-muted/15 p-4">
+          <div className="space-y-4 p-5">
+            <div className="rounded-2xl border border-border/80 bg-card p-4">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <div className="min-w-0 space-y-1">
-                  <p className="truncate text-base font-semibold text-foreground">
-                    {account.fullName?.trim() || account.userName || "Chưa cập nhật"}
-                  </p>
-                  <p className="truncate text-sm text-muted-foreground">{account.email || "Chưa cập nhật"}</p>
+                <div className="flex min-w-0 items-center gap-3">
+                  <span className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-sm font-semibold text-primary">
+                    {(account.fullName?.trim() || account.userName || "?").slice(0, 2).toUpperCase()}
+                  </span>
+                  <div className="min-w-0 space-y-1">
+                    <p className="truncate text-base font-semibold text-foreground">
+                      {account.fullName?.trim() || account.userName || "Chưa cập nhật"}
+                    </p>
+                    <p className="truncate text-sm text-muted-foreground">
+                      {account.email || "Chưa cập nhật"}
+                    </p>
+                  </div>
                 </div>
                 <StatusBadge status={account.status} />
               </div>
@@ -147,14 +148,14 @@ export function AccountDetailDialog({
               <DetailField label="Username">
                 <span className="tabular-nums">{account.userName || "Chưa cập nhật"}</span>
               </DetailField>
-              <DetailField label="ID">
-                <span className="break-all font-mono text-xs tabular-nums">{account.id}</span>
+              <DetailField label="Email">
+                <span className="break-all">{account.email || "Chưa cập nhật"}</span>
               </DetailField>
             </div>
 
-            <div className="rounded-xl border border-border bg-card p-4">
+            <div className="rounded-2xl border border-border/80 bg-card p-4">
               <div className="mb-3 flex items-center gap-2">
-                <span className="flex size-8 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary">
+                <span className="flex size-8 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
                   <IdCard className="size-4" />
                 </span>
                 <p className="text-sm font-semibold text-foreground">Phương thức đăng nhập</p>
@@ -171,9 +172,9 @@ export function AccountDetailDialog({
               </div>
             </div>
 
-            <div className="rounded-xl border border-border bg-card p-4">
+            <div className="rounded-2xl border border-border/80 bg-card p-4">
               <div className="mb-3 flex items-center gap-2">
-                <span className="flex size-8 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary">
+                <span className="flex size-8 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
                   <ShieldCheck className="size-4" />
                 </span>
                 <p className="text-sm font-semibold text-foreground">Vai trò và phạm vi</p>
@@ -199,10 +200,21 @@ export function AccountDetailDialog({
                 </div>
               )}
             </div>
+
+            <div className="rounded-xl border border-dashed border-border bg-muted/10 px-3.5 py-3">
+              <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                  Mã kỹ thuật
+                </span>
+                <span className="break-all font-mono text-xs tabular-nums text-muted-foreground">
+                  {account.id}
+                </span>
+              </div>
+            </div>
           </div>
         ) : null}
 
-        <DialogFooter className="bg-background" showCloseButton />
+        <DialogFooter className="mx-0 mb-0 rounded-none bg-background" showCloseButton />
       </DialogContent>
     </Dialog>
   );
