@@ -57,7 +57,7 @@ export function AcceptInvitationForm() {
     try {
       const result = await acceptInvitation({ token, newPassword });
       if (!result.accepted) {
-        setErrorMessage("Backend chưa xác nhận lời mời.");
+        setErrorMessage("Lời mời không được xác nhận. Liên kết có thể đã hết hạn hoặc bị thu hồi.");
         return;
       }
 

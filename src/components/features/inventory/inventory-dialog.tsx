@@ -64,7 +64,7 @@ export function InventoryDetailDialog({
                 {dispenser?.ingredientName ?? "Chi tiết tồn kho"}
               </DialogTitle>
               <DialogDescription>
-                Trạng thái bộ phân phối nguyên liệu từ Inventory Management API.
+                Trạng thái bộ phân phối nguyên liệu.
               </DialogDescription>
             </div>
           </div>

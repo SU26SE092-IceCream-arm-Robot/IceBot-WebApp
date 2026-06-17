@@ -27,7 +27,7 @@ import {
   TransactionsTable,
 } from "@/components/features/transactions/transactions-table";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -109,13 +109,11 @@ const STAT_TONES: Record<StatTone, { iconClassName: string; valueClassName: stri
 function StatCard({
   icon: Icon,
   label,
-  supportingText,
   tone,
   value,
 }: {
   icon: typeof ReceiptText;
   label: string;
-  supportingText: string;
   tone: StatTone;
   value: number;
 }) {
@@ -135,7 +133,6 @@ function StatCard({
         <p className={`tabular-nums text-3xl font-semibold tracking-tight ${toneClasses.valueClassName}`}>
           {value}
         </p>
-        <p className="mt-1 text-xs text-muted-foreground">{supportingText}</p>
       </CardContent>
     </Card>
   );
@@ -263,7 +260,6 @@ export default function TransactionsPage() {
           icon={ReceiptText}
           label={activeTab === "orders" ? "Tổng giao dịch" : "Tổng hoàn tiền"}
           value={activeTab === "orders" ? summary.total : refundsSummary.total}
-          supportingText="Theo kết quả đang lọc"
           tone="primary"
         />
         <StatCard
@@ -274,7 +270,6 @@ export default function TransactionsPage() {
               ? summary.paidOnPage
               : refundsSummary.processedOnPage
           }
-          supportingText="Trong trang dữ liệu hiện tại"
           tone="success"
         />
         <StatCard
@@ -285,7 +280,6 @@ export default function TransactionsPage() {
               ? summary.refundRequiredOnPage
               : refundsSummary.requestedOnPage
           }
-          supportingText="Cần theo dõi thủ công"
           tone="warning"
         />
         <StatCard
@@ -296,7 +290,6 @@ export default function TransactionsPage() {
               ? summary.failedOrCancelledOnPage
               : refundsSummary.failedOrRejectedOnPage
           }
-          supportingText="Trong trang dữ liệu hiện tại"
           tone="destructive"
         />
       </section>
@@ -334,11 +327,6 @@ export default function TransactionsPage() {
             </span>
             <div>
               <CardTitle className="text-base">Danh sách giao dịch</CardTitle>
-              <CardDescription>
-                {activeTab === "orders"
-                  ? "Dữ liệu thật từ Management Orders API."
-                  : "Dữ liệu thật từ Management Refunds API, chỉ hiển thị read-only trong phase này."}
-              </CardDescription>
             </div>
           </div>
         </CardHeader>

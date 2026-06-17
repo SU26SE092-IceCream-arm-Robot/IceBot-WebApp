@@ -37,6 +37,15 @@ const SIDEBAR_ITEMS: readonly SidebarItem[] = [
   { href: "/maintenance", label: "Bảo trì", icon: Wrench },
 ];
 
+const SIDEBAR_GROUPS: readonly {
+  label: string;
+  routes: readonly DashboardRoutePath[];
+}[] = [
+  { label: "Vận hành", routes: ["/kiosks", "/inventory", "/maintenance"] },
+  { label: "Kinh doanh", routes: ["/transactions", "/menu", "/reports"] },
+  { label: "Quản trị", routes: ["/users"] },
+];
+
 interface AppSidebarProps {
   currentUser: DashboardUser;
   collapsed: boolean;
@@ -62,6 +71,13 @@ export function AppSidebar({
   const visibleRoutes = new Set(getVisibleRoutes(currentUser.role));
 
   const visibleItems = SIDEBAR_ITEMS.filter((item) => visibleRoutes.has(item.href));
+  const visibleItemsByRoute = new Map(visibleItems.map((item) => [item.href, item]));
+  const groupedItems = SIDEBAR_GROUPS.map((group) => ({
+    label: group.label,
+    items: group.routes
+      .map((route) => visibleItemsByRoute.get(route))
+      .filter((item): item is SidebarItem => Boolean(item)),
+  })).filter((group) => group.items.length > 0);
 
   useEffect(() => {
     if (!accountMenuOpen) {
@@ -109,35 +125,53 @@ export function AppSidebar({
           </div>
         </div>
 
-        <nav className="mt-4 space-y-0.5 px-2">
-          {visibleItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = pathname === item.href;
-
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                title={collapsed ? item.label : undefined}
-                className={`flex w-full items-center gap-3 rounded-md text-sm font-medium transition-all duration-200 ease-out ${
-                  collapsed ? "justify-center px-0 py-2.5" : "px-3 py-2"
-                } ${
-                  isActive
-                    ? "bg-primary/10 text-primary"
-                    : "text-muted-foreground hover:bg-accent hover:text-foreground"
+        <nav className={`mt-4 px-2 ${collapsed ? "space-y-3" : "space-y-4"}`}>
+          {groupedItems.map((group) => (
+            <div key={group.label} className="space-y-1">
+              <div
+                className={`overflow-hidden px-3 transition-all duration-200 ease-out ${
+                  collapsed ? "h-0 opacity-0" : "h-5 opacity-100"
                 }`}
+                aria-hidden={collapsed}
               >
-                <Icon size={18} className="shrink-0" />
-                <span
-                  className={`overflow-hidden whitespace-nowrap transition-all duration-200 ease-out ${
-                    collapsed ? "w-0 opacity-0" : "w-auto opacity-100"
-                  }`}
-                >
-                  {item.label}
+                <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/70">
+                  {group.label}
                 </span>
-              </Link>
-            );
-          })}
+              </div>
+
+              <div className="space-y-0.5">
+                {group.items.map((item) => {
+                  const Icon = item.icon;
+                  const isActive =
+                    pathname === item.href || pathname.startsWith(`${item.href}/`);
+
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      title={collapsed ? item.label : undefined}
+                      className={`flex w-full items-center gap-3 rounded-md text-sm font-medium transition-all duration-200 ease-out ${
+                        collapsed ? "justify-center px-0 py-2.5" : "px-3 py-2"
+                      } ${
+                        isActive
+                          ? "bg-primary/10 text-primary"
+                          : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                      }`}
+                    >
+                      <Icon size={18} className="shrink-0" />
+                      <span
+                        className={`overflow-hidden whitespace-nowrap transition-all duration-200 ease-out ${
+                          collapsed ? "w-0 opacity-0" : "w-auto opacity-100"
+                        }`}
+                      >
+                        {item.label}
+                      </span>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </nav>
       </div>
 

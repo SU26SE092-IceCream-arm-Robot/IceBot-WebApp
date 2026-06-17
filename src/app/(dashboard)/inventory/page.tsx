@@ -24,7 +24,6 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -69,13 +68,11 @@ function StatCard({
   icon: Icon,
   label,
   value,
-  supportingText,
   tone,
 }: {
   icon: LucideIcon;
   label: string;
   value: number;
-  supportingText: string;
   tone: StatTone;
 }) {
   return (
@@ -91,9 +88,6 @@ function StatCard({
         </div>
         <p className="mt-3 text-3xl font-semibold leading-none tracking-tight tabular-nums text-foreground">
           {value}
-        </p>
-        <p className="mt-1.5 text-xs leading-5 text-muted-foreground">
-          {supportingText}
         </p>
       </CardContent>
     </Card>
@@ -292,28 +286,24 @@ export default function InventoryPage() {
           icon={Boxes}
           label="Tổng bộ phân phối"
           value={summary.total}
-          supportingText="Theo phạm vi và bộ lọc backend"
           tone="primary"
         />
         <StatCard
           icon={TriangleAlert}
-          label="Sắp hết trên trang"
+          label="Sắp hết"
           value={summary.lowOnPage}
-          supportingText="Status Low từ backend"
           tone="warning"
         />
         <StatCard
           icon={PackageCheck}
-          label="Đầy trên trang"
+          label="Đầy"
           value={summary.fullOnPage}
-          supportingText="Status Full từ backend"
           tone="success"
         />
         <StatCard
           icon={CircleHelp}
           label="Chưa xác định"
           value={summary.unknownOnPage}
-          supportingText="Status Unknown trên trang hiện tại"
           tone="muted"
         />
       </section>
@@ -328,10 +318,6 @@ export default function InventoryPage() {
               <CardTitle className="text-base font-semibold">
                 Bộ lọc tồn kho
               </CardTitle>
-              <CardDescription className="text-xs leading-5">
-                Cửa hàng và kiosk lọc tại backend; nguyên liệu và trạng thái lọc
-                trên trang dữ liệu hiện tại.
-              </CardDescription>
             </div>
           </div>
         </CardHeader>
@@ -441,9 +427,6 @@ export default function InventoryPage() {
                 <CardTitle className="text-base font-semibold">
                   Trạng thái nguyên liệu
                 </CardTitle>
-                <CardDescription className="text-xs leading-5">
-                  Dữ liệu thật từ dispenser states, chỉ hiển thị read-only.
-                </CardDescription>
               </div>
             </div>
             <span className="w-fit rounded-full border border-border bg-muted/30 px-2.5 py-1 text-xs text-muted-foreground">
@@ -472,7 +455,7 @@ export default function InventoryPage() {
             description={
               hasClientFilters
                 ? "Thử thay đổi từ khóa hoặc trạng thái đang lọc."
-                : "Database chưa có trạng thái bộ phân phối trong phạm vi hiện tại."
+                : "Chưa có trạng thái bộ phân phối."
             }
           />
         ) : (
@@ -504,9 +487,6 @@ export default function InventoryPage() {
               <CardTitle className="text-base font-semibold">
                 Biến động tồn kho gần đây
               </CardTitle>
-              <CardDescription className="text-xs leading-5">
-                Lịch sử stock movements trong cùng phạm vi cửa hàng và kiosk.
-              </CardDescription>
             </div>
           </div>
         </CardHeader>
@@ -521,7 +501,7 @@ export default function InventoryPage() {
         ) : movements.data.length === 0 ? (
           <EmptyState
             title="Chưa có biến động tồn kho"
-            description="Database chưa ghi nhận stock movement trong phạm vi hiện tại."
+            description="Chưa ghi nhận biến động tồn kho."
           />
         ) : (
           <StockMovementsTable movements={movements.data} />

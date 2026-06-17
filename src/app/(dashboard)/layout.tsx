@@ -65,7 +65,7 @@ export default function DashboardLayout({
           <CardContent className="space-y-4">
             {assignedRoles && (
               <p className="rounded-md bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-                Role backend: <span className="font-medium text-foreground">{assignedRoles}</span>
+                Vai trò hiện tại: <span className="font-medium text-foreground">{assignedRoles}</span>
               </p>
             )}
             <Button

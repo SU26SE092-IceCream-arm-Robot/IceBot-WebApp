@@ -110,7 +110,7 @@ export function TransactionDetailDialog({
             <div className="min-w-0 space-y-1">
               <DialogTitle>Chi tiết giao dịch</DialogTitle>
               <DialogDescription>
-                Dữ liệu thật từ Management Orders API và lịch sử trạng thái.
+                Thông tin đơn hàng và lịch sử trạng thái.
               </DialogDescription>
             </div>
           </div>
@@ -427,7 +427,7 @@ export function RefundDetailDialog({
             <div className="min-w-0 space-y-1">
               <DialogTitle>Chi tiết hoàn tiền</DialogTitle>
               <DialogDescription>
-                Dữ liệu thật từ Management Refunds API, chỉ hiển thị read-only.
+                Thông tin yêu cầu hoàn tiền.
               </DialogDescription>
             </div>
           </div>

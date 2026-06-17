@@ -583,7 +583,7 @@ export function CreateAccountDialog({
               checked={sendInvitationEmail}
               disabled={isSubmitting}
               label="Gửi lời mời qua email"
-              description="Nếu SMTP lỗi, backend vẫn trả token/link để gửi thủ công."
+              description="Nếu email chưa gửi được, hệ thống vẫn hiển thị liên kết để gửi thủ công."
               onChange={setSendInvitationEmail}
             />
           </div>
@@ -644,7 +644,7 @@ export function RegenerateInvitationDialog({
           </span>
           <DialogTitle>Tạo lại lời mời?</DialogTitle>
           <DialogDescription>
-            Backend sẽ tạo token mới cho <span className="font-medium text-foreground">{accountName}</span>.
+            Tạo token mới cho <span className="font-medium text-foreground">{accountName}</span>.
             Các lời mời cũ đang hoạt động sẽ bị thu hồi.
           </DialogDescription>
         </DialogHeader>
@@ -734,7 +734,7 @@ export function InvitationResultDialog({
           </span>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>
-            Lưu liên kết mới cho {accountName}. Backend không cho đọc lại raw token sau khi đóng màn hình này.
+            Lưu liên kết lời mời cho {accountName}. Liên kết và token chỉ hiển thị một lần — đóng màn hình này sau khi đã sao chép.
           </DialogDescription>
         </DialogHeader>
 
@@ -750,7 +750,7 @@ export function InvitationResultDialog({
               <Mail className="mt-0.5 size-4 shrink-0" />
               <p className="text-sm">
                 {result.emailSent
-                  ? "Backend đã gửi email lời mời."
+                  ? "Email lời mời đã được gửi."
                   : "Email chưa được gửi. Hãy sao chép liên kết hoặc token và gửi thủ công."}
               </p>
             </div>
@@ -780,7 +780,7 @@ export function InvitationResultDialog({
               </div>
               {!result.invitationUrl ? (
                 <p className="text-xs text-muted-foreground">
-                  Backend chưa cấu hình InvitationBaseUrl; liên kết trên được frontend tạo từ origin hiện tại.
+                  Liên kết được tạo từ địa chỉ web hiện tại. Liên hệ quản trị hệ thống nếu cần liên kết chính thức.
                 </p>
               ) : null}
             </div>
@@ -824,7 +824,7 @@ export function InvitationResultDialog({
         ) : (
           <div className="flex gap-3 rounded-lg border border-warning/30 bg-warning/5 p-3 text-warning">
             <AlertTriangle className="mt-0.5 size-4 shrink-0" />
-            <p className="text-sm">Backend không trả thông tin lời mời trong response.</p>
+            <p className="text-sm">Không nhận được thông tin lời mời. Thử lại hoặc liên hệ quản trị hệ thống.</p>
           </div>
         )}
 

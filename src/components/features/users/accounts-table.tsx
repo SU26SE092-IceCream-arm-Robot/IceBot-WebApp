@@ -12,7 +12,6 @@ import {
 } from "@/components/ui/table";
 import type {
   InternalAccountResult,
-  InternalAccountRoleResult,
   ManagementAccountStatus,
 } from "@/types/accounts";
 
@@ -84,34 +83,6 @@ function StatusBadge({ status }: { status: ManagementAccountStatus }) {
   }
 }
 
-function ScopeLabel({ role }: { role: InternalAccountRoleResult }) {
-  if (role.kioskId) {
-    return (
-      <span className="tabular-nums text-xs text-muted-foreground">
-        Kiosk {role.kioskId.slice(0, 8)}
-      </span>
-    );
-  }
-
-  if (role.storeId) {
-    return (
-      <span className="tabular-nums text-xs text-muted-foreground">
-        Cửa hàng {role.storeId.slice(0, 8)}
-      </span>
-    );
-  }
-
-  if (role.organizationId) {
-    return (
-      <span className="tabular-nums text-xs text-muted-foreground">
-        Tổ chức {role.organizationId.slice(0, 8)}
-      </span>
-    );
-  }
-
-  return <span className="text-xs text-muted-foreground">Toàn hệ thống</span>;
-}
-
 function LoginMethods({ account }: { account: InternalAccountResult }) {
   return (
     <div className="flex flex-wrap justify-center gap-1.5">
@@ -148,7 +119,7 @@ export function AccountsTable({
         <TableRow>
           <TableHead className="px-5">Tài khoản</TableHead>
           <TableHead className="text-center">Trạng thái</TableHead>
-          <TableHead className="text-center">Vai trò & phạm vi</TableHead>
+          <TableHead className="text-center">Vai trò</TableHead>
           <TableHead className="text-center">Đăng nhập</TableHead>
           <TableHead className="text-center">ID</TableHead>
           <TableHead className="px-5 text-center">Thao tác</TableHead>
@@ -169,21 +140,18 @@ export function AccountsTable({
               <StatusBadge status={account.status} />
             </TableCell>
             <TableCell className="text-center">
-              <div className="space-y-2">
+              <div className="flex flex-wrap items-center justify-center gap-1.5">
                 {account.roles.length === 0 ? (
                   <span className="text-xs text-muted-foreground">Chưa gán role</span>
                 ) : (
                   account.roles.map((role, index) => (
-                    <div
+                    <Badge
                       key={`${role.roleCode}-${role.organizationId ?? ""}-${role.storeId ?? ""}-${role.kioskId ?? ""}-${index}`}
-                      className="flex flex-wrap items-center justify-center gap-2"
+                      className="gap-1 border-0 bg-primary/10 text-primary"
                     >
-                      <Badge className="gap-1 border-0 bg-primary/10 text-primary">
-                        <ShieldCheck className="size-3" />
-                        {ROLE_LABELS[role.roleCode] ?? role.roleCode}
-                      </Badge>
-                      <ScopeLabel role={role} />
-                    </div>
+                      <ShieldCheck className="size-3" />
+                      {ROLE_LABELS[role.roleCode] ?? role.roleCode}
+                    </Badge>
                   ))
                 )}
               </div>

@@ -210,7 +210,7 @@ export function ProductDetailDialog({
         <DialogHeader>
           <DialogTitle>Chi tiết sản phẩm</DialogTitle>
           <DialogDescription>
-            Dữ liệu danh mục và biến thể từ Management Products API.
+            Thông tin danh mục và biến thể sản phẩm.
           </DialogDescription>
         </DialogHeader>
 
@@ -350,7 +350,7 @@ export function MenuDetailDialog({
         <DialogHeader>
           <DialogTitle>Chi tiết thực đơn</DialogTitle>
           <DialogDescription>
-            Trạng thái phân phối và danh sách món từ Management Menus API.
+            Trạng thái phân phối và danh sách món.
           </DialogDescription>
         </DialogHeader>
 

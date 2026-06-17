@@ -109,7 +109,7 @@ export function AccountDetailDialog({
             <div className="min-w-0 space-y-1">
               <DialogTitle>Chi tiết tài khoản</DialogTitle>
               <DialogDescription>
-                Thông tin mới nhất từ Management Accounts API.
+                Thông tin tài khoản nội bộ.
               </DialogDescription>
             </div>
           </div>

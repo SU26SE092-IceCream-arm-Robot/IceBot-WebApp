@@ -24,7 +24,7 @@ import {
   RegenerateInvitationDialog,
 } from "@/components/features/users/invitation-dialogs";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -89,13 +89,11 @@ const STAT_TONES: Record<StatTone, { iconClassName: string; valueClassName: stri
 function StatCard({
   icon: Icon,
   label,
-  supportingText,
   tone,
   value,
 }: {
   icon: LucideIcon;
   label: string;
-  supportingText: string;
   tone: StatTone;
   value: number;
 }) {
@@ -113,7 +111,6 @@ function StatCard({
         <p className={`tabular-nums text-3xl font-semibold tracking-tight ${toneClasses.valueClassName}`}>
           {value}
         </p>
-        <p className="mt-1 text-xs text-muted-foreground">{supportingText}</p>
       </CardContent>
     </Card>
   );
@@ -199,7 +196,7 @@ export default function UsersPage() {
         <div className="max-w-2xl space-y-2">
           <h1 className="text-3xl font-semibold tracking-tight text-foreground">Quản lý tài khoản</h1>
           <p className="text-sm leading-6 text-muted-foreground">
-            Theo dõi tài khoản nội bộ và phạm vi vai trò được cấp trong hệ thống IceBot.
+            Theo dõi tài khoản nội bộ và vai trò được cấp trong hệ thống IceBot.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -221,21 +218,18 @@ export default function UsersPage() {
           icon={UsersRound}
           label="Tổng tài khoản"
           value={pagination.totalCount}
-          supportingText="Theo kết quả đang lọc"
           tone="primary"
         />
         <StatCard
           icon={UserRoundCheck}
-          label="Hoạt động trên trang"
+          label="Đang hoạt động"
           value={activeOnPage}
-          supportingText="Trong trang dữ liệu hiện tại"
           tone="success"
         />
         <StatCard
           icon={ContactRound}
-          label="Role scope hiển thị"
+          label="Vai trò hiển thị"
           value={roleCount}
-          supportingText="Phân quyền trên trang hiện tại"
           tone="warning"
         />
       </section>
@@ -248,9 +242,6 @@ export default function UsersPage() {
             </span>
             <div>
               <CardTitle className="text-base">Danh sách tài khoản nội bộ</CardTitle>
-              <CardDescription>
-                Dữ liệu thật từ Management Accounts API, được bảo vệ bởi policy `accounts.manage`.
-              </CardDescription>
             </div>
           </div>
         </CardHeader>

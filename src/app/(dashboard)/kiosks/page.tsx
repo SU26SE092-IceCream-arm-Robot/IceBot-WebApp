@@ -60,7 +60,6 @@ const SUMMARY_TONES: Record<
 interface SummaryCardProps {
   icon: LucideIcon;
   label: string;
-  supportingText: string;
   tone: SummaryTone;
   value: number;
 }
@@ -68,7 +67,6 @@ interface SummaryCardProps {
 function SummaryCard({
   icon: Icon,
   label,
-  supportingText,
   tone,
   value,
 }: SummaryCardProps) {
@@ -82,7 +80,6 @@ function SummaryCard({
           <p className={`tabular-nums text-3xl font-semibold tracking-tight ${toneClasses.valueClassName}`}>
             {value}
           </p>
-          <p className="text-xs text-muted-foreground">{supportingText}</p>
         </div>
         <span className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${toneClasses.iconClassName}`}>
           <Icon className="size-5" />
@@ -141,28 +138,24 @@ export default function KiosksPage() {
           icon={Monitor}
           label="Tổng số kiosk"
           value={summary.total}
-          supportingText="Thiết bị trong phạm vi"
           tone="neutral"
         />
         <SummaryCard
           icon={Wifi}
           label="Đang trực tuyến"
           value={summary.online}
-          supportingText="Kết nối ổn định"
           tone="primary"
         />
         <SummaryCard
           icon={AlertTriangle}
           label="Đang lỗi"
           value={summary.error}
-          supportingText={summary.error > 0 ? "Cần kiểm tra ngay" : "Không có cảnh báo"}
           tone="destructive"
         />
         <SummaryCard
           icon={Wrench}
           label="Đang bảo trì"
           value={summary.maintenance}
-          supportingText="Tạm ngưng phục vụ"
           tone="warning"
         />
       </section>
@@ -176,8 +169,8 @@ export default function KiosksPage() {
             <div className="space-y-1">
               <CardTitle className="text-base">Bộ lọc giám sát</CardTitle>
               <CardDescription>
-                Hiển thị <span className="tabular-nums font-medium text-foreground">{kiosks.length}</span> trên{" "}
-                <span className="tabular-nums font-medium text-foreground">{scopedCount}</span> kiosk có thể truy cập.
+                <span className="tabular-nums font-medium text-foreground">{kiosks.length}</span> /{" "}
+                <span className="tabular-nums font-medium text-foreground">{scopedCount}</span> kiosk
               </CardDescription>
             </div>
           </div>
@@ -259,7 +252,6 @@ export default function KiosksPage() {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-base font-semibold text-foreground">Trạng thái đội máy</h2>
-            <p className="text-sm text-muted-foreground">Telemetry gần nhất của từng kiosk trong phạm vi hiển thị.</p>
           </div>
           <div className="flex flex-wrap items-center gap-4">
             <StatusLegend className="bg-primary" label="Ổn định" />

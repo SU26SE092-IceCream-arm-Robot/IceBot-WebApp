@@ -25,7 +25,7 @@ import {
   ProductsTable,
 } from "@/components/features/menu/catalog-tables";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/use-auth";
 import { useMenuManagement, type MenuCollectionState } from "@/hooks/use-menu-management";
@@ -75,13 +75,11 @@ const STAT_TONES: Record<StatTone, { iconClassName: string; valueClassName: stri
 function StatCard({
   icon: Icon,
   label,
-  supportingText,
   tone,
   value,
 }: {
   icon: LucideIcon;
   label: string;
-  supportingText: string;
   tone: StatTone;
   value: number;
 }) {
@@ -99,7 +97,6 @@ function StatCard({
         <p className={`tabular-nums text-3xl font-semibold tracking-tight ${toneClasses.valueClassName}`}>
           {value}
         </p>
-        <p className="mt-1 text-xs text-muted-foreground">{supportingText}</p>
       </CardContent>
     </Card>
   );
@@ -183,7 +180,6 @@ function MenusPanel({
           </span>
           <div>
             <CardTitle className="text-base">Thực đơn đang bán</CardTitle>
-            <CardDescription>Lớp thực đơn và các món hiển thị tới kênh bán hàng.</CardDescription>
           </div>
         </div>
       </CardHeader>
@@ -242,7 +238,6 @@ function ProductsPanel({
           </span>
           <div>
             <CardTitle className="text-base">Danh mục sản phẩm</CardTitle>
-            <CardDescription>Danh mục sản phẩm và biến thể làm nguồn cho món bán.</CardDescription>
           </div>
         </div>
       </CardHeader>
@@ -363,28 +358,24 @@ export default function MenuPage() {
           icon={Layers3}
           label="Tổng thực đơn"
           value={menus.pagination.totalCount}
-          supportingText="Theo kết quả đang lọc"
           tone="primary"
         />
         <StatCard
           icon={CircleCheckBig}
-          label="Đang bán trên trang"
+          label="Đang bán"
           value={activeMenusOnPage}
-          supportingText="Thực đơn đang ở trạng thái bán"
           tone="success"
         />
         <StatCard
           icon={IceCreamBowl}
           label="Tổng sản phẩm"
           value={products.pagination.totalCount}
-          supportingText="Danh mục hiện có"
           tone="primary"
         />
         <StatCard
           icon={PackageCheck}
-          label="Khả dụng trên trang"
+          label="Khả dụng"
           value={availableProductsOnPage}
-          supportingText="Sản phẩm đang bán"
           tone="success"
         />
       </section>

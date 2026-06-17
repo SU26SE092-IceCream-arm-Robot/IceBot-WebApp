@@ -20,7 +20,7 @@ import {
 
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -263,7 +263,6 @@ function TemperatureTrend({ history }: { history: KioskTemperaturePoint[] }) {
           <Snowflake className="size-4 text-primary" />
           Xu hướng nhiệt độ
         </CardTitle>
-        <CardDescription>Telemetry mô phỏng trong 50 phút gần nhất.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-5 p-5">
         <div className="flex items-end justify-between gap-4">
@@ -307,7 +306,6 @@ function EventsTable({ events }: { events: KioskEvent[] }) {
     <Card className="border-border/80 shadow-none">
       <CardHeader className="border-b border-border pb-4">
         <CardTitle className="text-base">Sự kiện gần đây</CardTitle>
-        <CardDescription>Lịch sử lỗi và tín hiệu vận hành mô phỏng gần nhất.</CardDescription>
       </CardHeader>
       <CardContent className="p-0">
         <Table>
@@ -355,9 +353,6 @@ function ControlsPanel({
     <Card className="border-border/80 shadow-none">
       <CardHeader className="border-b border-border pb-4">
         <CardTitle className="text-base">Điều khiển quản trị</CardTitle>
-        <CardDescription>
-          Lệnh chỉ mô phỏng trên giao diện, chưa gửi tới kiosk hoặc backend.
-        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3 p-5">
         <div className="grid gap-2 sm:grid-cols-2">
@@ -441,7 +436,6 @@ function CurrentStatusPanel({ kiosk }: { kiosk: KioskDetail }) {
         <div className="flex items-start justify-between gap-3">
           <div>
             <CardTitle className="text-base">Trạng thái hiện tại</CardTitle>
-            <CardDescription>Kết nối và telemetry phần cứng gần nhất.</CardDescription>
           </div>
           {isError ? (
             <AlertTriangle className="size-5 animate-pulse text-destructive" />
@@ -493,7 +487,6 @@ function InventoryPanel({ kiosk }: { kiosk: KioskDetail }) {
     <Card className="border-border/80 shadow-none">
       <CardHeader className="border-b border-border pb-4">
         <CardTitle className="text-base">Tồn kho & nguyên liệu</CardTitle>
-        <CardDescription>Mức cấp phát hiện tại của kiosk.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-5 p-5">
         <div className={cn("flex items-center justify-between rounded-xl border border-border bg-background/70 p-4", cupsWarning && "border-warning/40 bg-warning/5")}>
@@ -534,7 +527,6 @@ export function KioskDetailView({ kioskId }: KioskDetailViewProps) {
     role,
     state,
     errorMessage,
-    metadataSource,
     metadataWarning,
     refresh,
   } = useKioskDetail(kioskId);
@@ -584,34 +576,17 @@ export function KioskDetailView({ kioskId }: KioskDetailViewProps) {
     <div className="space-y-6">
       <DetailHeader kiosk={kiosk} onRefresh={() => void refresh()} />
 
-      <div
-        className={cn(
-          "rounded-lg border px-4 py-3",
-          metadataWarning
-            ? "border-warning/30 bg-warning/5"
-            : "border-border bg-muted/20",
-        )}
-        role="status"
-      >
-        <div className="flex items-start gap-3">
-          {metadataWarning ? (
+      {metadataWarning ? (
+        <div
+          className="rounded-lg border border-warning/30 bg-warning/5 px-4 py-3"
+          role="status"
+        >
+          <div className="flex items-start gap-3">
             <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" />
-          ) : (
-            <Cpu className="mt-0.5 size-4 shrink-0 text-primary" />
-          )}
-          <div className="space-y-1 text-xs text-muted-foreground">
-            <p className="font-medium text-foreground">
-              {metadataSource === "API"
-                ? "Thông tin định danh và vòng đời kiosk lấy từ API quản lý."
-                : "Thông tin kiosk đang dùng dữ liệu mô phỏng."}
-            </p>
-            {metadataWarning ? <p>{metadataWarning}</p> : null}
-            <p>
-              Robot, nhiệt độ, mức nguyên liệu, đơn hiện tại, lịch sử sự kiện và bảng điều khiển vẫn là dữ liệu mock/demo.
-            </p>
+            <p className="text-xs font-medium text-warning">{metadataWarning}</p>
           </div>
         </div>
-      </div>
+      ) : null}
 
       <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
         <CurrentStatusPanel kiosk={kiosk} />
@@ -627,17 +602,12 @@ export function KioskDetailView({ kioskId }: KioskDetailViewProps) {
         <ControlsPanel
           canControl={canControl}
           onCommand={(command) => {
-            setCommandNotice(`${command}: thao tác mô phỏng đã được ghi nhận, chưa gửi tới thiết bị.`);
+            setCommandNotice(`${command}: thao tác đã được ghi nhận trên giao diện.`);
           }}
         />
         <Card className="border-border/80 shadow-none">
           <CardHeader className="border-b border-border pb-4">
-            <div className="flex items-center justify-between gap-3">
-              <CardTitle className="text-base">Metadata quản lý</CardTitle>
-              <Badge variant="outline">
-                {metadataSource === "API" ? "API quản lý" : "Dữ liệu mô phỏng"}
-              </Badge>
-            </div>
+            <CardTitle className="text-base">Thông tin quản lý</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4 p-5 text-sm">
             <div className="flex items-center justify-between gap-3">

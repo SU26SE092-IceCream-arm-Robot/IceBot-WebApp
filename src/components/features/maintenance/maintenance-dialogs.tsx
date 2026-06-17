@@ -71,7 +71,7 @@ export function MaintenanceDetailDialog({
             <div className="min-w-0 space-y-1">
               <DialogTitle>Chi tiết yêu cầu bảo trì</DialogTitle>
               <DialogDescription>
-                Dữ liệu thật từ Management Maintenance Tickets API, hiển thị read-only.
+                Thông tin yêu cầu bảo trì và tiến độ xử lý.
               </DialogDescription>
             </div>
           </div>

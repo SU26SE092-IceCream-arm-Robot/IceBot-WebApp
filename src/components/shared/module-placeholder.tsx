@@ -26,14 +26,14 @@ export function ModulePlaceholder({ title, description }: ModulePlaceholderProps
             <div className="space-y-1">
               <CardTitle className="text-base">Module đang được phát triển</CardTitle>
               <CardDescription>
-                Phase hiện tại chỉ dựng dashboard foundation, chưa triển khai nghiệp vụ chi tiết.
+                Chức năng chi tiết sẽ được bổ sung trong các phiên bản tiếp theo.
               </CardDescription>
             </div>
           </div>
         </CardHeader>
         <CardContent className="p-5">
           <CardDescription>
-            Module sẽ tiếp tục tuân theo kiến trúc Page - Hook - Service - API/Mock Layer khi backend contract sẵn sàng.
+            Các thao tác nghiệp vụ sẽ xuất hiện tại đây khi phạm vi sản phẩm được mở rộng.
           </CardDescription>
         </CardContent>
       </Card>
