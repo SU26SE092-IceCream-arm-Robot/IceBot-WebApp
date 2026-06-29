@@ -8,6 +8,10 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return [
       {
+        source: "/api/backend/graphql",
+        destination: `${backendApiUrl}/graphql`,
+      },
+      {
         source: "/api/backend/:path*",
         destination: `${backendApiUrl}/api/:path*`,
       },

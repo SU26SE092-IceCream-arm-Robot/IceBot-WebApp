@@ -20,7 +20,7 @@ export function LoginForm() {
 
   useEffect(() => {
     if (status === "authenticated" || status === "forbidden") {
-      router.replace("/kiosks");
+      router.replace("/dashboard");
     }
   }, [router, status]);
 
@@ -31,7 +31,7 @@ export function LoginForm() {
 
     try {
       await login({ emailOrUsername, password });
-      router.replace("/kiosks");
+      router.replace("/dashboard");
     } catch (error) {
       setErrorMessage(getAuthErrorMessage(error));
     } finally {

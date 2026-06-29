@@ -8,6 +8,7 @@ import {
   ChevronLeft,
   ChevronRight,
   IceCream,
+  LayoutDashboard,
   LogOut,
   Monitor,
   Package,
@@ -28,6 +29,7 @@ interface SidebarItem {
 }
 
 const SIDEBAR_ITEMS: readonly SidebarItem[] = [
+  { href: "/dashboard", label: "Tổng quan", icon: LayoutDashboard },
   { href: "/kiosks", label: "Quản lý Kiosk", icon: Monitor },
   { href: "/inventory", label: "Tồn kho", icon: Package },
   { href: "/transactions", label: "Giao dịch", icon: ShoppingCart },
@@ -41,7 +43,10 @@ const SIDEBAR_GROUPS: readonly {
   label: string;
   routes: readonly DashboardRoutePath[];
 }[] = [
-  { label: "Vận hành", routes: ["/kiosks", "/inventory", "/maintenance"] },
+  {
+    label: "Vận hành",
+    routes: ["/dashboard", "/kiosks", "/inventory", "/maintenance"],
+  },
   { label: "Kinh doanh", routes: ["/transactions", "/menu", "/reports"] },
   { label: "Quản trị", routes: ["/users"] },
 ];

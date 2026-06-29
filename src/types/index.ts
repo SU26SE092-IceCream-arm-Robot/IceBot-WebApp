@@ -21,6 +21,7 @@ export type BackendRoleCode =
   | "Technician";
 
 export type DashboardRoutePath =
+  | "/dashboard"
   | "/kiosks"
   | "/inventory"
   | "/transactions"
@@ -30,6 +31,7 @@ export type DashboardRoutePath =
   | "/maintenance";
 
 export type DashboardPermission =
+  | "dashboard.view"
   | "kiosks.view"
   | "kiosks.control"
   | "inventory.view"
