@@ -1,12 +1,14 @@
 "use client";
 
 import axios from "axios";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
+  adjustDispenserEstimate,
   getInventoryErrorMessage,
   listDispenserStates,
   listStockMovements,
+  refillDispenserState,
 } from "@/lib/services/inventory";
 import {
   getKioskManagementErrorMessage,
@@ -21,11 +23,14 @@ import type {
   StoreResult,
 } from "@/types/kiosk-management";
 import type {
+  AdjustDispenserEstimateRequest,
   DispenserStateResult,
   InventoryFilters,
+  InventoryMutationKind,
   InventoryPaginationMeta,
   InventoryStatusFilter,
   InventorySummary,
+  RefillDispenserRequest,
   StockMovementResult,
 } from "@/types/inventory-management";
 
@@ -72,6 +77,12 @@ export interface UseInventoryResult {
   lookupWarning: string | null;
   selectedDispenser: DispenserStateResult | null;
   isDetailOpen: boolean;
+  mutationDispenser: DispenserStateResult | null;
+  mutationKind: InventoryMutationKind | null;
+  isMutationOpen: boolean;
+  isMutationSubmitting: boolean;
+  mutationErrorMessage: string | null;
+  mutationSuccessMessage: string | null;
   setIngredientSearch: (value: string) => void;
   setStatusFilter: (value: InventoryStatusFilter) => void;
   setStoreFilter: (value: string | null) => void;
@@ -83,10 +94,18 @@ export interface UseInventoryResult {
   nextMovementPage: () => void;
   openDispenserDetail: (dispenser: DispenserStateResult) => void;
   setDetailOpen: (open: boolean) => void;
+  openRefillDialog: (dispenser: DispenserStateResult) => void;
+  openAdjustDialog: (dispenser: DispenserStateResult) => void;
+  setMutationOpen: (open: boolean) => void;
+  submitRefill: (request: RefillDispenserRequest) => Promise<boolean>;
+  submitAdjustment: (
+    request: AdjustDispenserEstimateRequest,
+  ) => Promise<boolean>;
   refresh: () => Promise<void>;
 }
 
 export function useInventory(): UseInventoryResult {
+  const mutationInFlightRef = useRef(false);
   const [filters, setFilters] = useState<InventoryFilters>(INITIAL_FILTERS);
   const [dispenserPage, setDispenserPage] = useState(1);
   const [movementPage, setMovementPage] = useState(1);
@@ -112,6 +131,18 @@ export function useInventory(): UseInventoryResult {
   const [selectedDispenser, setSelectedDispenser] =
     useState<DispenserStateResult | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [mutationDispenser, setMutationDispenser] =
+    useState<DispenserStateResult | null>(null);
+  const [mutationKind, setMutationKind] =
+    useState<InventoryMutationKind | null>(null);
+  const [isMutationOpen, setIsMutationOpen] = useState(false);
+  const [isMutationSubmitting, setIsMutationSubmitting] = useState(false);
+  const [mutationErrorMessage, setMutationErrorMessage] = useState<
+    string | null
+  >(null);
+  const [mutationSuccessMessage, setMutationSuccessMessage] = useState<
+    string | null
+  >(null);
 
   const serverScope = useMemo(
     () => ({
@@ -386,6 +417,109 @@ export function useInventory(): UseInventoryResult {
     }
   }, []);
 
+  const openMutationDialog = useCallback(
+    (kind: InventoryMutationKind, dispenser: DispenserStateResult) => {
+      setMutationKind(kind);
+      setMutationDispenser(dispenser);
+      setMutationErrorMessage(null);
+      setMutationSuccessMessage(null);
+      setIsMutationOpen(true);
+    },
+    [],
+  );
+
+  const setMutationOpen = useCallback(
+    (open: boolean) => {
+      if (mutationInFlightRef.current) {
+        return;
+      }
+
+      setIsMutationOpen(open);
+      if (!open) {
+        setMutationKind(null);
+        setMutationDispenser(null);
+        setMutationErrorMessage(null);
+      }
+    },
+    [],
+  );
+
+  const finishMutation = useCallback(
+    async (successMessage: string) => {
+      await Promise.all([fetchDispensers(), fetchMovements()]);
+      setMutationSuccessMessage(successMessage);
+      setIsMutationOpen(false);
+      setMutationKind(null);
+      setMutationDispenser(null);
+      setMutationErrorMessage(null);
+    },
+    [fetchDispensers, fetchMovements],
+  );
+
+  const submitRefill = useCallback(
+    async (request: RefillDispenserRequest) => {
+      if (!mutationDispenser || mutationInFlightRef.current) {
+        return false;
+      }
+
+      mutationInFlightRef.current = true;
+      setIsMutationSubmitting(true);
+      setMutationErrorMessage(null);
+
+      try {
+        await refillDispenserState(mutationDispenser.id, request);
+        await finishMutation(
+          `Đã ghi nhận refill cho ${mutationDispenser.ingredientName}.`,
+        );
+        return true;
+      } catch (error) {
+        setMutationErrorMessage(
+          getInventoryErrorMessage(
+            error,
+            "Không thể ghi nhận refill. Vui lòng kiểm tra dữ liệu và thử lại.",
+          ),
+        );
+        return false;
+      } finally {
+        mutationInFlightRef.current = false;
+        setIsMutationSubmitting(false);
+      }
+    },
+    [finishMutation, mutationDispenser],
+  );
+
+  const submitAdjustment = useCallback(
+    async (request: AdjustDispenserEstimateRequest) => {
+      if (!mutationDispenser || mutationInFlightRef.current) {
+        return false;
+      }
+
+      mutationInFlightRef.current = true;
+      setIsMutationSubmitting(true);
+      setMutationErrorMessage(null);
+
+      try {
+        await adjustDispenserEstimate(mutationDispenser.id, request);
+        await finishMutation(
+          `Đã cập nhật lượng ước tính cho ${mutationDispenser.ingredientName}.`,
+        );
+        return true;
+      } catch (error) {
+        setMutationErrorMessage(
+          getInventoryErrorMessage(
+            error,
+            "Không thể điều chỉnh lượng ước tính. Vui lòng kiểm tra dữ liệu và thử lại.",
+          ),
+        );
+        return false;
+      } finally {
+        mutationInFlightRef.current = false;
+        setIsMutationSubmitting(false);
+      }
+    },
+    [finishMutation, mutationDispenser],
+  );
+
   return {
     dispensers,
     visibleDispensers,
@@ -398,6 +532,12 @@ export function useInventory(): UseInventoryResult {
     lookupWarning,
     selectedDispenser,
     isDetailOpen,
+    mutationDispenser,
+    mutationKind,
+    isMutationOpen,
+    isMutationSubmitting,
+    mutationErrorMessage,
+    mutationSuccessMessage,
     setIngredientSearch,
     setStatusFilter,
     setStoreFilter,
@@ -411,6 +551,13 @@ export function useInventory(): UseInventoryResult {
     nextMovementPage: () => setMovementPage((page) => page + 1),
     openDispenserDetail,
     setDetailOpen,
+    openRefillDialog: (dispenser) =>
+      openMutationDialog("refill", dispenser),
+    openAdjustDialog: (dispenser) =>
+      openMutationDialog("adjust", dispenser),
+    setMutationOpen,
+    submitRefill,
+    submitAdjustment,
     refresh: async () => {
       await Promise.all([fetchDispensers(), fetchMovements(), loadLookups()]);
     },

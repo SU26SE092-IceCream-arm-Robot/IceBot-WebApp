@@ -4,6 +4,19 @@ export type IngredientLevelStatus = "Unknown" | "Low" | "Medium" | "Full";
 
 export type InventoryStatusFilter = "ALL" | IngredientLevelStatus;
 
+export type InventoryMutationKind = "refill" | "adjust";
+
+export interface RefillDispenserRequest {
+  quantity: number;
+  reportedLevelAfter?: IngredientLevelStatus | null;
+  reasonCode?: string | null;
+}
+
+export interface AdjustDispenserEstimateRequest {
+  estimatedQuantity: number;
+  reasonCode?: string | null;
+}
+
 export interface DispenserStateResult {
   id: string;
   deviceId: string;

@@ -1,4 +1,4 @@
-import { Eye } from "lucide-react";
+import { Eye, PackagePlus, SlidersHorizontal } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -144,14 +144,18 @@ function InventoryProgress({ state }: { state: DispenserStateResult }) {
 interface InventoryTableProps {
   dispensers: DispenserStateResult[];
   onViewDetail: (dispenser: DispenserStateResult) => void;
+  onRefill: (dispenser: DispenserStateResult) => void;
+  onAdjustEstimate: (dispenser: DispenserStateResult) => void;
 }
 
 export function InventoryTable({
   dispensers,
   onViewDetail,
+  onRefill,
+  onAdjustEstimate,
 }: InventoryTableProps) {
   return (
-    <Table className="min-w-[1040px] table-fixed">
+    <Table className="min-w-[1120px] table-fixed">
       <TableHeader className="bg-muted/40">
         <TableRow className="hover:bg-transparent">
           <TableHead className="w-[22%] px-4 text-xs text-muted-foreground">
@@ -175,8 +179,8 @@ export function InventoryTable({
           <TableHead className="w-[9%] text-center text-xs text-muted-foreground">
             Cập nhật
           </TableHead>
-          <TableHead className="w-[7%] px-4 text-center text-xs text-muted-foreground">
-            Chi tiết
+          <TableHead className="w-[11%] px-4 text-center text-xs text-muted-foreground">
+            Thao tác
           </TableHead>
         </TableRow>
       </TableHeader>
@@ -227,17 +231,41 @@ export function InventoryTable({
               {formatInventoryDate(dispenser.lastMeasuredAt)}
             </TableCell>
             <TableCell className="px-4 py-2.5 text-center">
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-sm"
-                className="rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
-                title={`Xem chi tiết ${dispenser.ingredientName}`}
-                aria-label={`Xem chi tiết ${dispenser.ingredientName}`}
-                onClick={() => onViewDetail(dispenser)}
-              >
-                <Eye className="size-4" />
-              </Button>
+              <div className="flex items-center justify-center gap-1">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  className="rounded-lg text-success hover:bg-success/10 hover:text-success"
+                  title={`Ghi nhận refill ${dispenser.ingredientName}`}
+                  aria-label={`Ghi nhận refill ${dispenser.ingredientName}`}
+                  onClick={() => onRefill(dispenser)}
+                >
+                  <PackagePlus className="size-4" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  className="rounded-lg text-primary hover:bg-primary/10 hover:text-primary"
+                  title={`Điều chỉnh lượng ước tính ${dispenser.ingredientName}`}
+                  aria-label={`Điều chỉnh lượng ước tính ${dispenser.ingredientName}`}
+                  onClick={() => onAdjustEstimate(dispenser)}
+                >
+                  <SlidersHorizontal className="size-4" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  className="rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
+                  title={`Xem chi tiết ${dispenser.ingredientName}`}
+                  aria-label={`Xem chi tiết ${dispenser.ingredientName}`}
+                  onClick={() => onViewDetail(dispenser)}
+                >
+                  <Eye className="size-4" />
+                </Button>
+              </div>
             </TableCell>
           </TableRow>
         ))}

@@ -3,9 +3,11 @@ import axios from "axios";
 import axiosClient from "@/lib/axios-client";
 import type { ApiResult } from "@/types";
 import type {
+  AdjustDispenserEstimateRequest,
   DispenserStateResult,
   InventoryPagedResult,
   InventoryQuery,
+  RefillDispenserRequest,
   StockMovementResult,
 } from "@/types/inventory-management";
 
@@ -28,6 +30,30 @@ function requirePagedData<T>(
   }
 
   return result;
+}
+
+function getApiResultMessage(
+  result: ApiResult<unknown> | undefined,
+  fallbackMessage: string,
+): string {
+  if (!result) {
+    return fallbackMessage;
+  }
+
+  const validationMessages = Object.values(result.validationErrors ?? {}).flat();
+  if (validationMessages.length > 0) {
+    return validationMessages.join(" ");
+  }
+
+  return result.message || result.businessError || fallbackMessage;
+}
+
+function requireData<T>(result: ApiResult<T>, fallbackMessage: string): T {
+  if (!result.succeeded || result.data === null || result.data === undefined) {
+    throw new Error(getApiResultMessage(result, fallbackMessage));
+  }
+
+  return result.data;
 }
 
 export async function listDispenserStates(
@@ -64,6 +90,36 @@ export async function listStockMovements(
   );
 }
 
+export async function refillDispenserState(
+  id: string,
+  request: RefillDispenserRequest,
+): Promise<DispenserStateResult> {
+  const response = await axiosClient.post<ApiResult<DispenserStateResult>>(
+    `/api/v1/management/inventory/dispenser-states/${encodeURIComponent(id)}/refill`,
+    request,
+  );
+
+  return requireData(
+    response.data,
+    "Không thể ghi nhận lượng nguyên liệu vừa refill.",
+  );
+}
+
+export async function adjustDispenserEstimate(
+  id: string,
+  request: AdjustDispenserEstimateRequest,
+): Promise<DispenserStateResult> {
+  const response = await axiosClient.post<ApiResult<DispenserStateResult>>(
+    `/api/v1/management/inventory/dispenser-states/${encodeURIComponent(id)}/adjust-estimate`,
+    request,
+  );
+
+  return requireData(
+    response.data,
+    "Không thể điều chỉnh lượng tồn kho ước tính.",
+  );
+}
+
 export function getInventoryErrorMessage(
   error: unknown,
   fallbackMessage = "Không thể tải dữ liệu tồn kho.",
@@ -74,10 +130,10 @@ export function getInventoryErrorMessage(
 
   if (axios.isAxiosError<ApiResult<unknown>>(error)) {
     if (error.response?.status === 403) {
-      return "Tài khoản hiện tại không có quyền xem dữ liệu tồn kho.";
+      return "Tài khoản hiện tại không có quyền truy cập hoặc thao tác dữ liệu tồn kho.";
     }
 
-    return error.response?.data?.message || fallbackMessage;
+    return getApiResultMessage(error.response?.data, fallbackMessage);
   }
 
   return error instanceof Error ? error.message : fallbackMessage;

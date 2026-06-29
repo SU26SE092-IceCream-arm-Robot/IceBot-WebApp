@@ -5,6 +5,7 @@ import {
   Boxes,
   ChevronLeft,
   ChevronRight,
+  CircleCheck,
   CircleHelp,
   PackageCheck,
   RefreshCw,
@@ -15,7 +16,10 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-import { InventoryDetailDialog } from "@/components/features/inventory/inventory-dialog";
+import {
+  InventoryDetailDialog,
+  InventoryMutationDialog,
+} from "@/components/features/inventory/inventory-dialog";
 import {
   InventoryTable,
   StockMovementsTable,
@@ -233,6 +237,12 @@ export default function InventoryPage() {
     lookupWarning,
     selectedDispenser,
     isDetailOpen,
+    mutationDispenser,
+    mutationKind,
+    isMutationOpen,
+    isMutationSubmitting,
+    mutationErrorMessage,
+    mutationSuccessMessage,
     setIngredientSearch,
     setStatusFilter,
     setStoreFilter,
@@ -244,6 +254,11 @@ export default function InventoryPage() {
     nextMovementPage,
     openDispenserDetail,
     setDetailOpen,
+    openRefillDialog,
+    openAdjustDialog,
+    setMutationOpen,
+    submitRefill,
+    submitAdjustment,
     refresh,
   } = useInventory();
 
@@ -278,6 +293,16 @@ export default function InventoryPage() {
         <div className="flex items-start gap-3 rounded-lg border border-warning/30 bg-warning/5 px-4 py-3 text-sm text-warning">
           <TriangleAlert className="mt-0.5 size-4 shrink-0" />
           <p>{lookupWarning} Danh sách tồn kho vẫn có thể được tải riêng.</p>
+        </div>
+      ) : null}
+
+      {mutationSuccessMessage ? (
+        <div
+          role="status"
+          className="flex items-start gap-3 rounded-lg border border-success/30 bg-success/5 px-4 py-3 text-sm text-success"
+        >
+          <CircleCheck className="mt-0.5 size-4 shrink-0" />
+          <p>{mutationSuccessMessage}</p>
         </div>
       ) : null}
 
@@ -462,6 +487,8 @@ export default function InventoryPage() {
           <InventoryTable
             dispensers={visibleDispensers}
             onViewDetail={openDispenserDetail}
+            onRefill={openRefillDialog}
+            onAdjustEstimate={openAdjustDialog}
           />
         )}
 
@@ -524,6 +551,19 @@ export default function InventoryPage() {
         open={isDetailOpen}
         onOpenChange={setDetailOpen}
       />
+
+      {mutationDispenser && mutationKind ? (
+        <InventoryMutationDialog
+          dispenser={mutationDispenser}
+          kind={mutationKind}
+          open={isMutationOpen}
+          isSubmitting={isMutationSubmitting}
+          errorMessage={mutationErrorMessage}
+          onOpenChange={setMutationOpen}
+          onSubmitRefill={submitRefill}
+          onSubmitAdjustment={submitAdjustment}
+        />
+      ) : null}
     </div>
   );
 }
