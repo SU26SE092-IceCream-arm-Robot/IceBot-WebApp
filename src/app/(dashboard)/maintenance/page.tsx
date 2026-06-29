@@ -6,13 +6,18 @@ import {
   ChevronRight,
   ClipboardList,
   Filter,
+  Plus,
   RefreshCw,
   Search,
   ShieldAlert,
   Wrench,
 } from "lucide-react";
 
-import { MaintenanceDetailDialog } from "@/components/features/maintenance/maintenance-dialogs";
+import {
+  MaintenanceDetailDialog,
+  MaintenanceEditorDialog,
+  MaintenanceWorkflowDialog,
+} from "@/components/features/maintenance/maintenance-dialogs";
 import {
   MAINTENANCE_PRIORITY_LABELS,
   MAINTENANCE_STATUS_LABELS,
@@ -30,6 +35,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useMaintenance } from "@/hooks/use-maintenance";
+import { useAuth } from "@/hooks/use-auth";
+import { hasPermission } from "@/lib/rbac";
 import type {
   MaintenancePriority,
   MaintenancePriorityFilter,
@@ -137,15 +144,28 @@ function MaintenanceLoadingTable() {
 }
 
 export default function MaintenancePage() {
+  const { currentUser } = useAuth();
   const {
     tickets,
     visibleTickets,
     filters,
     summary,
+    kiosks,
+    technicians,
+    lookupWarning,
     selectedTicket,
     isDetailOpen,
     isDetailLoading,
     detailErrorMessage,
+    editorMode,
+    editorTicket,
+    isEditorOpen,
+    workflowAction,
+    workflowTicket,
+    isWorkflowOpen,
+    isMutationSubmitting,
+    mutationErrorMessage,
+    successMessage,
     setSearchTerm,
     setStatusFilter,
     setPriorityFilter,
@@ -154,11 +174,40 @@ export default function MaintenancePage() {
     nextPage,
     openTicketDetail,
     setDetailOpen,
+    openCreateEditor,
+    openEditEditor,
+    setEditorOpen,
+    submitCreate,
+    submitUpdate,
+    requestWorkflow,
+    setWorkflowOpen,
+    submitWorkflow,
+    clearSuccessMessage,
     refresh,
   } = useMaintenance();
+  const canManage = currentUser
+    ? hasPermission(currentUser.role, "maintenance.edit")
+    : false;
 
   return (
     <div className="space-y-7">
+      {successMessage ? (
+        <div
+          role="status"
+          className="flex items-center justify-between gap-3 rounded-lg border border-success/30 bg-success/5 px-4 py-3 text-sm text-success"
+        >
+          <span>{successMessage}</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 text-success"
+            onClick={clearSuccessMessage}
+          >
+            Đóng
+          </Button>
+        </div>
+      ) : null}
+
       <section className="flex flex-col gap-4 border-b border-border pb-6 lg:flex-row lg:items-end lg:justify-between">
         <div className="max-w-2xl space-y-2">
           <h1 className="text-3xl font-semibold tracking-tight text-foreground">
@@ -168,15 +217,30 @@ export default function MaintenancePage() {
             Theo dõi và điều phối các yêu cầu bảo trì máy tại hiện trường.
           </p>
         </div>
-        <Button
-          variant="outline"
-          onClick={() => void refresh()}
-          isLoading={tickets.isLoading}
-        >
-          <RefreshCw className="size-4" />
-          Làm mới
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          {canManage ? (
+            <Button onClick={openCreateEditor}>
+              <Plus className="size-4" />
+              Tạo yêu cầu
+            </Button>
+          ) : null}
+          <Button
+            variant="outline"
+            onClick={() => void refresh()}
+            isLoading={tickets.isLoading}
+          >
+            <RefreshCw className="size-4" />
+            Làm mới
+          </Button>
+        </div>
       </section>
+
+      {lookupWarning ? (
+        <div className="flex items-start gap-3 rounded-lg border border-warning/30 bg-warning/5 px-4 py-3 text-sm text-warning">
+          <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+          <p>{lookupWarning}</p>
+        </div>
+      ) : null}
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
@@ -375,8 +439,40 @@ export default function MaintenancePage() {
         isLoading={isDetailLoading}
         open={isDetailOpen}
         ticket={selectedTicket}
+        canManage={canManage}
         onOpenChange={setDetailOpen}
+        onEdit={openEditEditor}
+        onWorkflow={requestWorkflow}
       />
+
+      {editorMode ? (
+        <MaintenanceEditorDialog
+          key={`${editorMode}-${editorTicket?.id ?? "new"}`}
+          mode={editorMode}
+          ticket={editorTicket}
+          kiosks={kiosks}
+          open={isEditorOpen}
+          isSubmitting={isMutationSubmitting}
+          errorMessage={mutationErrorMessage}
+          onOpenChange={setEditorOpen}
+          onCreate={submitCreate}
+          onUpdate={submitUpdate}
+        />
+      ) : null}
+
+      {workflowAction && workflowTicket ? (
+        <MaintenanceWorkflowDialog
+          key={`${workflowAction}-${workflowTicket.id}`}
+          action={workflowAction}
+          ticket={workflowTicket}
+          technicians={technicians}
+          open={isWorkflowOpen}
+          isSubmitting={isMutationSubmitting}
+          errorMessage={mutationErrorMessage}
+          onOpenChange={setWorkflowOpen}
+          onSubmit={submitWorkflow}
+        />
+      ) : null}
     </div>
   );
 }

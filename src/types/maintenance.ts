@@ -14,6 +14,55 @@ export type MaintenanceStatusFilter = "ALL" | MaintenanceTicketStatus;
 
 export type MaintenancePriorityFilter = "ALL" | MaintenancePriority;
 
+export type MaintenanceEditorMode = "create" | "edit";
+
+export type MaintenanceWorkflowAction =
+  | "assign"
+  | "start"
+  | "resolve"
+  | "close"
+  | "cancel";
+
+export interface CreateMaintenanceTicketRequest {
+  organizationId: string;
+  storeId: string;
+  kioskId: string;
+  deviceId?: string | null;
+  orderId?: string | null;
+  deviceEventId?: string | null;
+  title: string;
+  description?: string | null;
+  issueCode?: string | null;
+  priority: MaintenancePriority;
+}
+
+export interface UpdateMaintenanceTicketRequest {
+  title: string;
+  description?: string | null;
+  priority: MaintenancePriority;
+  deviceId?: string | null;
+  orderId?: string | null;
+  deviceEventId?: string | null;
+}
+
+export interface AssignMaintenanceTicketRequest {
+  assignedToAccountId: string;
+}
+
+export interface ResolveMaintenanceTicketRequest {
+  resolutionNotes: string;
+}
+
+export interface CancelMaintenanceTicketRequest {
+  reason: string;
+}
+
+export interface MaintenanceWorkflowSubmission {
+  accountId?: string;
+  resolutionNotes?: string;
+  reason?: string;
+}
+
 export interface MaintenanceTicketResult {
   id: string;
   ticketNumber: string;
