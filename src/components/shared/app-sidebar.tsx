@@ -5,6 +5,7 @@ import type { LucideIcon } from "lucide-react";
 import {
   BarChart3,
   Bell,
+  Building2,
   ChevronLeft,
   ChevronRight,
   IceCream,
@@ -35,6 +36,7 @@ const SIDEBAR_ITEMS: readonly SidebarItem[] = [
   { href: "/transactions", label: "Giao dịch", icon: ShoppingCart },
   { href: "/menu", label: "Thực đơn", icon: IceCream },
   { href: "/reports", label: "Báo cáo", icon: BarChart3 },
+  { href: "/organizations", label: "Tổ chức & cửa hàng", icon: Building2 },
   { href: "/users", label: "Tài khoản", icon: Users },
   { href: "/maintenance", label: "Bảo trì", icon: Wrench },
 ];
@@ -48,7 +50,7 @@ const SIDEBAR_GROUPS: readonly {
     routes: ["/dashboard", "/kiosks", "/inventory", "/maintenance"],
   },
   { label: "Kinh doanh", routes: ["/transactions", "/menu", "/reports"] },
-  { label: "Quản trị", routes: ["/users"] },
+  { label: "Quản trị", routes: ["/organizations", "/users"] },
 ];
 
 interface AppSidebarProps {

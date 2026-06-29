@@ -170,13 +170,6 @@ export default function KiosksPage() {
         />
       </section>
 
-      <div className="rounded-lg border border-primary/20 bg-primary/5 px-4 py-3 text-xs text-muted-foreground">
-        <p className="font-medium text-foreground">Nguồn dữ liệu: Backend management API</p>
-        <p className="mt-1">
-          Danh sách chỉ hiển thị metadata quản lý, không suy diễn trạng thái online từ vòng đời và không sử dụng telemetry mô phỏng.
-        </p>
-      </div>
-
       {metadataWarning ? (
         <div className="rounded-lg border border-warning/30 bg-warning/5 px-4 py-3" role="status">
           <div className="flex items-start gap-3">

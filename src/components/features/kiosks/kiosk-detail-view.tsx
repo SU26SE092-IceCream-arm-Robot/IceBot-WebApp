@@ -9,7 +9,6 @@ import {
   CircleHelp,
   Clock3,
   Cpu,
-  Database,
   HardDrive,
   MapPin,
   MemoryStick,
@@ -330,24 +329,6 @@ function MetadataPanel({ kiosk }: { kiosk: KioskManagementDetail }) {
   );
 }
 
-function EvidenceNotice() {
-  return (
-    <div className="rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
-      <div className="flex items-start gap-3">
-        <Database className="mt-0.5 size-4 shrink-0 text-primary" />
-        <div className="space-y-1 text-xs text-muted-foreground">
-          <p className="font-medium text-foreground">
-            Nguồn dữ liệu: Backend management API
-          </p>
-          <p>
-            Metadata, heartbeat và sự kiện được hiển thị tách biệt. Không sử dụng dữ liệu mô phỏng trong chế độ backend thật.
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function EvidenceUnavailable({
   message,
   title,
@@ -637,8 +618,6 @@ export function KioskDetailView({ kioskId }: KioskDetailViewProps) {
     <div className="space-y-6">
       <DetailHeader kiosk={kiosk} onRefresh={() => void refresh()} />
 
-      <EvidenceNotice />
-
       {metadataWarning ? (
         <div className="rounded-lg border border-warning/30 bg-warning/5 px-4 py-3" role="status">
           <div className="flex items-start gap-3">
@@ -656,12 +635,6 @@ export function KioskDetailView({ kioskId }: KioskDetailViewProps) {
       <HeartbeatsTable state={heartbeats} />
       <EventsTable state={events} />
 
-      <div className="flex items-start gap-3 rounded-lg border border-border bg-muted/20 px-4 py-3 text-xs text-muted-foreground">
-        <CircleHelp className="mt-0.5 size-4 shrink-0" />
-        <p>
-          Chưa có telemetry thời gian thực ngoài các trường heartbeat và sự kiện backend trả về. Nhiệt độ, tồn kho và trạng thái robot không được suy diễn khi API không cung cấp.
-        </p>
-      </div>
     </div>
   );
 }

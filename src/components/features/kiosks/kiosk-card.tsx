@@ -3,7 +3,6 @@ import {
   ArrowRight,
   Building2,
   CalendarClock,
-  CircleHelp,
   MapPin,
   Server,
 } from "lucide-react";
@@ -145,14 +144,6 @@ export function KioskCard({ kiosk }: KioskCardProps) {
               {formatTimestamp(kiosk.lastOnlineAt)}
             </span>
           </div>
-        </div>
-
-        <div className="flex items-start gap-2.5 rounded-lg border border-border bg-muted/20 px-3 py-2.5 text-xs text-muted-foreground">
-          <CircleHelp className="mt-0.5 size-4 shrink-0" />
-          <p>
-            Trạng thái trên thẻ là vòng đời quản lý. Xem chi tiết để kiểm tra
-            heartbeat và sự kiện thật từ backend.
-          </p>
         </div>
 
         <div className="border-t border-border pt-3">

@@ -2,6 +2,8 @@ import type { DashboardPermission, DashboardRole, DashboardRoutePath } from "@/t
 
 export const PERMISSIONS: Record<DashboardPermission, readonly DashboardRole[]> = {
   "dashboard.view": ["ADMIN", "MANAGER", "LOCATION_OWNER"],
+  "organizations.view": ["ADMIN", "LOCATION_OWNER"],
+  "organizations.edit": ["ADMIN", "LOCATION_OWNER"],
   "kiosks.view": ["ADMIN", "MANAGER", "LOCATION_OWNER"],
   "kiosks.control": ["ADMIN", "MANAGER"],
   "inventory.view": ["ADMIN", "MANAGER"],
@@ -19,6 +21,7 @@ export const PERMISSIONS: Record<DashboardPermission, readonly DashboardRole[]> 
 
 export const ROUTE_PERMISSIONS: Record<DashboardRoutePath, DashboardPermission> = {
   "/dashboard": "dashboard.view",
+  "/organizations": "organizations.view",
   "/kiosks": "kiosks.view",
   "/inventory": "inventory.view",
   "/transactions": "transactions.view",
@@ -30,6 +33,7 @@ export const ROUTE_PERMISSIONS: Record<DashboardRoutePath, DashboardPermission> 
 
 const DASHBOARD_ROUTES: readonly DashboardRoutePath[] = [
   "/dashboard",
+  "/organizations",
   "/kiosks",
   "/inventory",
   "/transactions",

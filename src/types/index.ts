@@ -22,6 +22,7 @@ export type BackendRoleCode =
 
 export type DashboardRoutePath =
   | "/dashboard"
+  | "/organizations"
   | "/kiosks"
   | "/inventory"
   | "/transactions"
@@ -32,6 +33,8 @@ export type DashboardRoutePath =
 
 export type DashboardPermission =
   | "dashboard.view"
+  | "organizations.view"
+  | "organizations.edit"
   | "kiosks.view"
   | "kiosks.control"
   | "inventory.view"
