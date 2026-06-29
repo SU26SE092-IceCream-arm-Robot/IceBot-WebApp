@@ -6,14 +6,15 @@ import { Card, CardContent } from "@/components/ui/card";
 export function ReportsLoadingState() {
   return (
     <div className="space-y-4" aria-label="Đang tải báo cáo">
-      <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {Array.from({ length: 4 }).map((_, index) => (
-          <div key={index} className="h-44 animate-pulse rounded-lg border border-border bg-muted/25" />
+          <div key={index} className="h-44 animate-pulse rounded-xl border border-border bg-muted/25" />
         ))}
       </div>
+      <div className="h-36 animate-pulse rounded-xl border border-border bg-muted/25" />
       <div className="grid gap-4 xl:grid-cols-2">
-        <div className="h-96 animate-pulse rounded-lg border border-border bg-muted/25" />
-        <div className="h-96 animate-pulse rounded-lg border border-border bg-muted/25" />
+        <div className="h-96 animate-pulse rounded-xl border border-border bg-muted/25" />
+        <div className="h-96 animate-pulse rounded-xl border border-border bg-muted/25" />
       </div>
     </div>
   );
@@ -34,7 +35,7 @@ export function ReportsDataQualityBanner({ messages }: { messages: string[] }) {
 
 export function ReportsUnavailableState({ onRetry }: { onRetry: () => void }) {
   return (
-    <Card className="gap-0 rounded-lg border-border bg-card py-0 shadow-none">
+    <Card className="rounded-xl border border-border bg-card shadow-none">
       <CardContent className="flex flex-col items-center gap-4 p-12 text-center">
         <span className="flex size-12 items-center justify-center rounded-xl border border-border bg-muted/20 text-muted-foreground">
           <BarChart3 className="size-5" />
@@ -51,7 +52,7 @@ export function ReportsUnavailableState({ onRetry }: { onRetry: () => void }) {
 
 export function ReportsSectionUnavailable({ message }: { message: string }) {
   return (
-    <Card className="gap-0 rounded-lg border-border bg-card py-0 shadow-none">
+    <Card className="rounded-xl border border-border bg-card shadow-none">
       <CardContent className="flex min-h-64 flex-col items-center justify-center gap-3 p-8 text-center">
         <span className="flex size-11 items-center justify-center rounded-xl bg-warning/10 text-warning">
           <AlertTriangle className="size-5" />

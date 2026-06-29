@@ -19,11 +19,13 @@ export function RevenueSummary({ trend }: { trend: ReportTrendBucket[] }) {
   );
 
   return (
-    <Card className="gap-0 rounded-lg border border-border/80 bg-card py-0 shadow-none">
-      <CardHeader className="border-b border-border/70 bg-muted/5 px-5 py-4">
-        <div className="flex items-start gap-2.5">
-          <ChartNoAxesCombined className="mt-0.5 size-4 shrink-0 text-success" />
-          <div className="space-y-0.5">
+    <Card className="rounded-xl border border-border bg-card shadow-none">
+      <CardHeader className="border-b border-border pb-4">
+        <div className="flex items-start gap-3">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-success/20 bg-success/10 text-success">
+            <ChartNoAxesCombined className="size-5" />
+          </span>
+          <div className="space-y-1">
             <CardTitle>Xu hướng đơn hàng và doanh thu</CardTitle>
             <CardDescription>Theo ngày với kỳ 7/30 ngày, theo tuần với kỳ 90 ngày.</CardDescription>
           </div>
@@ -39,12 +41,12 @@ export function RevenueSummary({ trend }: { trend: ReportTrendBucket[] }) {
         ) : (
           <div className="max-h-96 space-y-2 overflow-y-auto pr-1">
             {trend.map((bucket) => (
-              <div key={bucket.id} className="grid grid-cols-[84px_minmax(0,1fr)_minmax(104px,auto)] items-center gap-3 border-b border-border/50 py-1.5 text-xs last:border-0">
+              <div key={bucket.id} className="grid grid-cols-[84px_minmax(0,1fr)_minmax(104px,auto)] items-center gap-3 py-1.5 text-xs">
                 <span className="text-muted-foreground">{bucket.label}</span>
                 {bucket.orderCount > 0 ? (
-                  <div className="h-6 overflow-hidden rounded bg-border/60">
+                  <div className="h-6 overflow-hidden rounded-md bg-muted/30">
                     <div
-                      className="flex h-full min-w-0 items-center rounded bg-primary/80 px-2 font-medium text-primary-foreground"
+                      className="flex h-full min-w-0 items-center rounded-md bg-primary/80 px-2 font-medium text-primary-foreground"
                       style={{ width: `${Math.max((bucket.orderCount / maxOrders) * 100, 8)}%` }}
                     >
                       {bucket.orderCount}

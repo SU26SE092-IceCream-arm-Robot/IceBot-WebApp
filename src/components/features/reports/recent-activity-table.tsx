@@ -12,6 +12,40 @@ const TYPE_LABELS: Record<ReportActivityItem["type"], string> = {
   inventory: "Tồn kho",
 };
 
+const STATUS_LABELS: Record<string, string> = {
+  Draft: "Nháp",
+  PendingPayment: "Chờ thanh toán",
+  Paid: "Đã thanh toán",
+  ReadyForExecution: "Sẵn sàng xử lý",
+  Accepted: "Đã nhận",
+  Preparing: "Đang chuẩn bị",
+  Ready: "Sẵn sàng",
+  Completed: "Hoàn tất",
+  Cancelled: "Đã hủy",
+  Failed: "Thất bại",
+  ExecutionRejected: "Từ chối xử lý",
+  RefundRequired: "Cần hoàn tiền",
+  Refunded: "Đã hoàn tiền",
+  Compensated: "Đã bồi hoàn",
+  Requested: "Đã yêu cầu",
+  Processing: "Đang xử lý",
+  Processed: "Đã xử lý",
+  Rejected: "Đã từ chối",
+  Open: "Đang mở",
+  Assigned: "Đã phân công",
+  InProgress: "Đang thực hiện",
+  Resolved: "Đã giải quyết",
+  Closed: "Đã đóng",
+};
+
+const STATUS_CLASS_NAMES: Record<ReportActivityItem["tone"], string> = {
+  primary: "border-primary/20 bg-primary/10 text-primary",
+  success: "border-success/20 bg-success/10 text-success",
+  warning: "border-warning/20 bg-warning/10 text-warning",
+  destructive: "border-destructive/20 bg-destructive/10 text-destructive",
+  muted: "border-border bg-muted/20 text-muted-foreground",
+};
+
 function formatDate(value: string) {
   const parts = new Intl.DateTimeFormat("vi-VN", {
     day: "2-digit",
@@ -29,11 +63,13 @@ function formatDate(value: string) {
 
 export function RecentActivityTable({ items }: { items: ReportActivityItem[] }) {
   return (
-    <Card className="gap-0 rounded-lg border border-border/80 bg-card py-0 shadow-none">
-      <CardHeader className="border-b border-border/70 bg-muted/5 px-5 py-4">
-        <div className="flex items-start gap-2.5">
-          <Activity className="mt-0.5 size-4 shrink-0 text-primary" />
-          <div className="space-y-0.5">
+    <Card className="rounded-xl border border-border bg-card shadow-none">
+      <CardHeader className="border-b border-border pb-4">
+        <div className="flex items-start gap-3">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
+            <Activity className="size-5" />
+          </span>
+          <div className="space-y-1">
             <CardTitle>Hoạt động gần đây</CardTitle>
             <CardDescription>15 sự kiện mới nhất trong phạm vi thời gian đã chọn.</CardDescription>
           </div>
@@ -43,7 +79,7 @@ export function RecentActivityTable({ items }: { items: ReportActivityItem[] }) 
         <CardContent className="p-10 text-center text-sm text-muted-foreground">Chưa có hoạt động trong khoảng thời gian này.</CardContent>
       ) : (
         <Table className="min-w-[860px]">
-          <TableHeader className="bg-muted/15">
+          <TableHeader className="bg-muted/40">
             <TableRow className="hover:bg-transparent">
               <TableHead className="pl-5">Thời gian</TableHead>
               <TableHead>Loại</TableHead>
@@ -56,10 +92,21 @@ export function RecentActivityTable({ items }: { items: ReportActivityItem[] }) 
             {items.map((item) => (
               <TableRow key={item.id}>
                 <TableCell className="py-3 pl-5 text-muted-foreground">{formatDate(item.occurredAt)}</TableCell>
-                <TableCell><Badge variant="outline">{TYPE_LABELS[item.type]}</Badge></TableCell>
+                <TableCell>
+                  <Badge variant="outline" className="h-6 rounded-full border-border bg-muted/20 px-2.5 text-muted-foreground">
+                    {TYPE_LABELS[item.type]}
+                  </Badge>
+                </TableCell>
                 <TableCell className="font-medium text-foreground">{item.entity}</TableCell>
                 <TableCell className="max-w-md whitespace-normal text-muted-foreground">{item.summary}</TableCell>
-                <TableCell className="pr-5"><Badge variant={item.tone === "destructive" ? "destructive" : "outline"}>{item.status}</Badge></TableCell>
+                <TableCell className="pr-5">
+                  <Badge
+                    variant="outline"
+                    className={`h-6 rounded-full px-2.5 ${STATUS_CLASS_NAMES[item.tone]}`}
+                  >
+                    {STATUS_LABELS[item.status] ?? item.status}
+                  </Badge>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>

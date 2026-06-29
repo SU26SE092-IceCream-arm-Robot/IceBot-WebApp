@@ -19,11 +19,13 @@ export function OperationsSignals({ panels }: { panels: ReportSignalPanel[] }) {
         const Icon = ICONS[panel.id];
         const unavailable = panel.coverage.every((item) => item.status === "skipped" || item.status === "failed");
         return (
-          <Card key={panel.id} className="gap-0 rounded-lg border border-border/80 bg-card py-0 shadow-none">
-            <CardHeader className="border-b border-border/70 bg-muted/5 px-5 py-4">
-              <div className="flex items-start gap-2.5">
-                <Icon className="mt-0.5 size-4 shrink-0 text-primary" />
-                <div className="space-y-0.5">
+          <Card key={panel.id} className="rounded-xl border border-border bg-card shadow-none">
+            <CardHeader className="border-b border-border pb-4">
+              <div className="flex items-start gap-3">
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
+                  <Icon className="size-5" />
+                </span>
+                <div className="space-y-1">
                   <CardTitle>{panel.title}</CardTitle>
                   <CardDescription>{panel.description}</CardDescription>
                 </div>

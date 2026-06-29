@@ -2,8 +2,10 @@ import { AlertTriangle, ExternalLink, MonitorCog } from "lucide-react";
 import Link from "next/link";
 
 import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { cn } from "@/lib/utils";
 import type { ReportKioskAttentionRow } from "@/types/reports";
 
 function formatDate(value?: string | null) {
@@ -23,13 +25,27 @@ const LIFECYCLE_LABELS: Record<
   Retired: "Ngừng sử dụng",
 };
 
+const LIFECYCLE_CLASS_NAMES: Record<
+  ReportKioskAttentionRow["lifecycleStatus"],
+  string
+> = {
+  Provisioning: "border-primary/20 bg-primary/10 text-primary",
+  Active: "border-success/20 bg-success/10 text-success",
+  Offline: "border-border bg-muted/20 text-muted-foreground",
+  Maintenance: "border-warning/20 bg-warning/10 text-warning",
+  Disabled: "border-destructive/20 bg-destructive/10 text-destructive",
+  Retired: "border-border bg-muted/20 text-muted-foreground",
+};
+
 export function KioskAttentionTable({ rows }: { rows: ReportKioskAttentionRow[] }) {
   return (
-    <Card className="gap-0 rounded-lg border border-border/80 bg-card py-0 shadow-none">
-      <CardHeader className="border-b border-border/70 bg-muted/5 px-5 py-4">
-        <div className="flex items-start gap-2.5">
-          <MonitorCog className="mt-0.5 size-4 shrink-0 text-warning" />
-          <div className="space-y-0.5">
+    <Card className="rounded-xl border border-border bg-card shadow-none">
+      <CardHeader className="border-b border-border pb-4">
+        <div className="flex items-start gap-3">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-warning/20 bg-warning/10 text-warning">
+            <MonitorCog className="size-5" />
+          </span>
+          <div className="space-y-1">
             <CardTitle>Kiosk cần chú ý</CardTitle>
             <CardDescription>Tổng hợp trạng thái vòng đời, tồn kho, bảo trì và đơn cần xử lý.</CardDescription>
           </div>
@@ -45,15 +61,15 @@ export function KioskAttentionTable({ rows }: { rows: ReportKioskAttentionRow[] 
         </CardContent>
       ) : (
         <Table className="min-w-[1080px]">
-          <TableHeader className="bg-muted/15">
+          <TableHeader className="bg-muted/40">
             <TableRow className="hover:bg-transparent">
               <TableHead className="pl-5">Kiosk</TableHead>
               <TableHead>Cửa hàng</TableHead>
-              <TableHead>Lifecycle</TableHead>
-              <TableHead>Tồn kho</TableHead>
-              <TableHead>Bảo trì</TableHead>
-              <TableHead>Đơn hàng</TableHead>
-              <TableHead>Attention</TableHead>
+              <TableHead>Vòng đời</TableHead>
+              <TableHead className="text-center">Tồn kho</TableHead>
+              <TableHead className="text-center">Bảo trì</TableHead>
+              <TableHead className="text-center">Đơn hàng</TableHead>
+              <TableHead>Cần xử lý</TableHead>
               <TableHead className="pr-5 text-right">Chi tiết</TableHead>
             </TableRow>
           </TableHeader>
@@ -66,19 +82,22 @@ export function KioskAttentionTable({ rows }: { rows: ReportKioskAttentionRow[] 
                 </TableCell>
                 <TableCell className="text-muted-foreground">{row.storeName}</TableCell>
                 <TableCell>
-                  <Badge variant={row.level === "critical" ? "destructive" : "outline"}>
+                  <Badge
+                    variant="outline"
+                    className={`h-6 rounded-full px-2.5 ${LIFECYCLE_CLASS_NAMES[row.lifecycleStatus]}`}
+                  >
                     {LIFECYCLE_LABELS[row.lifecycleStatus]}
                   </Badge>
-                  <p className="mt-1 text-xs text-muted-foreground">Online: {formatDate(row.lastOnlineAt)}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">Trực tuyến: {formatDate(row.lastOnlineAt)}</p>
                 </TableCell>
-                <TableCell className="tabular-nums">{row.inventoryIssueCount}</TableCell>
-                <TableCell className="tabular-nums">
+                <TableCell className="text-center tabular-nums">{row.inventoryIssueCount}</TableCell>
+                <TableCell className="text-center tabular-nums">
                   {row.maintenanceIssueCount}
                   {row.criticalMaintenanceCount > 0 ? (
                     <span className="ml-1 text-xs text-destructive">({row.criticalMaintenanceCount} khẩn cấp)</span>
                   ) : null}
                 </TableCell>
-                <TableCell className="tabular-nums">{row.attentionOrderCount}</TableCell>
+                <TableCell className="text-center tabular-nums">{row.attentionOrderCount}</TableCell>
                 <TableCell>
                   <div className="flex max-w-md items-start gap-2 whitespace-normal">
                     <AlertTriangle className={`mt-0.5 size-4 shrink-0 ${row.level === "critical" ? "text-destructive" : "text-warning"}`} />
@@ -86,8 +105,16 @@ export function KioskAttentionTable({ rows }: { rows: ReportKioskAttentionRow[] 
                   </div>
                 </TableCell>
                 <TableCell className="pr-5 text-right">
-                  <Link className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline" href={`/kiosks/${row.kioskId}`}>
-                    Mở <ExternalLink className="size-3.5" />
+                  <Link
+                    className={cn(
+                      buttonVariants({ variant: "ghost", size: "icon-sm" }),
+                      "rounded-lg text-muted-foreground hover:bg-muted/35 hover:text-foreground",
+                    )}
+                    href={`/kiosks/${row.kioskId}`}
+                    title={`Mở chi tiết ${row.kioskName}`}
+                    aria-label={`Mở chi tiết ${row.kioskName}`}
+                  >
+                    <ExternalLink className="size-4" />
                   </Link>
                 </TableCell>
               </TableRow>

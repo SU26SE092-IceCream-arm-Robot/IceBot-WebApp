@@ -7,6 +7,7 @@ import {
   Clock3,
   RefreshCw,
   ShoppingBag,
+  SlidersHorizontal,
 } from "lucide-react";
 
 import { KioskAttentionTable } from "@/components/features/reports/kiosk-attention-table";
@@ -22,7 +23,12 @@ import {
   ReportsUnavailableState,
 } from "@/components/features/reports/reports-states";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -87,9 +93,107 @@ export default function ReportsPage() {
     "0 ₫"
   );
 
+  const filtersPanel = (
+    <Card className="gap-0 rounded-xl border border-border/80 bg-card py-0 shadow-none">
+      <CardHeader className="border-b border-border px-4 py-4">
+        <div className="flex items-start gap-3">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
+            <SlidersHorizontal className="size-5" />
+          </span>
+          <div className="space-y-0.5">
+            <CardTitle className="text-base font-semibold">
+              Bộ lọc báo cáo
+            </CardTitle>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="grid gap-2 bg-muted/10 px-4 py-3 md:grid-cols-2 xl:grid-cols-3">
+        <Select
+          value={String(filters.rangeDays)}
+          onValueChange={(value) => {
+            if (isRangeDays(value)) {
+              setRangeDays(Number(value) as ReportsRangeDays);
+            }
+          }}
+        >
+          <SelectTrigger
+            className="h-9 w-full bg-card text-foreground"
+            aria-label="Khoảng thời gian báo cáo"
+          >
+            <SelectValue>
+              {
+                RANGE_OPTIONS.find(
+                  (item) => item.value === filters.rangeDays,
+                )?.label
+              }
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            {RANGE_OPTIONS.map((option) => (
+              <SelectItem key={option.value} value={String(option.value)}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select
+          value={filters.storeId}
+          onValueChange={(value) => setStoreId(value ?? "ALL")}
+        >
+          <SelectTrigger
+            className="h-9 w-full bg-card text-foreground"
+            aria-label="Cửa hàng báo cáo"
+          >
+            <SelectValue>
+              {filters.storeId === "ALL"
+                ? "Tất cả cửa hàng"
+                : snapshot?.storeOptions.find(
+                    (item) => item.id === filters.storeId,
+                  )?.label}
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ALL">Tất cả cửa hàng</SelectItem>
+            {snapshot?.storeOptions.map((store) => (
+              <SelectItem key={store.id} value={store.id}>
+                {store.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select
+          value={filters.kioskId}
+          onValueChange={(value) => setKioskId(value ?? "ALL")}
+        >
+          <SelectTrigger
+            className="h-9 w-full bg-card text-foreground md:col-span-2 xl:col-span-1"
+            aria-label="Kiosk báo cáo"
+          >
+            <SelectValue>
+              {filters.kioskId === "ALL"
+                ? "Tất cả kiosk"
+                : kioskOptions.find((item) => item.id === filters.kioskId)
+                    ?.label}
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ALL">Tất cả kiosk</SelectItem>
+            {kioskOptions.map((kiosk) => (
+              <SelectItem key={kiosk.id} value={kiosk.id}>
+                {kiosk.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </CardContent>
+    </Card>
+  );
+
   return (
-    <div className="space-y-6">
-      <section className="flex flex-col gap-4 border-b border-border/80 pb-5 lg:flex-row lg:items-end lg:justify-between">
+    <div className="space-y-7">
+      <section className="flex flex-col gap-4 border-b border-border pb-6 lg:flex-row lg:items-end lg:justify-between">
         <div className="max-w-2xl space-y-2">
           <h1 className="text-3xl font-semibold tracking-tight text-foreground">Báo cáo vận hành</h1>
           <p className="text-sm leading-6 text-muted-foreground">
@@ -106,92 +210,37 @@ export default function ReportsPage() {
         </Button>
       </section>
 
-      <Card className="gap-0 rounded-lg border border-border/80 bg-card/90 py-0 shadow-none">
-        <CardContent className="grid gap-3 p-4 lg:grid-cols-3">
-          <label className="space-y-1.5 text-xs font-medium text-muted-foreground">
-            Khoảng thời gian
-            <Select
-              value={String(filters.rangeDays)}
-              onValueChange={(value) => {
-                if (isRangeDays(value)) setRangeDays(Number(value) as ReportsRangeDays);
-              }}
-            >
-              <SelectTrigger className="h-9 w-full bg-card text-foreground">
-                <SelectValue>{RANGE_OPTIONS.find((item) => item.value === filters.rangeDays)?.label}</SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                {RANGE_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={String(option.value)}>{option.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </label>
-
-          <label className="space-y-1.5 text-xs font-medium text-muted-foreground">
-            Cửa hàng
-            <Select value={filters.storeId} onValueChange={(value) => setStoreId(value ?? "ALL")}>
-              <SelectTrigger className="h-9 w-full bg-card text-foreground">
-                <SelectValue>{filters.storeId === "ALL" ? "Tất cả cửa hàng" : snapshot?.storeOptions.find((item) => item.id === filters.storeId)?.label}</SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">Tất cả cửa hàng</SelectItem>
-                {snapshot?.storeOptions.map((store) => (
-                  <SelectItem key={store.id} value={store.id}>{store.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </label>
-
-          <label className="space-y-1.5 text-xs font-medium text-muted-foreground">
-            Kiosk
-            <Select value={filters.kioskId} onValueChange={(value) => setKioskId(value ?? "ALL")}>
-              <SelectTrigger className="h-9 w-full bg-card text-foreground">
-                <SelectValue>{filters.kioskId === "ALL" ? "Tất cả kiosk" : kioskOptions.find((item) => item.id === filters.kioskId)?.label}</SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">Tất cả kiosk</SelectItem>
-                {kioskOptions.map((kiosk) => (
-                  <SelectItem key={kiosk.id} value={kiosk.id}>{kiosk.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </label>
-        </CardContent>
-      </Card>
-
       {isLoading ? (
         <ReportsLoadingState />
       ) : !snapshot || !snapshot.hasUsableData ? (
-        <ReportsUnavailableState onRetry={refresh} />
+        <>
+          {filtersPanel}
+          <ReportsUnavailableState onRetry={refresh} />
+        </>
       ) : (
         <>
           <ReportsDataQualityBanner messages={snapshot.dataQualityMessages} />
 
-          <section className="space-y-3">
-            <div>
-              <h2 className="text-base font-semibold text-foreground">Tổng quan trong kỳ</h2>
-              <p className="mt-1 text-xs text-muted-foreground">Các chỉ số chính theo phạm vi đang chọn.</p>
-            </div>
-            <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
-              <ReportKpiCard
+          <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <ReportKpiCard
               icon={ShoppingBag}
               label="Đơn hàng trong kỳ"
-              value={snapshot.availability.orders ? snapshot.kpis.orderCount.toLocaleString("vi-VN") : "—"}
+              value={snapshot.availability.orders ? snapshot.kpis.orderCount.toLocaleString("vi-VN") : "--"}
               helper={`Từ ${new Date(snapshot.rangeStart).toLocaleDateString("vi-VN")} đến nay`}
               coverage={snapshot.kpis.coverageLabel}
             />
-              <ReportKpiCard
+            <ReportKpiCard
               icon={Banknote}
               label="Doanh thu đã thu"
-              value={snapshot.availability.orders ? revenueValue : "—"}
+              value={snapshot.availability.orders ? revenueValue : "--"}
               helper="Chỉ tính các khoản đã thanh toán thành công."
               coverage={snapshot.kpis.coverageLabel}
               tone="success"
             />
-              <ReportKpiCard
+            <ReportKpiCard
               icon={CheckCircle2}
               label="Tỷ lệ hoàn tất"
-              value={snapshot.availability.orders ? `${snapshot.kpis.completionRate.toFixed(1)}%` : "—"}
+              value={snapshot.availability.orders ? `${snapshot.kpis.completionRate.toFixed(1)}%` : "--"}
               helper={
                 snapshot.availability.orders && snapshot.kpis.orderCount > 0
                   ? `${snapshot.kpis.completedOrderCount.toLocaleString("vi-VN")} / ${snapshot.kpis.orderCount.toLocaleString("vi-VN")} đơn hoàn tất`
@@ -202,34 +251,29 @@ export default function ReportsPage() {
               coverage={snapshot.kpis.coverageLabel}
               tone="success"
             />
-              <ReportKpiCard
+            <ReportKpiCard
               icon={AlertTriangle}
               label="Đơn cần chú ý"
-              value={snapshot.availability.orders ? snapshot.kpis.attentionOrderCount.toLocaleString("vi-VN") : "—"}
+              value={snapshot.availability.orders ? snapshot.kpis.attentionOrderCount.toLocaleString("vi-VN") : "--"}
               helper="Lỗi, từ chối thực thi, cần hoàn tiền hoặc cần nhân viên"
               coverage={snapshot.kpis.coverageLabel}
               tone={snapshot.kpis.attentionOrderCount > 0 ? "destructive" : "primary"}
-              />
-            </div>
+            />
           </section>
 
-          <section className="space-y-3">
-            <div>
-              <h2 className="text-base font-semibold text-foreground">Phân tích giao dịch</h2>
-              <p className="mt-1 text-xs text-muted-foreground">Xu hướng theo thời gian và cơ cấu trạng thái đơn hàng.</p>
-            </div>
-            <div className="grid gap-4 xl:grid-cols-2">
-              {snapshot.availability.orders ? (
-                <>
-                  <RevenueSummary trend={snapshot.trend} />
-                  <OrderStatusBreakdown buckets={snapshot.statusBreakdown} />
-                </>
-              ) : (
-                <div className="xl:col-span-2">
-                  <ReportsSectionUnavailable message="Không thể tải đơn hàng nên phân bổ trạng thái và xu hướng doanh thu chưa được hiển thị." />
-                </div>
-              )}
-            </div>
+          {filtersPanel}
+
+          <section className="grid gap-4 xl:grid-cols-2">
+            {snapshot.availability.orders ? (
+              <>
+                <RevenueSummary trend={snapshot.trend} />
+                <OrderStatusBreakdown buckets={snapshot.statusBreakdown} />
+              </>
+            ) : (
+              <div className="xl:col-span-2">
+                <ReportsSectionUnavailable message="Không thể tải đơn hàng nên phân bổ trạng thái và xu hướng doanh thu chưa được hiển thị." />
+              </div>
+            )}
           </section>
 
           {snapshot.availability.kiosks ? (
@@ -237,13 +281,7 @@ export default function ReportsPage() {
           ) : (
             <ReportsSectionUnavailable message="Không thể tải metadata kiosk nên danh sách kiosk cần chú ý chưa được hiển thị." />
           )}
-          <section className="space-y-3">
-            <div>
-              <h2 className="text-base font-semibold text-foreground">Tín hiệu vận hành</h2>
-              <p className="mt-1 text-xs text-muted-foreground">Danh mục, tồn kho và các tác vụ cần theo dõi.</p>
-            </div>
-            <OperationsSignals panels={snapshot.signalPanels} />
-          </section>
+          <OperationsSignals panels={snapshot.signalPanels} />
           {snapshot.availability.activity ? (
             <RecentActivityTable items={snapshot.recentActivity} />
           ) : (

@@ -13,11 +13,13 @@ const BAR_TONES: Record<ReportStatusBucket["tone"], string> = {
 
 export function OrderStatusBreakdown({ buckets }: { buckets: ReportStatusBucket[] }) {
   return (
-    <Card className="gap-0 rounded-lg border border-border/80 bg-card py-0 shadow-none">
-      <CardHeader className="border-b border-border/70 bg-muted/5 px-5 py-4">
-        <div className="flex items-start gap-2.5">
-          <ListChecks className="mt-0.5 size-4 shrink-0 text-primary" />
-          <div className="space-y-0.5">
+    <Card className="rounded-xl border border-border bg-card shadow-none">
+      <CardHeader className="border-b border-border pb-4">
+        <div className="flex items-start gap-3">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
+            <ListChecks className="size-5" />
+          </span>
+          <div className="space-y-1">
             <CardTitle>Trạng thái đơn hàng</CardTitle>
             <CardDescription>Phân bổ đơn trong khoảng thời gian đã chọn.</CardDescription>
           </div>
@@ -32,7 +34,7 @@ export function OrderStatusBreakdown({ buckets }: { buckets: ReportStatusBucket[
                 {bucket.count.toLocaleString("vi-VN")} · {bucket.percentage.toFixed(1)}%
               </span>
             </div>
-            <div className="h-1.5 overflow-hidden rounded-full bg-border/70">
+            <div className="h-1.5 overflow-hidden rounded-full bg-muted/40">
               <div
                 className={`h-full rounded-full ${BAR_TONES[bucket.tone]}`}
                 style={{ width: `${Math.max(bucket.percentage, bucket.count > 0 ? 2 : 0)}%` }}
