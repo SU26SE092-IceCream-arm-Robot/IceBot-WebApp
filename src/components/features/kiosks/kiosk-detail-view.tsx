@@ -1,21 +1,22 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import {
   Activity,
   AlertTriangle,
   ArrowLeft,
+  Building2,
+  CircleHelp,
   Clock3,
   Cpu,
-  CupSoda,
-  Lock,
+  Database,
+  HardDrive,
   MapPin,
+  MemoryStick,
+  Network,
   RefreshCw,
+  Server,
   ShieldAlert,
-  Snowflake,
-  Unlock,
-  Wrench,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -29,115 +30,43 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import type { KioskEvidenceState } from "@/hooks/use-kiosk-detail";
 import { useKioskDetail } from "@/hooks/use-kiosk-detail";
-import { hasPermission } from "@/lib/rbac";
 import { cn } from "@/lib/utils";
-import type { KioskStatus, RobotArmStatus } from "@/types";
-import type { KioskLifecycleStatus } from "@/types/kiosk-management";
+import type { KioskLifecycleStatus } from "@/types";
 import type {
-  KioskDetail,
-  KioskEvent,
-  KioskEventSeverity,
-  KioskTemperaturePoint,
+  DeviceEventSeverity,
+  KioskDeviceEventResult,
+  KioskHeartbeatResult,
+  KioskHeartbeatStatus,
+  KioskManagementDetail,
 } from "@/types/kiosk-detail";
 
 interface KioskDetailViewProps {
   kioskId: string;
 }
 
-type ControlCommand = "Khóa kiosk" | "Mở khóa kiosk" | "Đặt trạng thái READY" | "Tạo phiếu bảo trì";
+function formatTimestamp(value?: string | null): string {
+  if (!value) {
+    return "Chưa cập nhật";
+  }
 
-function formatTimestamp(value: string): string {
-  const parsed = new Date(value);
-
-  if (Number.isNaN(parsed.getTime())) {
-    return "--";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "Chưa cập nhật";
   }
 
   return new Intl.DateTimeFormat("vi-VN", {
-    day: "2-digit",
-    month: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
     second: "2-digit",
-  }).format(parsed);
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(date);
 }
 
-function formatShortTime(value: string): string {
-  const parsed = new Date(value);
-
-  if (Number.isNaN(parsed.getTime())) {
-    return "--";
-  }
-
-  return new Intl.DateTimeFormat("vi-VN", {
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(parsed);
-}
-
-function getStatusLabel(status: KioskStatus): string {
-  switch (status) {
-    case "ONLINE":
-      return "Trực tuyến";
-    case "OFFLINE":
-      return "Mất kết nối";
-    case "MAINTENANCE":
-      return "Bảo trì";
-    case "ERROR":
-      return "Đang lỗi";
-  }
-}
-
-function getStatusVariant(status: KioskStatus): "default" | "destructive" | "secondary" {
-  if (status === "ONLINE") {
-    return "default";
-  }
-
-  if (status === "ERROR") {
-    return "destructive";
-  }
-
-  return "secondary";
-}
-
-function getRobotLabel(status: RobotArmStatus): string {
-  switch (status) {
-    case "READY":
-      return "Sẵn sàng";
-    case "BUSY":
-      return "Đang phục vụ";
-    case "IDLE":
-      return "Đang nghỉ";
-    case "ERROR":
-      return "Lỗi phần cứng";
-  }
-}
-
-function getSeverityVariant(severity: KioskEventSeverity): "outline" | "secondary" | "destructive" {
-  if (severity === "ERROR") {
-    return "destructive";
-  }
-
-  if (severity === "WARNING") {
-    return "secondary";
-  }
-
-  return "outline";
-}
-
-function getSeverityLabel(severity: KioskEventSeverity): string {
-  switch (severity) {
-    case "ERROR":
-      return "Lỗi";
-    case "WARNING":
-      return "Cảnh báo";
-    case "INFO":
-      return "Thông tin";
-  }
-}
-
-function getLifecycleLabel(status?: KioskLifecycleStatus): string {
+function getLifecycleLabel(status: KioskLifecycleStatus): string {
   switch (status) {
     case "Provisioning":
       return "Đang cấu hình";
@@ -151,39 +80,142 @@ function getLifecycleLabel(status?: KioskLifecycleStatus): string {
       return "Đã vô hiệu hóa";
     case "Retired":
       return "Ngừng sử dụng";
-    default:
-      return "Chưa cập nhật";
   }
+}
+
+function getLifecycleVariant(
+  status: KioskLifecycleStatus,
+): "default" | "destructive" | "secondary" | "outline" {
+  if (status === "Active") {
+    return "default";
+  }
+
+  if (status === "Offline" || status === "Disabled") {
+    return "destructive";
+  }
+
+  if (status === "Maintenance" || status === "Provisioning") {
+    return "secondary";
+  }
+
+  return "outline";
+}
+
+function getHeartbeatLabel(status: KioskHeartbeatStatus): string {
+  switch (status) {
+    case "Online":
+      return "Online theo heartbeat";
+    case "Degraded":
+      return "Suy giảm";
+    case "Offline":
+      return "Offline theo heartbeat";
+  }
+}
+
+function getHeartbeatVariant(
+  status: KioskHeartbeatStatus,
+): "default" | "destructive" | "secondary" {
+  if (status === "Online") {
+    return "default";
+  }
+
+  if (status === "Offline") {
+    return "destructive";
+  }
+
+  return "secondary";
+}
+
+function getSeverityLabel(severity: DeviceEventSeverity): string {
+  switch (severity) {
+    case "Debug":
+      return "Debug";
+    case "Info":
+      return "Thông tin";
+    case "Warning":
+      return "Cảnh báo";
+    case "Error":
+      return "Lỗi";
+    case "Critical":
+      return "Nghiêm trọng";
+  }
+}
+
+function getSeverityVariant(
+  severity: DeviceEventSeverity,
+): "default" | "destructive" | "secondary" | "outline" {
+  if (severity === "Critical" || severity === "Error") {
+    return "destructive";
+  }
+
+  if (severity === "Warning") {
+    return "secondary";
+  }
+
+  return severity === "Info" ? "default" : "outline";
+}
+
+function formatPercent(value?: number | null): string {
+  return value === null || value === undefined
+    ? "Chưa có dữ liệu"
+    : `${value.toLocaleString("vi-VN", { maximumFractionDigits: 1 })}%`;
 }
 
 function StatePanel({
   description,
   destructive = false,
+  onRetry,
   title,
 }: {
   description: string;
   destructive?: boolean;
+  onRetry?: () => void;
   title: string;
 }) {
   return (
-    <Card className={destructive ? "border-destructive/30 bg-destructive/5 shadow-none" : "border-border shadow-none"}>
+    <Card
+      className={
+        destructive
+          ? "border-destructive/30 bg-destructive/5 shadow-none"
+          : "border-border shadow-none"
+      }
+    >
       <CardContent className="flex flex-col items-center gap-4 p-10 text-center">
         <span
           className={cn(
             "flex size-12 items-center justify-center rounded-xl",
-            destructive ? "bg-destructive/10 text-destructive" : "bg-secondary text-muted-foreground"
+            destructive
+              ? "bg-destructive/10 text-destructive"
+              : "bg-secondary text-muted-foreground",
           )}
         >
-          {destructive ? <ShieldAlert className="size-5" /> : <Cpu className="size-5" />}
+          {destructive ? (
+            <ShieldAlert className="size-5" />
+          ) : (
+            <Server className="size-5" />
+          )}
         </span>
         <div className="space-y-1">
           <p className="font-medium text-foreground">{title}</p>
-          <p className="max-w-md text-sm text-muted-foreground">{description}</p>
+          <p className="max-w-md text-sm text-muted-foreground">
+            {description}
+          </p>
         </div>
-        <Link href="/kiosks" className={buttonVariants({ variant: "outline", size: "md" })}>
-          <ArrowLeft className="size-4" />
-          Về Fleet Monitor
-        </Link>
+        <div className="flex flex-wrap justify-center gap-2">
+          {onRetry ? (
+            <Button variant={destructive ? "destructive" : "outline"} onClick={onRetry}>
+              <RefreshCw className="size-4" />
+              Thử lại
+            </Button>
+          ) : null}
+          <Link
+            href="/kiosks"
+            className={buttonVariants({ variant: "outline", size: "md" })}
+          >
+            <ArrowLeft className="size-4" />
+            Về danh sách kiosk
+          </Link>
+        </div>
       </CardContent>
     </Card>
   );
@@ -196,190 +228,12 @@ function DetailSkeleton() {
         <div className="h-8 w-64 animate-pulse rounded bg-muted/50" />
         <div className="h-4 w-80 animate-pulse rounded bg-muted/30" />
       </div>
-      <div className="grid gap-4 xl:grid-cols-[1.3fr_0.7fr]">
-        <div className="h-64 animate-pulse rounded-xl border border-border bg-card" />
-        <div className="h-64 animate-pulse rounded-xl border border-border bg-card" />
-      </div>
       <div className="grid gap-4 xl:grid-cols-2">
         <div className="h-72 animate-pulse rounded-xl border border-border bg-card" />
         <div className="h-72 animate-pulse rounded-xl border border-border bg-card" />
       </div>
+      <div className="h-80 animate-pulse rounded-xl border border-border bg-card" />
     </div>
-  );
-}
-
-function MetricTile({
-  children,
-  icon: Icon,
-  label,
-  warning = false,
-}: {
-  children: React.ReactNode;
-  icon: typeof Activity;
-  label: string;
-  warning?: boolean;
-}) {
-  return (
-    <div className="space-y-2 rounded-xl border border-border bg-background/70 p-4">
-      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-        <Icon className="size-3.5" />
-        {label}
-      </div>
-      <div className={cn("text-sm font-semibold text-foreground", warning && "text-destructive")}>
-        {children}
-      </div>
-    </div>
-  );
-}
-
-function IngredientLevel({ label, value }: { label: string; value: number }) {
-  const warning = value < 15;
-
-  return (
-    <div className="space-y-2.5">
-      <div className="flex justify-between gap-3 text-sm">
-        <span className="text-muted-foreground">{label}</span>
-        <span className={cn("tabular-nums font-semibold text-foreground", warning && "text-warning")}>
-          {value}%
-        </span>
-      </div>
-      <div className="h-2 overflow-hidden rounded-full bg-muted">
-        <div
-          className={cn("h-full rounded-full", warning ? "bg-warning" : "bg-primary")}
-          style={{ width: `${Math.max(0, Math.min(value, 100))}%` }}
-        />
-      </div>
-    </div>
-  );
-}
-
-function TemperatureTrend({ history }: { history: KioskTemperaturePoint[] }) {
-  const current = history.at(-1);
-
-  return (
-    <Card className="border-border/80 shadow-none">
-      <CardHeader className="border-b border-border pb-4">
-        <CardTitle className="flex items-center gap-2 text-base">
-          <Snowflake className="size-4 text-primary" />
-          Xu hướng nhiệt độ
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-5 p-5">
-        <div className="flex items-end justify-between gap-4">
-          <div>
-            <p className="text-xs text-muted-foreground">Nhiệt độ gần nhất</p>
-            <p className="tabular-nums text-2xl font-semibold tracking-tight text-foreground">
-              {current ? `${current.temperature.toFixed(1)}°C` : "--"}
-            </p>
-          </div>
-          <Badge variant="outline">Ngưỡng mục tiêu -18°C</Badge>
-        </div>
-
-        <div className="flex h-36 items-end gap-3 rounded-xl border border-border bg-background/70 p-4">
-          {history.map((point) => {
-            const barHeight = Math.max(14, Math.min(94, ((point.temperature + 22) / 14) * 100));
-            const tooWarm = point.temperature > -15;
-
-            return (
-              <div key={point.timestamp} className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-2">
-                <span className={cn("tabular-nums text-[11px] font-medium", tooWarm ? "text-destructive" : "text-muted-foreground")}>
-                  {point.temperature.toFixed(1)}
-                </span>
-                <div
-                  className={cn("w-full max-w-9 rounded-t-md", tooWarm ? "bg-destructive" : "bg-primary")}
-                  style={{ height: `${barHeight}%` }}
-                />
-                <span className="tabular-nums text-[11px] text-muted-foreground">
-                  {formatShortTime(point.timestamp)}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function EventsTable({ events }: { events: KioskEvent[] }) {
-  return (
-    <Card className="border-border/80 shadow-none">
-      <CardHeader className="border-b border-border pb-4">
-        <CardTitle className="text-base">Sự kiện gần đây</CardTitle>
-      </CardHeader>
-      <CardContent className="p-0">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="px-5">Thời gian</TableHead>
-              <TableHead>Loại</TableHead>
-              <TableHead>Sự kiện</TableHead>
-              <TableHead className="px-5">Mã</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {events.map((event) => (
-              <TableRow key={event.id}>
-                <TableCell className="px-5 tabular-nums text-xs text-muted-foreground">
-                  {formatTimestamp(event.timestamp)}
-                </TableCell>
-                <TableCell>
-                  <Badge variant={getSeverityVariant(event.severity)}>{getSeverityLabel(event.severity)}</Badge>
-                </TableCell>
-                <TableCell className="max-w-72 whitespace-normal">
-                  <p className="font-medium text-foreground">{event.title}</p>
-                  <p className="text-xs text-muted-foreground">{event.description}</p>
-                </TableCell>
-                <TableCell className="px-5 tabular-nums text-xs text-muted-foreground">
-                  {event.code ?? "--"}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
-  );
-}
-
-function ControlsPanel({
-  canControl,
-  onCommand,
-}: {
-  canControl: boolean;
-  onCommand: (command: ControlCommand) => void;
-}) {
-  return (
-    <Card className="border-border/80 shadow-none">
-      <CardHeader className="border-b border-border pb-4">
-        <CardTitle className="text-base">Điều khiển quản trị</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3 p-5">
-        <div className="grid gap-2 sm:grid-cols-2">
-          <Button variant="destructive" disabled={!canControl} onClick={() => onCommand("Khóa kiosk")}>
-            <Lock className="size-4" />
-            Khóa kiosk
-          </Button>
-          <Button variant="outline" disabled={!canControl} onClick={() => onCommand("Mở khóa kiosk")}>
-            <Unlock className="size-4" />
-            Mở khóa
-          </Button>
-          <Button variant="secondary" disabled={!canControl} onClick={() => onCommand("Đặt trạng thái READY")}>
-            <Activity className="size-4" />
-            Đặt READY
-          </Button>
-          <Button variant="outline" disabled={!canControl} onClick={() => onCommand("Tạo phiếu bảo trì")}>
-            <Wrench className="size-4" />
-            Tạo bảo trì
-          </Button>
-        </div>
-        {!canControl ? (
-          <p className="rounded-lg border border-border bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
-            Chỉ Admin hoặc Manager có quyền thực hiện thao tác điều khiển kiosk.
-          </p>
-        ) : null}
-      </CardContent>
-    </Card>
   );
 }
 
@@ -387,7 +241,7 @@ function DetailHeader({
   kiosk,
   onRefresh,
 }: {
-  kiosk: KioskDetail;
+  kiosk: KioskManagementDetail;
   onRefresh: () => void;
 }) {
   return (
@@ -395,127 +249,340 @@ function DetailHeader({
       <div className="space-y-4">
         <Link
           href="/kiosks"
-          className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "-ml-3 text-muted-foreground")}
+          className={cn(
+            buttonVariants({ variant: "ghost", size: "sm" }),
+            "-ml-3 text-muted-foreground",
+          )}
         >
           <ArrowLeft className="size-4" />
-          Fleet Monitor
+          Danh sách kiosk
         </Link>
         <div className="space-y-2">
           <div className="flex flex-wrap items-center gap-3">
-            <h1 className="tabular-nums text-3xl font-semibold tracking-tight text-foreground">
-              {kiosk.kioskId}
+            <h1 className="text-3xl font-semibold tracking-tight text-foreground">
+              {kiosk.name}
             </h1>
-            <Badge variant={getStatusVariant(kiosk.status)}>{getStatusLabel(kiosk.status)}</Badge>
+            <Badge variant={getLifecycleVariant(kiosk.lifecycleStatus)}>
+              {getLifecycleLabel(kiosk.lifecycleStatus)}
+            </Badge>
           </div>
-          <p className="text-base font-medium text-foreground">{kiosk.name}</p>
+          <p className="tabular-nums text-sm font-medium text-muted-foreground">
+            {kiosk.kioskId}
+          </p>
           <p className="flex items-center gap-2 text-sm text-muted-foreground">
             <MapPin className="size-4" />
             {kiosk.locationName}
           </p>
         </div>
       </div>
-      <div className="flex flex-wrap gap-2">
-        <Badge variant="outline" className="tabular-nums px-3 py-2">
-          Serial {kiosk.deviceSerial}
-        </Badge>
-        <Button variant="outline" onClick={onRefresh}>
-          <RefreshCw className="size-4" />
-          Làm mới
-        </Button>
-      </div>
+      <Button variant="outline" onClick={onRefresh}>
+        <RefreshCw className="size-4" />
+        Làm mới
+      </Button>
     </header>
   );
 }
 
-function CurrentStatusPanel({ kiosk }: { kiosk: KioskDetail }) {
-  const isError = kiosk.status === "ERROR" || kiosk.hardwareState.robotArmStatus === "ERROR";
-
+function DetailValue({
+  label,
+  value,
+}: {
+  label: string;
+  value: React.ReactNode;
+}) {
   return (
-    <Card className={cn("border-border/80 shadow-none", isError && "border-destructive/40 ring-2 ring-destructive/20")}>
+    <div className="flex items-start justify-between gap-4 border-b border-border/70 py-3 last:border-b-0">
+      <span className="text-sm text-muted-foreground">{label}</span>
+      <span className="max-w-[62%] text-right text-sm font-medium text-foreground">
+        {value}
+      </span>
+    </div>
+  );
+}
+
+function MetadataPanel({ kiosk }: { kiosk: KioskManagementDetail }) {
+  return (
+    <Card className="border-border/80 shadow-none">
       <CardHeader className="border-b border-border pb-4">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <CardTitle className="text-base">Trạng thái hiện tại</CardTitle>
-          </div>
-          {isError ? (
-            <AlertTriangle className="size-5 animate-pulse text-destructive" />
-          ) : (
-            <Activity className="size-5 text-primary" />
-          )}
-        </div>
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Building2 className="size-4 text-primary" />
+          Metadata quản lý
+        </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4 p-5">
-        <div className="grid gap-3 sm:grid-cols-2">
-          <MetricTile icon={Activity} label="Kết nối" warning={kiosk.status === "ERROR" || kiosk.status === "OFFLINE"}>
-            {getStatusLabel(kiosk.status)}
-          </MetricTile>
-          <MetricTile icon={Cpu} label="Robot Arm" warning={kiosk.hardwareState.robotArmStatus === "ERROR"}>
-            {getRobotLabel(kiosk.hardwareState.robotArmStatus)}
-          </MetricTile>
-          <MetricTile icon={Snowflake} label="Nhiệt độ tủ đông" warning={kiosk.hardwareState.freezerTemperature > -15}>
-            <span className="tabular-nums">{kiosk.hardwareState.freezerTemperature.toFixed(1)}°C</span>
-          </MetricTile>
-          <MetricTile icon={Clock3} label="Heartbeat cuối">
-            <span className="tabular-nums">{formatTimestamp(kiosk.hardwareState.lastHeartbeat)}</span>
-          </MetricTile>
-        </div>
-
-        {kiosk.currentOrderId ? (
-          <div className="flex items-center gap-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-sm">
-            <Cpu className="size-4 shrink-0 text-primary" />
-            <span className="text-muted-foreground">Đơn đang xử lý</span>
-            <span className="tabular-nums font-semibold text-foreground">{kiosk.currentOrderId}</span>
-          </div>
-        ) : null}
-
-        {kiosk.hardwareState.errorCode ? (
-          <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
-            <AlertTriangle className="size-4 shrink-0" />
-            <span>Mã lỗi phần cứng</span>
-            <span className="tabular-nums font-semibold">{kiosk.hardwareState.errorCode}</span>
-          </div>
-        ) : null}
+      <CardContent className="p-5">
+        <DetailValue
+          label="Trạng thái vòng đời"
+          value={getLifecycleLabel(kiosk.lifecycleStatus)}
+        />
+        <DetailValue label="Cửa hàng" value={kiosk.locationName} />
+        <DetailValue label="Store ID" value={<span className="tabular-nums">{kiosk.locationId}</span>} />
+        <DetailValue label="Organization ID" value={<span className="tabular-nums">{kiosk.organizationId}</span>} />
+        <DetailValue label="Loại kiosk" value={kiosk.kioskType} />
+        <DetailValue label="Serial" value={kiosk.serialNumber || "Chưa cập nhật"} />
+        <DetailValue label="Múi giờ" value={kiosk.timeZone} />
+        <DetailValue label="Địa chỉ" value={kiosk.address || "Chưa cập nhật"} />
+        <DetailValue
+          label="Online gần nhất (metadata)"
+          value={<span className="tabular-nums">{formatTimestamp(kiosk.lastOnlineAt)}</span>}
+        />
       </CardContent>
     </Card>
   );
 }
 
-function InventoryPanel({ kiosk }: { kiosk: KioskDetail }) {
-  const cupsWarning = kiosk.hardwareState.cupsRemaining < 15;
+function EvidenceNotice() {
+  return (
+    <div className="rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
+      <div className="flex items-start gap-3">
+        <Database className="mt-0.5 size-4 shrink-0 text-primary" />
+        <div className="space-y-1 text-xs text-muted-foreground">
+          <p className="font-medium text-foreground">
+            Nguồn dữ liệu: Backend management API
+          </p>
+          <p>
+            Metadata, heartbeat và sự kiện được hiển thị tách biệt. Không sử dụng dữ liệu mô phỏng trong chế độ backend thật.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function EvidenceUnavailable({
+  message,
+  title,
+}: {
+  message: string;
+  title: string;
+}) {
+  return (
+    <div className="flex min-h-32 items-center justify-center p-6 text-center">
+      <div className="max-w-md space-y-2">
+        <CircleHelp className="mx-auto size-6 text-muted-foreground" />
+        <p className="text-sm font-medium text-foreground">{title}</p>
+        <p className="text-xs leading-5 text-muted-foreground">{message}</p>
+      </div>
+    </div>
+  );
+}
+
+function LatestHeartbeatPanel({
+  state,
+}: {
+  state: KioskEvidenceState<KioskHeartbeatResult>;
+}) {
+  const latest = [...state.data].sort(
+    (left, right) =>
+      new Date(right.reportedAt).getTime() - new Date(left.reportedAt).getTime(),
+  )[0];
 
   return (
     <Card className="border-border/80 shadow-none">
       <CardHeader className="border-b border-border pb-4">
-        <CardTitle className="text-base">Tồn kho & nguyên liệu</CardTitle>
+        <div className="flex items-center justify-between gap-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Activity className="size-4 text-primary" />
+            Bằng chứng vận hành gần nhất
+          </CardTitle>
+          {latest ? (
+            <Badge variant={getHeartbeatVariant(latest.status)}>
+              {getHeartbeatLabel(latest.status)}
+            </Badge>
+          ) : null}
+        </div>
       </CardHeader>
-      <CardContent className="space-y-5 p-5">
-        <div className={cn("flex items-center justify-between rounded-xl border border-border bg-background/70 p-4", cupsWarning && "border-warning/40 bg-warning/5")}>
-          <div className="flex items-center gap-3">
-            <span
-              className={cn(
-                "flex size-10 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary",
-                cupsWarning && "border-warning/20 bg-warning/10 text-warning"
-              )}
-            >
-              <CupSoda className="size-5" />
-            </span>
-            <div>
-              <p className="text-sm font-medium text-foreground">Ly sẵn sàng</p>
-              <p className="text-xs text-muted-foreground">
-                {cupsWarning ? "Dưới ngưỡng tiếp liệu" : "Đủ cho vận hành hiện tại"}
-              </p>
-            </div>
+      <CardContent className="p-5">
+        {state.isLoading ? (
+          <div className="space-y-3" aria-label="Đang tải heartbeat">
+            {Array.from({ length: 5 }).map((_, index) => (
+              <div key={index} className="h-9 animate-pulse rounded bg-muted/40" />
+            ))}
           </div>
-          <p className={cn("tabular-nums text-2xl font-semibold text-foreground", cupsWarning && "text-warning")}>
-            {kiosk.hardwareState.cupsRemaining}
-          </p>
-        </div>
+        ) : state.errorMessage ? (
+          <EvidenceUnavailable
+            title="Không lấy được dữ liệu heartbeat"
+            message={state.errorMessage}
+          />
+        ) : !latest ? (
+          <EvidenceUnavailable
+            title="Chưa có dữ liệu vận hành"
+            message="Backend chưa ghi nhận heartbeat nào cho kiosk này. Không thể kết luận trạng thái online/offline thời gian thực."
+          />
+        ) : (
+          <div>
+            <DetailValue label="Kiosk báo cáo lúc" value={<span className="tabular-nums">{formatTimestamp(latest.reportedAt)}</span>} />
+            <DetailValue label="Backend nhận lúc" value={<span className="tabular-nums">{formatTimestamp(latest.receivedAt)}</span>} />
+            <DetailValue label="Network status" value={latest.networkStatus || "Không được heartbeat cung cấp"} />
+            <DetailValue label="Robot status" value={latest.robotStatus || "Không được heartbeat cung cấp"} />
+            <DetailValue label="Phiên bản ứng dụng" value={latest.appVersion || "Chưa có dữ liệu"} />
+            <DetailValue label="Phiên bản firmware" value={latest.firmwareVersion || "Chưa có dữ liệu"} />
+            <DetailValue label="Sự kiện chờ đồng bộ" value={<span className="tabular-nums">{latest.pendingSyncEventCount}</span>} />
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
-        <div className="space-y-4">
-          <IngredientLevel label="Syrup Vanilla" value={kiosk.hardwareState.vanillaSyrupLevel} />
-          <IngredientLevel label="Syrup Chocolate" value={kiosk.hardwareState.chocolateSyrupLevel} />
-          <IngredientLevel label="Topping / Dispenser" value={kiosk.hardwareState.toppingLevel} />
+function ResourceTile({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: typeof Cpu;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="space-y-2 rounded-lg border border-border bg-background/70 p-3">
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <Icon className="size-3.5" />
+        {label}
+      </div>
+      <p className="tabular-nums text-sm font-semibold text-foreground">{value}</p>
+    </div>
+  );
+}
+
+function HeartbeatsTable({
+  state,
+}: {
+  state: KioskEvidenceState<KioskHeartbeatResult>;
+}) {
+  return (
+    <Card className="border-border/80 shadow-none">
+      <CardHeader className="border-b border-border pb-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Clock3 className="size-4 text-primary" />
+            Lịch sử heartbeat
+          </CardTitle>
+          {state.pagination ? (
+            <span className="text-xs text-muted-foreground">
+              Hiển thị {state.data.length}/{state.pagination.totalCount} bản ghi
+            </span>
+          ) : null}
         </div>
+      </CardHeader>
+      <CardContent className="p-0">
+        {state.isLoading ? (
+          <EvidenceUnavailable title="Đang tải heartbeat" message="Đang lấy bằng chứng vận hành từ backend." />
+        ) : state.errorMessage ? (
+          <EvidenceUnavailable title="Không lấy được dữ liệu heartbeat" message={state.errorMessage} />
+        ) : state.data.length === 0 ? (
+          <EvidenceUnavailable title="Chưa có heartbeat" message="Kiosk chưa gửi heartbeat nào về backend." />
+        ) : (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="pl-5">Thời gian báo cáo</TableHead>
+                  <TableHead>Trạng thái</TableHead>
+                  <TableHead>Network</TableHead>
+                  <TableHead>Robot</TableHead>
+                  <TableHead>Tài nguyên</TableHead>
+                  <TableHead className="pr-5">Node ID</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {state.data.map((heartbeat) => (
+                  <TableRow key={heartbeat.id}>
+                    <TableCell className="pl-5 tabular-nums text-xs text-muted-foreground">
+                      {formatTimestamp(heartbeat.reportedAt)}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={getHeartbeatVariant(heartbeat.status)}>
+                        {getHeartbeatLabel(heartbeat.status)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{heartbeat.networkStatus || "--"}</TableCell>
+                    <TableCell>{heartbeat.robotStatus || "--"}</TableCell>
+                    <TableCell>
+                      <div className="grid min-w-52 grid-cols-3 gap-2">
+                        <ResourceTile icon={Cpu} label="CPU" value={formatPercent(heartbeat.cpuUsagePercent)} />
+                        <ResourceTile icon={MemoryStick} label="RAM" value={formatPercent(heartbeat.memoryUsagePercent)} />
+                        <ResourceTile icon={HardDrive} label="Disk" value={formatPercent(heartbeat.diskUsagePercent)} />
+                      </div>
+                    </TableCell>
+                    <TableCell className="max-w-48 truncate pr-5 font-mono text-xs text-muted-foreground">
+                      {heartbeat.nodeId}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function EventsTable({
+  state,
+}: {
+  state: KioskEvidenceState<KioskDeviceEventResult>;
+}) {
+  return (
+    <Card className="border-border/80 shadow-none">
+      <CardHeader className="border-b border-border pb-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Network className="size-4 text-primary" />
+            Sự kiện từ kiosk
+          </CardTitle>
+          {state.pagination ? (
+            <span className="text-xs text-muted-foreground">
+              Hiển thị {state.data.length}/{state.pagination.totalCount} sự kiện
+            </span>
+          ) : null}
+        </div>
+      </CardHeader>
+      <CardContent className="p-0">
+        {state.isLoading ? (
+          <EvidenceUnavailable title="Đang tải sự kiện" message="Đang lấy sự kiện thiết bị từ backend." />
+        ) : state.errorMessage ? (
+          <EvidenceUnavailable title="Không lấy được sự kiện từ kiosk" message={state.errorMessage} />
+        ) : state.data.length === 0 ? (
+          <EvidenceUnavailable title="Chưa có sự kiện từ kiosk" message="Backend chưa ghi nhận sự kiện thiết bị nào cho kiosk này." />
+        ) : (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="pl-5">Thời gian</TableHead>
+                  <TableHead>Mức độ</TableHead>
+                  <TableHead>Loại sự kiện</TableHead>
+                  <TableHead>Nội dung</TableHead>
+                  <TableHead className="pr-5">Device ID</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {state.data.map((event) => (
+                  <TableRow key={event.id}>
+                    <TableCell className="pl-5 tabular-nums text-xs text-muted-foreground">
+                      {formatTimestamp(event.occurredAt)}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={getSeverityVariant(event.severity)}>
+                        {getSeverityLabel(event.severity)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="font-medium text-foreground">
+                      {event.eventType}
+                    </TableCell>
+                    <TableCell className="min-w-72 max-w-xl whitespace-normal text-sm text-muted-foreground">
+                      {event.message || "Backend không cung cấp nội dung sự kiện."}
+                    </TableCell>
+                    <TableCell className="max-w-48 truncate pr-5 font-mono text-xs text-muted-foreground">
+                      {event.deviceId}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
@@ -524,14 +591,13 @@ function InventoryPanel({ kiosk }: { kiosk: KioskDetail }) {
 export function KioskDetailView({ kioskId }: KioskDetailViewProps) {
   const {
     kiosk,
-    role,
     state,
     errorMessage,
     metadataWarning,
+    heartbeats,
+    events,
     refresh,
   } = useKioskDetail(kioskId);
-  const [commandNotice, setCommandNotice] = useState<string | null>(null);
-  const canControl = role ? hasPermission(role, "kiosks.control") : false;
 
   if (state === "LOADING") {
     return <DetailSkeleton />;
@@ -541,7 +607,7 @@ export function KioskDetailView({ kioskId }: KioskDetailViewProps) {
     return (
       <StatePanel
         title="Không tìm thấy kiosk"
-        description={`Không có kiosk mã ${kioskId} trong dữ liệu vận hành hiện tại.`}
+        description={`Không tìm thấy kiosk có ID ${kioskId} trong backend management API.`}
       />
     );
   }
@@ -551,24 +617,19 @@ export function KioskDetailView({ kioskId }: KioskDetailViewProps) {
       <StatePanel
         destructive
         title="Ngoài phạm vi truy cập"
-        description="Kiosk này không thuộc địa điểm được cấp quyền cho tài khoản hiện tại."
+        description="Tài khoản hiện tại không có quyền xem kiosk này."
       />
     );
   }
 
   if (state === "ERROR" || !kiosk) {
     return (
-      <Card className="border-destructive/30 bg-destructive/5 shadow-none">
-        <CardContent className="flex flex-col items-center gap-4 p-10 text-center">
-          <AlertTriangle className="size-6 text-destructive" />
-          <p className="text-sm font-medium text-destructive">
-            {errorMessage ?? "Không thể tải chi tiết kiosk."}
-          </p>
-          <Button variant="destructive" onClick={() => void refresh()}>
-            Thử lại
-          </Button>
-        </CardContent>
-      </Card>
+      <StatePanel
+        destructive
+        title="Không thể tải chi tiết kiosk"
+        description={errorMessage ?? "Không thể tải metadata kiosk từ backend."}
+        onRetry={() => void refresh()}
+      />
     );
   }
 
@@ -576,11 +637,10 @@ export function KioskDetailView({ kioskId }: KioskDetailViewProps) {
     <div className="space-y-6">
       <DetailHeader kiosk={kiosk} onRefresh={() => void refresh()} />
 
+      <EvidenceNotice />
+
       {metadataWarning ? (
-        <div
-          className="rounded-lg border border-warning/30 bg-warning/5 px-4 py-3"
-          role="status"
-        >
+        <div className="rounded-lg border border-warning/30 bg-warning/5 px-4 py-3" role="status">
           <div className="flex items-start gap-3">
             <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" />
             <p className="text-xs font-medium text-warning">{metadataWarning}</p>
@@ -588,63 +648,20 @@ export function KioskDetailView({ kioskId }: KioskDetailViewProps) {
         </div>
       ) : null}
 
-      <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
-        <CurrentStatusPanel kiosk={kiosk} />
-        <InventoryPanel kiosk={kiosk} />
-      </div>
-
       <div className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
-        <TemperatureTrend history={kiosk.temperatureHistory} />
-        <EventsTable events={kiosk.recentEvents} />
+        <MetadataPanel kiosk={kiosk} />
+        <LatestHeartbeatPanel state={heartbeats} />
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[0.68fr_0.32fr]">
-        <ControlsPanel
-          canControl={canControl}
-          onCommand={(command) => {
-            setCommandNotice(`${command}: thao tác đã được ghi nhận trên giao diện.`);
-          }}
-        />
-        <Card className="border-border/80 shadow-none">
-          <CardHeader className="border-b border-border pb-4">
-            <CardTitle className="text-base">Thông tin quản lý</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4 p-5 text-sm">
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-muted-foreground">Vòng đời</span>
-              <Badge variant="outline">{getLifecycleLabel(kiosk.lifecycleStatus)}</Badge>
-            </div>
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-muted-foreground">Serial</span>
-              <span className="tabular-nums text-right font-medium text-foreground">
-                {kiosk.serialNumber ?? kiosk.deviceSerial}
-              </span>
-            </div>
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-muted-foreground">Cửa hàng</span>
-              <span className="text-right font-medium text-foreground">{kiosk.locationName}</span>
-            </div>
-            <div className="flex items-start justify-between gap-3">
-              <span className="text-muted-foreground">Địa chỉ</span>
-              <span className="max-w-48 text-right font-medium text-foreground">
-                {kiosk.address ?? "Chưa cập nhật"}
-              </span>
-            </div>
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-muted-foreground">Online gần nhất</span>
-              <span className="tabular-nums text-right font-medium text-foreground">
-                {kiosk.lastOnlineAt ? formatTimestamp(kiosk.lastOnlineAt) : "Chưa cập nhật"}
-              </span>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <HeartbeatsTable state={heartbeats} />
+      <EventsTable state={events} />
 
-      {commandNotice ? (
-        <div className="rounded-lg border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-foreground" role="status">
-          {commandNotice}
-        </div>
-      ) : null}
+      <div className="flex items-start gap-3 rounded-lg border border-border bg-muted/20 px-4 py-3 text-xs text-muted-foreground">
+        <CircleHelp className="mt-0.5 size-4 shrink-0" />
+        <p>
+          Chưa có telemetry thời gian thực ngoài các trường heartbeat và sự kiện backend trả về. Nhiệt độ, tồn kho và trạng thái robot không được suy diễn khi API không cung cấp.
+        </p>
+      </div>
     </div>
   );
 }

@@ -2,11 +2,12 @@
 
 import {
   AlertTriangle,
+  Ban,
   Monitor,
   RefreshCw,
   Search,
   SlidersHorizontal,
-  Wifi,
+  Power,
   Wrench,
   type LucideIcon,
 } from "lucide-react";
@@ -27,10 +28,12 @@ import type { KioskStatusFilter } from "@/types";
 
 const STATUS_OPTIONS: { value: KioskStatusFilter; label: string }[] = [
   { value: "ALL", label: "Tất cả trạng thái" },
-  { value: "ONLINE", label: "Trực tuyến" },
-  { value: "OFFLINE", label: "Mất kết nối" },
-  { value: "MAINTENANCE", label: "Bảo trì" },
-  { value: "ERROR", label: "Đang lỗi" },
+  { value: "Provisioning", label: "Đang cấu hình" },
+  { value: "Active", label: "Đang hoạt động" },
+  { value: "Offline", label: "Ngoại tuyến" },
+  { value: "Maintenance", label: "Bảo trì" },
+  { value: "Disabled", label: "Đã vô hiệu hóa" },
+  { value: "Retired", label: "Ngừng sử dụng" },
 ];
 
 type SummaryTone = "neutral" | "primary" | "destructive" | "warning";
@@ -112,6 +115,7 @@ export default function KiosksPage() {
     filters,
     isLoading,
     errorMessage,
+    metadataWarning,
     scopedCount,
     setSearchTerm,
     setStatusFilter,
@@ -127,13 +131,13 @@ export default function KiosksPage() {
           <div className="space-y-2">
             <h1 className="text-3xl font-semibold tracking-tight text-foreground">Giám sát Kiosk</h1>
             <p className="text-sm leading-6 text-muted-foreground">
-              Theo dõi kết nối, phần cứng robot và mức nguyên liệu của đội máy IceBot trong một màn hình vận hành.
+              Theo dõi metadata vòng đời của đội máy IceBot và mở trang chi tiết để xem heartbeat, sự kiện từ backend.
             </p>
           </div>
         </div>
       </section>
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         <SummaryCard
           icon={Monitor}
           label="Tổng số kiosk"
@@ -141,15 +145,15 @@ export default function KiosksPage() {
           tone="neutral"
         />
         <SummaryCard
-          icon={Wifi}
-          label="Đang trực tuyến"
-          value={summary.online}
+          icon={Power}
+          label="Đang hoạt động"
+          value={summary.active}
           tone="primary"
         />
         <SummaryCard
           icon={AlertTriangle}
-          label="Đang lỗi"
-          value={summary.error}
+          label="Ngoại tuyến"
+          value={summary.offline}
           tone="destructive"
         />
         <SummaryCard
@@ -158,7 +162,29 @@ export default function KiosksPage() {
           value={summary.maintenance}
           tone="warning"
         />
+        <SummaryCard
+          icon={Ban}
+          label="Đã dừng sử dụng"
+          value={summary.disabled}
+          tone="neutral"
+        />
       </section>
+
+      <div className="rounded-lg border border-primary/20 bg-primary/5 px-4 py-3 text-xs text-muted-foreground">
+        <p className="font-medium text-foreground">Nguồn dữ liệu: Backend management API</p>
+        <p className="mt-1">
+          Danh sách chỉ hiển thị metadata quản lý, không suy diễn trạng thái online từ vòng đời và không sử dụng telemetry mô phỏng.
+        </p>
+      </div>
+
+      {metadataWarning ? (
+        <div className="rounded-lg border border-warning/30 bg-warning/5 px-4 py-3" role="status">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" />
+            <p className="text-xs font-medium text-warning">{metadataWarning}</p>
+          </div>
+        </div>
+      ) : null}
 
       <Card className="border-border/80 bg-card shadow-none">
         <CardHeader className="border-b border-border pb-4">
@@ -251,12 +277,12 @@ export default function KiosksPage() {
       <section className="space-y-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-base font-semibold text-foreground">Trạng thái đội máy</h2>
+            <h2 className="text-base font-semibold text-foreground">Vòng đời đội máy</h2>
           </div>
           <div className="flex flex-wrap items-center gap-4">
-            <StatusLegend className="bg-primary" label="Ổn định" />
-            <StatusLegend className="bg-destructive" label="Cần xử lý" />
-            <StatusLegend className="bg-muted-foreground" label="Ngoại tuyến / bảo trì" />
+            <StatusLegend className="bg-primary" label="Đang hoạt động" />
+            <StatusLegend className="bg-warning" label="Bảo trì" />
+            <StatusLegend className="bg-destructive" label="Ngoại tuyến / vô hiệu hóa" />
           </div>
         </div>
 

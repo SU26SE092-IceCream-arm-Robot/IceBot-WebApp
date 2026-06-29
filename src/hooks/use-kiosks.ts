@@ -7,12 +7,11 @@ import { getKioskManagementErrorMessage } from "@/lib/services/kiosk-management"
 import {
   buildFleetKiosksResult,
   getManagementFleetKiosks,
-  getMockFleetKiosks,
 } from "@/lib/services/kiosks";
 import type {
   DashboardRole,
   DashboardUser,
-  Kiosk,
+  KioskFleetItem,
   KioskFilters,
   KioskLocationOption,
   KioskStatusFilter,
@@ -25,19 +24,16 @@ const INITIAL_FILTERS: KioskFilters = {
   locationId: "ALL",
 };
 
-type KioskMetadataSource = "API" | "MOCK";
-
 export interface UseKiosksResult {
   role: DashboardRole | null;
   currentUser: DashboardUser | null;
-  kiosks: Kiosk[];
+  kiosks: KioskFleetItem[];
   summary: KioskSummary;
   locations: KioskLocationOption[];
   filters: KioskFilters;
   isLoading: boolean;
   errorMessage: string | null;
   metadataWarning: string | null;
-  metadataSource: KioskMetadataSource;
   scopedCount: number;
   setSearchTerm: (value: string) => void;
   setStatusFilter: (value: KioskStatusFilter) => void;
@@ -48,18 +44,21 @@ export interface UseKiosksResult {
 
 const EMPTY_SUMMARY: KioskSummary = {
   total: 0,
-  online: 0,
-  error: 0,
+  active: 0,
+  offline: 0,
   maintenance: 0,
+  disabled: 0,
 };
 
 function isStatusFilter(value: string | null): value is KioskStatusFilter {
   return (
     value === "ALL" ||
-    value === "ONLINE" ||
-    value === "OFFLINE" ||
-    value === "MAINTENANCE" ||
-    value === "ERROR"
+    value === "Provisioning" ||
+    value === "Active" ||
+    value === "Offline" ||
+    value === "Maintenance" ||
+    value === "Disabled" ||
+    value === "Retired"
   );
 }
 
@@ -67,9 +66,7 @@ export function useKiosks(): UseKiosksResult {
   const { currentUser } = useAuth();
   const role = currentUser?.role ?? null;
   const [filters, setFilters] = useState<KioskFilters>(INITIAL_FILTERS);
-  const [scopedKiosks, setScopedKiosks] = useState<Kiosk[]>([]);
-  const [metadataSource, setMetadataSource] =
-    useState<KioskMetadataSource>("MOCK");
+  const [scopedKiosks, setScopedKiosks] = useState<KioskFleetItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [metadataWarning, setMetadataWarning] = useState<string | null>(null);
@@ -92,39 +89,27 @@ export function useKiosks(): UseKiosksResult {
       }
 
       try {
-        const managementKiosks = await getManagementFleetKiosks(signal);
+        const result = await getManagementFleetKiosks(signal);
         if (signal?.aborted) {
           return;
         }
 
-        setScopedKiosks(managementKiosks);
-        setMetadataSource("API");
+        setScopedKiosks(result.kiosks);
+        setMetadataWarning(result.warning);
       } catch (error) {
         if (signal?.aborted) {
           return;
         }
 
-        const fallbackKiosks = await getMockFleetKiosks({
-          role,
-          locationIds: currentUser?.locationIds,
-        });
-        if (signal?.aborted) {
-          return;
-        }
-
-        const apiMessage = getKioskManagementErrorMessage(error);
-        setScopedKiosks(fallbackKiosks);
-        setMetadataSource("MOCK");
-        setMetadataWarning(
-          `${apiMessage} Đang hiển thị metadata và telemetry mô phỏng.`,
-        );
+        setScopedKiosks([]);
+        setErrorMessage(getKioskManagementErrorMessage(error));
       } finally {
         if (!signal?.aborted) {
           setIsLoading(false);
         }
       }
     },
-    [currentUser, role],
+    [role],
   );
 
   useEffect(() => {
@@ -168,7 +153,6 @@ export function useKiosks(): UseKiosksResult {
     isLoading,
     errorMessage,
     metadataWarning,
-    metadataSource,
     scopedCount: fleetResult.scopedKiosks.length,
     setSearchTerm,
     setStatusFilter,

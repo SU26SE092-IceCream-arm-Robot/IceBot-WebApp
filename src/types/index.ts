@@ -144,7 +144,22 @@ export interface Kiosk {
   currentOrderId?: string;
 }
 
-export type KioskStatusFilter = "ALL" | KioskStatus;
+export interface KioskFleetItem {
+  managementId: string;
+  kioskId: string;
+  name: string;
+  organizationId: string;
+  locationId: string;
+  locationName: string;
+  address?: string | null;
+  serialNumber?: string | null;
+  lifecycleStatus: KioskLifecycleStatus;
+  lastOnlineAt?: string | null;
+  createdAt: string;
+  updatedAt?: string | null;
+}
+
+export type KioskStatusFilter = "ALL" | KioskLifecycleStatus;
 
 export type KioskLocationFilter = "ALL" | string;
 
@@ -161,7 +176,8 @@ export interface KioskLocationOption {
 
 export interface KioskSummary {
   total: number;
-  online: number;
-  error: number;
+  active: number;
+  offline: number;
   maintenance: number;
+  disabled: number;
 }
