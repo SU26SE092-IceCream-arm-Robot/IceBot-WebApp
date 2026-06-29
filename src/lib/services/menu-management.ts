@@ -3,6 +3,7 @@ import axios from "axios";
 import axiosClient from "@/lib/axios-client";
 import type { ApiResult } from "@/types";
 import type {
+  CreateProductRequest,
   MenuItemResult,
   MenuItemStatus,
   MenuManagementPagedResult,
@@ -11,11 +12,25 @@ import type {
   MenuStatus,
   ProductResult,
   ProductVariantResult,
+  UpdateProductRequest,
+  UpdateProductVariantRequest,
+  UpsertProductVariantRequest,
 } from "@/types/menu-management";
+
+function getApiResultMessage(
+  result: ApiResult<unknown> | undefined,
+  fallbackMessage: string,
+): string {
+  if (!result) return fallbackMessage;
+  const validationMessages = Object.values(result.validationErrors ?? {}).flat();
+  return validationMessages.length > 0
+    ? validationMessages.join(" ")
+    : result.message || result.businessError || fallbackMessage;
+}
 
 function requireData<T>(result: ApiResult<T>, fallbackMessage: string): T {
   if (!result.succeeded || !result.data) {
-    throw new Error(result.message || fallbackMessage);
+    throw new Error(getApiResultMessage(result, fallbackMessage));
   }
 
   return result.data;
@@ -77,6 +92,67 @@ export async function getProductById(
   );
 
   return requireData(response.data, "Không thể tải chi tiết sản phẩm.");
+}
+
+export async function createManagementProduct(
+  request: CreateProductRequest,
+): Promise<ProductResult> {
+  const response = await axiosClient.post<ApiResult<ProductResult>>(
+    "/api/v1/management/products",
+    request,
+  );
+  return requireData(response.data, "Không thể tạo sản phẩm.");
+}
+
+export async function updateManagementProduct(
+  productId: string,
+  request: UpdateProductRequest,
+): Promise<ProductResult> {
+  const response = await axiosClient.put<ApiResult<ProductResult>>(
+    `/api/v1/management/products/${encodeURIComponent(productId)}`,
+    request,
+  );
+  return requireData(response.data, "Không thể cập nhật sản phẩm.");
+}
+
+export async function deleteManagementProduct(productId: string): Promise<boolean> {
+  const response = await axiosClient.delete<ApiResult<boolean>>(
+    `/api/v1/management/products/${encodeURIComponent(productId)}`,
+  );
+  return requireData(response.data, "Không thể xóa sản phẩm.");
+}
+
+export async function createManagementProductVariant(
+  productId: string,
+  request: UpsertProductVariantRequest,
+): Promise<ProductVariantResult> {
+  const response = await axiosClient.post<ApiResult<ProductVariantResult>>(
+    `/api/v1/management/products/${encodeURIComponent(productId)}/variants`,
+    request,
+  );
+  return requireData(response.data, "Không thể tạo biến thể sản phẩm.");
+}
+
+export async function updateManagementProductVariant(
+  productId: string,
+  variantId: string,
+  request: UpdateProductVariantRequest,
+): Promise<ProductVariantResult> {
+  const response = await axiosClient.put<ApiResult<ProductVariantResult>>(
+    `/api/v1/management/products/${encodeURIComponent(productId)}/variants/${encodeURIComponent(variantId)}`,
+    request,
+  );
+  return requireData(response.data, "Không thể cập nhật biến thể sản phẩm.");
+}
+
+export async function deleteManagementProductVariant(
+  productId: string,
+  variantId: string,
+): Promise<boolean> {
+  const response = await axiosClient.delete<ApiResult<boolean>>(
+    `/api/v1/management/products/${encodeURIComponent(productId)}/variants/${encodeURIComponent(variantId)}`,
+  );
+  return requireData(response.data, "Không thể xóa biến thể sản phẩm.");
 }
 
 export async function setProductAvailability(
@@ -148,10 +224,13 @@ export function getMenuManagementErrorMessage(error: unknown, resourceName: stri
 
   if (axios.isAxiosError<ApiResult<unknown>>(error)) {
     if (error.response?.status === 403) {
-      return "Tài khoản hiện tại không có quyền xem danh mục và thực đơn.";
+      return "Tài khoản hiện tại không có quyền truy cập hoặc quản lý danh mục và thực đơn.";
     }
 
-    return error.response?.data?.message || `Không thể tải ${resourceName}.`;
+    return getApiResultMessage(
+      error.response?.data,
+      `Không thể tải ${resourceName}.`,
+    );
   }
 
   return error instanceof Error ? error.message : `Không thể tải ${resourceName}.`;

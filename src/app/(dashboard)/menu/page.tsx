@@ -1,5 +1,7 @@
 "use client";
 
+import { useCallback } from "react";
+
 import {
   AlertTriangle,
   ChevronLeft,
@@ -8,6 +10,7 @@ import {
   IceCreamBowl,
   Layers3,
   PackageCheck,
+  Plus,
   RefreshCw,
   Search,
   ShoppingBasket,
@@ -24,11 +27,20 @@ import {
   MenusTable,
   ProductsTable,
 } from "@/components/features/menu/catalog-tables";
+import {
+  ProductDeleteDialog,
+  ProductFormDialog,
+  VariantFormDialog,
+} from "@/components/features/menu/product-crud-dialogs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/use-auth";
 import { useMenuManagement, type MenuCollectionState } from "@/hooks/use-menu-management";
+import {
+  useProductCrud,
+  type ProductCrudChange,
+} from "@/hooks/use-product-crud";
 import { hasPermission } from "@/lib/rbac";
 import type {
   MenuStatus,
@@ -310,6 +322,55 @@ export default function MenuPage() {
     clearSuccessMessage,
   } = useMenuManagement();
 
+  const handleProductChanged = useCallback(
+    async (change: ProductCrudChange) => {
+      await refresh();
+      if (change.productDeleted) {
+        if (selectedProduct?.id === change.productId) {
+          setProductDetailOpen(false);
+        }
+        return;
+      }
+      if (isProductDetailOpen && selectedProduct?.id === change.productId) {
+        await openProductDetail(change.productId);
+      }
+    },
+    [
+      isProductDetailOpen,
+      openProductDetail,
+      refresh,
+      selectedProduct?.id,
+      setProductDetailOpen,
+    ],
+  );
+
+  const {
+    productFormOpen,
+    editingProduct,
+    variantFormOpen,
+    variantProduct,
+    editingVariant,
+    deleteTarget,
+    isSubmitting: isCrudSubmitting,
+    errorMessage: crudError,
+    successMessage: crudSuccess,
+    openProductCreate,
+    openProductEdit,
+    setProductFormOpen,
+    submitProductCreate,
+    submitProductUpdate,
+    openVariantCreate,
+    openVariantEdit,
+    setVariantFormOpen,
+    submitVariantCreate,
+    submitVariantUpdate,
+    requestProductDelete,
+    requestVariantDelete,
+    setDeleteOpen,
+    confirmDelete,
+    clearSuccessMessage: clearCrudSuccess,
+  } = useProductCrud({ onChanged: handleProductChanged });
+
   const canManage = currentUser
     ? hasPermission(currentUser.role, "menu.edit")
     : false;
@@ -335,6 +396,13 @@ export default function MenuPage() {
         </div>
       ) : null}
 
+      {crudSuccess ? (
+        <div role="status" className="flex items-center justify-between gap-3 rounded-lg border border-success/30 bg-success/5 px-4 py-3 text-sm text-success">
+          <span>{crudSuccess}</span>
+          <Button variant="ghost" size="sm" className="h-7 text-success" onClick={clearCrudSuccess}>Đóng</Button>
+        </div>
+      ) : null}
+
       <section className="flex flex-col gap-4 border-b border-border pb-6 lg:flex-row lg:items-end lg:justify-between">
         <div className="max-w-2xl space-y-2">
           <h1 className="text-3xl font-semibold tracking-tight text-foreground">Thực đơn</h1>
@@ -342,15 +410,10 @@ export default function MenuPage() {
             Theo dõi danh mục sản phẩm và các thực đơn đang phân phối tới kênh bán của IceBot.
           </p>
         </div>
-        <Button
-          variant="outline"
-          className="h-10"
-          onClick={() => void refresh()}
-          isLoading={menus.isLoading || products.isLoading}
-        >
-          <RefreshCw className="size-4" />
-          Làm mới
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          {canManage ? <Button onClick={openProductCreate}><Plus className="size-4" />Tạo sản phẩm</Button> : null}
+          <Button variant="outline" className="h-10" onClick={() => void refresh()} isLoading={menus.isLoading || products.isLoading}><RefreshCw className="size-4" />Làm mới</Button>
+        </div>
       </section>
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -430,6 +493,11 @@ export default function MenuPage() {
         onOpenChange={setProductDetailOpen}
         onToggleProduct={requestProductAvailability}
         onToggleVariant={requestVariantAvailability}
+        onEditProduct={openProductEdit}
+        onDeleteProduct={requestProductDelete}
+        onCreateVariant={openVariantCreate}
+        onEditVariant={openVariantEdit}
+        onDeleteVariant={requestVariantDelete}
       />
 
       <MenuDetailDialog
@@ -453,6 +521,44 @@ export default function MenuPage() {
         onConfirm={() => void confirmAction()}
         onOpenChange={setActionDialogOpen}
       />
+
+      {productFormOpen ? (
+        <ProductFormDialog
+          key={editingProduct?.id ?? "create-product"}
+          product={editingProduct}
+          open
+          isSubmitting={isCrudSubmitting}
+          errorMessage={crudError}
+          onOpenChange={setProductFormOpen}
+          onCreate={submitProductCreate}
+          onUpdate={submitProductUpdate}
+        />
+      ) : null}
+
+      {variantFormOpen && variantProduct ? (
+        <VariantFormDialog
+          key={editingVariant?.id ?? `create-${variantProduct.id}`}
+          product={variantProduct}
+          variant={editingVariant}
+          open
+          isSubmitting={isCrudSubmitting}
+          errorMessage={crudError}
+          onOpenChange={setVariantFormOpen}
+          onCreate={submitVariantCreate}
+          onUpdate={submitVariantUpdate}
+        />
+      ) : null}
+
+      {deleteTarget ? (
+        <ProductDeleteDialog
+          target={deleteTarget}
+          open
+          isSubmitting={isCrudSubmitting}
+          errorMessage={crudError}
+          onOpenChange={setDeleteOpen}
+          onConfirm={confirmDelete}
+        />
+      ) : null}
     </div>
   );
 }

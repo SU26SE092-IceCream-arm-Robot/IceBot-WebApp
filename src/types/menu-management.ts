@@ -6,6 +6,8 @@ export type MenuStatus = "Draft" | "Active" | "Paused" | "Archived";
 
 export type MenuItemStatus = "Draft" | "Active" | "Unavailable" | "Archived";
 
+export type FulfillmentType = "Manual" | "Packaged" | "MachineProduced";
+
 export interface ProductVariantResult {
   id: string;
   productId: string;
@@ -14,6 +16,7 @@ export interface ProductVariantResult {
   displayName?: string | null;
   description?: string | null;
   variantType: string;
+  fulfillmentType: FulfillmentType;
   sizeCode?: string | null;
   basePrice: number;
   currency: string;
@@ -113,3 +116,45 @@ export interface MenuManagementQuery {
   pageNumber: number;
   pageSize: number;
 }
+
+export interface CreateProductRequest {
+  organizationId?: string | null;
+  storeId?: string | null;
+  kioskId?: string | null;
+  templateProductId?: string | null;
+  categoryId?: number | null;
+  code: string;
+  name: string;
+  displayName?: string | null;
+  description?: string | null;
+  productType: string;
+  basePrice: number;
+  currency: string;
+  isAvailable: boolean;
+  preparationTimeSeconds?: number | null;
+  imageUrl?: string | null;
+  metadataJson?: string | null;
+  scopeType: TenantScopeType;
+  variants: UpsertProductVariantRequest[];
+}
+
+export type UpdateProductRequest = Omit<CreateProductRequest, "variants">;
+
+export interface UpsertProductVariantRequest {
+  code: string;
+  name: string;
+  displayName?: string | null;
+  description?: string | null;
+  variantType: string;
+  fulfillmentType: FulfillmentType;
+  sizeCode?: string | null;
+  basePrice: number;
+  currency: string;
+  isAvailable: boolean;
+  displayOrder: number;
+  preparationTimeSeconds?: number | null;
+  imageUrl?: string | null;
+  metadataJson?: string | null;
+}
+
+export type UpdateProductVariantRequest = UpsertProductVariantRequest;

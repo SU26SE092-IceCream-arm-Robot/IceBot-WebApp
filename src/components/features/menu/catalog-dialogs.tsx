@@ -7,7 +7,10 @@ import {
   CirclePlay,
   PackageCheck,
   PackageX,
+  Pencil,
+  Plus,
   ShoppingBasket,
+  Trash2,
 } from "lucide-react";
 
 import type { CatalogManagementAction } from "@/hooks/use-menu-management";
@@ -42,6 +45,17 @@ interface ProductDetailDialogProps {
   onOpenChange: (open: boolean) => void;
   onToggleProduct: (product: ProductResult) => void;
   onToggleVariant: (variant: ProductVariantResult) => void;
+  onEditProduct: (product: ProductResult) => void;
+  onDeleteProduct: (product: ProductResult) => void;
+  onCreateVariant: (product: ProductResult) => void;
+  onEditVariant: (
+    product: ProductResult,
+    variant: ProductVariantResult,
+  ) => void;
+  onDeleteVariant: (
+    product: ProductResult,
+    variant: ProductVariantResult,
+  ) => void;
 }
 
 interface MenuDetailDialogProps {
@@ -201,6 +215,11 @@ export function ProductDetailDialog({
   onOpenChange,
   onToggleProduct,
   onToggleVariant,
+  onEditProduct,
+  onDeleteProduct,
+  onCreateVariant,
+  onEditVariant,
+  onDeleteVariant,
 }: ProductDetailDialogProps) {
   const scopeId = product ? getScopeId(product) : null;
 
@@ -254,28 +273,14 @@ export function ProductDetailDialog({
             </div>
 
             <section className="space-y-3">
-              <div className="flex items-center justify-between gap-3">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <h3 className="font-medium text-foreground">Biến thể sản phẩm</h3>
                   <p className="text-xs text-muted-foreground">
                     Giá và trạng thái khả dụng của từng biến thể.
                   </p>
                 </div>
-                {canManage ? (
-                  <Button
-                    variant={product.isAvailable ? "outline" : "default"}
-                    size="sm"
-                    isLoading={productActionId === product.id}
-                    onClick={() => onToggleProduct(product)}
-                  >
-                    {product.isAvailable ? (
-                      <PackageX className="size-3.5" />
-                    ) : (
-                      <PackageCheck className="size-3.5" />
-                    )}
-                    {product.isAvailable ? "Tắt sản phẩm" : "Bật sản phẩm"}
-                  </Button>
-                ) : null}
+                {canManage ? <div className="flex flex-wrap gap-2"><Button variant="outline" size="sm" onClick={() => onEditProduct(product)}><Pencil className="size-3.5" />Sửa sản phẩm</Button><Button variant={product.isAvailable ? "outline" : "default"} size="sm" isLoading={productActionId === product.id} onClick={() => onToggleProduct(product)}>{product.isAvailable ? <PackageX className="size-3.5" /> : <PackageCheck className="size-3.5" />}{product.isAvailable ? "Tắt sản phẩm" : "Bật sản phẩm"}</Button><Button size="sm" onClick={() => onCreateVariant(product)}><Plus className="size-3.5" />Thêm biến thể</Button><Button variant="ghost" size="icon-sm" className="text-destructive hover:bg-destructive/10 hover:text-destructive" title="Xóa sản phẩm" onClick={() => onDeleteProduct(product)}><Trash2 className="size-4" /></Button></div> : null}
               </div>
 
               {product.variants.length === 0 ? (
@@ -300,20 +305,20 @@ export function ProductDetailDialog({
                           <span className="tabular-nums">{variant.code}</span>
                           {variant.sizeCode ? ` · Kích cỡ ${variant.sizeCode}` : ""}
                           {variant.variantType ? ` · ${variant.variantType}` : ""}
+                          {` · ${
+                            variant.fulfillmentType === "MachineProduced"
+                              ? "Máy sản xuất"
+                              : variant.fulfillmentType === "Manual"
+                                ? "Thủ công"
+                                : "Đóng gói sẵn"
+                          }`}
                         </p>
                         <p className="tabular-nums text-sm font-medium text-foreground">
                           {formatMoney(variant.basePrice, variant.currency)}
                         </p>
                       </div>
                       {canManage ? (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          isLoading={variantActionId === variant.id}
-                          onClick={() => onToggleVariant(variant)}
-                        >
-                          {variant.isAvailable ? "Tắt biến thể" : "Bật biến thể"}
-                        </Button>
+                        <div className="flex flex-wrap gap-1"><Button variant="outline" size="sm" isLoading={variantActionId === variant.id} onClick={() => onToggleVariant(variant)}>{variant.isAvailable ? "Tắt biến thể" : "Bật biến thể"}</Button><Button variant="ghost" size="icon-sm" title="Chỉnh sửa biến thể" onClick={() => onEditVariant(product, variant)}><Pencil className="size-4" /></Button><Button variant="ghost" size="icon-sm" className="text-destructive hover:bg-destructive/10 hover:text-destructive" title="Xóa biến thể" onClick={() => onDeleteVariant(product, variant)}><Trash2 className="size-4" /></Button></div>
                       ) : null}
                     </div>
                   ))}
