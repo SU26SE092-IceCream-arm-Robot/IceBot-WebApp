@@ -116,7 +116,7 @@ export function KioskCard({ kiosk }: KioskCardProps) {
       </CardHeader>
 
       <CardContent className="space-y-4">
-        <div className="grid gap-3 rounded-xl border border-border bg-background/70 p-4 text-sm">
+        <div className="space-y-2.5 text-sm">
           <div className="flex items-start justify-between gap-4">
             <span className="flex items-center gap-2 text-muted-foreground">
               <Building2 className="size-4 shrink-0" />

@@ -78,9 +78,9 @@ function SummaryCard({
   return (
     <Card className="border-border/80 bg-card shadow-none">
       <CardContent className="flex items-start justify-between gap-4 p-5">
-        <div className="space-y-3">
-          <p className="text-sm text-muted-foreground">{label}</p>
-          <p className={`tabular-nums text-3xl font-semibold tracking-tight ${toneClasses.valueClassName}`}>
+        <div className="space-y-1.5">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
+          <p className={`tabular-nums text-3xl lg:text-4xl font-bold tracking-tight ${toneClasses.valueClassName}`}>
             {value}
           </p>
         </div>
@@ -310,15 +310,17 @@ export default function KiosksPage() {
             </CardContent>
           </Card>
         ) : kiosks.length === 0 ? (
-          <Card className="border-border/80 shadow-none">
-            <CardContent className="flex flex-col items-center gap-3 p-10 text-center">
-              <span className="flex size-12 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
-                <Search className="size-5" />
+          <Card className="border-dashed border-2 border-border/80 bg-muted/5 shadow-none">
+            <CardContent className="flex flex-col items-center gap-4 px-10 py-16 text-center">
+              <span className="flex size-14 items-center justify-center rounded-full border border-border bg-background text-muted-foreground shadow-sm">
+                <Search className="size-6 opacity-70" />
               </span>
-              <p className="text-sm font-medium text-foreground">Không có kiosk phù hợp</p>
-              <p className="text-sm text-muted-foreground">
-                Thử thay đổi từ khóa, trạng thái hoặc địa điểm đang lọc.
-              </p>
+              <div className="space-y-1.5">
+                <p className="text-base font-semibold tracking-tight text-foreground">Không tìm thấy Kiosk</p>
+                <p className="mx-auto max-w-md text-sm leading-relaxed text-muted-foreground">
+                  Không có Kiosk nào phù hợp với bộ lọc hiện tại. Thử thay đổi từ khóa, trạng thái hoặc địa điểm để xem kết quả.
+                </p>
+              </div>
             </CardContent>
           </Card>
         ) : (

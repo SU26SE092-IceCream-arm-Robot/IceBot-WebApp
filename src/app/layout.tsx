@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { AuthProvider } from "@/hooks/use-auth";
+import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
@@ -25,6 +26,7 @@ export default function RootLayout({
     <html lang="vi" className={`${plusJakartaSans.variable} h-full`}>
       <body className="min-h-full bg-background text-foreground font-sans antialiased">
         <AuthProvider>{children}</AuthProvider>
+        <Toaster richColors position="bottom-right" />
       </body>
     </html>
   );

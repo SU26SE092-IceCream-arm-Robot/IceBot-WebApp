@@ -144,20 +144,35 @@ export interface RoleScopeOptionsResult {
   organizations: RoleScopeOrganization[];
 }
 
-export interface PermissionDefinition {
-  code: string;
-  name: string;
-  description?: string;
+export interface PermissionMatrixItem {
+  policy: string;
+  description: string;
+  roles?: string[] | null;
+  scopeRequired: boolean;
 }
 
-export interface PermissionGroup {
-  groupName: string;
-  permissions: PermissionDefinition[];
+export type PermissionMatrixResult = PermissionMatrixItem[];
+
+export interface AccountRoleScopeAccessResult {
+  roleCode: string;
+  organizationId?: string | null;
+  storeId?: string | null;
+  kioskId?: string | null;
 }
 
-export type PermissionMatrixResult = PermissionGroup[];
+export interface EffectiveScopeResult {
+  organizationIds: string[];
+  storeIds: string[];
+  kioskIds: string[];
+}
 
-export type EffectiveAccessResult = string[];
+export interface EffectiveAccessResult {
+  accountId: string;
+  isSystemAdmin: boolean;
+  roles: string[];
+  roleScopes: AccountRoleScopeAccessResult[];
+  effectiveScope: EffectiveScopeResult;
+}
 
 export interface ResetPasswordRequest {
   newPassword: string;

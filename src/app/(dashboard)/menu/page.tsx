@@ -38,9 +38,18 @@ import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/use-auth";
 import { useMenuManagement, type MenuCollectionState } from "@/hooks/use-menu-management";
 import {
+  useMenuCrud,
+  type MenuCrudChange,
+} from "@/hooks/use-menu-crud";
+import {
   useProductCrud,
   type ProductCrudChange,
 } from "@/hooks/use-product-crud";
+import {
+  MenuDeleteDialog,
+  MenuFormDialog,
+  MenuItemFormDialog,
+} from "@/components/features/menu/menu-crud-dialogs";
 import { hasPermission } from "@/lib/rbac";
 import type {
   MenuStatus,
@@ -301,7 +310,6 @@ export default function MenuPage() {
     menuActionId,
     menuItemActionId,
     actionError,
-    successMessage,
     setSearchTerm,
     clearSearch,
     previousMenusPage,
@@ -319,7 +327,6 @@ export default function MenuPage() {
     requestMenuItemStatus,
     setActionDialogOpen,
     confirmAction,
-    clearSuccessMessage,
   } = useMenuManagement();
 
   const handleProductChanged = useCallback(
@@ -344,6 +351,45 @@ export default function MenuPage() {
     ],
   );
 
+  const handleMenuChanged = useCallback(
+    async (change: MenuCrudChange) => {
+      await refresh();
+      if (change.menuDeleted) {
+        if (selectedMenu?.id === change.menuId) {
+          setMenuDetailOpen(false);
+        }
+        return;
+      }
+      if (isMenuDetailOpen && selectedMenu?.id === change.menuId) {
+        await openMenuDetail(change.menuId);
+      }
+    },
+    [isMenuDetailOpen, openMenuDetail, refresh, selectedMenu?.id, setMenuDetailOpen],
+  );
+
+  const {
+    isSubmitting: isMenuCrudSubmitting,
+    errorMessage: menuCrudError,
+    menuFormOpen,
+    editingMenu,
+    menuItemFormOpen,
+    menuItemMenu,
+    editingMenuItem,
+    deleteTarget: menuDeleteTarget,
+    setMenuFormOpen,
+    setMenuItemFormOpen,
+    setDeleteTarget: setMenuDeleteTarget,
+    openMenuForm,
+    openMenuItemForm,
+    requestDelete: requestMenuDeleteTarget,
+    submitMenuCreate,
+    submitMenuUpdate,
+    submitMenuDelete,
+    submitMenuItemCreate,
+    submitMenuItemUpdate,
+    submitMenuItemDelete,
+  } = useMenuCrud({ onChanged: handleMenuChanged });
+
   const {
     productFormOpen,
     editingProduct,
@@ -353,7 +399,6 @@ export default function MenuPage() {
     deleteTarget,
     isSubmitting: isCrudSubmitting,
     errorMessage: crudError,
-    successMessage: crudSuccess,
     openProductCreate,
     openProductEdit,
     setProductFormOpen,
@@ -368,7 +413,6 @@ export default function MenuPage() {
     requestVariantDelete,
     setDeleteOpen,
     confirmDelete,
-    clearSuccessMessage: clearCrudSuccess,
   } = useProductCrud({ onChanged: handleProductChanged });
 
   const canManage = currentUser
@@ -380,29 +424,11 @@ export default function MenuPage() {
     menuActionId !== null ||
     menuItemActionId !== null;
   const activeMenusOnPage = menus.data.filter((menu) => menu.status === "Active").length;
+
   const availableProductsOnPage = products.data.filter((product) => product.isAvailable).length;
 
   return (
     <div className="space-y-7">
-      {successMessage ? (
-        <div
-          role="status"
-          className="flex items-center justify-between gap-3 rounded-lg border border-success/30 bg-success/5 px-4 py-3 text-sm text-success"
-        >
-          <span>{successMessage}</span>
-          <Button variant="ghost" size="sm" className="h-7 text-success" onClick={clearSuccessMessage}>
-            Đóng
-          </Button>
-        </div>
-      ) : null}
-
-      {crudSuccess ? (
-        <div role="status" className="flex items-center justify-between gap-3 rounded-lg border border-success/30 bg-success/5 px-4 py-3 text-sm text-success">
-          <span>{crudSuccess}</span>
-          <Button variant="ghost" size="sm" className="h-7 text-success" onClick={clearCrudSuccess}>Đóng</Button>
-        </div>
-      ) : null}
-
       <section className="flex flex-col gap-4 border-b border-border pb-6 lg:flex-row lg:items-end lg:justify-between">
         <div className="max-w-2xl space-y-2">
           <h1 className="text-3xl font-semibold tracking-tight text-foreground">Thực đơn</h1>
@@ -411,8 +437,9 @@ export default function MenuPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          {canManage ? <Button onClick={openProductCreate}><Plus className="size-4" />Tạo sản phẩm</Button> : null}
           <Button variant="outline" className="h-10" onClick={() => void refresh()} isLoading={menus.isLoading || products.isLoading}><RefreshCw className="size-4" />Làm mới</Button>
+          {canManage ? <Button variant="outline" className="h-10" onClick={() => openMenuForm()}><Plus className="size-4" />Tạo thực đơn</Button> : null}
+          {canManage ? <Button className="h-10" onClick={openProductCreate}><Plus className="size-4" />Tạo sản phẩm</Button> : null}
         </div>
       </section>
 
@@ -511,6 +538,11 @@ export default function MenuPage() {
         onOpenChange={setMenuDetailOpen}
         onToggleMenu={requestMenuStatus}
         onToggleMenuItem={requestMenuItemStatus}
+        onEditMenu={openMenuForm}
+        onDeleteMenu={(m) => requestMenuDeleteTarget({ kind: "menu", menu: m })}
+        onCreateMenuItem={openMenuItemForm}
+        onEditMenuItem={openMenuItemForm}
+        onDeleteMenuItem={(m, item) => requestMenuDeleteTarget({ kind: "menu-item", menu: m, menuItem: item })}
       />
 
       <CatalogActionDialog
@@ -557,6 +589,50 @@ export default function MenuPage() {
           errorMessage={crudError}
           onOpenChange={setDeleteOpen}
           onConfirm={confirmDelete}
+        />
+      ) : null}
+
+      {menuFormOpen ? (
+        <MenuFormDialog
+          key={editingMenu?.id ?? "create-menu"}
+          menu={editingMenu}
+          open
+          isSubmitting={isMenuCrudSubmitting}
+          errorMessage={menuCrudError}
+          onOpenChange={setMenuFormOpen}
+          onCreate={submitMenuCreate}
+          onUpdate={(req) => submitMenuUpdate(editingMenu!.id, req)}
+        />
+      ) : null}
+
+      {menuItemFormOpen && menuItemMenu ? (
+        <MenuItemFormDialog
+          key={editingMenuItem?.id ?? `create-${menuItemMenu.id}`}
+          menu={menuItemMenu}
+          menuItem={editingMenuItem}
+          products={products.data}
+          open
+          isSubmitting={isMenuCrudSubmitting}
+          errorMessage={menuCrudError}
+          onOpenChange={setMenuItemFormOpen}
+          onCreate={(req) => submitMenuItemCreate(menuItemMenu.id, req)}
+          onUpdate={(req) => submitMenuItemUpdate(menuItemMenu.id, editingMenuItem!.id, req)}
+        />
+      ) : null}
+
+      {menuDeleteTarget ? (
+        <MenuDeleteDialog
+          target={menuDeleteTarget}
+          isSubmitting={isMenuCrudSubmitting}
+          errorMessage={menuCrudError}
+          onOpenChange={(open) => {
+            if (!open) setMenuDeleteTarget(null);
+          }}
+          onConfirm={() =>
+            menuDeleteTarget.kind === "menu"
+              ? submitMenuDelete(menuDeleteTarget.menu)
+              : submitMenuItemDelete(menuDeleteTarget.menu, menuDeleteTarget.menuItem)
+          }
         />
       ) : null}
     </div>

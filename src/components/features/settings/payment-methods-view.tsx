@@ -31,7 +31,7 @@ export function PaymentMethodsView({ currentUser }: PaymentMethodsViewProps) {
   const { methods, state, error, updatingId, refresh, updateStatus } = usePaymentMethods();
   const [confirmDialog, setConfirmDialog] = useState<{ id: number; isActive: boolean; name: string } | null>(null);
 
-  const canEdit = hasPermission(currentUser.role, "transactions.edit");
+  const canEdit = hasPermission(currentUser.role, "payments.manage");
 
   const handleToggle = (id: number, currentStatus: boolean, name: string) => {
     if (!canEdit) return;

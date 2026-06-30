@@ -21,7 +21,6 @@ import {
 import {
   MAINTENANCE_PRIORITY_LABELS,
   MAINTENANCE_STATUS_LABELS,
-  MaintenanceEmptyIcon,
   MaintenanceTable,
 } from "@/components/features/maintenance/maintenance-table";
 import { Button } from "@/components/ui/button";
@@ -218,20 +217,21 @@ export default function MaintenancePage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          {canManage ? (
-            <Button onClick={openCreateEditor}>
-              <Plus className="size-4" />
-              Tạo yêu cầu
-            </Button>
-          ) : null}
           <Button
             variant="outline"
+            className="h-10"
             onClick={() => void refresh()}
             isLoading={tickets.isLoading}
           >
             <RefreshCw className="size-4" />
             Làm mới
           </Button>
+          {canManage ? (
+            <Button className="h-10" onClick={openCreateEditor}>
+              <Plus className="size-4" />
+              Tạo yêu cầu
+            </Button>
+          ) : null}
         </div>
       </section>
 
@@ -378,14 +378,16 @@ export default function MaintenancePage() {
               </Button>
             </div>
           ) : visibleTickets.length === 0 ? (
-            <div className="flex flex-col items-center gap-3 p-10 text-center">
-              <MaintenanceEmptyIcon />
-              <p className="text-sm font-medium text-foreground">
-                Không có yêu cầu bảo trì phù hợp
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Thử thay đổi từ khóa, trạng thái hoặc mức độ ưu tiên.
-              </p>
+            <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
+              <span className="mb-4 flex size-14 items-center justify-center rounded-full border border-border bg-muted/20 text-muted-foreground shadow-sm">
+                <Wrench className="size-6 opacity-70" />
+              </span>
+              <div className="max-w-md space-y-1.5">
+                <p className="text-base font-semibold tracking-tight text-foreground">Không tìm thấy yêu cầu bảo trì</p>
+                <p className="text-sm leading-relaxed text-muted-foreground">
+                  Không có yêu cầu bảo trì phù hợp. Thử thay đổi từ khóa, trạng thái hoặc mức độ ưu tiên.
+                </p>
+              </div>
             </div>
           ) : (
             <MaintenanceTable

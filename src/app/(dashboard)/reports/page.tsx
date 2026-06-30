@@ -4,7 +4,6 @@ import {
   AlertTriangle,
   Banknote,
   CheckCircle2,
-  Clock3,
   RefreshCw,
   ShoppingBag,
   SlidersHorizontal,
@@ -61,14 +60,6 @@ function formatMoney(value: ReportCurrencyAmount) {
   }
 }
 
-function formatUpdatedAt(value: Date | null) {
-  if (!value) return "Chưa cập nhật";
-  return new Intl.DateTimeFormat("vi-VN", {
-    dateStyle: "short",
-    timeStyle: "medium",
-  }).format(value);
-}
-
 export default function ReportsPage() {
   const {
     filters,
@@ -76,7 +67,6 @@ export default function ReportsPage() {
     kioskOptions,
     isLoading,
     isRefreshing,
-    lastUpdatedAt,
     setRangeDays,
     setStoreId,
     setKioskId,
@@ -199,14 +189,10 @@ export default function ReportsPage() {
           <p className="text-sm leading-6 text-muted-foreground">
             Tổng hợp đơn hàng, doanh thu và tín hiệu cần chú ý từ dữ liệu quản trị hiện có.
           </p>
-          <p className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Clock3 className="size-3.5" />
-            Cập nhật lần cuối: {formatUpdatedAt(lastUpdatedAt)}
-          </p>
         </div>
         <Button variant="outline" onClick={refresh} isLoading={isRefreshing}>
           <RefreshCw className="size-4" />
-          Làm mới dữ liệu
+          Làm mới
         </Button>
       </section>
 
@@ -226,37 +212,23 @@ export default function ReportsPage() {
               icon={ShoppingBag}
               label="Đơn hàng trong kỳ"
               value={snapshot.availability.orders ? snapshot.kpis.orderCount.toLocaleString("vi-VN") : "--"}
-              helper={`Từ ${new Date(snapshot.rangeStart).toLocaleDateString("vi-VN")} đến nay`}
-              coverage={snapshot.kpis.coverageLabel}
             />
             <ReportKpiCard
               icon={Banknote}
               label="Doanh thu đã thu"
               value={snapshot.availability.orders ? revenueValue : "--"}
-              helper="Chỉ tính các khoản đã thanh toán thành công."
-              coverage={snapshot.kpis.coverageLabel}
               tone="success"
             />
             <ReportKpiCard
               icon={CheckCircle2}
               label="Tỷ lệ hoàn tất"
               value={snapshot.availability.orders ? `${snapshot.kpis.completionRate.toFixed(1)}%` : "--"}
-              helper={
-                snapshot.availability.orders && snapshot.kpis.orderCount > 0
-                  ? `${snapshot.kpis.completedOrderCount.toLocaleString("vi-VN")} / ${snapshot.kpis.orderCount.toLocaleString("vi-VN")} đơn hoàn tất`
-                  : snapshot.availability.orders
-                    ? "Chưa có đơn trong kỳ"
-                    : "Nguồn đơn hàng không khả dụng"
-              }
-              coverage={snapshot.kpis.coverageLabel}
               tone="success"
             />
             <ReportKpiCard
               icon={AlertTriangle}
               label="Đơn cần chú ý"
               value={snapshot.availability.orders ? snapshot.kpis.attentionOrderCount.toLocaleString("vi-VN") : "--"}
-              helper="Lỗi, từ chối thực thi, cần hoàn tiền hoặc cần nhân viên"
-              coverage={snapshot.kpis.coverageLabel}
               tone={snapshot.kpis.attentionOrderCount > 0 ? "destructive" : "primary"}
             />
           </section>

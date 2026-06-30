@@ -18,6 +18,12 @@ import {
   TransactionDetailDialog,
 } from "@/components/features/transactions/transaction-dialogs";
 import {
+  CancelRefundDialog,
+  ProcessRefundDialog,
+  RejectRefundDialog,
+  RequestRefundDialog,
+} from "@/components/features/transactions/refund-action-dialogs";
+import {
   REFUND_STATUS_LABELS,
   RefundsTable,
 } from "@/components/features/transactions/refunds-table";
@@ -163,6 +169,10 @@ function TransactionsLoadingTable() {
 
 export default function TransactionsPage() {
   const [activeTab, setActiveTab] = useState<TransactionsTab>("orders");
+  const [isRequestRefundOpen, setIsRequestRefundOpen] = useState(false);
+  const [isProcessRefundOpen, setIsProcessRefundOpen] = useState(false);
+  const [isRejectRefundOpen, setIsRejectRefundOpen] = useState(false);
+  const [isCancelRefundOpen, setIsCancelRefundOpen] = useState(false);
   const { currentUser } = useAuth();
   const {
     orders,
@@ -211,6 +221,10 @@ export default function TransactionsPage() {
     setRefundRequiredOpen,
     confirmCancelOrder,
     confirmRefundRequired,
+    submitRefundRequest,
+    submitRefundProcessed,
+    submitRefundReject,
+    submitRefundCancel,
     clearActionSuccessMessage,
     refresh,
   } = useTransactions();
@@ -469,28 +483,28 @@ export default function TransactionsPage() {
               </Button>
             </div>
           ) : activeTab === "orders" && orders.data.length === 0 ? (
-            <div className="flex flex-col items-center gap-3 p-10 text-center">
-              <span className="flex size-12 items-center justify-center rounded-xl border border-border bg-muted/20 text-muted-foreground">
-                <ReceiptText className="size-5" />
+            <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
+              <span className="mb-4 flex size-14 items-center justify-center rounded-full border border-border bg-muted/20 text-muted-foreground shadow-sm">
+                <ReceiptText className="size-6 opacity-70" />
               </span>
-              <p className="text-sm font-medium text-foreground">
-                Không có giao dịch phù hợp
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Thử thay đổi từ khóa, trạng thái đơn hoặc trạng thái thanh toán.
-              </p>
+              <div className="max-w-md space-y-1.5">
+                <p className="text-base font-semibold tracking-tight text-foreground">Không tìm thấy giao dịch</p>
+                <p className="text-sm leading-relaxed text-muted-foreground">
+                  Không có giao dịch nào phù hợp. Thử thay đổi từ khóa, trạng thái đơn hoặc trạng thái thanh toán.
+                </p>
+              </div>
             </div>
           ) : activeTab === "refunds" && refunds.data.length === 0 ? (
-            <div className="flex flex-col items-center gap-3 p-10 text-center">
-              <span className="flex size-12 items-center justify-center rounded-xl border border-border bg-muted/20 text-muted-foreground">
-                <RotateCcw className="size-5" />
+            <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
+              <span className="mb-4 flex size-14 items-center justify-center rounded-full border border-border bg-muted/20 text-muted-foreground shadow-sm">
+                <RotateCcw className="size-6 opacity-70" />
               </span>
-              <p className="text-sm font-medium text-foreground">
-                Không có hoàn tiền phù hợp
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Thử thay đổi từ khóa hoặc trạng thái hoàn tiền.
-              </p>
+              <div className="max-w-md space-y-1.5">
+                <p className="text-base font-semibold tracking-tight text-foreground">Không tìm thấy hoàn tiền</p>
+                <p className="text-sm leading-relaxed text-muted-foreground">
+                  Không có dữ liệu hoàn tiền nào phù hợp. Thử thay đổi từ khóa hoặc trạng thái hoàn tiền.
+                </p>
+              </div>
             </div>
           ) : activeTab === "orders" ? (
             <TransactionsTable
@@ -563,6 +577,7 @@ export default function TransactionsPage() {
       </Card>
 
       <TransactionDetailDialog
+        canRequestRefund={canManageOrders}
         order={selectedOrder}
         errorMessage={detailErrorMessage}
         isLoading={isDetailLoading}
@@ -574,14 +589,19 @@ export default function TransactionsPage() {
         onOpenChange={setDetailOpen}
         onPreviousHistoryPage={previousHistoryPage}
         onNextHistoryPage={nextHistoryPage}
+        onRequestRefundClick={() => setIsRequestRefundOpen(true)}
       />
 
       <RefundDetailDialog
-        errorMessage={refundDetailErrorMessage}
-        isLoading={isRefundDetailLoading}
+        canManageRefunds={canManageOrders}
         open={isRefundDetailOpen}
         refund={selectedRefund}
+        isLoading={isRefundDetailLoading}
+        errorMessage={refundDetailErrorMessage}
         onOpenChange={setRefundDetailOpen}
+        onProcessClick={() => setIsProcessRefundOpen(true)}
+        onRejectClick={() => setIsRejectRefundOpen(true)}
+        onCancelClick={() => setIsCancelRefundOpen(true)}
       />
 
       <OrderActionDialog
@@ -603,9 +623,34 @@ export default function TransactionsPage() {
         open={isRefundRequiredOpen}
         order={orderPendingAction}
         reason={actionReason}
-        onConfirm={() => void confirmRefundRequired()}
+        onConfirm={confirmRefundRequired}
         onOpenChange={setRefundRequiredOpen}
         onReasonChange={setActionReason}
+      />
+
+      <RequestRefundDialog
+        open={isRequestRefundOpen}
+        onOpenChange={setIsRequestRefundOpen}
+        order={selectedOrder}
+        onSubmit={submitRefundRequest}
+      />
+      <ProcessRefundDialog
+        open={isProcessRefundOpen}
+        onOpenChange={setIsProcessRefundOpen}
+        refund={selectedRefund}
+        onSubmit={submitRefundProcessed}
+      />
+      <RejectRefundDialog
+        open={isRejectRefundOpen}
+        onOpenChange={setIsRejectRefundOpen}
+        refund={selectedRefund}
+        onSubmit={submitRefundReject}
+      />
+      <CancelRefundDialog
+        open={isCancelRefundOpen}
+        onOpenChange={setIsCancelRefundOpen}
+        refund={selectedRefund}
+        onSubmit={submitRefundCancel}
       />
     </div>
   );

@@ -1,6 +1,6 @@
 import { Boxes, ClipboardList, PackageSearch } from "lucide-react";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { ReportSignalPanel } from "@/types/reports";
 
 const ICONS = { catalog: PackageSearch, inventory: Boxes, operations: ClipboardList };
@@ -25,9 +25,8 @@ export function OperationsSignals({ panels }: { panels: ReportSignalPanel[] }) {
                 <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
                   <Icon className="size-5" />
                 </span>
-                <div className="space-y-1">
+                <div>
                   <CardTitle>{panel.title}</CardTitle>
-                  <CardDescription>{panel.description}</CardDescription>
                 </div>
               </div>
             </CardHeader>

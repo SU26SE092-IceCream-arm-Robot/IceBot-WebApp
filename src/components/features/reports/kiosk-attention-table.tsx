@@ -3,7 +3,7 @@ import Link from "next/link";
 
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import type { ReportKioskAttentionRow } from "@/types/reports";
@@ -45,9 +45,8 @@ export function KioskAttentionTable({ rows }: { rows: ReportKioskAttentionRow[] 
           <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-warning/20 bg-warning/10 text-warning">
             <MonitorCog className="size-5" />
           </span>
-          <div className="space-y-1">
+          <div>
             <CardTitle>Kiosk cần chú ý</CardTitle>
-            <CardDescription>Tổng hợp trạng thái vòng đời, tồn kho, bảo trì và đơn cần xử lý.</CardDescription>
           </div>
         </div>
       </CardHeader>

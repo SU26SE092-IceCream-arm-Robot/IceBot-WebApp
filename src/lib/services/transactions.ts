@@ -11,6 +11,9 @@ import type {
   OrderStatusHistoryResult,
   RefundResult,
   TransactionsPagedResult,
+  RequestRefundRequest,
+  MarkRefundProcessedRequest,
+  RefundReasonRequest,
 } from "@/types/transactions";
 
 function requireData<T>(result: ApiResult<T>, fallbackMessage: string): T {
@@ -179,4 +182,58 @@ export function getTransactionsErrorMessage(
   }
 
   return error instanceof Error ? error.message : fallbackMessage;
+}
+
+export async function requestManagementRefund(
+  orderId: string,
+  request: RequestRefundRequest,
+  idempotencyKey: string,
+): Promise<RefundResult> {
+  const response = await axiosClient.post<ApiResult<RefundResult>>(
+    `/api/v1/management/orders/${encodeURIComponent(orderId)}/refunds`,
+    request,
+    {
+      headers: {
+        "Idempotency-Key": idempotencyKey,
+      },
+    },
+  );
+
+  return requireData(response.data, "Không thể yêu cầu hoàn tiền.");
+}
+
+export async function markManagementRefundProcessed(
+  refundId: string,
+  request: MarkRefundProcessedRequest,
+): Promise<RefundResult> {
+  const response = await axiosClient.patch<ApiResult<RefundResult>>(
+    `/api/v1/management/refunds/${encodeURIComponent(refundId)}/mark-processed`,
+    request,
+  );
+
+  return requireData(response.data, "Không thể đánh dấu hoàn tiền đã xử lý.");
+}
+
+export async function rejectManagementRefund(
+  refundId: string,
+  request: RefundReasonRequest,
+): Promise<RefundResult> {
+  const response = await axiosClient.patch<ApiResult<RefundResult>>(
+    `/api/v1/management/refunds/${encodeURIComponent(refundId)}/reject`,
+    request,
+  );
+
+  return requireData(response.data, "Không thể từ chối yêu cầu hoàn tiền.");
+}
+
+export async function cancelManagementRefund(
+  refundId: string,
+  request: RefundReasonRequest,
+): Promise<RefundResult> {
+  const response = await axiosClient.patch<ApiResult<RefundResult>>(
+    `/api/v1/management/refunds/${encodeURIComponent(refundId)}/cancel`,
+    request,
+  );
+
+  return requireData(response.data, "Không thể hủy yêu cầu hoàn tiền.");
 }

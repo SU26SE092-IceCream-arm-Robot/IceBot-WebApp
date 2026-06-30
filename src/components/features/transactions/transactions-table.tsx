@@ -152,7 +152,7 @@ export function TransactionsTable({
           <TableRow key={order.id} className="hover:bg-muted/30">
             <TableCell className="h-16 px-4 py-2.5">
               <div className="min-w-0 space-y-0.5">
-                <p className="truncate font-medium text-foreground">
+                <p className="truncate font-mono text-[13px] font-medium text-foreground">
                   {order.orderNumber}
                 </p>
                 <p className="truncate text-xs tabular-nums text-muted-foreground">
@@ -210,7 +210,11 @@ export function TransactionsTable({
                 >
                   <Eye className="size-4" />
                 </Button>
-                {canManageOrders && order.paymentStatus === "Paid" && order.status !== "Completed" && order.status !== "Cancelled" ? (
+                {canManageOrders &&
+                order.paymentStatus === "Paid" &&
+                order.status !== "Completed" &&
+                order.status !== "Cancelled" &&
+                order.status !== "RefundRequired" ? (
                   <Button
                     type="button"
                     variant="ghost"

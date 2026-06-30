@@ -2,6 +2,7 @@
 
 import axios from "axios";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 
 import {
   cancelManagementOrder,
@@ -12,6 +13,10 @@ import {
   listManagementRefunds,
   listManagementOrders,
   markManagementOrderRefundRequired,
+  requestManagementRefund,
+  markManagementRefundProcessed,
+  rejectManagementRefund,
+  cancelManagementRefund,
 } from "@/lib/services/transactions";
 import type {
   OrderResult,
@@ -25,6 +30,9 @@ import type {
   TransactionsFilters,
   TransactionsPaginationMeta,
   TransactionsSummary,
+  RequestRefundRequest,
+  MarkRefundProcessedRequest,
+  RefundReasonRequest,
 } from "@/types/transactions";
 
 const ORDERS_PAGE_SIZE = 10;
@@ -110,6 +118,14 @@ export interface UseTransactionsResult {
   setRefundRequiredOpen: (open: boolean) => void;
   confirmCancelOrder: () => Promise<void>;
   confirmRefundRequired: () => Promise<void>;
+  submitRefundRequest: (
+    orderId: string,
+    request: RequestRefundRequest,
+    idempotencyKey: string,
+  ) => Promise<void>;
+  submitRefundProcessed: (refundId: string, request: MarkRefundProcessedRequest) => Promise<void>;
+  submitRefundReject: (refundId: string, request: RefundReasonRequest) => Promise<void>;
+  submitRefundCancel: (refundId: string, request: RefundReasonRequest) => Promise<void>;
   clearActionSuccessMessage: () => void;
   refresh: () => Promise<void>;
 }
@@ -639,6 +655,81 @@ export function useTransactions(): UseTransactionsResult {
     updateOrderInState,
   ]);
 
+  const refreshAfterRefundMutation = useCallback(
+    async (orderId: string, refundId?: string) => {
+      const tasks: Promise<unknown>[] = [fetchOrders(), fetchRefunds()];
+
+      if (isDetailOpen && selectedOrderId === orderId) {
+        tasks.push(
+          getManagementOrderById(orderId).then(setSelectedOrder),
+          fetchStatusHistory(orderId),
+        );
+      }
+
+      if (refundId && isRefundDetailOpen) {
+        tasks.push(getManagementRefundById(refundId).then(setSelectedRefund));
+      }
+
+      await Promise.all(tasks);
+    },
+    [
+      fetchOrders,
+      fetchRefunds,
+      fetchStatusHistory,
+      isDetailOpen,
+      isRefundDetailOpen,
+      selectedOrderId,
+    ],
+  );
+
+  const submitRefundRequest = useCallback(async (
+    orderId: string,
+    request: RequestRefundRequest,
+    idempotencyKey: string,
+  ) => {
+    try {
+      const refund = await requestManagementRefund(orderId, request, idempotencyKey);
+      toast.success("Đã gửi yêu cầu hoàn tiền thành công.");
+      await refreshAfterRefundMutation(orderId, refund.id);
+    } catch (error) {
+      const msg = getTransactionsErrorMessage(error, "Không thể gửi yêu cầu hoàn tiền.");
+      throw new Error(msg);
+    }
+  }, [refreshAfterRefundMutation]);
+
+  const submitRefundProcessed = useCallback(async (refundId: string, request: MarkRefundProcessedRequest) => {
+    try {
+      const updatedRefund = await markManagementRefundProcessed(refundId, request);
+      await refreshAfterRefundMutation(updatedRefund.orderId, updatedRefund.id);
+      toast.success("Đã đánh dấu hoàn tiền là đã xử lý.");
+    } catch (error) {
+      const msg = getTransactionsErrorMessage(error, "Không thể đánh dấu đã xử lý.");
+      throw new Error(msg);
+    }
+  }, [refreshAfterRefundMutation]);
+
+  const submitRefundReject = useCallback(async (refundId: string, request: RefundReasonRequest) => {
+    try {
+      const updatedRefund = await rejectManagementRefund(refundId, request);
+      await refreshAfterRefundMutation(updatedRefund.orderId, updatedRefund.id);
+      toast.success("Đã từ chối yêu cầu hoàn tiền.");
+    } catch (error) {
+      const msg = getTransactionsErrorMessage(error, "Không thể từ chối yêu cầu hoàn tiền.");
+      throw new Error(msg);
+    }
+  }, [refreshAfterRefundMutation]);
+
+  const submitRefundCancel = useCallback(async (refundId: string, request: RefundReasonRequest) => {
+    try {
+      const updatedRefund = await cancelManagementRefund(refundId, request);
+      await refreshAfterRefundMutation(updatedRefund.orderId, updatedRefund.id);
+      toast.success("Đã hủy yêu cầu hoàn tiền.");
+    } catch (error) {
+      const msg = getTransactionsErrorMessage(error, "Không thể hủy yêu cầu hoàn tiền.");
+      throw new Error(msg);
+    }
+  }, [refreshAfterRefundMutation]);
+
   return {
     orders,
     refunds,
@@ -688,6 +779,10 @@ export function useTransactions(): UseTransactionsResult {
     setRefundRequiredOpen,
     confirmCancelOrder,
     confirmRefundRequired,
+    submitRefundRequest,
+    submitRefundProcessed,
+    submitRefundReject,
+    submitRefundCancel,
     clearActionSuccessMessage: () => setActionSuccessMessage(null),
     refresh: async () => {
       await Promise.all([fetchOrders(), fetchRefunds()]);

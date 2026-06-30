@@ -69,6 +69,11 @@ interface MenuDetailDialogProps {
   onOpenChange: (open: boolean) => void;
   onToggleMenu: (menu: MenuResult, status: MenuStatus) => void;
   onToggleMenuItem: (item: MenuItemResult, status: MenuItemStatus) => void;
+  onEditMenu: (menu: MenuResult) => void;
+  onDeleteMenu: (menu: MenuResult) => void;
+  onCreateMenuItem: (menu: MenuResult) => void;
+  onEditMenuItem: (menu: MenuResult, item: MenuItemResult) => void;
+  onDeleteMenuItem: (menu: MenuResult, item: MenuItemResult) => void;
 }
 
 interface CatalogActionDialogProps {
@@ -275,12 +280,39 @@ export function ProductDetailDialog({
             <section className="space-y-3">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <h3 className="font-medium text-foreground">Biến thể sản phẩm</h3>
+                  <h3 className="font-medium text-foreground">Biến thể (Variants)</h3>
                   <p className="text-xs text-muted-foreground">
                     Giá và trạng thái khả dụng của từng biến thể.
                   </p>
                 </div>
-                {canManage ? <div className="flex flex-wrap gap-2"><Button variant="outline" size="sm" onClick={() => onEditProduct(product)}><Pencil className="size-3.5" />Sửa sản phẩm</Button><Button variant={product.isAvailable ? "outline" : "default"} size="sm" isLoading={productActionId === product.id} onClick={() => onToggleProduct(product)}>{product.isAvailable ? <PackageX className="size-3.5" /> : <PackageCheck className="size-3.5" />}{product.isAvailable ? "Tắt sản phẩm" : "Bật sản phẩm"}</Button><Button size="sm" onClick={() => onCreateVariant(product)}><Plus className="size-3.5" />Thêm biến thể</Button><Button variant="ghost" size="icon-sm" className="text-destructive hover:bg-destructive/10 hover:text-destructive" title="Xóa sản phẩm" onClick={() => onDeleteProduct(product)}><Trash2 className="size-4" /></Button></div> : null}
+                {canManage ? (
+                  <div className="flex flex-wrap gap-2">
+                    <Button variant="outline" size="sm" onClick={() => onEditProduct(product)}>
+                      <Pencil className="size-3.5" />Sửa sản phẩm
+                    </Button>
+                    <Button
+                      variant={product.isAvailable ? "outline" : "default"}
+                      size="sm"
+                      isLoading={productActionId === product.id}
+                      onClick={() => onToggleProduct(product)}
+                    >
+                      {product.isAvailable ? <PackageX className="size-3.5" /> : <PackageCheck className="size-3.5" />}
+                      {product.isAvailable ? "Tắt sản phẩm" : "Bật sản phẩm"}
+                    </Button>
+                    <Button size="sm" onClick={() => onCreateVariant(product)}>
+                      <Plus className="size-3.5" />Thêm biến thể
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                      title="Xóa sản phẩm"
+                      onClick={() => onDeleteProduct(product)}
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
+                  </div>
+                ) : null}
               </div>
 
               {product.variants.length === 0 ? (
@@ -318,7 +350,17 @@ export function ProductDetailDialog({
                         </p>
                       </div>
                       {canManage ? (
-                        <div className="flex flex-wrap gap-1"><Button variant="outline" size="sm" isLoading={variantActionId === variant.id} onClick={() => onToggleVariant(variant)}>{variant.isAvailable ? "Tắt biến thể" : "Bật biến thể"}</Button><Button variant="ghost" size="icon-sm" title="Chỉnh sửa biến thể" onClick={() => onEditVariant(product, variant)}><Pencil className="size-4" /></Button><Button variant="ghost" size="icon-sm" className="text-destructive hover:bg-destructive/10 hover:text-destructive" title="Xóa biến thể" onClick={() => onDeleteVariant(product, variant)}><Trash2 className="size-4" /></Button></div>
+                        <div className="flex flex-wrap gap-1">
+                          <Button variant="outline" size="sm" isLoading={variantActionId === variant.id} onClick={() => onToggleVariant(variant)}>
+                            {variant.isAvailable ? "Tắt biến thể" : "Bật biến thể"}
+                          </Button>
+                          <Button variant="ghost" size="icon-sm" title="Chỉnh sửa biến thể" onClick={() => onEditVariant(product, variant)}>
+                            <Pencil className="size-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon-sm" className="text-destructive hover:bg-destructive/10 hover:text-destructive" title="Xóa biến thể" onClick={() => onDeleteVariant(product, variant)}>
+                            <Trash2 className="size-4" />
+                          </Button>
+                        </div>
                       ) : null}
                     </div>
                   ))}
@@ -345,6 +387,11 @@ export function MenuDetailDialog({
   onOpenChange,
   onToggleMenu,
   onToggleMenuItem,
+  onEditMenu,
+  onDeleteMenu,
+  onCreateMenuItem,
+  onEditMenuItem,
+  onDeleteMenuItem,
 }: MenuDetailDialogProps) {
   const scopeId = menu ? getScopeId(menu) : null;
   const nextMenuStatus = menu ? getNextMenuStatus(menu.status) : null;
@@ -353,10 +400,25 @@ export function MenuDetailDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Chi tiết thực đơn</DialogTitle>
-          <DialogDescription>
-            Trạng thái phân phối và danh sách món.
-          </DialogDescription>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <DialogTitle>Chi tiết thực đơn</DialogTitle>
+              <DialogDescription>
+                Thông tin thực đơn và danh sách các món.
+              </DialogDescription>
+            </div>
+            {canManage && menu && !isLoading && !errorMessage ? (
+              <div className="flex gap-2 pr-6 sm:pr-0">
+                <Button variant="outline" size="sm" onClick={() => onEditMenu(menu)}>
+                  <Pencil className="size-4" />
+                  Sửa
+                </Button>
+                <Button variant="destructive" size="sm" onClick={() => onDeleteMenu(menu)}>
+                  <Trash2 className="size-4" />
+                </Button>
+              </div>
+            ) : null}
+          </div>
         </DialogHeader>
 
         {isLoading ? (
@@ -366,16 +428,21 @@ export function MenuDetailDialog({
         ) : menu ? (
           <div className="space-y-6 py-2">
             <div className="grid gap-4 rounded-xl border border-border bg-muted/20 p-4 sm:grid-cols-2">
-              <DetailField label="Tên thực đơn">{menu.name || "Chưa cập nhật"}</DetailField>
+              <DetailField label="Tên thực đơn">
+                {menu.name || "Chưa cập nhật"}
+              </DetailField>
               <DetailField label="Mã thực đơn">
                 <span className="tabular-nums">{menu.code || "Chưa cập nhật"}</span>
               </DetailField>
               <DetailField label="Trạng thái">
                 <Badge variant="outline">{getMenuStatusLabel(menu.status)}</Badge>
               </DetailField>
+              <DetailField label="Tiền tệ">
+                <span className="tabular-nums font-medium">{menu.currency}</span>
+              </DetailField>
               <DetailField label="Phạm vi">
-                <div className="space-y-1">
-                  <Badge variant="outline">{getScopeLabel(menu.scopeType)}</Badge>
+                <div>
+                  <p>{getScopeLabel(menu.scopeType)}</p>
                   {scopeId ? (
                     <p className="break-all tabular-nums text-xs text-muted-foreground">{scopeId}</p>
                   ) : null}
@@ -389,27 +456,35 @@ export function MenuDetailDialog({
             </div>
 
             <section className="space-y-3">
-              <div className="flex items-center justify-between gap-3">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <h3 className="font-medium text-foreground">Món trong thực đơn</h3>
                   <p className="text-xs text-muted-foreground">
                     Giá, thứ tự và trạng thái phân phối của từng món.
                   </p>
                 </div>
-                {canManage && nextMenuStatus ? (
-                  <Button
-                    variant={nextMenuStatus === "Active" ? "default" : "outline"}
-                    size="sm"
-                    isLoading={menuActionId === menu.id}
-                    onClick={() => onToggleMenu(menu, nextMenuStatus)}
-                  >
-                    {nextMenuStatus === "Active" ? (
-                      <CirclePlay className="size-3.5" />
-                    ) : (
-                      <CirclePause className="size-3.5" />
-                    )}
-                    {nextMenuStatus === "Active" ? "Kích hoạt" : "Tạm dừng"}
-                  </Button>
+                {canManage ? (
+                  <div className="flex items-center gap-2">
+                    {nextMenuStatus ? (
+                      <Button
+                        variant={nextMenuStatus === "Active" ? "default" : "outline"}
+                        size="sm"
+                        isLoading={menuActionId === menu.id}
+                        onClick={() => onToggleMenu(menu, nextMenuStatus)}
+                      >
+                        {nextMenuStatus === "Active" ? (
+                          <CirclePlay className="size-3.5" />
+                        ) : (
+                          <CirclePause className="size-3.5" />
+                        )}
+                        {nextMenuStatus === "Active" ? "Kích hoạt" : "Tạm dừng"}
+                      </Button>
+                    ) : null}
+                    <Button variant="outline" size="sm" onClick={() => onCreateMenuItem(menu)}>
+                      <Plus className="size-4" />
+                      Thêm món
+                    </Button>
+                  </div>
                 ) : null}
               </div>
 
@@ -452,15 +527,35 @@ export function MenuDetailDialog({
                               </span>
                             </p>
                           </div>
-                          {canManage && nextItemStatus ? (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              isLoading={menuItemActionId === item.id}
-                              onClick={() => onToggleMenuItem(item, nextItemStatus)}
-                            >
-                              {nextItemStatus === "Active" ? "Bật bán" : "Ngừng bán"}
-                            </Button>
+                          {canManage ? (
+                            <div className="flex shrink-0 items-center gap-2">
+                              {nextItemStatus ? (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  isLoading={menuItemActionId === item.id}
+                                  onClick={() => onToggleMenuItem(item, nextItemStatus)}
+                                >
+                                  {nextItemStatus === "Active" ? "Bật bán" : "Ngừng bán"}
+                                </Button>
+                              ) : null}
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="px-2"
+                                onClick={() => onEditMenuItem(menu, item)}
+                              >
+                                <Pencil className="size-4" />
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                className="px-2"
+                                onClick={() => onDeleteMenuItem(menu, item)}
+                              >
+                                <Trash2 className="size-4" />
+                              </Button>
+                            </div>
                           ) : null}
                         </div>
                       );

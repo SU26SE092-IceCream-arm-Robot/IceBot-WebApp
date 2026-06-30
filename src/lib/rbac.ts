@@ -18,6 +18,8 @@ export const PERMISSIONS: Record<DashboardPermission, readonly DashboardRole[]> 
   "users.edit": ["ADMIN"],
   "maintenance.view": ["ADMIN", "MANAGER"],
   "maintenance.edit": ["ADMIN", "MANAGER"],
+  // Backend payments.manage currently allows only SystemAdmin and Manager.
+  "payments.manage": ["ADMIN", "MANAGER"],
 };
 
 export const ROUTE_PERMISSIONS: Record<DashboardRoutePath, DashboardPermission> = {
@@ -30,7 +32,7 @@ export const ROUTE_PERMISSIONS: Record<DashboardRoutePath, DashboardPermission> 
   "/reports": "reports.view",
   "/users": "users.view",
   "/maintenance": "maintenance.view",
-  "/settings/payment-methods": "transactions.view",
+  "/settings/payment-methods": "payments.manage",
 };
 
 const DASHBOARD_ROUTES: readonly DashboardRoutePath[] = [

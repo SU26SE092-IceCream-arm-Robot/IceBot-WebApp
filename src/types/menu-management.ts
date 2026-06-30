@@ -158,3 +158,44 @@ export interface UpsertProductVariantRequest {
 }
 
 export type UpdateProductVariantRequest = UpsertProductVariantRequest;
+
+export interface CreateMenuRequest {
+  organizationId?: string | null;
+  storeId?: string | null;
+  kioskId?: string | null;
+  code: string;
+  name: string;
+  description?: string | null;
+  status: MenuStatus;
+  scopeType: TenantScopeType;
+  currency: string;
+  effectiveFrom?: string | null;
+  effectiveTo?: string | null;
+  displayOrder: number;
+  metadataSchemaVersion: number;
+  metadataJson?: string | null;
+}
+
+export type UpdateMenuRequest = CreateMenuRequest;
+
+export interface CreateMenuItemRequest {
+  productId: string;
+  productVariantId: string;
+  recipeId?: string | null;
+  code: string;
+  displayName: string;
+  description?: string | null;
+  status: MenuItemStatus;
+  price: number;
+  discountAmount: number;
+  currency: string;
+  displayOrder: number;
+  preparationTimeSeconds?: number | null;
+  imageUrl?: string | null;
+  effectiveFrom?: string | null;
+  effectiveTo?: string | null;
+  metadataSchemaVersion: number;
+  metadataJson?: string | null;
+}
+
+export type UpdateMenuItemRequest = CreateMenuItemRequest;

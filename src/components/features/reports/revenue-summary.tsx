@@ -1,6 +1,6 @@
 import { ChartNoAxesCombined } from "lucide-react";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { ReportCurrencyAmount, ReportTrendBucket } from "@/types/reports";
 
 function formatMoney(value: ReportCurrencyAmount) {
@@ -25,9 +25,8 @@ export function RevenueSummary({ trend }: { trend: ReportTrendBucket[] }) {
           <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-success/20 bg-success/10 text-success">
             <ChartNoAxesCombined className="size-5" />
           </span>
-          <div className="space-y-1">
+          <div>
             <CardTitle>Xu hướng đơn hàng và doanh thu</CardTitle>
-            <CardDescription>Theo ngày với kỳ 7/30 ngày, theo tuần với kỳ 90 ngày.</CardDescription>
           </div>
         </div>
       </CardHeader>

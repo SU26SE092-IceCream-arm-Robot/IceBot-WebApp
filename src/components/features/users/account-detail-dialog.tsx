@@ -100,7 +100,13 @@ export function AccountDetailDialog({
   }, [open, account]);
 
   useEffect(() => {
-    if (activeTab === "access" && account && !accountActions.effectiveAccess) {
+    if (
+      activeTab === "access" &&
+      account &&
+      !accountActions.isEffectiveAccessLoading &&
+      !accountActions.effectiveAccessErrorMessage &&
+      accountActions.effectiveAccess?.accountId !== account.id
+    ) {
       void accountActions.loadEffectiveAccess(account.id);
     }
   }, [activeTab, account, accountActions]);
@@ -157,7 +163,7 @@ export function AccountDetailDialog({
                     value="access"
                     className="relative h-10 rounded-none border-b-2 border-b-transparent bg-transparent px-4 pb-3 pt-2 font-medium text-muted-foreground shadow-none transition-none data-[state=active]:border-b-primary data-[state=active]:text-foreground data-[state=active]:shadow-none"
                   >
-                    Quyền thực tế
+                    Phạm vi hiệu lực
                   </TabsTrigger>
                   <TabsTrigger
                     value="security"
@@ -248,7 +254,7 @@ export function AccountDetailDialog({
                 <TabsContent value="access" className="mt-0 space-y-4 outline-none">
                   <div className="flex items-center justify-between mb-2">
                     <p className="text-sm text-muted-foreground">
-                      Quyền hạn thực tế từ backend dựa trên các vai trò.
+                      Vai trò và phạm vi hiệu lực do backend tính toán.
                     </p>
                     <Button variant="outline" size="sm" onClick={() => void accountActions.loadEffectiveAccess(account.id)} disabled={accountActions.isEffectiveAccessLoading}>
                       Làm mới
@@ -264,18 +270,82 @@ export function AccountDetailDialog({
                       <AlertTriangle className="h-4 w-4 shrink-0" />
                       {accountActions.effectiveAccessErrorMessage}
                     </div>
-                  ) : accountActions.effectiveAccess && accountActions.effectiveAccess.length > 0 ? (
-                    <div className="flex flex-wrap gap-2">
-                      {accountActions.effectiveAccess.map((perm) => (
-                        <Badge key={perm} variant="secondary" className="font-mono text-[10px] uppercase">
-                          {perm}
-                        </Badge>
-                      ))}
+                  ) : accountActions.effectiveAccess ? (
+                    <div className="space-y-4">
+                      <div className="rounded-xl border border-border bg-muted/15 p-4">
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <div>
+                            <p className="text-sm font-semibold text-foreground">Backend Effective Access</p>
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              Dữ liệu này mô tả vai trò và phạm vi, không phải danh sách permission code.
+                            </p>
+                          </div>
+                          {accountActions.effectiveAccess.isSystemAdmin ? (
+                            <Badge className="border border-primary/20 bg-primary/10 text-primary">
+                              Toàn quyền hệ thống
+                            </Badge>
+                          ) : null}
+                        </div>
+
+                        <div className="mt-4 flex flex-wrap gap-2">
+                          {accountActions.effectiveAccess.roles.length > 0 ? (
+                            accountActions.effectiveAccess.roles.map((role) => (
+                              <Badge key={role} variant="secondary">
+                                {ROLE_LABELS[role] ?? role}
+                              </Badge>
+                            ))
+                          ) : (
+                            <span className="text-sm text-muted-foreground">Chưa có vai trò hiệu lực.</span>
+                          )}
+                        </div>
+                      </div>
+
+                      {accountActions.effectiveAccess.roleScopes.length > 0 ? (
+                        <div className="space-y-2">
+                          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                            Vai trò theo phạm vi
+                          </p>
+                          {accountActions.effectiveAccess.roleScopes.map((role, index) => (
+                            <div
+                              key={`${role.roleCode}-${role.organizationId ?? ""}-${role.storeId ?? ""}-${role.kioskId ?? ""}-${index}`}
+                              className="flex flex-col gap-2 rounded-lg border border-border px-3 py-3 sm:flex-row sm:items-center sm:justify-between"
+                            >
+                              <Badge variant="outline">{ROLE_LABELS[role.roleCode] ?? role.roleCode}</Badge>
+                              <span className="break-all font-mono text-xs text-muted-foreground">
+                                {getScopeLabel(role)}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : null}
+
+                      <div className="grid gap-3 sm:grid-cols-3">
+                        {[
+                          ["Tổ chức", accountActions.effectiveAccess.effectiveScope.organizationIds],
+                          ["Cửa hàng", accountActions.effectiveAccess.effectiveScope.storeIds],
+                          ["Kiosk", accountActions.effectiveAccess.effectiveScope.kioskIds],
+                        ].map(([label, ids]) => (
+                          <div key={label as string} className="rounded-xl border border-border p-3">
+                            <p className="text-xs font-semibold text-muted-foreground">{label as string}</p>
+                            {(ids as string[]).length > 0 ? (
+                              <div className="mt-2 space-y-1.5">
+                                {(ids as string[]).map((id) => (
+                                  <p key={id} className="break-all font-mono text-[11px] text-foreground">
+                                    {id}
+                                  </p>
+                                ))}
+                              </div>
+                            ) : (
+                              <p className="mt-2 text-xs text-muted-foreground">Không có phạm vi</p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   ) : (
                     <div className="flex flex-col items-center justify-center p-8 text-center border rounded-lg border-dashed bg-muted/20">
                       <ShieldCheck className="h-8 w-8 text-muted-foreground/50 mb-2" />
-                      <p className="text-sm text-muted-foreground">Không có quyền truy cập nào.</p>
+                      <p className="text-sm text-muted-foreground">Chưa tải phạm vi hiệu lực.</p>
                     </div>
                   )}
                 </TabsContent>

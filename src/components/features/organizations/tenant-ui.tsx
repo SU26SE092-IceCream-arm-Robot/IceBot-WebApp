@@ -60,15 +60,15 @@ export function TenantErrorState({
   onRetry: () => void;
 }) {
   return (
-    <div className="flex flex-col items-center gap-4 px-6 py-14 text-center">
-      <span className="flex size-12 items-center justify-center rounded-xl bg-destructive/10 text-destructive">
-        <AlertTriangle className="size-5" />
+    <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
+      <span className="mb-4 flex size-14 items-center justify-center rounded-full bg-destructive/10 text-destructive shadow-sm">
+        <AlertTriangle className="size-6 opacity-70" />
       </span>
-      <div className="space-y-1">
-        <p className="font-medium text-destructive">Không thể tải dữ liệu</p>
-        <p className="max-w-xl text-sm text-muted-foreground">{message}</p>
+      <div className="max-w-md space-y-1.5">
+        <p className="text-base font-semibold tracking-tight text-foreground">Không thể tải dữ liệu</p>
+        <p className="text-sm leading-relaxed text-muted-foreground">{message}</p>
       </div>
-      <Button variant="outline" onClick={onRetry}>Thử lại</Button>
+      <Button variant="outline" className="mt-4" onClick={onRetry}>Thử lại</Button>
     </div>
   );
 }
@@ -81,13 +81,13 @@ export function TenantEmptyState({
   description: string;
 }) {
   return (
-    <div className="flex flex-col items-center gap-3 px-6 py-14 text-center">
-      <span className="flex size-12 items-center justify-center rounded-xl border border-border bg-muted/20 text-muted-foreground">
-        <Building2 className="size-5" />
+    <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
+      <span className="mb-4 flex size-14 items-center justify-center rounded-full border border-border bg-muted/20 text-muted-foreground shadow-sm">
+        <Building2 className="size-6 opacity-70" />
       </span>
-      <div className="space-y-1">
-        <p className="font-medium text-foreground">{title}</p>
-        <p className="text-sm text-muted-foreground">{description}</p>
+      <div className="max-w-md space-y-1.5">
+        <p className="text-base font-semibold tracking-tight text-foreground">{title}</p>
+        <p className="text-sm leading-relaxed text-muted-foreground">{description}</p>
       </div>
     </div>
   );

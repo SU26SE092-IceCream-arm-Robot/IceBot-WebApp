@@ -3,8 +3,6 @@
 import { ShieldCheck } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import type { PermissionMatrixResult } from "@/types/accounts";
 
 export function PermissionMatrixView({ matrix }: { matrix: PermissionMatrixResult }) {
@@ -17,38 +15,51 @@ export function PermissionMatrixView({ matrix }: { matrix: PermissionMatrixResul
   }
 
   return (
-    <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-      {matrix.map((group) => (
-        <Card key={group.groupName} className="flex flex-col h-full border-border/50 shadow-sm">
-          <CardHeader className="pb-3 bg-muted/20 border-b">
-            <CardTitle className="text-base flex items-center gap-2">
-              <ShieldCheck className="h-4 w-4 text-primary" />
-              {group.groupName}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0 flex-1">
-            <ScrollArea className="h-full max-h-[300px]">
-              <div className="flex flex-col divide-y">
-                {group.permissions.map((perm) => (
-                  <div key={perm.code} className="p-4 flex flex-col gap-1.5 hover:bg-muted/10 transition-colors">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="font-medium text-sm">{perm.name}</span>
-                      <Badge variant="outline" className="font-mono text-[10px] uppercase tracking-wider shrink-0 bg-background">
-                        {perm.code}
-                      </Badge>
-                    </div>
-                    {perm.description && (
-                      <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
-                        {perm.description}
-                      </p>
-                    )}
-                  </div>
-                ))}
+    <div className="overflow-hidden rounded-xl border border-border bg-card">
+      <div className="hidden grid-cols-[minmax(180px,0.8fr)_minmax(260px,1.5fr)_minmax(180px,1fr)_120px] gap-4 border-b border-border bg-muted/30 px-4 py-3 text-xs font-semibold text-muted-foreground md:grid">
+        <span>Policy</span>
+        <span>Mô tả backend</span>
+        <span>Vai trò</span>
+        <span>Phạm vi</span>
+      </div>
+      <div className="divide-y divide-border">
+        {matrix.map((item) => {
+          const roles = Array.isArray(item.roles) ? item.roles : [];
+
+          return (
+            <div
+              key={item.policy}
+              className="grid grid-cols-1 gap-3 px-4 py-4 md:grid-cols-[minmax(180px,0.8fr)_minmax(260px,1.5fr)_minmax(180px,1fr)_120px] md:gap-4"
+            >
+              <div className="flex items-start gap-2">
+                <ShieldCheck className="mt-0.5 size-4 shrink-0 text-primary" />
+                <code className="break-all text-xs font-semibold text-foreground">
+                  {item.policy}
+                </code>
               </div>
-            </ScrollArea>
-          </CardContent>
-        </Card>
-      ))}
+              <p className="text-sm leading-5 text-muted-foreground">
+                {item.description || "Backend chưa cung cấp mô tả."}
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {roles.length > 0 ? (
+                  roles.map((role) => (
+                    <Badge key={`${item.policy}-${role}`} variant="secondary">
+                      {role}
+                    </Badge>
+                  ))
+                ) : (
+                  <span className="text-sm text-muted-foreground">Không có vai trò</span>
+                )}
+              </div>
+              <div>
+                <Badge variant="outline">
+                  {item.scopeRequired ? "Bắt buộc" : "Không bắt buộc"}
+                </Badge>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

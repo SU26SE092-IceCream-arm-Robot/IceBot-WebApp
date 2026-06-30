@@ -39,16 +39,6 @@ function optional(value: string): string | null {
   return value.trim() || null;
 }
 
-function isJson(value: string): boolean {
-  if (!value.trim()) return true;
-  try {
-    JSON.parse(value);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 function FormError({ message }: { message: string | null }) {
   return message ? (
     <div role="alert" className="flex items-start gap-2 rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-2.5 text-sm text-destructive">
@@ -90,7 +80,7 @@ export function ProductFormDialog({
     product?.preparationTimeSeconds?.toString() ?? "",
   );
   const [imageUrl, setImageUrl] = useState(product?.imageUrl ?? "");
-  const [metadataJson, setMetadataJson] = useState(product?.metadataJson ?? "");
+  const metadataJson = product?.metadataJson ?? "";
   const [scopeType, setScopeType] = useState<TenantScopeType>(
     product?.scopeType ?? "Global",
   );
@@ -142,10 +132,7 @@ export function ProductFormDialog({
       setValidationMessage(`${invalidScope[1]} là bắt buộc và phải là UUID hợp lệ.`);
       return;
     }
-    if (!isJson(metadataJson)) {
-      setValidationMessage("Metadata phải là JSON hợp lệ.");
-      return;
-    }
+
 
     const request: UpdateProductRequest = {
       organizationId: scopeType === "Global" ? null : organizationId.trim(),
@@ -199,7 +186,6 @@ export function ProductFormDialog({
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5"><label htmlFor="product-template" className="text-sm font-medium">Template Product ID</label><Input id="product-template" value={templateProductId} disabled={isSubmitting} className="h-10 font-mono" placeholder="Không bắt buộc" onChange={(event) => setTemplateProductId(event.target.value)} /></div>
             <div className="space-y-1.5"><label htmlFor="product-image" className="text-sm font-medium">Image URL</label><Input id="product-image" type="url" value={imageUrl} disabled={isSubmitting} className="h-10" onChange={(event) => setImageUrl(event.target.value)} /></div>
-            <div className="space-y-1.5 sm:col-span-2"><label htmlFor="product-metadata" className="text-sm font-medium">Metadata JSON</label><textarea id="product-metadata" value={metadataJson} rows={3} disabled={isSubmitting} className="w-full resize-y rounded-lg border border-input bg-transparent px-3 py-2 font-mono text-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50" onChange={(event) => setMetadataJson(event.target.value)} /></div>
             <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={isAvailable} disabled={isSubmitting} className="size-4 accent-primary" onChange={(event) => setIsAvailable(event.target.checked)} />Cho phép bán sản phẩm</label>
           </div>
           <FormError message={validationMessage || errorMessage} />
@@ -251,7 +237,7 @@ export function VariantFormDialog({
     variant?.preparationTimeSeconds?.toString() ?? "",
   );
   const [imageUrl, setImageUrl] = useState(variant?.imageUrl ?? "");
-  const [metadataJson, setMetadataJson] = useState(variant?.metadataJson ?? "");
+  const metadataJson = variant?.metadataJson ?? "";
   const [validationMessage, setValidationMessage] = useState<string | null>(null);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -280,10 +266,7 @@ export function VariantFormDialog({
       setValidationMessage("Tiền tệ là bắt buộc.");
       return;
     }
-    if (!isJson(metadataJson)) {
-      setValidationMessage("Metadata phải là JSON hợp lệ.");
-      return;
-    }
+
 
     const request: UpsertProductVariantRequest = {
       code: code.trim().toUpperCase(),
@@ -326,7 +309,6 @@ export function VariantFormDialog({
             <div className="space-y-1.5 sm:col-span-2"><label htmlFor="variant-description" className="text-sm font-medium">Mô tả</label><textarea id="variant-description" value={description} rows={3} disabled={isSubmitting} className="w-full resize-y rounded-lg border border-input bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50" onChange={(event) => setDescription(event.target.value)} /></div>
             <div className="space-y-1.5"><label htmlFor="variant-image" className="text-sm font-medium">Image URL</label><Input id="variant-image" type="url" value={imageUrl} disabled={isSubmitting} className="h-10" onChange={(event) => setImageUrl(event.target.value)} /></div>
             <label className="flex items-end gap-2 pb-2 text-sm"><input type="checkbox" checked={isAvailable} disabled={isSubmitting} className="size-4 accent-primary" onChange={(event) => setIsAvailable(event.target.checked)} />Cho phép bán biến thể</label>
-            <div className="space-y-1.5 sm:col-span-2"><label htmlFor="variant-metadata" className="text-sm font-medium">Metadata JSON</label><textarea id="variant-metadata" value={metadataJson} rows={3} disabled={isSubmitting} className="w-full resize-y rounded-lg border border-input bg-transparent px-3 py-2 font-mono text-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50" onChange={(event) => setMetadataJson(event.target.value)} /></div>
           </div>
           <FormError message={validationMessage || errorMessage} />
           <DialogFooter><Button type="button" variant="outline" disabled={isSubmitting} onClick={() => onOpenChange(false)}>Hủy</Button><Button type="submit" isLoading={isSubmitting}>{isCreate ? "Thêm biến thể" : "Lưu thay đổi"}</Button></DialogFooter>

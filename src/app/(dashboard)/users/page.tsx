@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 
 import {
   AlertTriangle,
@@ -182,10 +182,17 @@ export default function UsersPage() {
     clearSuccessMessage,
   } = useAccounts();
 
-  const accountActions = useAccountActions((message) => {
-    toast.success(message);
-    void refresh();
-  });
+  const handleAccountActionSuccess = useCallback(
+    (message: string, account?: { id: string }) => {
+      toast.success(message);
+      void refresh();
+      if (account && isDetailOpen) {
+        void openAccountDetail(account.id);
+      }
+    },
+    [isDetailOpen, openAccountDetail, refresh],
+  );
+  const accountActions = useAccountActions(handleAccountActionSuccess);
 
   // Watch for legacy success message from useAccounts and toast it
   useEffect(() => {
@@ -368,9 +375,10 @@ export default function UsersPage() {
         isSubmitting={accountActions.isEditingRoles}
         errorMessage={accountActions.editRolesErrorMessage}
         managementRoles={managementRoles}
-        roleScopeOptions={accountActions.roleScopeOptions}
+        roleScopeOptionsByRole={accountActions.roleScopeOptionsByRole}
+        roleScopeErrorsByRole={accountActions.roleScopeErrorsByRole}
         isRoleScopeLoading={accountActions.isRoleScopeLoading}
-        onRoleChange={(roleCode) => void accountActions.loadRoleScopeOptions(roleCode)}
+        onLoadRoleScopeOptions={accountActions.loadRoleScopeOptions}
         onSubmit={accountActions.submitEditRoles}
       />
 

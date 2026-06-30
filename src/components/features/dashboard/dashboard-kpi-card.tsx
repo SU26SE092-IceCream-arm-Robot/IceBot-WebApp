@@ -42,10 +42,10 @@ export function DashboardKpiCard({
   return (
     <Card className="border-border/80 bg-card shadow-none">
       <CardContent className="flex items-start justify-between gap-4 p-5">
-        <div className="space-y-3">
-          <p className="text-sm text-muted-foreground">{label}</p>
+        <div className="space-y-1.5">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
           <p
-            className={`tabular-nums text-3xl font-semibold tracking-tight ${TONES[tone].value}`}
+            className={`tabular-nums text-3xl lg:text-4xl font-bold tracking-tight ${TONES[tone].value}`}
           >
             {value.toLocaleString("vi-VN")}
           </p>

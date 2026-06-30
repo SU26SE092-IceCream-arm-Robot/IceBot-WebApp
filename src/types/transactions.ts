@@ -197,3 +197,22 @@ export interface RefundsSummary {
 export type TransactionsPaginationMeta = PaginationMeta;
 
 export type TransactionsPagedResult<T> = PagedResult<T>;
+
+export type RefundMethod = "FullMoneyRefund" | "Voucher";
+
+export interface RequestRefundRequest {
+  refundMethod: RefundMethod;
+  reason: string;
+  voucherCode?: string | null;
+  voucherValue?: number | null;
+  note?: string | null;
+}
+
+export interface MarkRefundProcessedRequest {
+  providerRefundId?: string | null;
+  moneyWasRefunded?: boolean | null;
+}
+
+export interface RefundReasonRequest {
+  reason: string;
+}

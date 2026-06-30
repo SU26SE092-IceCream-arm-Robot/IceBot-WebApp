@@ -54,15 +54,17 @@ export function DashboardErrorState({
 
 export function DashboardEmptyState() {
   return (
-    <Card className="border-border/80 shadow-none">
-      <CardContent className="flex flex-col items-center gap-3 p-10 text-center">
-        <span className="flex size-12 items-center justify-center rounded-xl border border-border bg-muted/20 text-muted-foreground">
-          <LayoutDashboard className="size-5" />
+    <Card className="border-dashed border-2 border-border/80 bg-muted/5 shadow-none">
+      <CardContent className="flex flex-col items-center gap-4 px-10 py-16 text-center">
+        <span className="flex size-14 items-center justify-center rounded-full border border-border bg-background text-muted-foreground shadow-sm">
+          <LayoutDashboard className="size-6 opacity-70" />
         </span>
-        <p className="font-medium text-foreground">Chưa có dữ liệu tổng quan</p>
-        <p className="max-w-md text-sm text-muted-foreground">
-          Backend chưa trả về kiosk, tồn kho hoặc đơn hàng trong phạm vi truy cập hiện tại.
-        </p>
+        <div className="space-y-1.5">
+          <p className="text-base font-semibold tracking-tight text-foreground">Hệ thống chưa có dữ liệu</p>
+          <p className="mx-auto max-w-md text-sm leading-relaxed text-muted-foreground">
+            Chưa phát hiện thông tin Kiosk, tồn kho hoặc giao dịch nào trong phạm vi quản lý của bạn. Hãy tạo thiết lập đầu tiên để bắt đầu theo dõi.
+          </p>
+        </div>
       </CardContent>
     </Card>
   );

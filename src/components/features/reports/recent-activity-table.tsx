@@ -1,7 +1,7 @@
 import { Activity } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { ReportActivityItem } from "@/types/reports";
 
@@ -69,9 +69,8 @@ export function RecentActivityTable({ items }: { items: ReportActivityItem[] }) 
           <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
             <Activity className="size-5" />
           </span>
-          <div className="space-y-1">
+          <div>
             <CardTitle>Hoạt động gần đây</CardTitle>
-            <CardDescription>15 sự kiện mới nhất trong phạm vi thời gian đã chọn.</CardDescription>
           </div>
         </div>
       </CardHeader>

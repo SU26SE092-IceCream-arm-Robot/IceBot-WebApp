@@ -3,6 +3,8 @@ import axios from "axios";
 import axiosClient from "@/lib/axios-client";
 import type { ApiResult } from "@/types";
 import type {
+  CreateMenuRequest,
+  CreateMenuItemRequest,
   CreateProductRequest,
   MenuItemResult,
   MenuItemStatus,
@@ -12,6 +14,8 @@ import type {
   MenuStatus,
   ProductResult,
   ProductVariantResult,
+  UpdateMenuRequest,
+  UpdateMenuItemRequest,
   UpdateProductRequest,
   UpdateProductVariantRequest,
   UpsertProductVariantRequest,
@@ -202,6 +206,67 @@ export async function setMenuStatus(
   );
 
   return requireData(response.data, "Không thể cập nhật trạng thái thực đơn.");
+}
+
+export async function createManagementMenu(
+  request: CreateMenuRequest,
+): Promise<MenuResult> {
+  const response = await axiosClient.post<ApiResult<MenuResult>>(
+    "/api/v1/management/menus",
+    request,
+  );
+  return requireData(response.data, "Không thể tạo thực đơn.");
+}
+
+export async function updateManagementMenu(
+  menuId: string,
+  request: UpdateMenuRequest,
+): Promise<MenuResult> {
+  const response = await axiosClient.put<ApiResult<MenuResult>>(
+    `/api/v1/management/menus/${encodeURIComponent(menuId)}`,
+    request,
+  );
+  return requireData(response.data, "Không thể cập nhật thực đơn.");
+}
+
+export async function deleteManagementMenu(menuId: string): Promise<boolean> {
+  const response = await axiosClient.delete<ApiResult<boolean>>(
+    `/api/v1/management/menus/${encodeURIComponent(menuId)}`,
+  );
+  return requireData(response.data, "Không thể xóa thực đơn.");
+}
+
+export async function createManagementMenuItem(
+  menuId: string,
+  request: CreateMenuItemRequest,
+): Promise<MenuItemResult> {
+  const response = await axiosClient.post<ApiResult<MenuItemResult>>(
+    `/api/v1/management/menus/${encodeURIComponent(menuId)}/items`,
+    request,
+  );
+  return requireData(response.data, "Không thể thêm món vào thực đơn.");
+}
+
+export async function updateManagementMenuItem(
+  menuId: string,
+  menuItemId: string,
+  request: UpdateMenuItemRequest,
+): Promise<MenuItemResult> {
+  const response = await axiosClient.put<ApiResult<MenuItemResult>>(
+    `/api/v1/management/menus/${encodeURIComponent(menuId)}/items/${encodeURIComponent(menuItemId)}`,
+    request,
+  );
+  return requireData(response.data, "Không thể cập nhật món trong thực đơn.");
+}
+
+export async function deleteManagementMenuItem(
+  menuId: string,
+  menuItemId: string,
+): Promise<boolean> {
+  const response = await axiosClient.delete<ApiResult<boolean>>(
+    `/api/v1/management/menus/${encodeURIComponent(menuId)}/items/${encodeURIComponent(menuItemId)}`,
+  );
+  return requireData(response.data, "Không thể xóa món khỏi thực đơn.");
 }
 
 export async function setMenuItemStatus(

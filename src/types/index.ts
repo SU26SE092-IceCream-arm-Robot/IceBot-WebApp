@@ -49,7 +49,8 @@ export type DashboardPermission =
   | "users.view"
   | "users.edit"
   | "maintenance.view"
-  | "maintenance.edit";
+  | "maintenance.edit"
+  | "payments.manage";
 
 export interface DashboardUser {
   id: string;

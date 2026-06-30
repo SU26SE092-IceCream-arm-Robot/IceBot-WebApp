@@ -155,13 +155,13 @@ function EmptyState({
   description: string;
 }) {
   return (
-    <div className="flex flex-col items-center gap-3 px-6 py-12 text-center">
-      <span className="flex size-12 items-center justify-center rounded-xl border border-border bg-muted/20 text-muted-foreground">
-        <Warehouse className="size-5" />
+    <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
+      <span className="mb-4 flex size-14 items-center justify-center rounded-full border border-border bg-muted/20 text-muted-foreground shadow-sm">
+        <Warehouse className="size-6 opacity-70" />
       </span>
-      <div className="space-y-1">
-        <p className="text-sm font-medium text-foreground">{title}</p>
-        <p className="text-sm text-muted-foreground">{description}</p>
+      <div className="max-w-md space-y-1.5">
+        <p className="text-base font-semibold tracking-tight text-foreground">{title}</p>
+        <p className="text-sm leading-relaxed text-muted-foreground">{description}</p>
       </div>
     </div>
   );

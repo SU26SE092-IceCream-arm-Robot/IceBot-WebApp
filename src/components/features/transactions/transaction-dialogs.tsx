@@ -47,6 +47,8 @@ interface TransactionDetailDialogProps {
   onOpenChange: (open: boolean) => void;
   onPreviousHistoryPage: () => void;
   onNextHistoryPage: () => void;
+  onRequestRefundClick?: () => void;
+  canRequestRefund: boolean;
 }
 
 interface OrderActionDialogProps {
@@ -67,6 +69,10 @@ interface RefundDetailDialogProps {
   open: boolean;
   refund: RefundResult | null;
   onOpenChange: (open: boolean) => void;
+  onProcessClick?: () => void;
+  onRejectClick?: () => void;
+  onCancelClick?: () => void;
+  canManageRefunds: boolean;
 }
 
 function DetailTile({
@@ -98,6 +104,8 @@ export function TransactionDetailDialog({
   onOpenChange,
   onPreviousHistoryPage,
   onNextHistoryPage,
+  onRequestRefundClick,
+  canRequestRefund,
 }: TransactionDetailDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -304,8 +312,15 @@ export function TransactionDetailDialog({
             </div>
           </div>
         ) : null}
-
-        <DialogFooter className="bg-background" showCloseButton />
+        <DialogFooter className="bg-background" showCloseButton>
+          {canRequestRefund &&
+          order?.paymentStatus === "Paid" &&
+          order.status === "RefundRequired" ? (
+            <Button variant="outline" onClick={onRequestRefundClick}>
+              Yêu cầu hoàn tiền
+            </Button>
+          ) : null}
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
@@ -415,6 +430,10 @@ export function RefundDetailDialog({
   open,
   refund,
   onOpenChange,
+  onProcessClick,
+  onRejectClick,
+  onCancelClick,
+  canManageRefunds,
 }: RefundDetailDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -503,7 +522,23 @@ export function RefundDetailDialog({
           </div>
         ) : null}
 
-        <DialogFooter className="bg-background" showCloseButton />
+        <DialogFooter className="bg-background" showCloseButton>
+          {canManageRefunds && refund && (refund.status === "Requested" || refund.status === "Processing") ? (
+            <div className="flex flex-wrap items-center gap-2">
+              {refund.status === "Requested" ? (
+                <Button variant="outline" onClick={onCancelClick}>
+                  Hủy yêu cầu
+                </Button>
+              ) : null}
+              <Button variant="destructive" onClick={onRejectClick}>
+                Từ chối
+              </Button>
+              <Button variant="default" onClick={onProcessClick}>
+                Xử lý hoàn tiền
+              </Button>
+            </div>
+          ) : null}
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

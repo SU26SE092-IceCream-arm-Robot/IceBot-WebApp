@@ -2,6 +2,7 @@
 
 import axios from "axios";
 import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 
 import {
   getMenuById,
@@ -92,7 +93,6 @@ export interface UseMenuManagementResult {
   menuActionId: string | null;
   menuItemActionId: string | null;
   actionError: string | null;
-  successMessage: string | null;
   setSearchTerm: (value: string) => void;
   clearSearch: () => void;
   previousProductsPage: () => void;
@@ -110,7 +110,6 @@ export interface UseMenuManagementResult {
   requestMenuItemStatus: (item: MenuItemResult, status: MenuItemStatus) => void;
   setActionDialogOpen: (open: boolean) => void;
   confirmAction: () => Promise<void>;
-  clearSuccessMessage: () => void;
 }
 
 export function useMenuManagement(): UseMenuManagementResult {
@@ -144,7 +143,6 @@ export function useMenuManagement(): UseMenuManagementResult {
   const [menuActionId, setMenuActionId] = useState<string | null>(null);
   const [menuItemActionId, setMenuItemActionId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const fetchProducts = useCallback(
     async (signal?: AbortSignal) => {
@@ -340,7 +338,37 @@ export function useMenuManagement(): UseMenuManagementResult {
   );
 
   const requestMenuStatus = useCallback(
-    (menu: MenuResult, status: MenuStatus) => {
+    async (menu: MenuResult, status: MenuStatus) => {
+      if (status === "Active") {
+        const productCache = new Map(products.data.map((product) => [product.id, product]));
+        const candidates = menu.items.filter(
+          (item) => item.status === "Active" && !item.recipeId,
+        );
+
+        try {
+          for (const item of candidates) {
+            const product =
+              productCache.get(item.productId) ??
+              (await getProductById(item.productId));
+            productCache.set(product.id, product);
+            const variant = product.variants.find(
+              (productVariant) => productVariant.id === item.productVariantId,
+            );
+            if (variant?.fulfillmentType === "MachineProduced") {
+              toast.error(
+                `Không thể kích hoạt: món ${item.displayName} là MachineProduced nhưng chưa có Recipe.`,
+              );
+              return;
+            }
+          }
+        } catch (error) {
+          toast.error(
+            getMenuManagementErrorMessage(error, "điều kiện bán của thực đơn"),
+          );
+          return;
+        }
+      }
+
       openActionDialog({
         kind: "menu-status",
         menuId: menu.id,
@@ -348,11 +376,31 @@ export function useMenuManagement(): UseMenuManagementResult {
         nextStatus: status,
       });
     },
-    [openActionDialog]
+    [openActionDialog, products.data]
   );
 
   const requestMenuItemStatus = useCallback(
-    (item: MenuItemResult, status: MenuItemStatus) => {
+    async (item: MenuItemResult, status: MenuItemStatus) => {
+      if (status === "Active" && !item.recipeId) {
+        try {
+          const product =
+            products.data.find((candidate) => candidate.id === item.productId) ??
+            await getProductById(item.productId);
+          const variant = product.variants.find(
+            (candidate) => candidate.id === item.productVariantId,
+          );
+          if (variant?.fulfillmentType === "MachineProduced") {
+            toast.error(
+              "Không thể bật bán món MachineProduced khi chưa có Recipe hợp lệ.",
+            );
+            return;
+          }
+        } catch (error) {
+          toast.error(getMenuManagementErrorMessage(error, "điều kiện bán của món"));
+          return;
+        }
+      }
+
       openActionDialog({
         kind: "menu-item-status",
         menuId: item.menuId,
@@ -361,7 +409,7 @@ export function useMenuManagement(): UseMenuManagementResult {
         nextStatus: status,
       });
     },
-    [openActionDialog]
+    [openActionDialog, products.data]
   );
 
   const setActionDialogOpen = useCallback(
@@ -451,7 +499,6 @@ export function useMenuManagement(): UseMenuManagementResult {
     }
 
     setActionError(null);
-    setSuccessMessage(null);
 
     try {
       switch (pendingAction.kind) {
@@ -462,7 +509,7 @@ export function useMenuManagement(): UseMenuManagementResult {
             pendingAction.nextAvailable
           );
           updateProduct(result);
-          setSuccessMessage(
+          toast.success(
             `Đã ${pendingAction.nextAvailable ? "bật" : "tắt"} khả dụng cho sản phẩm ${pendingAction.label}.`
           );
           break;
@@ -475,7 +522,7 @@ export function useMenuManagement(): UseMenuManagementResult {
             pendingAction.nextAvailable
           );
           updateVariant(result);
-          setSuccessMessage(
+          toast.success(
             `Đã ${pendingAction.nextAvailable ? "bật" : "tắt"} khả dụng cho biến thể ${pendingAction.label}.`
           );
           break;
@@ -487,7 +534,7 @@ export function useMenuManagement(): UseMenuManagementResult {
             pendingAction.nextStatus
           );
           updateMenu(result);
-          setSuccessMessage(`Đã cập nhật trạng thái thực đơn ${pendingAction.label}.`);
+          toast.success(`Đã cập nhật trạng thái thực đơn ${pendingAction.label}.`);
           break;
         }
         case "menu-item-status": {
@@ -498,7 +545,7 @@ export function useMenuManagement(): UseMenuManagementResult {
             pendingAction.nextStatus
           );
           updateMenuItem(result);
-          setSuccessMessage(`Đã cập nhật trạng thái món ${pendingAction.label}.`);
+          toast.success(`Đã cập nhật trạng thái món ${pendingAction.label}.`);
           break;
         }
       }
@@ -534,7 +581,6 @@ export function useMenuManagement(): UseMenuManagementResult {
     menuActionId,
     menuItemActionId,
     actionError,
-    successMessage,
     setSearchTerm,
     clearSearch,
     previousProductsPage: () => setProductsPage((page) => Math.max(page - 1, 1)),
@@ -554,6 +600,5 @@ export function useMenuManagement(): UseMenuManagementResult {
     requestMenuItemStatus,
     setActionDialogOpen,
     confirmAction,
-    clearSuccessMessage: () => setSuccessMessage(null),
   };
 }

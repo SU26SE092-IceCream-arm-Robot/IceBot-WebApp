@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
+import { toast } from "sonner";
 
 import {
   createManagementProduct,
@@ -48,8 +49,6 @@ export function useProductCrud({ onChanged }: UseProductCrudOptions) {
   const [deleteTarget, setDeleteTarget] = useState<ProductDeleteTarget | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
-
   const runMutation = useCallback(
     async <T,>(
       mutation: () => Promise<T>,
@@ -63,7 +62,7 @@ export function useProductCrud({ onChanged }: UseProductCrudOptions) {
       try {
         await mutation();
         await onChanged(change);
-        setSuccessMessage(success);
+        toast.success(success);
         return true;
       } catch (error) {
         setErrorMessage(getMenuManagementErrorMessage(error, "dữ liệu sản phẩm"));
@@ -86,7 +85,7 @@ export function useProductCrud({ onChanged }: UseProductCrudOptions) {
       try {
         createdProduct = await createManagementProduct(request);
         await onChanged({ productId: createdProduct.id });
-        setSuccessMessage(`Đã tạo sản phẩm ${createdProduct.displayName || createdProduct.name}.`);
+        toast.success(`Đã tạo sản phẩm ${createdProduct.displayName || createdProduct.name}.`);
         setProductFormOpen(false);
         return true;
       } catch (error) {
@@ -202,7 +201,6 @@ export function useProductCrud({ onChanged }: UseProductCrudOptions) {
     deleteTarget,
     isSubmitting,
     errorMessage,
-    successMessage,
     openProductCreate: () => {
       setEditingProduct(null);
       setErrorMessage(null);
@@ -249,6 +247,5 @@ export function useProductCrud({ onChanged }: UseProductCrudOptions) {
       }
     },
     confirmDelete,
-    clearSuccessMessage: () => setSuccessMessage(null),
   };
 }

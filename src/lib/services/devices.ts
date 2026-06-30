@@ -1,5 +1,4 @@
 import axiosClient from "@/lib/axios-client";
-import type { ApiResult } from "@/types";
 import type { DeviceListResult } from "@/types/devices";
 
 export async function getDevicesByKiosk(kioskId: string, signal?: AbortSignal): Promise<DeviceListResult> {

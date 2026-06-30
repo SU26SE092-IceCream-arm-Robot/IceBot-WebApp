@@ -1,6 +1,6 @@
 import { ListChecks } from "lucide-react";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { ReportStatusBucket } from "@/types/reports";
 
 const BAR_TONES: Record<ReportStatusBucket["tone"], string> = {
@@ -19,9 +19,8 @@ export function OrderStatusBreakdown({ buckets }: { buckets: ReportStatusBucket[
           <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
             <ListChecks className="size-5" />
           </span>
-          <div className="space-y-1">
+          <div>
             <CardTitle>Trạng thái đơn hàng</CardTitle>
-            <CardDescription>Phân bổ đơn trong khoảng thời gian đã chọn.</CardDescription>
           </div>
         </div>
       </CardHeader>

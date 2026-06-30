@@ -17,10 +17,11 @@ export interface UseAccountActionsResult {
   isEditRolesOpen: boolean;
   isEditingRoles: boolean;
   editRolesErrorMessage: string | null;
-  roleScopeOptions: RoleScopeOptionsResult | null;
+  roleScopeOptionsByRole: Record<string, RoleScopeOptionsResult>;
+  roleScopeErrorsByRole: Record<string, string>;
   isRoleScopeLoading: boolean;
   setEditRolesOpen: (open: boolean) => void;
-  loadRoleScopeOptions: (roleCode: string) => Promise<void>;
+  loadRoleScopeOptions: (roleCode: string) => Promise<RoleScopeOptionsResult | null>;
   submitEditRoles: (accountId: string, roles: AccountRoleScopeRequest[]) => Promise<boolean>;
 
   // Reset Password
@@ -41,7 +42,10 @@ export function useAccountActions(
   const [isEditRolesOpen, setIsEditRolesOpen] = useState(false);
   const [isEditingRoles, setIsEditingRoles] = useState(false);
   const [editRolesErrorMessage, setEditRolesErrorMessage] = useState<string | null>(null);
-  const [roleScopeOptions, setRoleScopeOptions] = useState<RoleScopeOptionsResult | null>(null);
+  const [roleScopeOptionsByRole, setRoleScopeOptionsByRole] = useState<
+    Record<string, RoleScopeOptionsResult>
+  >({});
+  const [roleScopeErrorsByRole, setRoleScopeErrorsByRole] = useState<Record<string, string>>({});
   const [isRoleScopeLoading, setIsRoleScopeLoading] = useState(false);
 
   const [isResetPasswordOpen, setIsResetPasswordOpen] = useState(false);
@@ -62,12 +66,20 @@ export function useAccountActions(
   }, []);
 
   const loadRoleScopeOptions = useCallback(async (roleCode: string) => {
+    if (!roleCode) {
+      return null;
+    }
+
     setIsRoleScopeLoading(true);
+    setRoleScopeErrorsByRole((current) => ({ ...current, [roleCode]: "" }));
     try {
       const result = await getRoleScopeOptions(roleCode);
-      setRoleScopeOptions(result);
+      setRoleScopeOptionsByRole((current) => ({ ...current, [roleCode]: result }));
+      return result;
     } catch (error) {
-      console.error("Failed to load role scopes", error);
+      const message = error instanceof Error ? error.message : "Không thể tải phạm vi vai trò.";
+      setRoleScopeErrorsByRole((current) => ({ ...current, [roleCode]: message }));
+      return null;
     } finally {
       setIsRoleScopeLoading(false);
     }
@@ -79,6 +91,7 @@ export function useAccountActions(
       setEditRolesErrorMessage(null);
       try {
         const result = await assignAccountRoles(accountId, { roles });
+        setEffectiveAccess(null);
         setIsEditRolesOpen(false);
         onSuccess?.("Đã cập nhật vai trò thành công.", result);
         return true;
@@ -120,7 +133,8 @@ export function useAccountActions(
     isEditRolesOpen,
     isEditingRoles,
     editRolesErrorMessage,
-    roleScopeOptions,
+    roleScopeOptionsByRole,
+    roleScopeErrorsByRole,
     isRoleScopeLoading,
     setEditRolesOpen: setIsEditRolesOpen,
     loadRoleScopeOptions,

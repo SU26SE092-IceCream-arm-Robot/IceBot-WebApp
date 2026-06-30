@@ -28,15 +28,11 @@ export function ReportKpiCard({
   icon: Icon,
   label,
   value,
-  helper,
-  coverage,
   tone = "primary",
 }: {
   icon: LucideIcon;
   label: string;
   value: ReactNode;
-  helper: string;
-  coverage: string;
   tone?: KpiTone;
 }) {
   return (
@@ -54,11 +50,7 @@ export function ReportKpiCard({
           <div className={`tabular-nums text-3xl font-semibold tracking-tight ${TONES[tone].value}`}>
             {value}
           </div>
-          <p className="mt-2 text-xs leading-5 text-muted-foreground">{helper}</p>
         </div>
-        <p className="mt-4 border-t border-border pt-3 text-[11px] leading-4 text-muted-foreground">
-          {coverage}
-        </p>
       </CardContent>
     </Card>
   );
