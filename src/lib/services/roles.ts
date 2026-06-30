@@ -4,6 +4,7 @@ import axiosClient from "@/lib/axios-client";
 import type { ApiResult } from "@/types";
 import type {
   ManagementRoleResult,
+  PermissionMatrixResult,
   RoleScopeOptionsResult,
 } from "@/types/accounts";
 
@@ -36,6 +37,17 @@ export async function getRoleScopeOptions(
   );
 
   return requireData(response.data, "Không thể tải phạm vi cho vai trò.");
+}
+
+export async function getPermissionMatrix(
+  signal?: AbortSignal
+): Promise<PermissionMatrixResult> {
+  const response = await axiosClient.get<ApiResult<PermissionMatrixResult>>(
+    "/api/v1/management/permission-matrix",
+    { signal }
+  );
+
+  return requireData(response.data, "Không thể tải ma trận phân quyền.");
 }
 
 export function getRolesErrorMessage(

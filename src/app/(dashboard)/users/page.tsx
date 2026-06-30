@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect } from "react";
+
 import {
   AlertTriangle,
   ChevronLeft,
@@ -12,12 +14,17 @@ import {
   UsersRound,
   type LucideIcon,
 } from "lucide-react";
+import { toast } from "sonner";
 
 import { AccountsTable } from "@/components/features/users/accounts-table";
 import {
   AccountDetailDialog,
-  DisableAccountDialog,
-} from "@/components/features/users/account-dialogs";
+} from "@/components/features/users/account-detail-dialog";
+import {
+  EditRolesDialog,
+  ResetPasswordDialog,
+} from "@/components/features/users/account-action-dialogs";
+import { DisableAccountDialog } from "@/components/features/users/account-dialogs";
 import {
   CreateAccountDialog,
   InvitationResultDialog,
@@ -34,6 +41,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAccounts } from "@/hooks/use-accounts";
+import { useAccountActions } from "@/hooks/use-account-actions";
 import { useAuth } from "@/hooks/use-auth";
 import type { ManagementAccountStatusFilter } from "@/types/accounts";
 
@@ -174,24 +182,25 @@ export default function UsersPage() {
     clearSuccessMessage,
   } = useAccounts();
 
+  const accountActions = useAccountActions((message) => {
+    toast.success(message);
+    void refresh();
+  });
+
+  // Watch for legacy success message from useAccounts and toast it
+  useEffect(() => {
+    if (successMessage) {
+      toast.success(successMessage);
+      clearSuccessMessage();
+    }
+  }, [successMessage, clearSuccessMessage]);
+
   const canManageAccounts = currentUser?.role === "ADMIN";
   const roleCount = accounts.reduce((count, account) => count + account.roles.length, 0);
   const activeOnPage = accounts.filter((account) => account.status === "Active").length;
 
   return (
     <div className="space-y-7">
-      {successMessage ? (
-        <div
-          role="status"
-          className="flex items-center justify-between gap-3 rounded-lg border border-success/30 bg-success/5 px-4 py-3 text-sm text-success"
-        >
-          <span>{successMessage}</span>
-          <Button variant="ghost" size="sm" className="h-7 text-success" onClick={clearSuccessMessage}>
-            Đóng
-          </Button>
-        </div>
-      ) : null}
-
       <section className="flex flex-col gap-4 border-b border-border pb-6 lg:flex-row lg:items-end lg:justify-between">
         <div className="max-w-2xl space-y-2">
           <h1 className="text-3xl font-semibold tracking-tight text-foreground">Quản lý tài khoản</h1>
@@ -349,6 +358,29 @@ export default function UsersPage() {
         isLoading={isDetailLoading}
         open={isDetailOpen}
         onOpenChange={setDetailOpen}
+        accountActions={accountActions}
+      />
+
+      <EditRolesDialog
+        account={selectedAccount}
+        open={accountActions.isEditRolesOpen}
+        onOpenChange={accountActions.setEditRolesOpen}
+        isSubmitting={accountActions.isEditingRoles}
+        errorMessage={accountActions.editRolesErrorMessage}
+        managementRoles={managementRoles}
+        roleScopeOptions={accountActions.roleScopeOptions}
+        isRoleScopeLoading={accountActions.isRoleScopeLoading}
+        onRoleChange={(roleCode) => void accountActions.loadRoleScopeOptions(roleCode)}
+        onSubmit={accountActions.submitEditRoles}
+      />
+
+      <ResetPasswordDialog
+        account={selectedAccount}
+        open={accountActions.isResetPasswordOpen}
+        onOpenChange={accountActions.setResetPasswordOpen}
+        isSubmitting={accountActions.isResettingPassword}
+        errorMessage={accountActions.resetPasswordErrorMessage}
+        onSubmit={accountActions.submitResetPassword}
       />
 
       <DisableAccountDialog

@@ -143,3 +143,26 @@ export interface RoleScopeOptionsResult {
   requiresScope: boolean;
   organizations: RoleScopeOrganization[];
 }
+
+export interface PermissionDefinition {
+  code: string;
+  name: string;
+  description?: string;
+}
+
+export interface PermissionGroup {
+  groupName: string;
+  permissions: PermissionDefinition[];
+}
+
+export type PermissionMatrixResult = PermissionGroup[];
+
+export type EffectiveAccessResult = string[];
+
+export interface ResetPasswordRequest {
+  newPassword: string;
+}
+
+export interface AccountRolesAssignmentRequest {
+  roles: AccountRoleScopeRequest[];
+}

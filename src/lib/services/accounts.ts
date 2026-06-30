@@ -6,11 +6,14 @@ import type {
   AcceptInvitationRequest,
   AcceptInvitationResult,
   AccountInvitationResult,
+  AccountRolesAssignmentRequest,
   CreateAccountInvitationRequest,
   CreateInternalAccountRequest,
+  EffectiveAccessResult,
   InternalAccountResult,
   ManagementAccountsQuery,
   PagedResult,
+  ResetPasswordRequest,
 } from "@/types/accounts";
 
 function requireData<T>(result: ApiResult<T>, fallbackMessage: string): T {
@@ -98,6 +101,42 @@ export async function acceptInvitation(
   );
 
   return requireData(response.data, "Không thể chấp nhận lời mời.");
+}
+
+export async function resetAccountPassword(
+  accountId: string,
+  request: ResetPasswordRequest
+): Promise<void> {
+  const response = await axiosClient.put<ApiResult<void>>(
+    `/api/v1/management/accounts/${encodeURIComponent(accountId)}/password`,
+    request
+  );
+
+  requireData(response.data, "Không thể đặt lại mật khẩu.");
+}
+
+export async function getEffectiveAccess(
+  accountId: string,
+  signal?: AbortSignal
+): Promise<EffectiveAccessResult> {
+  const response = await axiosClient.get<ApiResult<EffectiveAccessResult>>(
+    `/api/v1/management/accounts/${encodeURIComponent(accountId)}/effective-access`,
+    { signal }
+  );
+
+  return requireData(response.data, "Không thể tải quyền hạn thực tế.");
+}
+
+export async function assignAccountRoles(
+  accountId: string,
+  request: AccountRolesAssignmentRequest
+): Promise<InternalAccountResult> {
+  const response = await axiosClient.put<ApiResult<InternalAccountResult>>(
+    `/api/v1/management/accounts/${encodeURIComponent(accountId)}/roles`,
+    request
+  );
+
+  return requireData(response.data, "Không thể cập nhật vai trò.");
 }
 
 export function getAccountsErrorMessage(
