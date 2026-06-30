@@ -29,6 +29,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DevicesTable } from "./devices-table";
 import type { KioskEvidenceState } from "@/hooks/use-kiosk-detail";
 import { useKioskDetail } from "@/hooks/use-kiosk-detail";
 import { cn } from "@/lib/utils";
@@ -337,11 +339,13 @@ function EvidenceUnavailable({
   title: string;
 }) {
   return (
-    <div className="flex min-h-32 items-center justify-center p-6 text-center">
-      <div className="max-w-md space-y-2">
-        <CircleHelp className="mx-auto size-6 text-muted-foreground" />
-        <p className="text-sm font-medium text-foreground">{title}</p>
-        <p className="text-xs leading-5 text-muted-foreground">{message}</p>
+    <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
+      <span className="mb-4 flex size-14 items-center justify-center rounded-full border border-border bg-muted/20 text-muted-foreground shadow-sm">
+        <CircleHelp className="size-6 opacity-70" />
+      </span>
+      <div className="max-w-md space-y-1.5">
+        <p className="text-base font-semibold tracking-tight text-foreground">{title}</p>
+        <p className="text-sm leading-relaxed text-muted-foreground">{message}</p>
       </div>
     </div>
   );
@@ -627,14 +631,32 @@ export function KioskDetailView({ kioskId }: KioskDetailViewProps) {
         </div>
       ) : null}
 
-      <div className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
-        <MetadataPanel kiosk={kiosk} />
-        <LatestHeartbeatPanel state={heartbeats} />
-      </div>
+      <Tabs defaultValue="overview" className="w-full space-y-6">
+        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 lg:w-auto lg:inline-flex">
+          <TabsTrigger value="overview">Tổng quan</TabsTrigger>
+          <TabsTrigger value="heartbeats">Heartbeats</TabsTrigger>
+          <TabsTrigger value="events">Sự kiện</TabsTrigger>
+          <TabsTrigger value="devices">Thiết bị</TabsTrigger>
+        </TabsList>
+        <TabsContent value="overview" className="space-y-6">
+          <div className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
+            <MetadataPanel kiosk={kiosk} />
+            <LatestHeartbeatPanel state={heartbeats} />
+          </div>
+        </TabsContent>
 
-      <HeartbeatsTable state={heartbeats} />
-      <EventsTable state={events} />
+        <TabsContent value="heartbeats">
+          <HeartbeatsTable state={heartbeats} />
+        </TabsContent>
 
+        <TabsContent value="events">
+          <EventsTable state={events} />
+        </TabsContent>
+
+        <TabsContent value="devices">
+          <DevicesTable kioskId={kioskId} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
