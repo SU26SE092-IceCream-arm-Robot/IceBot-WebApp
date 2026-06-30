@@ -29,7 +29,8 @@ export type DashboardRoutePath =
   | "/menu"
   | "/reports"
   | "/users"
-  | "/maintenance";
+  | "/maintenance"
+  | "/settings/payment-methods";
 
 export type DashboardPermission =
   | "dashboard.view"
@@ -40,6 +41,7 @@ export type DashboardPermission =
   | "inventory.view"
   | "inventory.edit"
   | "transactions.view"
+  | "transactions.edit"
   | "transactions.refund"
   | "menu.view"
   | "menu.edit"

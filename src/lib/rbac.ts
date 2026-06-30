@@ -9,6 +9,7 @@ export const PERMISSIONS: Record<DashboardPermission, readonly DashboardRole[]> 
   "inventory.view": ["ADMIN", "MANAGER"],
   "inventory.edit": ["ADMIN", "MANAGER"],
   "transactions.view": ["ADMIN", "MANAGER", "LOCATION_OWNER"],
+  "transactions.edit": ["ADMIN", "MANAGER"],
   "transactions.refund": ["ADMIN", "MANAGER"],
   "menu.view": ["ADMIN", "MANAGER"],
   "menu.edit": ["ADMIN", "MANAGER"],
@@ -29,6 +30,7 @@ export const ROUTE_PERMISSIONS: Record<DashboardRoutePath, DashboardPermission> 
   "/reports": "reports.view",
   "/users": "users.view",
   "/maintenance": "maintenance.view",
+  "/settings/payment-methods": "transactions.view",
 };
 
 const DASHBOARD_ROUTES: readonly DashboardRoutePath[] = [
@@ -41,6 +43,7 @@ const DASHBOARD_ROUTES: readonly DashboardRoutePath[] = [
   "/reports",
   "/users",
   "/maintenance",
+  "/settings/payment-methods",
 ];
 
 const DASHBOARD_ROUTE_SET: ReadonlySet<string> = new Set(DASHBOARD_ROUTES);

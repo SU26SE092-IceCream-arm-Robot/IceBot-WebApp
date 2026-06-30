@@ -8,6 +8,7 @@ import {
   Building2,
   ChevronLeft,
   ChevronRight,
+  CreditCard,
   IceCream,
   LayoutDashboard,
   LogOut,
@@ -39,6 +40,7 @@ const SIDEBAR_ITEMS: readonly SidebarItem[] = [
   { href: "/organizations", label: "Tổ chức & cửa hàng", icon: Building2 },
   { href: "/users", label: "Tài khoản", icon: Users },
   { href: "/maintenance", label: "Bảo trì", icon: Wrench },
+  { href: "/settings/payment-methods", label: "Cấu hình thanh toán", icon: CreditCard },
 ];
 
 const SIDEBAR_GROUPS: readonly {
@@ -50,7 +52,7 @@ const SIDEBAR_GROUPS: readonly {
     routes: ["/dashboard", "/kiosks", "/inventory", "/maintenance"],
   },
   { label: "Kinh doanh", routes: ["/transactions", "/menu", "/reports"] },
-  { label: "Quản trị", routes: ["/organizations", "/users"] },
+  { label: "Quản trị", routes: ["/organizations", "/users", "/settings/payment-methods"] },
 ];
 
 interface AppSidebarProps {
@@ -107,7 +109,7 @@ export function AppSidebar({
   return (
     <aside
       className={`${
-        collapsed ? "w-16" : "w-60"
+        collapsed ? "w-16" : "w-56"
       } relative flex shrink-0 flex-col border-r border-border bg-card transition-all duration-300 ease-out`}
     >
       <div className="min-w-0 flex-1">
