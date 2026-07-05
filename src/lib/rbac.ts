@@ -19,7 +19,7 @@ export const PERMISSIONS: Record<DashboardPermission, readonly DashboardRole[]> 
   "maintenance.view": ["ADMIN", "MANAGER"],
   "maintenance.edit": ["ADMIN", "MANAGER"],
   "alerts.view": ["ADMIN", "MANAGER", "LOCATION_OWNER"],
-  "alerts.manage": ["ADMIN", "MANAGER"],
+  "alerts.manage": ["ADMIN", "MANAGER", "LOCATION_OWNER"],
   // Backend payments.manage currently allows only SystemAdmin and Manager.
   "payments.manage": ["ADMIN", "MANAGER"],
 };
