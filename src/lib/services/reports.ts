@@ -1,10 +1,7 @@
 import { listDispenserStates, listStockMovements } from "@/lib/services/inventory";
 import { getManagementKiosks } from "@/lib/services/kiosk-management";
 import { listManagementMaintenanceTickets } from "@/lib/services/maintenance";
-import {
-  listManagementMenus,
-  listManagementProducts,
-} from "@/lib/services/menu-management";
+
 import { getManagementStores } from "@/lib/services/stores";
 import {
   listManagementOrders,
@@ -238,26 +235,22 @@ export function loadReportRefunds(
 export function loadReportProducts(
   signal?: AbortSignal,
 ): Promise<ReportsSourceState<ProductResult>> {
-  return loadPagedSource(
-    (pageNumber, pageSize, requestSignal) =>
-      listManagementProducts(
-        { searchTerm: "", pageNumber, pageSize },
-        requestSignal,
-      ),
-    signal,
+  void signal;
+  return Promise.resolve(
+    skippedReportsSource<ProductResult>(
+      "Danh mục sản phẩm không thể tổng hợp khi quản lý nhiều tổ chức.",
+    ),
   );
 }
 
 export function loadReportMenus(
   signal?: AbortSignal,
 ): Promise<ReportsSourceState<MenuResult>> {
-  return loadPagedSource(
-    (pageNumber, pageSize, requestSignal) =>
-      listManagementMenus(
-        { searchTerm: "", pageNumber, pageSize },
-        requestSignal,
-      ),
-    signal,
+  void signal;
+  return Promise.resolve(
+    skippedReportsSource<MenuResult>(
+      "Thực đơn không thể tổng hợp khi quản lý nhiều tổ chức.",
+    ),
   );
 }
 
