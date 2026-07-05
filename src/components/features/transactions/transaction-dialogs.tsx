@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 
 import { RefundStatusBadge } from "@/components/features/transactions/refunds-table";
+import { ExecutionAttemptsPanel } from "@/components/features/transactions/execution-attempts-panel";
 import {
   ORDER_STATUS_LABELS,
   OrderStatusBadge,
@@ -109,7 +110,7 @@ export function TransactionDetailDialog({
 }: TransactionDetailDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-3xl">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-4xl">
         <DialogHeader className="gap-3">
           <div className="flex items-start gap-3">
             <span className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
@@ -222,6 +223,8 @@ export function TransactionDetailDialog({
                 </div>
               )}
             </div>
+
+            <ExecutionAttemptsPanel key={order.id} orderId={order.id} />
 
             <div className="rounded-xl border border-border bg-card p-4">
               <div className="mb-3 flex items-center justify-between gap-3">

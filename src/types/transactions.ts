@@ -117,6 +117,89 @@ export interface OrderStatusHistoryResult {
   changedAt: string;
 }
 
+export interface ExecutionAttemptResult {
+  sourceCommandId: string;
+  orderId: string;
+  dispatchAttemptNo: number;
+  kioskExecutionEndpointId: string;
+  commandStatus: string;
+  createdAt: string;
+  requestedByAccountId?: string | null;
+  commandExpiryAt?: string | null;
+  deliveredAt?: string | null;
+  respondedAt?: string | null;
+  rejectionCode?: string | null;
+  rejectionMessage?: string | null;
+  executionProfile?: string | null;
+  sourceConfigurationReleaseId?: string | null;
+  releaseChecksum?: string | null;
+  executionStatus?: string | null;
+  observationStatus?: string | null;
+  customerExecutionStatus?: string | null;
+  sourceExecutorId?: string | null;
+  lastAppliedSourceEventId?: string | null;
+  lastAppliedSequenceNumber?: number | null;
+  lastEdgeCreatedAt?: string | null;
+  lastExecutorReportedAt?: string | null;
+  cloudReceivedAt?: string | null;
+}
+
+export interface ExecutionAttemptReferenceResult {
+  sourceCommandId: string;
+  dispatchAttemptNo: number;
+  commandStatus: string;
+  createdAt: string;
+}
+
+export interface ExecutionAttemptProvenanceResult {
+  isRedispatch: boolean;
+  retryOfSourceCommandId?: string | null;
+  requestedByAccountId?: string | null;
+  redispatchReason?: string | null;
+  timedOutBeforeAcceptance: boolean;
+  timedOutAt?: string | null;
+  commandExpiryAt?: string | null;
+  executionReportTimedOut: boolean;
+  observationRecordedAt?: string | null;
+}
+
+export interface ExecutionDeliveryAttemptResult {
+  deliveryAttemptNo: number;
+  sentAt: string;
+  outcome: string;
+  responseCode?: string | null;
+  responseMessage?: string | null;
+}
+
+export interface ProductionExecutionResult {
+  id: string;
+  sourceProductionJobId?: string | null;
+  workcellId?: string | null;
+  controllerId?: string | null;
+  executionPlanChecksum?: string | null;
+  activeSetVersion?: number | null;
+  activeSetChecksum?: string | null;
+  status: string;
+  physicalOutputState: string;
+  errorCode?: string | null;
+  errorMessage?: string | null;
+  sourceExecutorId: string;
+  lastAppliedSourceEventId: string;
+  lastAppliedSequenceNumber: number;
+  lastEdgeCreatedAt: string;
+  lastExecutorReportedAt: string;
+  cloudReceivedAt: string;
+}
+
+export interface ExecutionAttemptDetailResult {
+  attempt: ExecutionAttemptResult;
+  previousAttempt?: ExecutionAttemptReferenceResult | null;
+  nextAttempt?: ExecutionAttemptReferenceResult | null;
+  provenance: ExecutionAttemptProvenanceResult;
+  deliveryAttempts: ExecutionDeliveryAttemptResult[];
+  productionExecutions: ProductionExecutionResult[];
+}
+
 export interface RefundResult {
   id: string;
   paymentTransactionId: string;

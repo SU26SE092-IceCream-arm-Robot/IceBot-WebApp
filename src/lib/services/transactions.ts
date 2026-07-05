@@ -14,6 +14,8 @@ import type {
   RequestRefundRequest,
   MarkRefundProcessedRequest,
   RefundReasonRequest,
+  ExecutionAttemptDetailResult,
+  ExecutionAttemptResult,
 } from "@/types/transactions";
 
 function requireData<T>(result: ApiResult<T>, fallbackMessage: string): T {
@@ -106,6 +108,39 @@ export async function getManagementOrderStatusHistory(
     response.data,
     "Không thể tải lịch sử trạng thái giao dịch.",
   );
+}
+
+export async function getManagementOrderExecutionAttempts(
+  orderId: string,
+  query: OrderStatusHistoryQuery,
+  signal?: AbortSignal,
+): Promise<TransactionsPagedResult<ExecutionAttemptResult>> {
+  const response = await axiosClient.get<
+    TransactionsPagedResult<ExecutionAttemptResult>
+  >(`/api/v1/management/orders/${encodeURIComponent(orderId)}/execution-attempts`, {
+    params: {
+      pageNumber: query.pageNumber,
+      pageSize: query.pageSize,
+    },
+    signal,
+  });
+
+  return requirePagedData(
+    response.data,
+    "Không thể tải lịch sử lần thực thi.",
+  );
+}
+
+export async function getManagementExecutionAttempt(
+  sourceCommandId: string,
+  signal?: AbortSignal,
+): Promise<ExecutionAttemptDetailResult> {
+  const response = await axiosClient.get<ApiResult<ExecutionAttemptDetailResult>>(
+    `/api/v1/management/execution-attempts/${encodeURIComponent(sourceCommandId)}`,
+    { signal },
+  );
+
+  return requireData(response.data, "Không thể tải chi tiết lần thực thi.");
 }
 
 export async function listManagementRefunds(
