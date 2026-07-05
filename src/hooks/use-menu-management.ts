@@ -112,7 +112,7 @@ export interface UseMenuManagementResult {
   confirmAction: () => Promise<void>;
 }
 
-export function useMenuManagement(): UseMenuManagementResult {
+export function useMenuManagement(organizationId: string | null): UseMenuManagementResult {
   const [searchTerm, setSearchTermValue] = useState("");
   const [productsPage, setProductsPage] = useState(1);
   const [menusPage, setMenusPage] = useState(1);
@@ -149,6 +149,7 @@ export function useMenuManagement(): UseMenuManagementResult {
       setProducts((current) => ({ ...current, isLoading: true, errorMessage: null }));
 
       const query: MenuManagementQuery = {
+        organizationId: organizationId ?? undefined,
         searchTerm,
         pageNumber: productsPage,
         pageSize: PAGE_SIZE,
@@ -179,7 +180,7 @@ export function useMenuManagement(): UseMenuManagementResult {
         });
       }
     },
-    [productsPage, searchTerm]
+    [organizationId, productsPage, searchTerm]
   );
 
   const fetchMenus = useCallback(
@@ -187,6 +188,7 @@ export function useMenuManagement(): UseMenuManagementResult {
       setMenus((current) => ({ ...current, isLoading: true, errorMessage: null }));
 
       const query: MenuManagementQuery = {
+        organizationId: organizationId ?? undefined,
         searchTerm,
         pageNumber: menusPage,
         pageSize: PAGE_SIZE,
@@ -217,10 +219,13 @@ export function useMenuManagement(): UseMenuManagementResult {
         });
       }
     },
-    [menusPage, searchTerm]
+    [menusPage, organizationId, searchTerm]
   );
 
   useEffect(() => {
+    if (!organizationId) {
+      return;
+    }
     const abortController = new AbortController();
     const timeoutId = window.setTimeout(
       () => void fetchProducts(abortController.signal),
@@ -231,9 +236,12 @@ export function useMenuManagement(): UseMenuManagementResult {
       window.clearTimeout(timeoutId);
       abortController.abort();
     };
-  }, [fetchProducts, searchTerm]);
+  }, [fetchProducts, organizationId, searchTerm]);
 
   useEffect(() => {
+    if (!organizationId) {
+      return;
+    }
     const abortController = new AbortController();
     const timeoutId = window.setTimeout(
       () => void fetchMenus(abortController.signal),
@@ -244,7 +252,21 @@ export function useMenuManagement(): UseMenuManagementResult {
       window.clearTimeout(timeoutId);
       abortController.abort();
     };
-  }, [fetchMenus, searchTerm]);
+  }, [fetchMenus, organizationId, searchTerm]);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      setProductsPage(1);
+      setMenusPage(1);
+      setSelectedProduct(null);
+      setSelectedMenu(null);
+      setIsProductDetailOpen(false);
+      setIsMenuDetailOpen(false);
+      setPendingAction(null);
+      setIsActionDialogOpen(false);
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
+  }, [organizationId]);
 
   const setSearchTerm = useCallback((value: string) => {
     setSearchTermValue(value);
@@ -265,7 +287,8 @@ export function useMenuManagement(): UseMenuManagementResult {
     setSelectedProduct(null);
 
     try {
-      setSelectedProduct(await getProductById(productId));
+      if (!organizationId) throw new Error("Vui lòng chọn tổ chức trước khi xem sản phẩm.");
+      setSelectedProduct(await getProductById(organizationId, productId));
     } catch (error) {
       setProductDetailError(
         getMenuManagementErrorMessage(error, "chi tiết sản phẩm")
@@ -273,7 +296,7 @@ export function useMenuManagement(): UseMenuManagementResult {
     } finally {
       setIsProductDetailLoading(false);
     }
-  }, []);
+  }, [organizationId]);
 
   const setProductDetailOpen = useCallback((open: boolean) => {
     setIsProductDetailOpen(open);
@@ -290,13 +313,14 @@ export function useMenuManagement(): UseMenuManagementResult {
     setSelectedMenu(null);
 
     try {
-      setSelectedMenu(await getMenuById(menuId));
+      if (!organizationId) throw new Error("Vui lòng chọn tổ chức trước khi xem thực đơn.");
+      setSelectedMenu(await getMenuById(organizationId, menuId));
     } catch (error) {
       setMenuDetailError(getMenuManagementErrorMessage(error, "chi tiết thực đơn"));
     } finally {
       setIsMenuDetailLoading(false);
     }
-  }, []);
+  }, [organizationId]);
 
   const setMenuDetailOpen = useCallback((open: boolean) => {
     setIsMenuDetailOpen(open);
@@ -349,7 +373,11 @@ export function useMenuManagement(): UseMenuManagementResult {
           for (const item of candidates) {
             const product =
               productCache.get(item.productId) ??
-              (await getProductById(item.productId));
+              (organizationId ? await getProductById(organizationId, item.productId) : null);
+            if (!product) {
+              toast.error("Vui lòng chọn tổ chức trước khi kiểm tra thực đơn.");
+              return;
+            }
             productCache.set(product.id, product);
             const variant = product.variants.find(
               (productVariant) => productVariant.id === item.productVariantId,
@@ -376,7 +404,7 @@ export function useMenuManagement(): UseMenuManagementResult {
         nextStatus: status,
       });
     },
-    [openActionDialog, products.data]
+    [openActionDialog, organizationId, products.data]
   );
 
   const requestMenuItemStatus = useCallback(
@@ -385,7 +413,11 @@ export function useMenuManagement(): UseMenuManagementResult {
         try {
           const product =
             products.data.find((candidate) => candidate.id === item.productId) ??
-            await getProductById(item.productId);
+            (organizationId ? await getProductById(organizationId, item.productId) : null);
+          if (!product) {
+            toast.error("Vui lòng chọn tổ chức trước khi kiểm tra món.");
+            return;
+          }
           const variant = product.variants.find(
             (candidate) => candidate.id === item.productVariantId,
           );
@@ -409,7 +441,7 @@ export function useMenuManagement(): UseMenuManagementResult {
         nextStatus: status,
       });
     },
-    [openActionDialog, products.data]
+    [openActionDialog, organizationId, products.data]
   );
 
   const setActionDialogOpen = useCallback(
@@ -498,6 +530,11 @@ export function useMenuManagement(): UseMenuManagementResult {
       return;
     }
 
+    if (!organizationId) {
+      setActionError("Vui lòng chọn tổ chức trước khi cập nhật dữ liệu.");
+      return;
+    }
+
     setActionError(null);
 
     try {
@@ -505,6 +542,7 @@ export function useMenuManagement(): UseMenuManagementResult {
         case "product-availability": {
           setProductActionId(pendingAction.productId);
           const result = await setProductAvailability(
+            organizationId,
             pendingAction.productId,
             pendingAction.nextAvailable
           );
@@ -517,6 +555,7 @@ export function useMenuManagement(): UseMenuManagementResult {
         case "variant-availability": {
           setVariantActionId(pendingAction.variantId);
           const result = await setProductVariantAvailability(
+            organizationId,
             pendingAction.productId,
             pendingAction.variantId,
             pendingAction.nextAvailable
@@ -530,6 +569,7 @@ export function useMenuManagement(): UseMenuManagementResult {
         case "menu-status": {
           setMenuActionId(pendingAction.menuId);
           const result = await setMenuStatus(
+            organizationId,
             pendingAction.menuId,
             pendingAction.nextStatus
           );
@@ -540,6 +580,7 @@ export function useMenuManagement(): UseMenuManagementResult {
         case "menu-item-status": {
           setMenuItemActionId(pendingAction.menuItemId);
           const result = await setMenuItemStatus(
+            organizationId,
             pendingAction.menuId,
             pendingAction.menuItemId,
             pendingAction.nextStatus
@@ -560,12 +601,16 @@ export function useMenuManagement(): UseMenuManagementResult {
       setMenuActionId(null);
       setMenuItemActionId(null);
     }
-  }, [pendingAction, updateMenu, updateMenuItem, updateProduct, updateVariant]);
+  }, [organizationId, pendingAction, updateMenu, updateMenuItem, updateProduct, updateVariant]);
 
   return {
     searchTerm,
-    products,
-    menus,
+    products: organizationId
+      ? products
+      : { data: [], pagination: emptyPagination(), isLoading: false, errorMessage: null },
+    menus: organizationId
+      ? menus
+      : { data: [], pagination: emptyPagination(), isLoading: false, errorMessage: null },
     selectedProduct,
     selectedMenu,
     pendingAction,
@@ -588,6 +633,7 @@ export function useMenuManagement(): UseMenuManagementResult {
     previousMenusPage: () => setMenusPage((page) => Math.max(page - 1, 1)),
     nextMenusPage: () => setMenusPage((page) => page + 1),
     refresh: async () => {
+      if (!organizationId) return;
       await Promise.all([fetchProducts(), fetchMenus()]);
     },
     openProductDetail,

@@ -35,10 +35,11 @@ export interface MenuCrudChange {
 }
 
 interface UseMenuCrudOptions {
+  organizationId: string | null;
   onChanged: (change: MenuCrudChange) => Promise<void>;
 }
 
-export function useMenuCrud({ onChanged }: UseMenuCrudOptions) {
+export function useMenuCrud({ organizationId, onChanged }: UseMenuCrudOptions) {
   const mutationRef = useRef(false);
   const [menuFormOpen, setMenuFormOpen] = useState(false);
   const [editingMenu, setEditingMenu] = useState<MenuResult | null>(null);
@@ -77,13 +78,17 @@ export function useMenuCrud({ onChanged }: UseMenuCrudOptions) {
 
   const submitMenuCreate = useCallback(
     async (request: CreateMenuRequest) => {
+      if (!organizationId) {
+        setErrorMessage("Vui lòng chọn tổ chức trước khi tạo thực đơn.");
+        return false;
+      }
       let createdMenu: MenuResult | null = null;
       if (mutationRef.current) return false;
       mutationRef.current = true;
       setIsSubmitting(true);
       setErrorMessage(null);
       try {
-        createdMenu = await createManagementMenu(request);
+        createdMenu = await createManagementMenu(organizationId, request);
         await onChanged({ menuId: createdMenu.id });
         toast.success(`Đã tạo thực đơn ${createdMenu.name}.`);
         setMenuFormOpen(false);
@@ -96,72 +101,72 @@ export function useMenuCrud({ onChanged }: UseMenuCrudOptions) {
         setIsSubmitting(false);
       }
     },
-    [onChanged],
+    [onChanged, organizationId],
   );
 
   const submitMenuUpdate = useCallback(
     async (menuId: string, request: UpdateMenuRequest) => {
       const ok = await runMutation(
-        () => updateManagementMenu(menuId, request),
+        () => updateManagementMenu(organizationId ?? "", menuId, request),
         { menuId },
         `Đã cập nhật thực đơn ${request.name}.`,
       );
       if (ok) setMenuFormOpen(false);
       return ok;
     },
-    [runMutation],
+    [organizationId, runMutation],
   );
 
   const submitMenuDelete = useCallback(
     async (menu: MenuResult) => {
       const ok = await runMutation(
-        () => deleteManagementMenu(menu.id),
+        () => deleteManagementMenu(organizationId ?? "", menu.id),
         { menuId: menu.id, menuDeleted: true },
         `Đã xóa thực đơn ${menu.name}.`,
       );
       if (ok) setDeleteTarget(null);
       return ok;
     },
-    [runMutation],
+    [organizationId, runMutation],
   );
 
   const submitMenuItemCreate = useCallback(
     async (menuId: string, request: CreateMenuItemRequest) => {
       const ok = await runMutation(
-        () => createManagementMenuItem(menuId, request),
+        () => createManagementMenuItem(organizationId ?? "", menuId, request),
         { menuId },
         `Đã thêm món ${request.displayName}.`,
       );
       if (ok) setMenuItemFormOpen(false);
       return ok;
     },
-    [runMutation],
+    [organizationId, runMutation],
   );
 
   const submitMenuItemUpdate = useCallback(
     async (menuId: string, menuItemId: string, request: UpdateMenuItemRequest) => {
       const ok = await runMutation(
-        () => updateManagementMenuItem(menuId, menuItemId, request),
+        () => updateManagementMenuItem(organizationId ?? "", menuId, menuItemId, request),
         { menuId },
         `Đã cập nhật món ${request.displayName}.`,
       );
       if (ok) setMenuItemFormOpen(false);
       return ok;
     },
-    [runMutation],
+    [organizationId, runMutation],
   );
 
   const submitMenuItemDelete = useCallback(
     async (menu: MenuResult, menuItem: MenuItemResult) => {
       const ok = await runMutation(
-        () => deleteManagementMenuItem(menu.id, menuItem.id),
+        () => deleteManagementMenuItem(organizationId ?? "", menu.id, menuItem.id),
         { menuId: menu.id },
         `Đã xóa món ${menuItem.displayName}.`,
       );
       if (ok) setDeleteTarget(null);
       return ok;
     },
-    [runMutation],
+    [organizationId, runMutation],
   );
 
   const openMenuForm = useCallback((menu?: MenuResult) => {

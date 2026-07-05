@@ -112,16 +112,15 @@ export interface MenuManagementPagedResult<T> extends ApiResult<T[]> {
 }
 
 export interface MenuManagementQuery {
+  organizationId?: string;
   searchTerm: string;
   pageNumber: number;
   pageSize: number;
 }
 
 export interface CreateProductRequest {
-  organizationId?: string | null;
   storeId?: string | null;
   kioskId?: string | null;
-  templateProductId?: string | null;
   categoryId?: number | null;
   code: string;
   name: string;
@@ -138,7 +137,20 @@ export interface CreateProductRequest {
   variants: UpsertProductVariantRequest[];
 }
 
-export type UpdateProductRequest = Omit<CreateProductRequest, "variants">;
+export interface UpdateProductRequest {
+  categoryId?: number | null;
+  code?: string | null;
+  name?: string | null;
+  displayName?: string | null;
+  description?: string | null;
+  productType?: string | null;
+  basePrice?: number | null;
+  currency?: string | null;
+  isAvailable?: boolean | null;
+  preparationTimeSeconds?: number | null;
+  imageUrl?: string | null;
+  metadataJson?: string | null;
+}
 
 export interface UpsertProductVariantRequest {
   code: string;
@@ -160,7 +172,6 @@ export interface UpsertProductVariantRequest {
 export type UpdateProductVariantRequest = UpsertProductVariantRequest;
 
 export interface CreateMenuRequest {
-  organizationId?: string | null;
   storeId?: string | null;
   kioskId?: string | null;
   code: string;
@@ -176,7 +187,18 @@ export interface CreateMenuRequest {
   metadataJson?: string | null;
 }
 
-export type UpdateMenuRequest = CreateMenuRequest;
+export interface UpdateMenuRequest {
+  code?: string | null;
+  name?: string | null;
+  description?: string | null;
+  status?: MenuStatus | null;
+  currency?: string | null;
+  effectiveFrom?: string | null;
+  effectiveTo?: string | null;
+  displayOrder?: number | null;
+  metadataSchemaVersion?: number | null;
+  metadataJson?: string | null;
+}
 
 export interface CreateMenuItemRequest {
   productId: string;

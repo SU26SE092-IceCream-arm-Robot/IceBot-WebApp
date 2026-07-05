@@ -4,6 +4,7 @@ import { useCallback } from "react";
 
 import {
   AlertTriangle,
+  Building2,
   ChevronLeft,
   ChevronRight,
   CircleCheckBig,
@@ -35,7 +36,15 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useAuth } from "@/hooks/use-auth";
+import { useCatalogOrganization } from "@/hooks/use-catalog-organization";
 import { useMenuManagement, type MenuCollectionState } from "@/hooks/use-menu-management";
 import {
   useMenuCrud,
@@ -292,6 +301,14 @@ function ProductsPanel({
 export default function MenuPage() {
   const { currentUser } = useAuth();
   const {
+    organizations,
+    selectedOrganizationId,
+    selectedOrganization,
+    setSelectedOrganizationId,
+    isLoading: isOrganizationLoading,
+    errorMessage: organizationError,
+  } = useCatalogOrganization();
+  const {
     searchTerm,
     menus,
     products,
@@ -327,7 +344,7 @@ export default function MenuPage() {
     requestMenuItemStatus,
     setActionDialogOpen,
     confirmAction,
-  } = useMenuManagement();
+  } = useMenuManagement(selectedOrganizationId);
 
   const handleProductChanged = useCallback(
     async (change: ProductCrudChange) => {
@@ -388,7 +405,7 @@ export default function MenuPage() {
     submitMenuItemCreate,
     submitMenuItemUpdate,
     submitMenuItemDelete,
-  } = useMenuCrud({ onChanged: handleMenuChanged });
+  } = useMenuCrud({ organizationId: selectedOrganizationId, onChanged: handleMenuChanged });
 
   const {
     productFormOpen,
@@ -413,7 +430,7 @@ export default function MenuPage() {
     requestVariantDelete,
     setDeleteOpen,
     confirmDelete,
-  } = useProductCrud({ onChanged: handleProductChanged });
+  } = useProductCrud({ organizationId: selectedOrganizationId, onChanged: handleProductChanged });
 
   const canManage = currentUser
     ? hasPermission(currentUser.role, "menu.edit")
@@ -438,10 +455,61 @@ export default function MenuPage() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" className="h-10" onClick={() => void refresh()} isLoading={menus.isLoading || products.isLoading}><RefreshCw className="size-4" />Làm mới</Button>
-          {canManage ? <Button variant="outline" className="h-10" onClick={() => openMenuForm()}><Plus className="size-4" />Tạo thực đơn</Button> : null}
-          {canManage ? <Button className="h-10" onClick={openProductCreate}><Plus className="size-4" />Tạo sản phẩm</Button> : null}
+          {canManage ? <Button variant="outline" className="h-10" disabled={!selectedOrganizationId} onClick={() => openMenuForm()}><Plus className="size-4" />Tạo thực đơn</Button> : null}
+          {canManage ? <Button className="h-10" disabled={!selectedOrganizationId} onClick={openProductCreate}><Plus className="size-4" />Tạo sản phẩm</Button> : null}
         </div>
       </section>
+
+      <Card className="rounded-xl border border-border bg-card shadow-none">
+        <CardContent className="flex flex-col gap-3 p-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-center gap-3">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <Building2 className="size-5" />
+            </span>
+            <div>
+              <p className="text-sm font-medium">Tổ chức quản lý</p>
+              <p className="text-sm text-muted-foreground">
+                Sản phẩm và thực đơn được tách riêng theo từng tổ chức.
+              </p>
+            </div>
+          </div>
+          <Select
+            value={selectedOrganizationId ?? ""}
+            disabled={isOrganizationLoading || organizations.length === 0}
+            onValueChange={(value) => setSelectedOrganizationId(value || null)}
+          >
+            <SelectTrigger className="h-10 w-full lg:w-[360px]">
+              <SelectValue placeholder={isOrganizationLoading ? "Đang tải tổ chức..." : "Chọn tổ chức"}>
+                {selectedOrganization
+                  ? selectedOrganization.name
+                    ? `${selectedOrganization.name} (${selectedOrganization.code})`
+                    : selectedOrganization.id
+                  : null}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {organizations.map((organization) => (
+                <SelectItem key={organization.id} value={organization.id}>
+                  {organization.name
+                    ? `${organization.name} (${organization.code})`
+                    : organization.id}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </CardContent>
+        {organizationError ? (
+          <div role="alert" className="border-t border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+            {organizationError}
+          </div>
+        ) : !isOrganizationLoading && !selectedOrganizationId ? (
+          <div className="border-t border-warning/20 bg-warning/5 px-4 py-3 text-sm text-warning">
+            {organizations.length === 0
+              ? "Không có tổ chức khả dụng cho tài khoản này."
+              : "Hãy chọn một tổ chức để tải và quản lý danh mục."}
+          </div>
+        ) : null}
+      </Card>
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard

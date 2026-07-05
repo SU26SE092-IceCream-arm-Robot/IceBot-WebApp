@@ -35,10 +35,11 @@ export interface ProductCrudChange {
 }
 
 interface UseProductCrudOptions {
+  organizationId: string | null;
   onChanged: (change: ProductCrudChange) => Promise<void>;
 }
 
-export function useProductCrud({ onChanged }: UseProductCrudOptions) {
+export function useProductCrud({ organizationId, onChanged }: UseProductCrudOptions) {
   const mutationRef = useRef(false);
   const [productFormOpen, setProductFormOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<ProductResult | null>(null);
@@ -77,13 +78,17 @@ export function useProductCrud({ onChanged }: UseProductCrudOptions) {
 
   const submitProductCreate = useCallback(
     async (request: CreateProductRequest) => {
+      if (!organizationId) {
+        setErrorMessage("Vui lòng chọn tổ chức trước khi tạo sản phẩm.");
+        return false;
+      }
       let createdProduct: ProductResult | null = null;
       if (mutationRef.current) return false;
       mutationRef.current = true;
       setIsSubmitting(true);
       setErrorMessage(null);
       try {
-        createdProduct = await createManagementProduct(request);
+        createdProduct = await createManagementProduct(organizationId, request);
         await onChanged({ productId: createdProduct.id });
         toast.success(`Đã tạo sản phẩm ${createdProduct.displayName || createdProduct.name}.`);
         setProductFormOpen(false);
@@ -96,14 +101,14 @@ export function useProductCrud({ onChanged }: UseProductCrudOptions) {
         setIsSubmitting(false);
       }
     },
-    [onChanged],
+    [onChanged, organizationId],
   );
 
   const submitProductUpdate = useCallback(
     async (request: UpdateProductRequest) => {
       if (!editingProduct) return false;
       const succeeded = await runMutation(
-        () => updateManagementProduct(editingProduct.id, request),
+        () => updateManagementProduct(organizationId ?? "", editingProduct.id, request),
         { productId: editingProduct.id },
         `Đã cập nhật ${editingProduct.displayName || editingProduct.name}.`,
       );
@@ -113,14 +118,14 @@ export function useProductCrud({ onChanged }: UseProductCrudOptions) {
       }
       return succeeded;
     },
-    [editingProduct, runMutation],
+    [editingProduct, organizationId, runMutation],
   );
 
   const submitVariantCreate = useCallback(
     async (request: UpsertProductVariantRequest) => {
       if (!variantProduct) return false;
       const succeeded = await runMutation(
-        () => createManagementProductVariant(variantProduct.id, request),
+        () => createManagementProductVariant(organizationId ?? "", variantProduct.id, request),
         { productId: variantProduct.id },
         `Đã tạo biến thể ${request.displayName || request.name}.`,
       );
@@ -130,7 +135,7 @@ export function useProductCrud({ onChanged }: UseProductCrudOptions) {
       }
       return succeeded;
     },
-    [runMutation, variantProduct],
+    [organizationId, runMutation, variantProduct],
   );
 
   const submitVariantUpdate = useCallback(
@@ -139,6 +144,7 @@ export function useProductCrud({ onChanged }: UseProductCrudOptions) {
       const succeeded = await runMutation(
         () =>
           updateManagementProductVariant(
+            organizationId ?? "",
             variantProduct.id,
             editingVariant.id,
             request,
@@ -153,20 +159,21 @@ export function useProductCrud({ onChanged }: UseProductCrudOptions) {
       }
       return succeeded;
     },
-    [editingVariant, runMutation, variantProduct],
+    [editingVariant, organizationId, runMutation, variantProduct],
   );
 
   const confirmDelete = useCallback(async () => {
     if (!deleteTarget) return false;
     const succeeded = await (deleteTarget.kind === "product"
       ? runMutation(
-          () => deleteManagementProduct(deleteTarget.product.id),
+          () => deleteManagementProduct(organizationId ?? "", deleteTarget.product.id),
           { productId: deleteTarget.product.id, productDeleted: true },
           `Đã xóa sản phẩm ${deleteTarget.product.displayName || deleteTarget.product.name}.`,
         )
       : runMutation(
           () =>
             deleteManagementProductVariant(
+              organizationId ?? "",
               deleteTarget.product.id,
               deleteTarget.variant.id,
             ),
@@ -175,7 +182,7 @@ export function useProductCrud({ onChanged }: UseProductCrudOptions) {
         ));
     if (succeeded) setDeleteTarget(null);
     return succeeded;
-  }, [deleteTarget, runMutation]);
+  }, [deleteTarget, organizationId, runMutation]);
 
   const closeDialog = (open: boolean, type: "product" | "variant") => {
     if (mutationRef.current) return;

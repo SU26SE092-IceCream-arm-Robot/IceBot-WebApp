@@ -78,9 +78,8 @@ export function MenuFormDialog({
   const [displayOrder, setDisplayOrder] = useState(menu?.displayOrder.toString() ?? "0");
   const metadataJson = menu?.metadataJson ?? "";
   const [scopeType, setScopeType] = useState<TenantScopeType>(
-    menu?.scopeType ?? "Global",
+    menu?.scopeType ?? "Organization",
   );
-  const [organizationId, setOrganizationId] = useState(menu?.organizationId ?? "");
   const [storeId, setStoreId] = useState(menu?.storeId ?? "");
   const [kioskId, setKioskId] = useState(menu?.kioskId ?? "");
   const [validationMessage, setValidationMessage] = useState<string | null>(null);
@@ -99,7 +98,6 @@ export function MenuFormDialog({
     }
 
     const requiredScopeIds = [
-      scopeType !== "Global" ? [organizationId, "Organization ID"] : null,
       scopeType === "Store" || scopeType === "Kiosk" ? [storeId, "Store ID"] : null,
       scopeType === "Kiosk" ? [kioskId, "Kiosk ID"] : null,
     ].filter(Boolean) as [string, string][];
@@ -112,10 +110,7 @@ export function MenuFormDialog({
     }
 
 
-    const request: UpdateMenuRequest = {
-      organizationId: scopeType === "Global" ? null : organizationId.trim(),
-      storeId: scopeType === "Store" || scopeType === "Kiosk" ? storeId.trim() : null,
-      kioskId: scopeType === "Kiosk" ? kioskId.trim() : null,
+    const request = {
       code: code.trim().toUpperCase(),
       name: name.trim(),
       description: optional(description),
@@ -124,12 +119,16 @@ export function MenuFormDialog({
       displayOrder: parsedOrder,
       metadataSchemaVersion: 1,
       metadataJson: optional(metadataJson),
-      scopeType,
     };
     
     setValidationMessage(null);
     if (isCreate) {
-      await onCreate(request);
+      await onCreate({
+        ...request,
+        storeId: scopeType === "Store" || scopeType === "Kiosk" ? storeId.trim() : null,
+        kioskId: scopeType === "Kiosk" ? kioskId.trim() : null,
+        scopeType,
+      });
     } else {
       await onUpdate(request);
     }
@@ -183,23 +182,18 @@ export function MenuFormDialog({
 
           <div className="space-y-4 rounded-xl border border-border bg-muted/15 p-4">
             <div className="space-y-1.5">
-              <label className="text-sm font-medium">Phạm vi</label>
-              <Select value={scopeType} disabled={isSubmitting} onValueChange={(value) => setScopeType(value as TenantScopeType)}>
+              <label className="text-sm font-medium">Phạm vi trong tổ chức</label>
+              <Select value={scopeType} disabled={isSubmitting || !isCreate} onValueChange={(value) => setScopeType(value as TenantScopeType)}>
                 <SelectTrigger className="h-10 w-full"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Global">Toàn hệ thống</SelectItem>
-                  <SelectItem value="Organization">Tổ chức</SelectItem>
+                  <SelectItem value="Organization">Toàn tổ chức</SelectItem>
                   <SelectItem value="Store">Cửa hàng</SelectItem>
                   <SelectItem value="Kiosk">Kiosk</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            {scopeType !== "Global" ? (
-              <div className="grid gap-3 sm:grid-cols-3">
-                <div className="space-y-1.5">
-                  <label htmlFor="menu-org" className="text-xs font-medium">Organization ID</label>
-                  <Input id="menu-org" value={organizationId} disabled={isSubmitting} className="h-9 font-mono text-xs" onChange={(event) => setOrganizationId(event.target.value)} />
-                </div>
+            {isCreate && (scopeType === "Store" || scopeType === "Kiosk") ? (
+              <div className="grid gap-3 sm:grid-cols-2">
                 {scopeType === "Store" || scopeType === "Kiosk" ? (
                   <div className="space-y-1.5">
                     <label htmlFor="menu-store" className="text-xs font-medium">Store ID</label>
@@ -214,6 +208,7 @@ export function MenuFormDialog({
                 ) : null}
               </div>
             ) : null}
+            {!isCreate ? <p className="text-xs text-muted-foreground">Backend không cho phép chuyển phạm vi sở hữu khi cập nhật thực đơn.</p> : null}
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">

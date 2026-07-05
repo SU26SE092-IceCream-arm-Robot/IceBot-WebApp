@@ -3,8 +3,8 @@ import axios from "axios";
 import axiosClient from "@/lib/axios-client";
 import type { ApiResult } from "@/types";
 import type {
-  CreateMenuRequest,
   CreateMenuItemRequest,
+  CreateMenuRequest,
   CreateProductRequest,
   MenuItemResult,
   MenuItemStatus,
@@ -14,8 +14,8 @@ import type {
   MenuStatus,
   ProductResult,
   ProductVariantResult,
-  UpdateMenuRequest,
   UpdateMenuItemRequest,
+  UpdateMenuRequest,
   UpdateProductRequest,
   UpdateProductVariantRequest,
   UpsertProductVariantRequest,
@@ -33,11 +33,26 @@ function getApiResultMessage(
 }
 
 function requireData<T>(result: ApiResult<T>, fallbackMessage: string): T {
-  if (!result.succeeded || !result.data) {
+  if (!result.succeeded || result.data === undefined || result.data === null) {
     throw new Error(getApiResultMessage(result, fallbackMessage));
   }
-
   return result.data;
+}
+
+function requireOrganizationId(organizationId: string | undefined): string {
+  const normalized = organizationId?.trim();
+  if (!normalized) {
+    throw new Error("Vui lòng chọn tổ chức trước khi tải danh mục và thực đơn.");
+  }
+  return encodeURIComponent(normalized);
+}
+
+function productsRoot(organizationId: string | undefined): string {
+  return `/api/v1/management/organizations/${requireOrganizationId(organizationId)}/products`;
+}
+
+function menusRoot(organizationId: string | undefined): string {
+  return `/api/v1/management/organizations/${requireOrganizationId(organizationId)}/menus`;
 }
 
 function buildListParams(query: MenuManagementQuery) {
@@ -50,253 +65,254 @@ function buildListParams(query: MenuManagementQuery) {
 
 export async function listManagementProducts(
   query: MenuManagementQuery,
-  signal?: AbortSignal
+  signal?: AbortSignal,
 ): Promise<MenuManagementPagedResult<ProductResult>> {
   const response = await axiosClient.get<MenuManagementPagedResult<ProductResult>>(
-    "/api/v1/management/products",
-    {
-      params: buildListParams(query),
-      signal,
-    }
+    productsRoot(query.organizationId),
+    { params: buildListParams(query), signal },
   );
-
   if (!response.data.succeeded) {
     throw new Error(response.data.message || "Không thể tải danh mục sản phẩm.");
   }
-
   return response.data;
 }
 
 export async function listManagementMenus(
   query: MenuManagementQuery,
-  signal?: AbortSignal
+  signal?: AbortSignal,
 ): Promise<MenuManagementPagedResult<MenuResult>> {
   const response = await axiosClient.get<MenuManagementPagedResult<MenuResult>>(
-    "/api/v1/management/menus",
-    {
-      params: buildListParams(query),
-      signal,
-    }
+    menusRoot(query.organizationId),
+    { params: buildListParams(query), signal },
   );
-
   if (!response.data.succeeded) {
     throw new Error(response.data.message || "Không thể tải danh sách thực đơn.");
   }
-
   return response.data;
 }
 
 export async function getProductById(
+  organizationId: string,
   productId: string,
-  signal?: AbortSignal
+  signal?: AbortSignal,
 ): Promise<ProductResult> {
   const response = await axiosClient.get<ApiResult<ProductResult>>(
-    `/api/v1/management/products/${encodeURIComponent(productId)}`,
-    { signal }
+    `${productsRoot(organizationId)}/${encodeURIComponent(productId)}`,
+    { signal },
   );
-
   return requireData(response.data, "Không thể tải chi tiết sản phẩm.");
 }
 
 export async function createManagementProduct(
+  organizationId: string,
   request: CreateProductRequest,
 ): Promise<ProductResult> {
   const response = await axiosClient.post<ApiResult<ProductResult>>(
-    "/api/v1/management/products",
+    productsRoot(organizationId),
     request,
   );
   return requireData(response.data, "Không thể tạo sản phẩm.");
 }
 
 export async function updateManagementProduct(
+  organizationId: string,
   productId: string,
   request: UpdateProductRequest,
 ): Promise<ProductResult> {
   const response = await axiosClient.put<ApiResult<ProductResult>>(
-    `/api/v1/management/products/${encodeURIComponent(productId)}`,
+    `${productsRoot(organizationId)}/${encodeURIComponent(productId)}`,
     request,
   );
   return requireData(response.data, "Không thể cập nhật sản phẩm.");
 }
 
-export async function deleteManagementProduct(productId: string): Promise<boolean> {
+export async function deleteManagementProduct(
+  organizationId: string,
+  productId: string,
+): Promise<boolean> {
   const response = await axiosClient.delete<ApiResult<boolean>>(
-    `/api/v1/management/products/${encodeURIComponent(productId)}`,
+    `${productsRoot(organizationId)}/${encodeURIComponent(productId)}`,
   );
   return requireData(response.data, "Không thể xóa sản phẩm.");
 }
 
 export async function createManagementProductVariant(
+  organizationId: string,
   productId: string,
   request: UpsertProductVariantRequest,
 ): Promise<ProductVariantResult> {
   const response = await axiosClient.post<ApiResult<ProductVariantResult>>(
-    `/api/v1/management/products/${encodeURIComponent(productId)}/variants`,
+    `${productsRoot(organizationId)}/${encodeURIComponent(productId)}/variants`,
     request,
   );
   return requireData(response.data, "Không thể tạo biến thể sản phẩm.");
 }
 
 export async function updateManagementProductVariant(
+  organizationId: string,
   productId: string,
   variantId: string,
   request: UpdateProductVariantRequest,
 ): Promise<ProductVariantResult> {
   const response = await axiosClient.put<ApiResult<ProductVariantResult>>(
-    `/api/v1/management/products/${encodeURIComponent(productId)}/variants/${encodeURIComponent(variantId)}`,
+    `${productsRoot(organizationId)}/${encodeURIComponent(productId)}/variants/${encodeURIComponent(variantId)}`,
     request,
   );
   return requireData(response.data, "Không thể cập nhật biến thể sản phẩm.");
 }
 
 export async function deleteManagementProductVariant(
+  organizationId: string,
   productId: string,
   variantId: string,
 ): Promise<boolean> {
   const response = await axiosClient.delete<ApiResult<boolean>>(
-    `/api/v1/management/products/${encodeURIComponent(productId)}/variants/${encodeURIComponent(variantId)}`,
+    `${productsRoot(organizationId)}/${encodeURIComponent(productId)}/variants/${encodeURIComponent(variantId)}`,
   );
   return requireData(response.data, "Không thể xóa biến thể sản phẩm.");
 }
 
 export async function setProductAvailability(
+  organizationId: string,
   productId: string,
-  isAvailable: boolean
+  isAvailable: boolean,
 ): Promise<ProductResult> {
   const response = await axiosClient.patch<ApiResult<ProductResult>>(
-    `/api/v1/management/products/${encodeURIComponent(productId)}/availability`,
-    { isAvailable }
+    `${productsRoot(organizationId)}/${encodeURIComponent(productId)}/availability`,
+    { isAvailable },
   );
-
   return requireData(response.data, "Không thể cập nhật trạng thái sản phẩm.");
 }
 
 export async function setProductVariantAvailability(
+  organizationId: string,
   productId: string,
   variantId: string,
-  isAvailable: boolean
+  isAvailable: boolean,
 ): Promise<ProductVariantResult> {
   const response = await axiosClient.patch<ApiResult<ProductVariantResult>>(
-    `/api/v1/management/products/${encodeURIComponent(productId)}/variants/${encodeURIComponent(variantId)}/availability`,
-    { isAvailable }
+    `${productsRoot(organizationId)}/${encodeURIComponent(productId)}/variants/${encodeURIComponent(variantId)}/availability`,
+    { isAvailable },
   );
-
   return requireData(response.data, "Không thể cập nhật trạng thái biến thể.");
 }
 
 export async function getMenuById(
+  organizationId: string,
   menuId: string,
-  signal?: AbortSignal
+  signal?: AbortSignal,
 ): Promise<MenuResult> {
   const response = await axiosClient.get<ApiResult<MenuResult>>(
-    `/api/v1/management/menus/${encodeURIComponent(menuId)}`,
-    { signal }
+    `${menusRoot(organizationId)}/${encodeURIComponent(menuId)}`,
+    { signal },
   );
-
   return requireData(response.data, "Không thể tải chi tiết thực đơn.");
 }
 
 export async function setMenuStatus(
+  organizationId: string,
   menuId: string,
-  status: MenuStatus
+  status: MenuStatus,
 ): Promise<MenuResult> {
   const response = await axiosClient.patch<ApiResult<MenuResult>>(
-    `/api/v1/management/menus/${encodeURIComponent(menuId)}/status`,
-    { status }
+    `${menusRoot(organizationId)}/${encodeURIComponent(menuId)}/status`,
+    { status },
   );
-
   return requireData(response.data, "Không thể cập nhật trạng thái thực đơn.");
 }
 
 export async function createManagementMenu(
+  organizationId: string,
   request: CreateMenuRequest,
 ): Promise<MenuResult> {
   const response = await axiosClient.post<ApiResult<MenuResult>>(
-    "/api/v1/management/menus",
+    menusRoot(organizationId),
     request,
   );
   return requireData(response.data, "Không thể tạo thực đơn.");
 }
 
 export async function updateManagementMenu(
+  organizationId: string,
   menuId: string,
   request: UpdateMenuRequest,
 ): Promise<MenuResult> {
   const response = await axiosClient.put<ApiResult<MenuResult>>(
-    `/api/v1/management/menus/${encodeURIComponent(menuId)}`,
+    `${menusRoot(organizationId)}/${encodeURIComponent(menuId)}`,
     request,
   );
   return requireData(response.data, "Không thể cập nhật thực đơn.");
 }
 
-export async function deleteManagementMenu(menuId: string): Promise<boolean> {
+export async function deleteManagementMenu(
+  organizationId: string,
+  menuId: string,
+): Promise<boolean> {
   const response = await axiosClient.delete<ApiResult<boolean>>(
-    `/api/v1/management/menus/${encodeURIComponent(menuId)}`,
+    `${menusRoot(organizationId)}/${encodeURIComponent(menuId)}`,
   );
   return requireData(response.data, "Không thể xóa thực đơn.");
 }
 
 export async function createManagementMenuItem(
+  organizationId: string,
   menuId: string,
   request: CreateMenuItemRequest,
 ): Promise<MenuItemResult> {
   const response = await axiosClient.post<ApiResult<MenuItemResult>>(
-    `/api/v1/management/menus/${encodeURIComponent(menuId)}/items`,
+    `${menusRoot(organizationId)}/${encodeURIComponent(menuId)}/items`,
     request,
   );
   return requireData(response.data, "Không thể thêm món vào thực đơn.");
 }
 
 export async function updateManagementMenuItem(
+  organizationId: string,
   menuId: string,
   menuItemId: string,
   request: UpdateMenuItemRequest,
 ): Promise<MenuItemResult> {
   const response = await axiosClient.put<ApiResult<MenuItemResult>>(
-    `/api/v1/management/menus/${encodeURIComponent(menuId)}/items/${encodeURIComponent(menuItemId)}`,
+    `${menusRoot(organizationId)}/${encodeURIComponent(menuId)}/items/${encodeURIComponent(menuItemId)}`,
     request,
   );
   return requireData(response.data, "Không thể cập nhật món trong thực đơn.");
 }
 
 export async function deleteManagementMenuItem(
+  organizationId: string,
   menuId: string,
   menuItemId: string,
 ): Promise<boolean> {
   const response = await axiosClient.delete<ApiResult<boolean>>(
-    `/api/v1/management/menus/${encodeURIComponent(menuId)}/items/${encodeURIComponent(menuItemId)}`,
+    `${menusRoot(organizationId)}/${encodeURIComponent(menuId)}/items/${encodeURIComponent(menuItemId)}`,
   );
   return requireData(response.data, "Không thể xóa món khỏi thực đơn.");
 }
 
 export async function setMenuItemStatus(
+  organizationId: string,
   menuId: string,
   menuItemId: string,
-  status: MenuItemStatus
+  status: MenuItemStatus,
 ): Promise<MenuItemResult> {
   const response = await axiosClient.patch<ApiResult<MenuItemResult>>(
-    `/api/v1/management/menus/${encodeURIComponent(menuId)}/items/${encodeURIComponent(menuItemId)}/status`,
-    { status }
+    `${menusRoot(organizationId)}/${encodeURIComponent(menuId)}/items/${encodeURIComponent(menuItemId)}/status`,
+    { status },
   );
-
   return requireData(response.data, "Không thể cập nhật trạng thái món.");
 }
 
-export function getMenuManagementErrorMessage(error: unknown, resourceName: string): string {
-  if (axios.isCancel(error)) {
-    return "";
-  }
-
+export function getMenuManagementErrorMessage(
+  error: unknown,
+  resourceName: string,
+): string {
+  if (axios.isCancel(error)) return "";
   if (axios.isAxiosError<ApiResult<unknown>>(error)) {
     if (error.response?.status === 403) {
       return "Tài khoản hiện tại không có quyền truy cập hoặc quản lý danh mục và thực đơn.";
     }
-
-    return getApiResultMessage(
-      error.response?.data,
-      `Không thể tải ${resourceName}.`,
-    );
+    return getApiResultMessage(error.response?.data, `Không thể tải ${resourceName}.`);
   }
-
   return error instanceof Error ? error.message : `Không thể tải ${resourceName}.`;
 }

@@ -82,14 +82,10 @@ export function ProductFormDialog({
   const [imageUrl, setImageUrl] = useState(product?.imageUrl ?? "");
   const metadataJson = product?.metadataJson ?? "";
   const [scopeType, setScopeType] = useState<TenantScopeType>(
-    product?.scopeType ?? "Global",
+    product?.scopeType ?? "Organization",
   );
-  const [organizationId, setOrganizationId] = useState(product?.organizationId ?? "");
   const [storeId, setStoreId] = useState(product?.storeId ?? "");
   const [kioskId, setKioskId] = useState(product?.kioskId ?? "");
-  const [templateProductId, setTemplateProductId] = useState(
-    product?.templateProductId ?? "",
-  );
   const [categoryId, setCategoryId] = useState(product?.categoryId?.toString() ?? "");
   const [validationMessage, setValidationMessage] = useState<string | null>(null);
 
@@ -115,13 +111,7 @@ export function ProductFormDialog({
       setValidationMessage("Category ID phải là số nguyên dương.");
       return;
     }
-    if (templateProductId.trim() && !UUID_PATTERN.test(templateProductId.trim())) {
-      setValidationMessage("Template Product ID phải là UUID hợp lệ.");
-      return;
-    }
-
     const requiredScopeIds = [
-      scopeType !== "Global" ? [organizationId, "Organization ID"] : null,
       scopeType === "Store" || scopeType === "Kiosk" ? [storeId, "Store ID"] : null,
       scopeType === "Kiosk" ? [kioskId, "Kiosk ID"] : null,
     ].filter(Boolean) as [string, string][];
@@ -134,11 +124,7 @@ export function ProductFormDialog({
     }
 
 
-    const request: UpdateProductRequest = {
-      organizationId: scopeType === "Global" ? null : organizationId.trim(),
-      storeId: scopeType === "Store" || scopeType === "Kiosk" ? storeId.trim() : null,
-      kioskId: scopeType === "Kiosk" ? kioskId.trim() : null,
-      templateProductId: optional(templateProductId),
+    const request = {
       categoryId: parsedCategory,
       code: code.trim().toUpperCase(),
       name: name.trim(),
@@ -151,11 +137,16 @@ export function ProductFormDialog({
       preparationTimeSeconds: parsedPreparation,
       imageUrl: optional(imageUrl),
       metadataJson: optional(metadataJson),
-      scopeType,
     };
     setValidationMessage(null);
     if (isCreate) {
-      await onCreate({ ...request, variants: [] });
+      await onCreate({
+        ...request,
+        storeId: scopeType === "Store" || scopeType === "Kiosk" ? storeId.trim() : null,
+        kioskId: scopeType === "Kiosk" ? kioskId.trim() : null,
+        scopeType,
+        variants: [],
+      });
     } else {
       await onUpdate(request);
     }
@@ -179,13 +170,13 @@ export function ProductFormDialog({
           </div>
 
           <div className="space-y-4 rounded-xl border border-border bg-muted/15 p-4">
-            <div className="space-y-1.5"><label className="text-sm font-medium">Phạm vi</label><Select value={scopeType} disabled={isSubmitting} onValueChange={(value) => { if (["Global", "Organization", "Store", "Kiosk"].includes(value ?? "")) setScopeType(value as TenantScopeType); }}><SelectTrigger className="h-10 w-full"><SelectValue>{scopeType === "Global" ? "Toàn hệ thống" : scopeType === "Organization" ? "Tổ chức" : scopeType === "Store" ? "Cửa hàng" : "Kiosk"}</SelectValue></SelectTrigger><SelectContent><SelectItem value="Global">Toàn hệ thống</SelectItem><SelectItem value="Organization">Tổ chức</SelectItem><SelectItem value="Store">Cửa hàng</SelectItem><SelectItem value="Kiosk">Kiosk</SelectItem></SelectContent></Select></div>
-            {scopeType !== "Global" ? <div className="grid gap-3 sm:grid-cols-3"><div className="space-y-1.5"><label htmlFor="product-org" className="text-xs font-medium">Organization ID</label><Input id="product-org" value={organizationId} disabled={isSubmitting} className="h-9 font-mono text-xs" onChange={(event) => setOrganizationId(event.target.value)} /></div>{scopeType === "Store" || scopeType === "Kiosk" ? <div className="space-y-1.5"><label htmlFor="product-store" className="text-xs font-medium">Store ID</label><Input id="product-store" value={storeId} disabled={isSubmitting} className="h-9 font-mono text-xs" onChange={(event) => setStoreId(event.target.value)} /></div> : null}{scopeType === "Kiosk" ? <div className="space-y-1.5"><label htmlFor="product-kiosk" className="text-xs font-medium">Kiosk ID</label><Input id="product-kiosk" value={kioskId} disabled={isSubmitting} className="h-9 font-mono text-xs" onChange={(event) => setKioskId(event.target.value)} /></div> : null}</div> : null}
+            <div className="space-y-1.5"><label className="text-sm font-medium">Phạm vi trong tổ chức</label><Select value={scopeType} disabled={isSubmitting || !isCreate} onValueChange={(value) => { if (["Organization", "Store", "Kiosk"].includes(value ?? "")) setScopeType(value as TenantScopeType); }}><SelectTrigger className="h-10 w-full"><SelectValue>{scopeType === "Organization" ? "Toàn tổ chức" : scopeType === "Store" ? "Cửa hàng" : "Kiosk"}</SelectValue></SelectTrigger><SelectContent><SelectItem value="Organization">Toàn tổ chức</SelectItem><SelectItem value="Store">Cửa hàng</SelectItem><SelectItem value="Kiosk">Kiosk</SelectItem></SelectContent></Select></div>
+            {isCreate && (scopeType === "Store" || scopeType === "Kiosk") ? <div className="grid gap-3 sm:grid-cols-2"><div className="space-y-1.5"><label htmlFor="product-store" className="text-xs font-medium">Store ID</label><Input id="product-store" value={storeId} disabled={isSubmitting} className="h-9 font-mono text-xs" onChange={(event) => setStoreId(event.target.value)} /></div>{scopeType === "Kiosk" ? <div className="space-y-1.5"><label htmlFor="product-kiosk" className="text-xs font-medium">Kiosk ID</label><Input id="product-kiosk" value={kioskId} disabled={isSubmitting} className="h-9 font-mono text-xs" onChange={(event) => setKioskId(event.target.value)} /></div> : null}</div> : null}
+            {!isCreate ? <p className="text-xs text-muted-foreground">Backend không cho phép chuyển phạm vi sở hữu khi cập nhật sản phẩm.</p> : null}
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-1.5"><label htmlFor="product-template" className="text-sm font-medium">Template Product ID</label><Input id="product-template" value={templateProductId} disabled={isSubmitting} className="h-10 font-mono" placeholder="Không bắt buộc" onChange={(event) => setTemplateProductId(event.target.value)} /></div>
-            <div className="space-y-1.5"><label htmlFor="product-image" className="text-sm font-medium">Image URL</label><Input id="product-image" type="url" value={imageUrl} disabled={isSubmitting} className="h-10" onChange={(event) => setImageUrl(event.target.value)} /></div>
+            <div className="space-y-1.5 sm:col-span-2"><label htmlFor="product-image" className="text-sm font-medium">Image URL</label><Input id="product-image" type="url" value={imageUrl} disabled={isSubmitting} className="h-10" onChange={(event) => setImageUrl(event.target.value)} /></div>
             <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={isAvailable} disabled={isSubmitting} className="size-4 accent-primary" onChange={(event) => setIsAvailable(event.target.checked)} />Cho phép bán sản phẩm</label>
           </div>
           <FormError message={validationMessage || errorMessage} />
