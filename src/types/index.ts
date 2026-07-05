@@ -30,6 +30,7 @@ export type DashboardRoutePath =
   | "/reports"
   | "/users"
   | "/maintenance"
+  | "/alerts"
   | "/settings/payment-methods";
 
 export type DashboardPermission =
@@ -50,6 +51,8 @@ export type DashboardPermission =
   | "users.edit"
   | "maintenance.view"
   | "maintenance.edit"
+  | "alerts.view"
+  | "alerts.manage"
   | "payments.manage";
 
 export interface DashboardUser {

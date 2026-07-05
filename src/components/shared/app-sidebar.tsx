@@ -39,6 +39,7 @@ const SIDEBAR_ITEMS: readonly SidebarItem[] = [
   { href: "/reports", label: "Báo cáo", icon: BarChart3 },
   { href: "/organizations", label: "Tổ chức & cửa hàng", icon: Building2 },
   { href: "/users", label: "Tài khoản", icon: Users },
+  { href: "/alerts", label: "Cảnh báo", icon: Bell },
   { href: "/maintenance", label: "Bảo trì", icon: Wrench },
   { href: "/settings/payment-methods", label: "Cấu hình thanh toán", icon: CreditCard },
 ];
@@ -49,7 +50,7 @@ const SIDEBAR_GROUPS: readonly {
 }[] = [
   {
     label: "Vận hành",
-    routes: ["/dashboard", "/kiosks", "/inventory", "/maintenance"],
+    routes: ["/dashboard", "/alerts", "/kiosks", "/inventory", "/maintenance"],
   },
   { label: "Kinh doanh", routes: ["/transactions", "/menu", "/reports"] },
   { label: "Quản trị", routes: ["/organizations", "/users", "/settings/payment-methods"] },
