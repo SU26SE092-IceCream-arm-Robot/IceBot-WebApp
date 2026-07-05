@@ -6,6 +6,7 @@ import type {
   CreateMenuItemRequest,
   CreateMenuRequest,
   CreateProductRequest,
+  CloneProductTemplateRequest,
   MenuItemResult,
   MenuItemStatus,
   MenuManagementPagedResult,
@@ -13,6 +14,7 @@ import type {
   MenuResult,
   MenuStatus,
   ProductResult,
+  ProductTemplatesQuery,
   ProductVariantResult,
   UpdateMenuItemRequest,
   UpdateMenuRequest,
@@ -75,6 +77,38 @@ export async function listManagementProducts(
     throw new Error(response.data.message || "Không thể tải danh mục sản phẩm.");
   }
   return response.data;
+}
+
+export async function listProductTemplates(
+  query: ProductTemplatesQuery,
+  signal?: AbortSignal,
+): Promise<MenuManagementPagedResult<ProductResult>> {
+  const response = await axiosClient.get<MenuManagementPagedResult<ProductResult>>(
+    "/api/v1/management/product-templates",
+    {
+      params: {
+        search: query.searchTerm.trim() || undefined,
+        pageNumber: query.pageNumber,
+        pageSize: query.pageSize,
+      },
+      signal,
+    },
+  );
+  if (!response.data.succeeded) {
+    throw new Error(response.data.message || "Không thể tải danh sách mẫu sản phẩm.");
+  }
+  return response.data;
+}
+
+export async function cloneProductTemplate(
+  organizationId: string,
+  request: CloneProductTemplateRequest,
+): Promise<ProductResult> {
+  const response = await axiosClient.post<ApiResult<ProductResult>>(
+    `${productsRoot(organizationId)}/from-template`,
+    request,
+  );
+  return requireData(response.data, "Không thể tạo sản phẩm từ mẫu.");
 }
 
 export async function listManagementMenus(

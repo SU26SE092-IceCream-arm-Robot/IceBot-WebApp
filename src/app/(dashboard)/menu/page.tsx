@@ -10,6 +10,7 @@ import {
   CircleCheckBig,
   IceCreamBowl,
   Layers3,
+  LayoutTemplate,
   PackageCheck,
   Plus,
   RefreshCw,
@@ -33,6 +34,7 @@ import {
   ProductFormDialog,
   VariantFormDialog,
 } from "@/components/features/menu/product-crud-dialogs";
+import { ProductTemplatesDialog } from "@/components/features/menu/product-templates-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -54,6 +56,7 @@ import {
   useProductCrud,
   type ProductCrudChange,
 } from "@/hooks/use-product-crud";
+import { useProductTemplates } from "@/hooks/use-product-templates";
 import {
   MenuDeleteDialog,
   MenuFormDialog,
@@ -435,6 +438,12 @@ export default function MenuPage() {
   const canManage = currentUser
     ? hasPermission(currentUser.role, "menu.edit")
     : false;
+  const productTemplates = useProductTemplates({
+    organizationId: selectedOrganizationId,
+    onCloned: async () => {
+      await refresh();
+    },
+  });
   const isActionSubmitting =
     productActionId !== null ||
     variantActionId !== null ||
@@ -455,6 +464,7 @@ export default function MenuPage() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" className="h-10" onClick={() => void refresh()} isLoading={menus.isLoading || products.isLoading}><RefreshCw className="size-4" />Làm mới</Button>
+          {canManage ? <Button variant="outline" className="h-10" disabled={!selectedOrganizationId} onClick={() => productTemplates.setOpen(true)}><LayoutTemplate className="size-4" />Tạo từ mẫu</Button> : null}
           {canManage ? <Button variant="outline" className="h-10" disabled={!selectedOrganizationId} onClick={() => openMenuForm()}><Plus className="size-4" />Tạo thực đơn</Button> : null}
           {canManage ? <Button className="h-10" disabled={!selectedOrganizationId} onClick={openProductCreate}><Plus className="size-4" />Tạo sản phẩm</Button> : null}
         </div>
@@ -620,6 +630,23 @@ export default function MenuPage() {
         open={isActionDialogOpen}
         onConfirm={() => void confirmAction()}
         onOpenChange={setActionDialogOpen}
+      />
+
+      <ProductTemplatesDialog
+        open={productTemplates.open}
+        organizationName={selectedOrganization?.name || selectedOrganization?.code || selectedOrganizationId || "đã chọn"}
+        searchTerm={productTemplates.searchTerm}
+        templates={productTemplates.templates}
+        pagination={productTemplates.pagination}
+        isLoading={productTemplates.isLoading}
+        errorMessage={productTemplates.errorMessage}
+        cloningTemplateId={productTemplates.cloningTemplateId}
+        onOpenChange={productTemplates.setOpen}
+        onSearchTermChange={productTemplates.setSearchTerm}
+        onPreviousPage={productTemplates.previousPage}
+        onNextPage={productTemplates.nextPage}
+        onRetry={productTemplates.retry}
+        onClone={(template) => void productTemplates.cloneTemplate(template)}
       />
 
       {productFormOpen ? (

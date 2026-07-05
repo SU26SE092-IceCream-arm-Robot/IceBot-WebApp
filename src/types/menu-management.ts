@@ -118,6 +118,17 @@ export interface MenuManagementQuery {
   pageSize: number;
 }
 
+export interface ProductTemplatesQuery {
+  searchTerm: string;
+  pageNumber: number;
+  pageSize: number;
+}
+
+export interface CloneProductTemplateRequest {
+  templateProductId: string;
+  scopeType: "Organization";
+}
+
 export interface CreateProductRequest {
   storeId?: string | null;
   kioskId?: string | null;
