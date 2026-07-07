@@ -222,13 +222,13 @@ export default function ReportsPage() {
             <ReportKpiCard
               icon={CheckCircle2}
               label="Tỷ lệ hoàn tất"
-              value={snapshot.availability.orders ? `${snapshot.kpis.completionRate.toFixed(1)}%` : "--"}
+              value={snapshot.availability.orderStatuses ? `${snapshot.kpis.completionRate.toFixed(1)}%` : "Không khả dụng"}
               tone="success"
             />
             <ReportKpiCard
               icon={AlertTriangle}
               label="Đơn cần chú ý"
-              value={snapshot.availability.orders ? snapshot.kpis.attentionOrderCount.toLocaleString("vi-VN") : "--"}
+              value={snapshot.availability.orderStatuses ? snapshot.kpis.attentionOrderCount.toLocaleString("vi-VN") : "Không khả dụng"}
               tone={snapshot.kpis.attentionOrderCount > 0 ? "destructive" : "primary"}
             />
           </section>
@@ -239,7 +239,11 @@ export default function ReportsPage() {
             {snapshot.availability.orders ? (
               <>
                 <RevenueSummary trend={snapshot.trend} />
+                {snapshot.availability.orderStatuses ? (
                 <OrderStatusBreakdown buckets={snapshot.statusBreakdown} />
+                ) : (
+                  <ReportsSectionUnavailable message="Backend management chưa cung cấp trạng thái đơn hàng/thanh toán nên phân bổ trạng thái tạm thời không khả dụng." />
+                )}
               </>
             ) : (
               <div className="xl:col-span-2">

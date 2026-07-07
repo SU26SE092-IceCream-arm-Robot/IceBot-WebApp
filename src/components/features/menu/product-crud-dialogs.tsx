@@ -75,12 +75,10 @@ export function ProductFormDialog({
   const [productType, setProductType] = useState(product?.productType ?? "IceCream");
   const [basePrice, setBasePrice] = useState(product?.basePrice.toString() ?? "0");
   const [currency, setCurrency] = useState(product?.currency ?? "VND");
-  const [isAvailable, setIsAvailable] = useState(product?.isAvailable ?? true);
   const [preparationTime, setPreparationTime] = useState(
     product?.preparationTimeSeconds?.toString() ?? "",
   );
   const [imageUrl, setImageUrl] = useState(product?.imageUrl ?? "");
-  const metadataJson = product?.metadataJson ?? "";
   const [scopeType, setScopeType] = useState<TenantScopeType>(
     product?.scopeType ?? "Organization",
   );
@@ -133,10 +131,8 @@ export function ProductFormDialog({
       productType: productType.trim() || "IceCream",
       basePrice: parsedPrice,
       currency: currency.trim().toUpperCase(),
-      isAvailable,
       preparationTimeSeconds: parsedPreparation,
       imageUrl: optional(imageUrl),
-      metadataJson: optional(metadataJson),
     };
     setValidationMessage(null);
     if (isCreate) {
@@ -144,7 +140,6 @@ export function ProductFormDialog({
         ...request,
         storeId: scopeType === "Store" || scopeType === "Kiosk" ? storeId.trim() : null,
         kioskId: scopeType === "Kiosk" ? kioskId.trim() : null,
-        scopeType,
         variants: [],
       });
     } else {
@@ -177,7 +172,7 @@ export function ProductFormDialog({
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5 sm:col-span-2"><label htmlFor="product-image" className="text-sm font-medium">Image URL</label><Input id="product-image" type="url" value={imageUrl} disabled={isSubmitting} className="h-10" onChange={(event) => setImageUrl(event.target.value)} /></div>
-            <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={isAvailable} disabled={isSubmitting} className="size-4 accent-primary" onChange={(event) => setIsAvailable(event.target.checked)} />Cho phép bán sản phẩm</label>
+            <p className="text-xs text-muted-foreground sm:col-span-2">Trạng thái bán được quản lý riêng sau khi sản phẩm được tạo.</p>
           </div>
           <FormError message={validationMessage || errorMessage} />
           <DialogFooter><Button type="button" variant="outline" disabled={isSubmitting} onClick={() => onOpenChange(false)}>Hủy</Button><Button type="submit" isLoading={isSubmitting}>{isCreate ? "Tạo sản phẩm" : "Lưu thay đổi"}</Button></DialogFooter>
@@ -221,14 +216,11 @@ export function VariantFormDialog({
   const [basePrice, setBasePrice] = useState(
     variant?.basePrice.toString() ?? product.basePrice.toString(),
   );
-  const [currency, setCurrency] = useState(variant?.currency ?? product.currency);
-  const [isAvailable, setIsAvailable] = useState(variant?.isAvailable ?? true);
   const [displayOrder, setDisplayOrder] = useState(variant?.displayOrder.toString() ?? "0");
   const [preparationTime, setPreparationTime] = useState(
     variant?.preparationTimeSeconds?.toString() ?? "",
   );
   const [imageUrl, setImageUrl] = useState(variant?.imageUrl ?? "");
-  const metadataJson = variant?.metadataJson ?? "";
   const [validationMessage, setValidationMessage] = useState<string | null>(null);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -253,12 +245,6 @@ export function VariantFormDialog({
       setValidationMessage("Thời gian chuẩn bị phải là số nguyên không âm.");
       return;
     }
-    if (!currency.trim()) {
-      setValidationMessage("Tiền tệ là bắt buộc.");
-      return;
-    }
-
-
     const request: UpsertProductVariantRequest = {
       code: code.trim().toUpperCase(),
       name: name.trim(),
@@ -268,12 +254,9 @@ export function VariantFormDialog({
       fulfillmentType,
       sizeCode: optional(sizeCode),
       basePrice: price,
-      currency: currency.trim().toUpperCase(),
-      isAvailable,
       displayOrder: order,
       preparationTimeSeconds: preparation,
       imageUrl: optional(imageUrl),
-      metadataJson: optional(metadataJson),
     };
     setValidationMessage(null);
     if (isCreate) await onCreate(request);
@@ -292,14 +275,14 @@ export function VariantFormDialog({
             <div className="space-y-1.5"><label htmlFor="variant-type" className="text-sm font-medium">Loại biến thể</label><Input id="variant-type" value={variantType} disabled={isSubmitting} className="h-10" onChange={(event) => setVariantType(event.target.value)} /></div>
             <div className="space-y-1.5"><label className="text-sm font-medium">Cách thực hiện</label><Select value={fulfillmentType} disabled={isSubmitting} onValueChange={(value) => { if (["Packaged", "MachineProduced", "Manual"].includes(value ?? "")) setFulfillmentType(value as FulfillmentType); }}><SelectTrigger className="h-10 w-full"><SelectValue>{fulfillmentType === "Packaged" ? "Đóng gói sẵn" : fulfillmentType === "MachineProduced" ? "Máy sản xuất" : "Thủ công"}</SelectValue></SelectTrigger><SelectContent><SelectItem value="Packaged">Đóng gói sẵn</SelectItem><SelectItem value="MachineProduced">Máy sản xuất</SelectItem><SelectItem value="Manual">Thủ công</SelectItem></SelectContent></Select></div>
             <div className="space-y-1.5"><label htmlFor="variant-size" className="text-sm font-medium">Mã kích cỡ</label><Input id="variant-size" value={sizeCode} disabled={isSubmitting} className="h-10" onChange={(event) => setSizeCode(event.target.value)} /></div>
-            {fulfillmentType === "MachineProduced" ? <div className="sm:col-span-2 rounded-lg border border-warning/30 bg-warning/5 px-3 py-2.5 text-sm text-warning">Backend ProductVariant không có trường recipe. Công thức được liên kết ở MenuItem; Admin hiện chưa có API quản lý recipe nên form này không tạo hoặc giả lập công thức.</div> : null}
+            {fulfillmentType === "MachineProduced" ? <div className="sm:col-span-2 rounded-lg border border-warning/30 bg-warning/5 px-3 py-2.5 text-sm text-warning">ProductVariant không chứa recipe trực tiếp. Công thức được liên kết qua MenuItem; form này không tạo hoặc giả lập công thức.</div> : null}
             <div className="space-y-1.5"><label htmlFor="variant-price" className="text-sm font-medium">Giá <span className="text-destructive">*</span></label><Input id="variant-price" type="number" min="0" step="any" value={basePrice} disabled={isSubmitting} className="h-10" onChange={(event) => setBasePrice(event.target.value)} /></div>
-            <div className="space-y-1.5"><label htmlFor="variant-currency" className="text-sm font-medium">Tiền tệ</label><Input id="variant-currency" value={currency} disabled={isSubmitting} className="h-10 font-mono uppercase" onChange={(event) => setCurrency(event.target.value)} /></div>
+            <div className="space-y-1.5"><p className="text-sm font-medium">Tiền tệ</p><p className="flex h-10 items-center font-mono text-sm text-muted-foreground">{product.currency}</p></div>
             <div className="space-y-1.5"><label htmlFor="variant-order" className="text-sm font-medium">Thứ tự hiển thị</label><Input id="variant-order" type="number" step="1" value={displayOrder} disabled={isSubmitting} className="h-10" onChange={(event) => setDisplayOrder(event.target.value)} /></div>
             <div className="space-y-1.5"><label htmlFor="variant-preparation" className="text-sm font-medium">Thời gian chuẩn bị (giây)</label><Input id="variant-preparation" type="number" min="0" step="1" value={preparationTime} disabled={isSubmitting} className="h-10" onChange={(event) => setPreparationTime(event.target.value)} /></div>
             <div className="space-y-1.5 sm:col-span-2"><label htmlFor="variant-description" className="text-sm font-medium">Mô tả</label><textarea id="variant-description" value={description} rows={3} disabled={isSubmitting} className="w-full resize-y rounded-lg border border-input bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50" onChange={(event) => setDescription(event.target.value)} /></div>
             <div className="space-y-1.5"><label htmlFor="variant-image" className="text-sm font-medium">Image URL</label><Input id="variant-image" type="url" value={imageUrl} disabled={isSubmitting} className="h-10" onChange={(event) => setImageUrl(event.target.value)} /></div>
-            <label className="flex items-end gap-2 pb-2 text-sm"><input type="checkbox" checked={isAvailable} disabled={isSubmitting} className="size-4 accent-primary" onChange={(event) => setIsAvailable(event.target.checked)} />Cho phép bán biến thể</label>
+            <p className="flex items-end pb-2 text-xs text-muted-foreground">Trạng thái bán được quản lý riêng sau khi lưu biến thể.</p>
           </div>
           <FormError message={validationMessage || errorMessage} />
           <DialogFooter><Button type="button" variant="outline" disabled={isSubmitting} onClick={() => onOpenChange(false)}>Hủy</Button><Button type="submit" isLoading={isSubmitting}>{isCreate ? "Thêm biến thể" : "Lưu thay đổi"}</Button></DialogFooter>

@@ -121,7 +121,7 @@ function StatCard({
   icon: typeof ReceiptText;
   label: string;
   tone: StatTone;
-  value: number;
+  value: number | string;
 }) {
   const toneClasses = STAT_TONES[tone];
 
@@ -230,6 +230,9 @@ export default function TransactionsPage() {
   } = useTransactions();
   const canManageOrders =
     currentUser?.role === "ADMIN" || currentUser?.role === "MANAGER";
+  const hasCompleteOrderStatuses = orders.data.every(
+    (order) => Boolean(order.status && order.paymentStatus),
+  );
 
   return (
     <div className="space-y-7">
@@ -281,7 +284,7 @@ export default function TransactionsPage() {
           label={activeTab === "orders" ? "Đã thanh toán" : "Đã xử lý"}
           value={
             activeTab === "orders"
-              ? summary.paidOnPage
+              ? hasCompleteOrderStatuses ? summary.paidOnPage : "Không khả dụng"
               : refundsSummary.processedOnPage
           }
           tone="success"
@@ -291,7 +294,7 @@ export default function TransactionsPage() {
           label={activeTab === "orders" ? "Cần hoàn tiền" : "Đã yêu cầu"}
           value={
             activeTab === "orders"
-              ? summary.refundRequiredOnPage
+              ? hasCompleteOrderStatuses ? summary.refundRequiredOnPage : "Không khả dụng"
               : refundsSummary.requestedOnPage
           }
           tone="warning"
@@ -301,7 +304,7 @@ export default function TransactionsPage() {
           label={activeTab === "orders" ? "Thất bại / hủy" : "Lỗi / từ chối"}
           value={
             activeTab === "orders"
-              ? summary.failedOrCancelledOnPage
+              ? hasCompleteOrderStatuses ? summary.failedOrCancelledOnPage : "Không khả dụng"
               : refundsSummary.failedOrRejectedOnPage
           }
           tone="destructive"

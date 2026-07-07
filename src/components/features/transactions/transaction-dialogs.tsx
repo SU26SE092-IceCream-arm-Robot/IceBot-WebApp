@@ -209,10 +209,10 @@ export function TransactionDetailDialog({
                     >
                       <div className="min-w-0">
                         <p className="truncate text-sm font-medium text-foreground">
-                          {item.productNameSnapshot} · {item.productVariantNameSnapshot}
+                          {item.productName || item.productNameSnapshot || "Sản phẩm không xác định"} · {item.productVariantName || item.productVariantNameSnapshot || "Biến thể không xác định"}
                         </p>
                         <p className="truncate text-xs text-muted-foreground">
-                          {item.menuItemNameSnapshot} · SL {item.quantity}
+                          {item.menuItemName || item.menuItemNameSnapshot || "Món không xác định"} · SL {item.quantity}
                         </p>
                       </div>
                       <span className="text-sm font-medium tabular-nums text-foreground">

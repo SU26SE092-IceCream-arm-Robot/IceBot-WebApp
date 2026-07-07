@@ -62,18 +62,25 @@ export interface OrderItemResult {
   productVariantId: string;
   recipeId?: string | null;
   clientLineId?: string | null;
-  menuItemCodeSnapshot: string;
-  menuItemNameSnapshot: string;
-  productCodeSnapshot: string;
-  productNameSnapshot: string;
-  productVariantCodeSnapshot: string;
-  productVariantNameSnapshot: string;
+  menuItemCode: string;
+  menuItemName: string;
+  productCode: string;
+  productName: string;
+  productVariantCode: string;
+  productVariantName: string;
+  recipeVersion?: number | null;
+  menuItemCodeSnapshot?: string;
+  menuItemNameSnapshot?: string;
+  productCodeSnapshot?: string;
+  productNameSnapshot?: string;
+  productVariantCodeSnapshot?: string;
+  productVariantNameSnapshot?: string;
   recipeVersionSnapshot?: number | null;
   quantity: number;
   unitPrice: number;
   discountAmount: number;
   totalAmount: number;
-  status: OrderItemStatus;
+  status?: OrderItemStatus;
 }
 
 export interface OrderResult {
@@ -85,9 +92,9 @@ export interface OrderResult {
   clientOrderId?: string | null;
   runtimeSnapshotId?: string | null;
   runtimeSnapshotGeneratedAt?: string | null;
-  channel: OrderChannel;
-  status: OrderStatus;
-  paymentStatus: PaymentStatus;
+  channel?: OrderChannel;
+  status?: OrderStatus;
+  paymentStatus?: PaymentStatus;
   currency: string;
   subtotalAmount: number;
   discountAmount: number;

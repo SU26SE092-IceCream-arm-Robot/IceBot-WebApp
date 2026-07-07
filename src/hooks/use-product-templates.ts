@@ -90,7 +90,6 @@ export function useProductTemplates({
     try {
       const product = await cloneProductTemplate(organizationId, {
         templateProductId: template.id,
-        scopeType: "Organization",
       });
       await onCloned(product);
       toast.success(`Đã tạo sản phẩm ${product.displayName || product.name} từ mẫu.`);

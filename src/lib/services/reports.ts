@@ -454,7 +454,7 @@ function kioskAttentionRows(
       const attentionOrderCount = orders.filter(
         (order) =>
           order.kioskId === kiosk.id &&
-          (ATTENTION_ORDER_STATUSES.has(order.status) || order.requiresStaffSupport),
+          ((order.status ? ATTENTION_ORDER_STATUSES.has(order.status) : false) || order.requiresStaffSupport),
       ).length;
       const reasons: string[] = [];
 
@@ -510,13 +510,15 @@ function activityItems(
       type: "order",
       occurredAt: order.placedAt,
       entity: order.orderNumber,
-      summary: `${order.items.length} món, ${order.channel}`,
-      status: order.status,
-      tone: ATTENTION_ORDER_STATUSES.has(order.status) || order.requiresStaffSupport
+      summary: `${order.items.length} món`,
+      status: order.status ?? "Không khả dụng",
+      tone: (order.status ? ATTENTION_ORDER_STATUSES.has(order.status) : false) || order.requiresStaffSupport
         ? "destructive"
         : order.status === "Completed"
           ? "success"
-          : "primary",
+          : order.status
+            ? "primary"
+            : "muted",
     });
   }
 
@@ -586,12 +588,18 @@ function qualityMessages(sources: ReportsSourceBundle): string[] {
     maintenance: "Bảo trì",
   };
 
-  return (Object.keys(sources) as Array<keyof ReportsSourceBundle>)
+  const messages = (Object.keys(sources) as Array<keyof ReportsSourceBundle>)
     .filter((key) => !sources[key].coverage.isComplete)
     .map((key) => {
       const coverage = sources[key].coverage;
       return `${labels[key]}: ${coverage.message ?? coverageLabel(coverage)}.`;
     });
+
+  if (sources.orders.items.some((order) => !order.status || !order.paymentStatus)) {
+    messages.push("Đơn hàng: backend management chưa cung cấp đầy đủ trạng thái đơn hàng/thanh toán; các thống kê theo trạng thái tạm thời không khả dụng.");
+  }
+
+  return messages;
 }
 
 function sourceAvailable(coverage: ReportsCoverage): boolean {
@@ -627,20 +635,23 @@ export function buildReportsSnapshot(
   const scopedMovements = sources.movements.items.filter(
     (item) => filters.kioskId === "ALL" || item.kioskId === filters.kioskId,
   );
-  const attentionOrders = scopedOrders.filter(
-    (order) => ATTENTION_ORDER_STATUSES.has(order.status) || order.requiresStaffSupport,
+  const ordersWithStatus = scopedOrders.filter(
+    (order): order is OrderResult & { status: NonNullable<OrderResult["status"]> } => Boolean(order.status),
   );
-  const completedOrders = scopedOrders.filter((order) => order.status === "Completed");
+  const attentionOrders = scopedOrders.filter(
+    (order) => (order.status ? ATTENTION_ORDER_STATUSES.has(order.status) : false) || order.requiresStaffSupport,
+  );
+  const completedOrders = ordersWithStatus.filter((order) => order.status === "Completed");
 
   const statusBreakdown = ORDER_STATUS_BUCKETS.map((bucket) => {
-    const count = scopedOrders.filter((order) =>
+    const count = ordersWithStatus.filter((order) =>
       (bucket.statuses as readonly string[]).includes(order.status),
     ).length;
     return {
       id: bucket.id,
       label: bucket.label,
       count,
-      percentage: scopedOrders.length === 0 ? 0 : (count / scopedOrders.length) * 100,
+      percentage: ordersWithStatus.length === 0 ? 0 : (count / ordersWithStatus.length) * 100,
       tone: bucket.tone,
     };
   });
@@ -666,7 +677,7 @@ export function buildReportsSnapshot(
       ),
       completedOrderCount: completedOrders.length,
       completionRate:
-        scopedOrders.length === 0 ? 0 : (completedOrders.length / scopedOrders.length) * 100,
+        ordersWithStatus.length === 0 ? 0 : (completedOrders.length / ordersWithStatus.length) * 100,
       attentionOrderCount: attentionOrders.length,
       coverageLabel: coverageLabel(sources.orders.coverage),
       isComplete: sources.orders.coverage.isComplete,
@@ -738,6 +749,9 @@ export function buildReportsSnapshot(
       .sort((left, right) => left.label.localeCompare(right.label, "vi")),
     availability: {
       orders: sourceAvailable(sources.orders.coverage),
+      orderStatuses:
+        sourceAvailable(sources.orders.coverage) &&
+        scopedOrders.every((order) => Boolean(order.status && order.paymentStatus)),
       kiosks: sourceAvailable(sources.kiosks.coverage),
       activity: [
         sources.orders.coverage,

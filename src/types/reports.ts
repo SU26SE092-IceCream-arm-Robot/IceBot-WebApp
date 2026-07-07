@@ -142,6 +142,7 @@ export interface ReportsSnapshot {
   kioskOptions: ReportKioskOption[];
   availability: {
     orders: boolean;
+    orderStatuses: boolean;
     kiosks: boolean;
     activity: boolean;
   };

@@ -25,9 +25,7 @@ import type {
   CreateMenuItemRequest,
   CreateMenuRequest,
   MenuItemResult,
-  MenuItemStatus,
   MenuResult,
-  MenuStatus,
   ProductResult,
   TenantScopeType,
   UpdateMenuItemRequest,
@@ -73,10 +71,8 @@ export function MenuFormDialog({
   const [code, setCode] = useState(menu?.code ?? "");
   const [name, setName] = useState(menu?.name ?? "");
   const [description, setDescription] = useState(menu?.description ?? "");
-  const [status, setStatus] = useState<MenuStatus>(menu?.status ?? "Draft");
   const [currency, setCurrency] = useState(menu?.currency ?? "VND");
   const [displayOrder, setDisplayOrder] = useState(menu?.displayOrder.toString() ?? "0");
-  const metadataJson = menu?.metadataJson ?? "";
   const [scopeType, setScopeType] = useState<TenantScopeType>(
     menu?.scopeType ?? "Organization",
   );
@@ -114,11 +110,8 @@ export function MenuFormDialog({
       code: code.trim().toUpperCase(),
       name: name.trim(),
       description: optional(description),
-      status,
       currency: currency.trim().toUpperCase(),
       displayOrder: parsedOrder,
-      metadataSchemaVersion: 1,
-      metadataJson: optional(metadataJson),
     };
     
     setValidationMessage(null);
@@ -127,7 +120,6 @@ export function MenuFormDialog({
         ...request,
         storeId: scopeType === "Store" || scopeType === "Kiosk" ? storeId.trim() : null,
         kioskId: scopeType === "Kiosk" ? kioskId.trim() : null,
-        scopeType,
       });
     } else {
       await onUpdate(request);
@@ -157,18 +149,6 @@ export function MenuFormDialog({
             <div className="space-y-1.5">
               <label htmlFor="menu-name" className="text-sm font-medium">Tên thực đơn <span className="text-destructive">*</span></label>
               <Input id="menu-name" value={name} disabled={isSubmitting} className="h-10" onChange={(event) => setName(event.target.value)} />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium">Trạng thái</label>
-              <Select value={status} disabled={isSubmitting} onValueChange={(value) => setStatus(value as MenuStatus)}>
-                <SelectTrigger className="h-10 w-full"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Draft">Bản nháp (Draft)</SelectItem>
-                  <SelectItem value="Active">Hoạt động (Active)</SelectItem>
-                  <SelectItem value="Paused">Tạm dừng (Paused)</SelectItem>
-                  <SelectItem value="Archived">Lưu trữ (Archived)</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
             <div className="space-y-1.5">
               <label htmlFor="menu-currency" className="text-sm font-medium">Tiền tệ</label>
@@ -310,7 +290,6 @@ export function MenuItemFormDialog({
   const [code, setCode] = useState(menuItem?.code ?? "");
   const [displayName, setDisplayName] = useState(menuItem?.displayName ?? "");
   const [description, setDescription] = useState(menuItem?.description ?? "");
-  const [status, setStatus] = useState<MenuItemStatus>(menuItem?.status ?? "Draft");
   const [price, setPrice] = useState(menuItem?.price.toString() ?? "0");
   const [discountAmount, setDiscountAmount] = useState(menuItem?.discountAmount.toString() ?? "0");
   const [displayOrder, setDisplayOrder] = useState(menuItem?.displayOrder.toString() ?? "0");
@@ -348,12 +327,6 @@ export function MenuItemFormDialog({
       setValidationMessage("Mã và Tên hiển thị là bắt buộc.");
       return;
     }
-    if (status === "Active" && isMachineProducedWithoutRecipe) {
-      setValidationMessage(
-        "Không thể bật bán món MachineProduced khi chưa có Recipe. Hãy giữ món ở trạng thái Nháp hoặc Hết hàng.",
-      );
-      return;
-    }
     const parsedPrice = Number(price);
     const parsedDiscount = Number(discountAmount);
     const parsedOrder = Number(displayOrder);
@@ -367,20 +340,17 @@ export function MenuItemFormDialog({
       return;
     }
 
-    const request: UpdateMenuItemRequest = {
-      productId,
+    const request: CreateMenuItemRequest = {
       productVariantId,
-      recipeId: null, // Left empty due to missing backend API
+      recipeId: menuItem?.recipeId ?? null,
       code: code.trim().toUpperCase(),
       displayName: displayName.trim(),
       description: optional(description),
-      status,
       price: parsedPrice,
       discountAmount: parsedDiscount,
-      currency: menu.currency,
       displayOrder: parsedOrder,
-      metadataSchemaVersion: 1,
       imageUrl: optional(imageUrl),
+      productOptionIds: menuItem?.productOptionIds ?? [],
     };
 
     setValidationMessage(null);
@@ -434,10 +404,10 @@ export function MenuItemFormDialog({
 
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-muted-foreground">Công thức (Recipe)</label>
-              <Input disabled className="h-10 bg-muted" placeholder="Chưa hỗ trợ Recipe API..." />
+              <Input disabled className="h-10 bg-muted" placeholder="Chưa tích hợp quản lý Recipe trong màn hình này" />
               {isMachineProducedWithoutRecipe ? (
                 <p className="rounded-lg border border-warning/30 bg-warning/5 px-3 py-2 text-sm text-warning">
-                  Biến thể MachineProduced cần Recipe hợp lệ và production route trước khi bật bán. Admin Web hiện chưa có API quản lý Recipe.
+                  Biến thể MachineProduced cần Recipe hợp lệ và production route trước khi bật bán. Hãy cấu hình Recipe qua luồng quản trị phù hợp trước khi kích hoạt món.
                 </p>
               ) : null}
             </div>
@@ -459,18 +429,6 @@ export function MenuItemFormDialog({
             <div className="space-y-1.5">
               <label htmlFor="mi-discount" className="text-sm font-medium">Giảm giá ({menu.currency})</label>
               <Input id="mi-discount" type="number" step="any" value={discountAmount} disabled={isSubmitting} className="h-10" onChange={(event) => setDiscountAmount(event.target.value)} />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium">Trạng thái</label>
-              <Select value={status} disabled={isSubmitting} onValueChange={(val) => setStatus(val as MenuItemStatus)}>
-                <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Draft">Nháp (Draft)</SelectItem>
-                  <SelectItem value="Active" disabled={isMachineProducedWithoutRecipe}>Hoạt động (Active)</SelectItem>
-                  <SelectItem value="Unavailable">Hết hàng (Unavailable)</SelectItem>
-                  <SelectItem value="Archived">Lưu trữ (Archived)</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
             <div className="space-y-1.5">
               <label htmlFor="mi-order" className="text-sm font-medium">Thứ tự hiển thị</label>

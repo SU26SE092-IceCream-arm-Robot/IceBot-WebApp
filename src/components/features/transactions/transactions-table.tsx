@@ -97,7 +97,11 @@ export function formatTransactionDate(value: string | null | undefined): string 
   }).format(date);
 }
 
-export function OrderStatusBadge({ status }: { status: OrderStatus }) {
+export function OrderStatusBadge({ status }: { status?: OrderStatus }) {
+  if (!status) {
+    return <Badge variant="outline" className="h-6 rounded-full px-2.5 text-muted-foreground">Không khả dụng</Badge>;
+  }
+
   return (
     <Badge
       variant="outline"
@@ -108,7 +112,11 @@ export function OrderStatusBadge({ status }: { status: OrderStatus }) {
   );
 }
 
-export function PaymentStatusBadge({ status }: { status: PaymentStatus }) {
+export function PaymentStatusBadge({ status }: { status?: PaymentStatus }) {
+  if (!status) {
+    return <Badge variant="outline" className="h-6 rounded-full px-2.5 text-muted-foreground">Không khả dụng</Badge>;
+  }
+
   return (
     <Badge
       variant="outline"
@@ -211,6 +219,7 @@ export function TransactionsTable({
                   <Eye className="size-4" />
                 </Button>
                 {canManageOrders &&
+                order.status &&
                 order.paymentStatus === "Paid" &&
                 order.status !== "Completed" &&
                 order.status !== "Cancelled" &&
@@ -227,7 +236,12 @@ export function TransactionsTable({
                     <RotateCcw className="size-4" />
                   </Button>
                 ) : null}
-                {canManageOrders && order.paymentStatus !== "Paid" && order.status !== "Completed" && order.status !== "Cancelled" ? (
+                {canManageOrders &&
+                order.status &&
+                order.paymentStatus &&
+                order.paymentStatus !== "Paid" &&
+                order.status !== "Completed" &&
+                order.status !== "Cancelled" ? (
                   <Button
                     type="button"
                     variant="ghost"

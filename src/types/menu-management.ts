@@ -71,6 +71,7 @@ export interface MenuItemResult {
   imageUrl?: string | null;
   effectiveFrom?: string | null;
   effectiveTo?: string | null;
+  productOptionIds?: string[];
   metadataSchemaVersion: number;
   metadataJson?: string | null;
   createdAt: string;
@@ -126,7 +127,10 @@ export interface ProductTemplatesQuery {
 
 export interface CloneProductTemplateRequest {
   templateProductId: string;
-  scopeType: "Organization";
+  storeId?: string | null;
+  kioskId?: string | null;
+  code?: string | null;
+  name?: string | null;
 }
 
 export interface CreateProductRequest {
@@ -140,11 +144,8 @@ export interface CreateProductRequest {
   productType: string;
   basePrice: number;
   currency: string;
-  isAvailable: boolean;
   preparationTimeSeconds?: number | null;
   imageUrl?: string | null;
-  metadataJson?: string | null;
-  scopeType: TenantScopeType;
   variants: UpsertProductVariantRequest[];
 }
 
@@ -157,10 +158,8 @@ export interface UpdateProductRequest {
   productType?: string | null;
   basePrice?: number | null;
   currency?: string | null;
-  isAvailable?: boolean | null;
   preparationTimeSeconds?: number | null;
   imageUrl?: string | null;
-  metadataJson?: string | null;
 }
 
 export interface UpsertProductVariantRequest {
@@ -172,15 +171,12 @@ export interface UpsertProductVariantRequest {
   fulfillmentType: FulfillmentType;
   sizeCode?: string | null;
   basePrice: number;
-  currency: string;
-  isAvailable: boolean;
   displayOrder: number;
   preparationTimeSeconds?: number | null;
   imageUrl?: string | null;
-  metadataJson?: string | null;
 }
 
-export type UpdateProductVariantRequest = UpsertProductVariantRequest;
+export type UpdateProductVariantRequest = Partial<UpsertProductVariantRequest>;
 
 export interface CreateMenuRequest {
   storeId?: string | null;
@@ -188,47 +184,36 @@ export interface CreateMenuRequest {
   code: string;
   name: string;
   description?: string | null;
-  status: MenuStatus;
-  scopeType: TenantScopeType;
   currency: string;
   effectiveFrom?: string | null;
   effectiveTo?: string | null;
   displayOrder: number;
-  metadataSchemaVersion: number;
-  metadataJson?: string | null;
 }
 
 export interface UpdateMenuRequest {
   code?: string | null;
   name?: string | null;
   description?: string | null;
-  status?: MenuStatus | null;
   currency?: string | null;
   effectiveFrom?: string | null;
   effectiveTo?: string | null;
   displayOrder?: number | null;
-  metadataSchemaVersion?: number | null;
-  metadataJson?: string | null;
 }
 
 export interface CreateMenuItemRequest {
-  productId: string;
   productVariantId: string;
   recipeId?: string | null;
   code: string;
   displayName: string;
   description?: string | null;
-  status: MenuItemStatus;
   price: number;
   discountAmount: number;
-  currency: string;
   displayOrder: number;
   preparationTimeSeconds?: number | null;
   imageUrl?: string | null;
   effectiveFrom?: string | null;
   effectiveTo?: string | null;
-  metadataSchemaVersion: number;
-  metadataJson?: string | null;
+  productOptionIds: string[];
 }
 
-export type UpdateMenuItemRequest = CreateMenuItemRequest;
+export type UpdateMenuItemRequest = Partial<CreateMenuItemRequest>;
