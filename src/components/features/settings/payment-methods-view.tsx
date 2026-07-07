@@ -117,7 +117,7 @@ export function PaymentMethodsView({ currentUser }: PaymentMethodsViewProps) {
                     disabled={!canEdit || isUpdating}
                     onClick={() => handleToggle(method.id, method.isActive, method.name)}
                   >
-                    {isUpdating ? "Đang xử lý" : method.isActive ? "Bật" : "Tắt"}
+                    {isUpdating ? "Đang xử lý" : method.isActive ? "Tắt" : "Bật"}
                   </Button>
                 </CardHeader>
                 <CardContent>

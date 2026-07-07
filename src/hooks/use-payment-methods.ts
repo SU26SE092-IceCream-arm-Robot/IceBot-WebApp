@@ -32,8 +32,12 @@ export function usePaymentMethods() {
   const updateStatus = useCallback(async (id: number, isActive: boolean) => {
     try {
       setUpdatingId(id);
-      const updated = await setPaymentMethodStatus(id, isActive);
-      setMethods((prev) => prev.map((m) => (m.id === id ? updated : m)));
+      await setPaymentMethodStatus(id, isActive);
+      setMethods((prev) =>
+        prev.map((method) =>
+          method.id === id ? { ...method, isActive } : method,
+        ),
+      );
       toast.success("Cập nhật trạng thái thành công!");
     } catch (err: unknown) {
       if (err instanceof Error) {
@@ -41,7 +45,6 @@ export function usePaymentMethods() {
       } else {
         toast.error("Cập nhật trạng thái thất bại.");
       }
-      throw err;
     } finally {
       setUpdatingId(null);
     }
