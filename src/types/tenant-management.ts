@@ -9,6 +9,22 @@ export type TenantEntityStatus =
 
 export type TenantStatusFilter = "ALL" | TenantEntityStatus;
 
+export type StoreDayOfWeek =
+  | "Sunday"
+  | "Monday"
+  | "Tuesday"
+  | "Wednesday"
+  | "Thursday"
+  | "Friday"
+  | "Saturday";
+
+export interface StoreOpeningHoursDay {
+  dayOfWeek: StoreDayOfWeek;
+  isClosed: boolean;
+  opensAt?: string | null;
+  closesAt?: string | null;
+}
+
 export interface OrganizationResult {
   id: string;
   code: string;
@@ -65,8 +81,7 @@ export interface CreateStoreRequest {
   longitude?: number | null;
   phoneNumber?: string | null;
   email?: string | null;
-  openingHoursSchemaVersion: number;
-  openingHoursJson?: string | null;
+  openingHours: StoreOpeningHoursDay[];
 }
 
 export type UpdateStoreRequest = Omit<CreateStoreRequest, "code">;

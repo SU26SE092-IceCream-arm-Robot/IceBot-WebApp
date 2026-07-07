@@ -18,6 +18,8 @@ import type {
   CreateOrganizationRequest,
   CreateStoreRequest,
   OrganizationResult,
+  StoreDayOfWeek,
+  StoreOpeningHoursDay,
   UpdateOrganizationRequest,
   UpdateStoreRequest,
 } from "@/types/tenant-management";
@@ -38,18 +40,48 @@ function optional(value: string): string | null {
   return value.trim() || null;
 }
 
-function isValidJson(value: string): boolean {
-  if (!value.trim()) return true;
-  try {
-    JSON.parse(value);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 function isValidEmail(value: string): boolean {
   return !value.trim() || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+}
+
+const STORE_DAYS: Array<{ value: StoreDayOfWeek; label: string }> = [
+  { value: "Monday", label: "Thứ 2" },
+  { value: "Tuesday", label: "Thứ 3" },
+  { value: "Wednesday", label: "Thứ 4" },
+  { value: "Thursday", label: "Thứ 5" },
+  { value: "Friday", label: "Thứ 6" },
+  { value: "Saturday", label: "Thứ 7" },
+  { value: "Sunday", label: "Chủ nhật" },
+];
+
+interface OpeningHoursEditorDay {
+  dayOfWeek: StoreDayOfWeek;
+  isClosed: boolean;
+  opensAt: string;
+  closesAt: string;
+}
+
+function timeInputValue(value: string | null | undefined): string {
+  return value?.slice(0, 5) ?? "";
+}
+
+function timeRequestValue(value: string): string {
+  return value.length === 5 ? `${value}:00` : value;
+}
+
+function createOpeningHoursEditor(
+  openingHours: StoreOpeningHoursDay[] | undefined,
+): OpeningHoursEditorDay[] {
+  const values = new Map(openingHours?.map((day) => [day.dayOfWeek, day]));
+  return STORE_DAYS.map(({ value }) => {
+    const existing = values.get(value);
+    return {
+      dayOfWeek: value,
+      isClosed: existing?.isClosed ?? true,
+      opensAt: timeInputValue(existing?.opensAt),
+      closesAt: timeInputValue(existing?.closesAt),
+    };
+  });
 }
 
 interface OrganizationFormDialogProps {
@@ -207,7 +239,12 @@ export function StoreFormDialog({
   const [longitude, setLongitude] = useState(store?.longitude?.toString() ?? "");
   const [phoneNumber, setPhoneNumber] = useState(store?.phoneNumber ?? "");
   const [email, setEmail] = useState(store?.email ?? "");
-  const [openingHoursJson, setOpeningHoursJson] = useState(store?.openingHoursJson ?? "");
+  const [usesOpeningHours, setUsesOpeningHours] = useState(
+    (store?.openingHours.length ?? 0) > 0,
+  );
+  const [openingHours, setOpeningHours] = useState<OpeningHoursEditorDay[]>(
+    createOpeningHoursEditor(store?.openingHours),
+  );
   const [validationMessage, setValidationMessage] = useState<string | null>(null);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -229,11 +266,6 @@ export function StoreFormDialog({
       setValidationMessage("Email không đúng định dạng.");
       return;
     }
-    if (!isValidJson(openingHoursJson)) {
-      setValidationMessage("Giờ mở cửa phải là JSON hợp lệ.");
-      return;
-    }
-
     const parsedLatitude = latitude.trim() ? Number(latitude) : null;
     const parsedLongitude = longitude.trim() ? Number(longitude) : null;
     if (parsedLatitude !== null && (!Number.isFinite(parsedLatitude) || parsedLatitude < -90 || parsedLatitude > 90)) {
@@ -243,6 +275,23 @@ export function StoreFormDialog({
     if (parsedLongitude !== null && (!Number.isFinite(parsedLongitude) || parsedLongitude < -180 || parsedLongitude > 180)) {
       setValidationMessage("Kinh độ phải nằm trong khoảng -180 đến 180.");
       return;
+    }
+
+    if (usesOpeningHours) {
+      const invalidDay = openingHours.find(
+        (day) =>
+          !day.isClosed &&
+          (!day.opensAt || !day.closesAt || day.opensAt >= day.closesAt),
+      );
+      if (invalidDay) {
+        const dayLabel = STORE_DAYS.find(
+          (day) => day.value === invalidDay.dayOfWeek,
+        )?.label;
+        setValidationMessage(
+          `${dayLabel ?? invalidDay.dayOfWeek}: giờ mở cửa phải có đủ thời gian và sớm hơn giờ đóng cửa.`,
+        );
+        return;
+      }
     }
 
     setValidationMessage(null);
@@ -258,8 +307,14 @@ export function StoreFormDialog({
       longitude: parsedLongitude,
       phoneNumber: optional(phoneNumber),
       email: optional(email),
-      openingHoursSchemaVersion: store?.openingHoursSchemaVersion ?? 1,
-      openingHoursJson: optional(openingHoursJson),
+      openingHours: usesOpeningHours
+        ? openingHours.map((day) => ({
+            dayOfWeek: day.dayOfWeek,
+            isClosed: day.isClosed,
+            opensAt: day.isClosed ? null : timeRequestValue(day.opensAt),
+            closesAt: day.isClosed ? null : timeRequestValue(day.closesAt),
+          }))
+        : [],
     };
     if (isCreate) {
       await onCreate({ code: code.trim().toUpperCase(), ...profile });
@@ -291,7 +346,90 @@ export function StoreFormDialog({
             <div className="space-y-1.5 sm:col-span-2"><label htmlFor="store-email" className="text-sm font-medium">Email</label><Input id="store-email" type="email" value={email} disabled={isSubmitting} className="h-10" onChange={(event) => setEmail(event.target.value)} /></div>
             <div className="space-y-1.5"><label htmlFor="store-latitude" className="text-sm font-medium">Vĩ độ</label><Input id="store-latitude" type="number" step="any" value={latitude} disabled={isSubmitting} className="h-10" onChange={(event) => setLatitude(event.target.value)} /></div>
             <div className="space-y-1.5"><label htmlFor="store-longitude" className="text-sm font-medium">Kinh độ</label><Input id="store-longitude" type="number" step="any" value={longitude} disabled={isSubmitting} className="h-10" onChange={(event) => setLongitude(event.target.value)} /></div>
-            <div className="space-y-1.5 sm:col-span-2"><label htmlFor="store-hours" className="text-sm font-medium">Giờ mở cửa JSON</label><textarea id="store-hours" value={openingHoursJson} rows={3} disabled={isSubmitting} className="w-full resize-y rounded-lg border border-input bg-transparent px-3 py-2 font-mono text-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50" onChange={(event) => setOpeningHoursJson(event.target.value)} /></div>
+            <div className="space-y-3 sm:col-span-2">
+              <div className="flex flex-col gap-2 rounded-lg border border-border bg-muted/15 p-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm font-medium">Lịch mở cửa</p>
+                  <p className="text-xs text-muted-foreground">Tắt lịch để không giới hạn thời gian bán theo ngày.</p>
+                </div>
+                <label className="flex items-center gap-2 text-sm font-medium">
+                  <input
+                    type="checkbox"
+                    checked={usesOpeningHours}
+                    disabled={isSubmitting}
+                    className="size-4 accent-primary"
+                    onChange={(event) => setUsesOpeningHours(event.target.checked)}
+                  />
+                  Áp dụng lịch
+                </label>
+              </div>
+              <div className="space-y-2">
+                {openingHours.map((day, index) => {
+                  const label = STORE_DAYS.find(
+                    (option) => option.value === day.dayOfWeek,
+                  )?.label;
+                  const disabled = isSubmitting || !usesOpeningHours;
+                  return (
+                    <div
+                      key={day.dayOfWeek}
+                      className="grid gap-3 rounded-lg border border-border px-3 py-3 sm:grid-cols-[minmax(90px,1fr)_auto_130px_130px] sm:items-center"
+                    >
+                      <p className="text-sm font-medium">{label}</p>
+                      <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <input
+                          type="checkbox"
+                          checked={day.isClosed}
+                          disabled={disabled}
+                          className="size-4 accent-primary"
+                          onChange={(event) =>
+                            setOpeningHours((current) =>
+                              current.map((item, itemIndex) =>
+                                itemIndex === index
+                                  ? { ...item, isClosed: event.target.checked }
+                                  : item,
+                              ),
+                            )
+                          }
+                        />
+                        Đóng cửa
+                      </label>
+                      <Input
+                        type="time"
+                        aria-label={`Giờ mở cửa ${label}`}
+                        value={day.opensAt}
+                        disabled={disabled || day.isClosed}
+                        className="h-9"
+                        onChange={(event) =>
+                          setOpeningHours((current) =>
+                            current.map((item, itemIndex) =>
+                              itemIndex === index
+                                ? { ...item, opensAt: event.target.value }
+                                : item,
+                            ),
+                          )
+                        }
+                      />
+                      <Input
+                        type="time"
+                        aria-label={`Giờ đóng cửa ${label}`}
+                        value={day.closesAt}
+                        disabled={disabled || day.isClosed}
+                        className="h-9"
+                        onChange={(event) =>
+                          setOpeningHours((current) =>
+                            current.map((item, itemIndex) =>
+                              itemIndex === index
+                                ? { ...item, closesAt: event.target.value }
+                                : item,
+                            ),
+                          )
+                        }
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </div>
           <ErrorMessage message={validationMessage || errorMessage} />
           <DialogFooter><Button type="button" variant="outline" disabled={isSubmitting} onClick={() => onOpenChange(false)}>Hủy</Button><Button type="submit" isLoading={isSubmitting}>{isCreate ? "Tạo cửa hàng" : "Lưu thay đổi"}</Button></DialogFooter>

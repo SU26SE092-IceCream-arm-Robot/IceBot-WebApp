@@ -1,3 +1,5 @@
+import type { StoreOpeningHoursDay } from "@/types/tenant-management";
+
 export type KioskLifecycleStatus =
   | "Provisioning"
   | "Active"
@@ -45,8 +47,7 @@ export interface StoreResult {
   longitude?: number | null;
   phoneNumber?: string | null;
   email?: string | null;
-  openingHoursSchemaVersion: number;
-  openingHoursJson?: string | null;
+  openingHours: StoreOpeningHoursDay[];
   createdAt: string;
   updatedAt?: string | null;
 }
