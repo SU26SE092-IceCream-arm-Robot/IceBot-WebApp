@@ -30,6 +30,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import type {
+  ManagementOrderListItemResult,
   OrderResult,
   OrderStatusHistoryResult,
   RefundResult,
@@ -57,7 +58,7 @@ interface OrderActionDialogProps {
   errorMessage: string | null;
   isSubmitting: boolean;
   open: boolean;
-  order: OrderResult | null;
+  order: ManagementOrderListItemResult | null;
   reason: string;
   onConfirm: () => void;
   onOpenChange: (open: boolean) => void;
@@ -209,11 +210,18 @@ export function TransactionDetailDialog({
                     >
                       <div className="min-w-0">
                         <p className="truncate text-sm font-medium text-foreground">
-                          {item.productName || item.productNameSnapshot || "Sản phẩm không xác định"} · {item.productVariantName || item.productVariantNameSnapshot || "Biến thể không xác định"}
+                          {item.productName} · {item.productVariantName}
                         </p>
                         <p className="truncate text-xs text-muted-foreground">
-                          {item.menuItemName || item.menuItemNameSnapshot || "Món không xác định"} · SL {item.quantity}
+                          {item.menuItemName} · SL {item.quantity}
                         </p>
+                        {item.selectedOptions.length > 0 ? (
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {item.selectedOptions
+                              .map((option) => `${option.name} (${option.priceDelta >= 0 ? "+" : ""}${formatTransactionMoney(option.priceDelta, order.currency)})`)
+                              .join(" · ")}
+                          </p>
+                        ) : null}
                       </div>
                       <span className="text-sm font-medium tabular-nums text-foreground">
                         {formatTransactionMoney(item.totalAmount, order.currency)}

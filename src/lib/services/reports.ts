@@ -22,7 +22,10 @@ import type {
   ReportsSourceBundle,
   ReportsSourceState,
 } from "@/types/reports";
-import type { OrderResult, RefundResult } from "@/types/transactions";
+import type {
+  ManagementOrderListItemResult,
+  RefundResult,
+} from "@/types/transactions";
 
 export const REPORTS_PAGE_SIZE = 50;
 export const REPORTS_MAX_ROWS = 1000;
@@ -197,7 +200,7 @@ export async function loadReportKiosks(
 export function loadReportOrders(
   filters: ReportsFilters,
   signal?: AbortSignal,
-): Promise<ReportsSourceState<OrderResult>> {
+): Promise<ReportsSourceState<ManagementOrderListItemResult>> {
   return loadPagedSource(
     (pageNumber, pageSize, requestSignal) =>
       listManagementOrders(
@@ -371,14 +374,19 @@ function dayKey(date: Date): string {
   ].join("-");
 }
 
-function buildTrend(orders: OrderResult[], start: Date, end: Date, days: number) {
+function buildTrend(
+  orders: ManagementOrderListItemResult[],
+  start: Date,
+  end: Date,
+  days: number,
+) {
   const bucketDays = days === 90 ? 7 : 1;
   const buckets: Array<{
     id: string;
     label: string;
     start: Date;
     end: Date;
-    orders: OrderResult[];
+    orders: ManagementOrderListItemResult[];
   }> = [];
 
   for (let cursor = new Date(start); cursor <= end; ) {
@@ -426,7 +434,7 @@ function kioskAttentionRows(
   stores: StoreResult[],
   dispensers: DispenserStateResult[],
   tickets: MaintenanceTicketResult[],
-  orders: OrderResult[],
+  orders: ManagementOrderListItemResult[],
 ): ReportKioskAttentionRow[] {
   const storeNames = new Map(stores.map((store) => [store.id, store.name]));
   const lifecycleReasons: Partial<Record<KioskResult["status"], string>> = {
@@ -454,7 +462,8 @@ function kioskAttentionRows(
       const attentionOrderCount = orders.filter(
         (order) =>
           order.kioskId === kiosk.id &&
-          ((order.status ? ATTENTION_ORDER_STATUSES.has(order.status) : false) || order.requiresStaffSupport),
+          (ATTENTION_ORDER_STATUSES.has(order.status) ||
+            order.requiresStaffSupport),
       ).length;
       const reasons: string[] = [];
 
@@ -495,7 +504,7 @@ function kioskAttentionRows(
 }
 
 function activityItems(
-  orders: OrderResult[],
+  orders: ManagementOrderListItemResult[],
   refunds: RefundResult[],
   tickets: MaintenanceTicketResult[],
   movements: StockMovementResult[],
@@ -510,15 +519,13 @@ function activityItems(
       type: "order",
       occurredAt: order.placedAt,
       entity: order.orderNumber,
-      summary: `${order.items.length} món`,
-      status: order.status ?? "Không khả dụng",
-      tone: (order.status ? ATTENTION_ORDER_STATUSES.has(order.status) : false) || order.requiresStaffSupport
+      summary: "Đơn hàng tại kiosk",
+      status: order.status,
+      tone: ATTENTION_ORDER_STATUSES.has(order.status) || order.requiresStaffSupport
         ? "destructive"
         : order.status === "Completed"
           ? "success"
-          : order.status
-            ? "primary"
-            : "muted",
+          : "primary",
     });
   }
 
@@ -595,10 +602,6 @@ function qualityMessages(sources: ReportsSourceBundle): string[] {
       return `${labels[key]}: ${coverage.message ?? coverageLabel(coverage)}.`;
     });
 
-  if (sources.orders.items.some((order) => !order.status || !order.paymentStatus)) {
-    messages.push("Đơn hàng: backend management chưa cung cấp đầy đủ trạng thái đơn hàng/thanh toán; các thống kê theo trạng thái tạm thời không khả dụng.");
-  }
-
   return messages;
 }
 
@@ -635,11 +638,9 @@ export function buildReportsSnapshot(
   const scopedMovements = sources.movements.items.filter(
     (item) => filters.kioskId === "ALL" || item.kioskId === filters.kioskId,
   );
-  const ordersWithStatus = scopedOrders.filter(
-    (order): order is OrderResult & { status: NonNullable<OrderResult["status"]> } => Boolean(order.status),
-  );
+  const ordersWithStatus = scopedOrders;
   const attentionOrders = scopedOrders.filter(
-    (order) => (order.status ? ATTENTION_ORDER_STATUSES.has(order.status) : false) || order.requiresStaffSupport,
+    (order) => ATTENTION_ORDER_STATUSES.has(order.status) || order.requiresStaffSupport,
   );
   const completedOrders = ordersWithStatus.filter((order) => order.status === "Completed");
 
@@ -751,7 +752,7 @@ export function buildReportsSnapshot(
       orders: sourceAvailable(sources.orders.coverage),
       orderStatuses:
         sourceAvailable(sources.orders.coverage) &&
-        scopedOrders.every((order) => Boolean(order.status && order.paymentStatus)),
+        sourceAvailable(sources.orders.coverage),
       kiosks: sourceAvailable(sources.kiosks.coverage),
       activity: [
         sources.orders.coverage,

@@ -19,6 +19,7 @@ import {
   cancelManagementRefund,
 } from "@/lib/services/transactions";
 import type {
+  ManagementOrderListItemResult,
   OrderResult,
   OrderStatusFilter,
   OrderStatusHistoryResult,
@@ -72,7 +73,7 @@ interface TransactionsCollectionState<T> {
 }
 
 export interface UseTransactionsResult {
-  orders: TransactionsCollectionState<OrderResult>;
+  orders: TransactionsCollectionState<ManagementOrderListItemResult>;
   refunds: TransactionsCollectionState<RefundResult>;
   statusHistory: TransactionsCollectionState<OrderStatusHistoryResult>;
   filters: TransactionsFilters;
@@ -87,7 +88,7 @@ export interface UseTransactionsResult {
   isRefundDetailOpen: boolean;
   isRefundDetailLoading: boolean;
   refundDetailErrorMessage: string | null;
-  orderPendingAction: OrderResult | null;
+  orderPendingAction: ManagementOrderListItemResult | null;
   actionReason: string;
   actionErrorMessage: string | null;
   actionSuccessMessage: string | null;
@@ -111,8 +112,8 @@ export interface UseTransactionsResult {
   openRefundDetail: (refundId: string) => Promise<void>;
   setDetailOpen: (open: boolean) => void;
   setRefundDetailOpen: (open: boolean) => void;
-  requestCancelOrder: (order: OrderResult) => void;
-  requestRefundRequired: (order: OrderResult) => void;
+  requestCancelOrder: (order: ManagementOrderListItemResult) => void;
+  requestRefundRequired: (order: ManagementOrderListItemResult) => void;
   setActionReason: (value: string) => void;
   setCancelOpen: (open: boolean) => void;
   setRefundRequiredOpen: (open: boolean) => void;
@@ -143,7 +144,7 @@ export function useTransactions(): UseTransactionsResult {
     null,
   );
   const [orderPendingAction, setOrderPendingAction] =
-    useState<OrderResult | null>(null);
+    useState<ManagementOrderListItemResult | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isDetailLoading, setIsDetailLoading] = useState(false);
   const [isRefundDetailOpen, setIsRefundDetailOpen] = useState(false);
@@ -165,7 +166,7 @@ export function useTransactions(): UseTransactionsResult {
     string | null
   >(null);
   const [orders, setOrders] = useState<
-    TransactionsCollectionState<OrderResult>
+    TransactionsCollectionState<ManagementOrderListItemResult>
   >({
     data: [],
     pagination: emptyPagination(1, ORDERS_PAGE_SIZE),
@@ -539,14 +540,14 @@ export function useTransactions(): UseTransactionsResult {
     setActionErrorMessage(null);
   }, []);
 
-  const requestCancelOrder = useCallback((order: OrderResult) => {
+  const requestCancelOrder = useCallback((order: ManagementOrderListItemResult) => {
     setOrderPendingAction(order);
     setActionReason("");
     setActionErrorMessage(null);
     setIsCancelOpen(true);
   }, []);
 
-  const requestRefundRequired = useCallback((order: OrderResult) => {
+  const requestRefundRequired = useCallback((order: ManagementOrderListItemResult) => {
     setOrderPendingAction(order);
     setActionReason("");
     setActionErrorMessage(null);

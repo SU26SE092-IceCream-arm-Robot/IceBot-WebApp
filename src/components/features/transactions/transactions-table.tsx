@@ -11,7 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type {
-  OrderResult,
+  ManagementOrderListItemResult,
   OrderStatus,
   PaymentStatus,
 } from "@/types/transactions";
@@ -97,11 +97,7 @@ export function formatTransactionDate(value: string | null | undefined): string 
   }).format(date);
 }
 
-export function OrderStatusBadge({ status }: { status?: OrderStatus }) {
-  if (!status) {
-    return <Badge variant="outline" className="h-6 rounded-full px-2.5 text-muted-foreground">Không khả dụng</Badge>;
-  }
-
+export function OrderStatusBadge({ status }: { status: OrderStatus }) {
   return (
     <Badge
       variant="outline"
@@ -112,11 +108,7 @@ export function OrderStatusBadge({ status }: { status?: OrderStatus }) {
   );
 }
 
-export function PaymentStatusBadge({ status }: { status?: PaymentStatus }) {
-  if (!status) {
-    return <Badge variant="outline" className="h-6 rounded-full px-2.5 text-muted-foreground">Không khả dụng</Badge>;
-  }
-
+export function PaymentStatusBadge({ status }: { status: PaymentStatus }) {
   return (
     <Badge
       variant="outline"
@@ -128,10 +120,10 @@ export function PaymentStatusBadge({ status }: { status?: PaymentStatus }) {
 }
 
 interface TransactionsTableProps {
-  orders: OrderResult[];
+  orders: ManagementOrderListItemResult[];
   canManageOrders: boolean;
-  onCancelOrder: (order: OrderResult) => void;
-  onMarkRefundRequired: (order: OrderResult) => void;
+  onCancelOrder: (order: ManagementOrderListItemResult) => void;
+  onMarkRefundRequired: (order: ManagementOrderListItemResult) => void;
   onViewDetail: (orderId: string) => void;
 }
 
@@ -219,7 +211,6 @@ export function TransactionsTable({
                   <Eye className="size-4" />
                 </Button>
                 {canManageOrders &&
-                order.status &&
                 order.paymentStatus === "Paid" &&
                 order.status !== "Completed" &&
                 order.status !== "Cancelled" &&
@@ -237,8 +228,6 @@ export function TransactionsTable({
                   </Button>
                 ) : null}
                 {canManageOrders &&
-                order.status &&
-                order.paymentStatus &&
                 order.paymentStatus !== "Paid" &&
                 order.status !== "Completed" &&
                 order.status !== "Cancelled" ? (

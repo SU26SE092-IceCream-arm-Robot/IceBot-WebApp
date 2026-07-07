@@ -2,7 +2,10 @@ import type { DispenserStateResult, StockMovementResult } from "@/types/inventor
 import type { KioskResult, StoreResult } from "@/types/kiosk-management";
 import type { MaintenanceTicketResult } from "@/types/maintenance";
 import type { MenuResult, ProductResult } from "@/types/menu-management";
-import type { OrderResult, RefundResult } from "@/types/transactions";
+import type {
+  ManagementOrderListItemResult,
+  RefundResult,
+} from "@/types/transactions";
 
 export type ReportsRangeDays = 7 | 30 | 90;
 
@@ -30,7 +33,7 @@ export interface ReportsSourceState<T> {
 export interface ReportsSourceBundle {
   stores: ReportsSourceState<StoreResult>;
   kiosks: ReportsSourceState<KioskResult>;
-  orders: ReportsSourceState<OrderResult>;
+  orders: ReportsSourceState<ManagementOrderListItemResult>;
   refunds: ReportsSourceState<RefundResult>;
   products: ReportsSourceState<ProductResult>;
   menus: ReportsSourceState<MenuResult>;

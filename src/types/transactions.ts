@@ -69,46 +69,53 @@ export interface OrderItemResult {
   productVariantCode: string;
   productVariantName: string;
   recipeVersion?: number | null;
-  menuItemCodeSnapshot?: string;
-  menuItemNameSnapshot?: string;
-  productCodeSnapshot?: string;
-  productNameSnapshot?: string;
-  productVariantCodeSnapshot?: string;
-  productVariantNameSnapshot?: string;
-  recipeVersionSnapshot?: number | null;
   quantity: number;
   unitPrice: number;
   discountAmount: number;
   totalAmount: number;
-  status?: OrderItemStatus;
+  status: OrderItemStatus;
+  selectedOptions: OrderItemOptionResult[];
 }
 
-export interface OrderResult {
+export interface OrderItemOptionResult {
+  productOptionId: string;
+  optionGroupCode: string;
+  code: string;
+  name: string;
+  priceDelta: number;
+}
+
+export interface ManagementOrderListItemResult {
   id: string;
   kioskId: string;
   storeId?: string | null;
   organizationId?: string | null;
   orderNumber: string;
   clientOrderId?: string | null;
-  runtimeSnapshotId?: string | null;
-  runtimeSnapshotGeneratedAt?: string | null;
-  channel?: OrderChannel;
-  status?: OrderStatus;
-  paymentStatus?: PaymentStatus;
+  status: OrderStatus;
+  paymentStatus: PaymentStatus;
   currency: string;
-  subtotalAmount: number;
-  discountAmount: number;
-  taxAmount: number;
   totalAmount: number;
   paidAmount: number;
+  customerName?: string | null;
+  customerPhoneNumber?: string | null;
   placedAt: string;
   paidAt?: string | null;
   completedAt?: string | null;
   cancelledAt?: string | null;
   customerStatus: string;
-  customerStatusMessage: string;
   canRetryPayment: boolean;
   requiresStaffSupport: boolean;
+}
+
+export interface OrderResult extends ManagementOrderListItemResult {
+  channel: OrderChannel;
+  externalChannel?: string | null;
+  subtotalAmount: number;
+  discountAmount: number;
+  taxAmount: number;
+  notes?: string | null;
+  customerStatusMessage: string;
   items: OrderItemResult[];
 }
 

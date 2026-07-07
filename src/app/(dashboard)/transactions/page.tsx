@@ -230,10 +230,6 @@ export default function TransactionsPage() {
   } = useTransactions();
   const canManageOrders =
     currentUser?.role === "ADMIN" || currentUser?.role === "MANAGER";
-  const hasCompleteOrderStatuses = orders.data.every(
-    (order) => Boolean(order.status && order.paymentStatus),
-  );
-
   return (
     <div className="space-y-7">
       {actionSuccessMessage ? (
@@ -284,7 +280,7 @@ export default function TransactionsPage() {
           label={activeTab === "orders" ? "Đã thanh toán" : "Đã xử lý"}
           value={
             activeTab === "orders"
-              ? hasCompleteOrderStatuses ? summary.paidOnPage : "Không khả dụng"
+              ? summary.paidOnPage
               : refundsSummary.processedOnPage
           }
           tone="success"
@@ -294,7 +290,7 @@ export default function TransactionsPage() {
           label={activeTab === "orders" ? "Cần hoàn tiền" : "Đã yêu cầu"}
           value={
             activeTab === "orders"
-              ? hasCompleteOrderStatuses ? summary.refundRequiredOnPage : "Không khả dụng"
+              ? summary.refundRequiredOnPage
               : refundsSummary.requestedOnPage
           }
           tone="warning"
@@ -304,7 +300,7 @@ export default function TransactionsPage() {
           label={activeTab === "orders" ? "Thất bại / hủy" : "Lỗi / từ chối"}
           value={
             activeTab === "orders"
-              ? hasCompleteOrderStatuses ? summary.failedOrCancelledOnPage : "Không khả dụng"
+              ? summary.failedOrCancelledOnPage
               : refundsSummary.failedOrRejectedOnPage
           }
           tone="destructive"
