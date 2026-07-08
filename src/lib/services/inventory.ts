@@ -8,6 +8,7 @@ import type {
   DispenserStateResult,
   InventoryPagedResult,
   InventoryQuery,
+  KioskInventoryTopologyResult,
   RefillDispenserRequest,
   StockMovementResult,
 } from "@/types/inventory-management";
@@ -112,6 +113,23 @@ export async function listDispenserHistory(
   return requirePagedData(
     response.data,
     "Không thể tải lịch sử bộ phân phối.",
+  );
+}
+
+export async function getKioskInventoryTopology(
+  kioskId: string,
+  signal?: AbortSignal,
+): Promise<KioskInventoryTopologyResult> {
+  const response = await axiosClient.get<
+    ApiResult<KioskInventoryTopologyResult>
+  >(
+    `/api/v1/management/kiosks/${encodeURIComponent(kioskId)}/inventory/topology`,
+    { signal },
+  );
+
+  return requireData(
+    response.data,
+    "Không thể tải chẩn đoán cấu hình tồn kho của kiosk.",
   );
 }
 

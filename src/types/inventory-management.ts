@@ -75,6 +75,51 @@ export interface DispenserHistoryResult {
   occurredAt: string;
 }
 
+export type InventoryTopologyWarning =
+  | "DeviceInactive"
+  | "DeviceUnavailable"
+  | "ContainerInactive"
+  | "IngredientInactive"
+  | string;
+
+export interface InventoryTopologyContainerResult {
+  dispenserStateId: string;
+  containerCode: string;
+  ingredientId: string;
+  ingredientCode: string;
+  ingredientName: string;
+  currentLevelStatus: IngredientLevelStatus;
+  estimatedQuantity?: number | null;
+  capacityQuantity?: number | null;
+  unit: string;
+  isActive: boolean;
+  ingredientIsActive: boolean;
+  warnings: InventoryTopologyWarning[];
+}
+
+export interface InventoryTopologyDeviceResult {
+  deviceId: string;
+  code: string;
+  name: string;
+  status: string;
+  deviceTypeId: number;
+  deviceTypeCode: string;
+  deviceModelId?: string | null;
+  deviceModelCode?: string | null;
+  capabilities: string[];
+  canHostDispenser: boolean;
+  hasConfiguredContainers: boolean;
+  warnings: InventoryTopologyWarning[];
+  containers: InventoryTopologyContainerResult[];
+}
+
+export interface KioskInventoryTopologyResult {
+  kioskId: string;
+  kioskCode: string;
+  kioskName: string;
+  devices: InventoryTopologyDeviceResult[];
+}
+
 export interface InventoryQuery {
   organizationId?: string;
   storeId?: string;

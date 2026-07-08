@@ -26,6 +26,7 @@ import {
   InventoryTable,
   StockMovementsTable,
 } from "@/components/features/inventory/inventory-table";
+import { InventoryTopologyPanel } from "@/components/features/inventory/inventory-topology-panel";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -460,6 +461,10 @@ export default function InventoryPage() {
           </Button>
         </CardContent>
       </Card>
+
+      <InventoryTopologyPanel
+        kioskId={filters.kioskId === "ALL" ? null : filters.kioskId}
+      />
 
       <Card className="gap-0 rounded-xl border border-border/80 bg-card py-0 shadow-none">
         <CardHeader className="border-b border-border px-4 py-4">
