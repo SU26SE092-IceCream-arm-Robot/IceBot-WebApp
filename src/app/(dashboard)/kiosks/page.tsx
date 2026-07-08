@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import {
   AlertTriangle,
   Ban,
+  Cpu,
   Monitor,
   RefreshCw,
   Search,
@@ -12,6 +14,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
+import { DeviceCatalogDialog } from "@/components/features/kiosks/device-catalog-dialog";
 import { KioskCard } from "@/components/features/kiosks/kiosk-card";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -108,6 +111,7 @@ function StatusLegend({
 }
 
 export default function KiosksPage() {
+  const [isDeviceCatalogOpen, setIsDeviceCatalogOpen] = useState(false);
   const {
     kiosks,
     summary,
@@ -126,7 +130,7 @@ export default function KiosksPage() {
 
   return (
     <div className="space-y-7">
-      <section className="border-b border-border pb-6">
+      <section className="flex flex-col gap-4 border-b border-border pb-6 sm:flex-row sm:items-end sm:justify-between">
         <div className="max-w-2xl space-y-3">
           <div className="space-y-2">
             <h1 className="text-3xl font-semibold tracking-tight text-foreground">Giám sát Kiosk</h1>
@@ -135,6 +139,14 @@ export default function KiosksPage() {
             </p>
           </div>
         </div>
+        <Button
+          variant="outline"
+          className="w-fit"
+          onClick={() => setIsDeviceCatalogOpen(true)}
+        >
+          <Cpu className="size-4" />
+          Danh mục thiết bị
+        </Button>
       </section>
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
@@ -331,6 +343,11 @@ export default function KiosksPage() {
           </div>
         )}
       </section>
+
+      <DeviceCatalogDialog
+        open={isDeviceCatalogOpen}
+        onOpenChange={setIsDeviceCatalogOpen}
+      />
     </div>
   );
 }
