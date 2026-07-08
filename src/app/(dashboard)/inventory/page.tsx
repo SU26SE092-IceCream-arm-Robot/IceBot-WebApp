@@ -14,8 +14,11 @@ import {
   SlidersHorizontal,
   TriangleAlert,
   Warehouse,
+  FlaskConical,
   type LucideIcon,
 } from "lucide-react";
+
+import { IngredientCatalogDialog } from "@/components/features/inventory/ingredient-catalog-dialog";
 
 import {
   InventoryDetailDialog,
@@ -232,6 +235,7 @@ function PaginationFooter({
 }
 
 export default function InventoryPage() {
+  const [isIngredientCatalogOpen, setIsIngredientCatalogOpen] = useState(false);
   const [historyDispenser, setHistoryDispenser] =
     useState<DispenserStateResult | null>(null);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
@@ -299,15 +303,25 @@ export default function InventoryPage() {
             động theo phạm vi được cấp.
           </p>
         </div>
-        <Button
-          variant="outline"
-          className="h-10 w-fit"
-          isLoading={isRefreshing}
-          onClick={() => void refresh()}
-        >
-          <RefreshCw className="size-4" />
-          Làm mới
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            className="h-10"
+            onClick={() => setIsIngredientCatalogOpen(true)}
+          >
+            <FlaskConical className="size-4" />
+            Danh mục nguyên liệu
+          </Button>
+          <Button
+            variant="outline"
+            className="h-10"
+            isLoading={isRefreshing}
+            onClick={() => void refresh()}
+          >
+            <RefreshCw className="size-4" />
+            Làm mới
+          </Button>
+        </div>
       </section>
 
       {lookupWarning ? (
@@ -576,6 +590,11 @@ export default function InventoryPage() {
         dispenser={selectedDispenser}
         open={isDetailOpen}
         onOpenChange={setDetailOpen}
+      />
+
+      <IngredientCatalogDialog
+        open={isIngredientCatalogOpen}
+        onOpenChange={setIsIngredientCatalogOpen}
       />
 
       <InventoryHistoryDialog
