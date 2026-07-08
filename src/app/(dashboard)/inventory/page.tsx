@@ -420,7 +420,7 @@ export default function InventoryPage() {
               <SelectItem value="ALL">Tất cả cửa hàng</SelectItem>
               {stores.map((store) => (
                 <SelectItem key={store.id} value={store.id}>
-                  {store.name} ({store.code})
+                  {store.name}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -445,7 +445,7 @@ export default function InventoryPage() {
               <SelectItem value="ALL">Tất cả kiosk</SelectItem>
               {availableKiosks.map((kiosk) => (
                 <SelectItem key={kiosk.id} value={kiosk.id}>
-                  {kiosk.name} ({kiosk.code})
+                  {kiosk.name}
                 </SelectItem>
               ))}
             </SelectContent>

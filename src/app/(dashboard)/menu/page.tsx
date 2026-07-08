@@ -492,7 +492,7 @@ export default function MenuPage() {
               <SelectValue placeholder={isOrganizationLoading ? "Đang tải tổ chức..." : "Chọn tổ chức"}>
                 {selectedOrganization
                   ? selectedOrganization.name
-                    ? `${selectedOrganization.name} (${selectedOrganization.code})`
+                    ? selectedOrganization.name
                     : selectedOrganization.id
                   : null}
               </SelectValue>
@@ -501,7 +501,7 @@ export default function MenuPage() {
               {organizations.map((organization) => (
                 <SelectItem key={organization.id} value={organization.id}>
                   {organization.name
-                    ? `${organization.name} (${organization.code})`
+                    ? organization.name
                     : organization.id}
                 </SelectItem>
               ))}
