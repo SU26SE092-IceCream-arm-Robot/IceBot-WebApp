@@ -4,10 +4,14 @@ import { useState, type FormEvent } from "react";
 import {
   AlertCircle,
   Boxes,
+  ChevronLeft,
+  ChevronRight,
   Cpu,
+  History,
   MapPin,
   PackageOpen,
   PackagePlus,
+  RefreshCw,
   SlidersHorizontal,
 } from "lucide-react";
 
@@ -36,8 +40,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useDispenserHistory } from "@/hooks/use-dispenser-history";
 import type {
   AdjustDispenserEstimateRequest,
+  DispenserHistoryResult,
   DispenserStateResult,
   IngredientLevelStatus,
   InventoryMutationKind,
@@ -61,6 +67,141 @@ function DetailField({
       >
         {value}
       </p>
+    </div>
+  );
+}
+
+function formatOptionalQuantity(
+  value: number | null | undefined,
+  unit: string | null | undefined,
+): string {
+  return formatInventoryQuantity(value, unit?.trim() || "gram");
+}
+
+const EVENT_KIND_LABELS: Record<string, string> = {
+  StockMovement: "Biến động tồn kho",
+  TopologyChange: "Cấu hình bộ phân phối",
+  TopologyRebind: "Chuyển liên kết",
+};
+
+const ACTION_LABELS: Record<string, string> = {
+  Refill: "Refill",
+  Consume: "Tiêu thụ",
+  AdjustEstimate: "Điều chỉnh ước tính",
+  TransferIn: "Chuyển vào",
+  TransferOut: "Chuyển ra",
+  Created: "Tạo cấu hình",
+  Updated: "Cập nhật cấu hình",
+  Retired: "Ngừng sử dụng",
+  Deleted: "Xóa cấu hình",
+  ReboundIn: "Nhận chuyển liên kết",
+  ReboundOut: "Chuyển liên kết đi",
+};
+
+function getEventKindLabel(kind: string): string {
+  return EVENT_KIND_LABELS[kind] ?? kind;
+}
+
+function getActionLabel(action: string): string {
+  return ACTION_LABELS[action] ?? action;
+}
+
+function formatActor(event: DispenserHistoryResult): string {
+  if (event.actorName?.trim()) {
+    return event.actorEmail?.trim()
+      ? `${event.actorName} · ${event.actorEmail}`
+      : event.actorName;
+  }
+
+  if (event.actorEmail?.trim()) {
+    return event.actorEmail;
+  }
+
+  if (event.actorType === "ExecutionEndpoint") {
+    return "Edge/robot runtime";
+  }
+
+  if (event.actorType === "Account") {
+    return "Tài khoản hệ thống";
+  }
+
+  return "Hệ thống";
+}
+
+function formatActiveTransition(event: DispenserHistoryResult): string | null {
+  if (event.activeBefore == null && event.activeAfter == null) {
+    return null;
+  }
+
+  const formatValue = (value: boolean | null | undefined) => {
+    if (value === true) return "Đang hoạt động";
+    if (value === false) return "Tạm ngưng";
+    return "Chưa có";
+  };
+
+  return `${formatValue(event.activeBefore)} → ${formatValue(event.activeAfter)}`;
+}
+
+function DispenserHistoryItem({ event }: { event: DispenserHistoryResult }) {
+  const activeTransition = formatActiveTransition(event);
+
+  return (
+    <div className="rounded-xl border border-border bg-card p-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0 space-y-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="outline" className="bg-muted/20">
+              {getEventKindLabel(event.eventKind)}
+            </Badge>
+            <Badge variant="outline" className="bg-background font-mono text-xs">
+              {getActionLabel(event.action)}
+            </Badge>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            {formatInventoryDate(event.occurredAt)}
+          </p>
+        </div>
+        <p className="max-w-full break-words text-sm text-muted-foreground sm:max-w-64 sm:text-right">
+          {formatActor(event)}
+        </p>
+      </div>
+
+      <div className="mt-4 grid gap-2 sm:grid-cols-2">
+        {event.quantityDelta !== null && event.quantityDelta !== undefined ? (
+          <DetailField
+            label="Số lượng thay đổi"
+            value={formatOptionalQuantity(event.quantityDelta, event.unit)}
+            mono
+          />
+        ) : null}
+        {event.quantityBefore != null || event.quantityAfter != null ? (
+          <DetailField
+            label="Tồn trước / sau"
+            value={`${formatOptionalQuantity(event.quantityBefore, event.unit)} → ${formatOptionalQuantity(event.quantityAfter, event.unit)}`}
+            mono
+          />
+        ) : null}
+        {event.capacityBefore != null || event.capacityAfter != null ? (
+          <DetailField
+            label="Sức chứa trước / sau"
+            value={`${formatOptionalQuantity(event.capacityBefore, event.unit)} → ${formatOptionalQuantity(event.capacityAfter, event.unit)}`}
+            mono
+          />
+        ) : null}
+        {activeTransition ? (
+          <DetailField label="Trạng thái hoạt động" value={activeTransition} />
+        ) : null}
+        {event.reason?.trim() ? (
+          <DetailField label="Lý do" value={event.reason} />
+        ) : null}
+        {event.relatedDispenserStateId ? (
+          <DetailField
+            label="Bộ phân phối liên quan"
+            value={event.relatedDispenserStateId}
+            mono
+          />
+        ) : null}
+      </div>
     </div>
   );
 }
@@ -206,6 +347,139 @@ export function InventoryDetailDialog({
             Không có dữ liệu tồn kho để hiển thị.
           </p>
         )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+interface InventoryHistoryDialogProps {
+  dispenser: DispenserStateResult | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+export function InventoryHistoryDialog({
+  dispenser,
+  open,
+  onOpenChange,
+}: InventoryHistoryDialogProps) {
+  const history = useDispenserHistory(dispenser?.id, open);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-3xl">
+        <DialogHeader>
+          <div className="flex items-start gap-3 pr-8">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-warning/20 bg-warning/10 text-warning">
+              <History className="size-5" />
+            </span>
+            <div className="space-y-1">
+              <DialogTitle>Lịch sử bộ phân phối</DialogTitle>
+              <DialogDescription>
+                {dispenser
+                  ? `${dispenser.ingredientName} · ${dispenser.containerCode}`
+                  : "Theo dõi các biến động và thay đổi cấu hình."}
+              </DialogDescription>
+            </div>
+          </div>
+        </DialogHeader>
+
+        {!dispenser ? (
+          <p className="py-8 text-center text-sm text-muted-foreground">
+            Chưa chọn bộ phân phối để xem lịch sử.
+          </p>
+        ) : history.isLoading ? (
+          <div className="space-y-3 py-2">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <div
+                key={`history-loading-${index}`}
+                className="rounded-xl border border-border bg-card p-4"
+              >
+                <div className="h-4 w-48 animate-pulse rounded bg-muted/60" />
+                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                  <div className="h-14 animate-pulse rounded-lg bg-muted/40" />
+                  <div className="h-14 animate-pulse rounded-lg bg-muted/40" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : history.errorMessage ? (
+          <div
+            role="alert"
+            className="flex flex-col items-center gap-4 rounded-xl border border-destructive/20 bg-destructive/5 px-6 py-10 text-center text-destructive"
+          >
+            <AlertCircle className="size-6" />
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Không thể tải lịch sử</p>
+              <p className="max-w-lg text-sm text-destructive/80">
+                {history.errorMessage}
+              </p>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => void history.refresh()}>
+              <RefreshCw className="size-4" />
+              Thử lại
+            </Button>
+          </div>
+        ) : history.data.length === 0 ? (
+          <div className="flex flex-col items-center justify-center rounded-xl border border-border bg-muted/10 px-6 py-12 text-center">
+            <History className="mb-3 size-6 text-muted-foreground" />
+            <p className="text-sm font-medium text-foreground">
+              Chưa có lịch sử biến động
+            </p>
+            <p className="mt-1 max-w-md text-sm text-muted-foreground">
+              Bộ phân phối này chưa ghi nhận refill, điều chỉnh, tiêu thụ hoặc
+              thay đổi cấu hình.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {history.data.map((event) => (
+              <DispenserHistoryItem key={event.eventId} event={event} />
+            ))}
+          </div>
+        )}
+
+        {dispenser ? (
+          <DialogFooter className="flex flex-col gap-3 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-muted-foreground">
+              Trang{" "}
+              <span className="font-medium tabular-nums text-foreground">
+                {history.pagination.page}
+              </span>{" "}
+              /{" "}
+              <span className="font-medium tabular-nums text-foreground">
+                {Math.max(history.pagination.totalPages, 1)}
+              </span>
+              {" · "}
+              <span className="font-medium tabular-nums text-foreground">
+                {history.pagination.totalCount}
+              </span>{" "}
+              bản ghi
+            </p>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={!history.pagination.hasPrevious || history.isLoading}
+                onClick={history.previousPage}
+              >
+                <ChevronLeft className="size-4" />
+                Trước
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={!history.pagination.hasNext || history.isLoading}
+                onClick={history.nextPage}
+              >
+                Sau
+                <ChevronRight className="size-4" />
+              </Button>
+            </div>
+          </DialogFooter>
+        ) : null}
       </DialogContent>
     </Dialog>
   );

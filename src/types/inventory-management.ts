@@ -52,6 +52,29 @@ export interface StockMovementResult {
   occurredAt: string;
 }
 
+export interface DispenserHistoryResult {
+  eventId: string;
+  eventKind: string;
+  action: string;
+  dispenserStateId: string;
+  relatedDispenserStateId?: string | null;
+  reason?: string | null;
+  quantityDelta?: number | null;
+  quantityBefore?: number | null;
+  quantityAfter?: number | null;
+  capacityBefore?: number | null;
+  capacityAfter?: number | null;
+  activeBefore?: boolean | null;
+  activeAfter?: boolean | null;
+  unit?: string | null;
+  actorAccountId?: string | null;
+  actorType: string;
+  actorReferenceId?: string | null;
+  actorName?: string | null;
+  actorEmail?: string | null;
+  occurredAt: string;
+}
+
 export interface InventoryQuery {
   organizationId?: string;
   storeId?: string;

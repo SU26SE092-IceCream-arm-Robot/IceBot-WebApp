@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   AlertTriangle,
   Boxes,
@@ -18,6 +19,7 @@ import {
 
 import {
   InventoryDetailDialog,
+  InventoryHistoryDialog,
   InventoryMutationDialog,
 } from "@/components/features/inventory/inventory-dialog";
 import {
@@ -40,7 +42,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useInventory } from "@/hooks/use-inventory";
-import type { InventoryStatusFilter } from "@/types/inventory-management";
+import type {
+  DispenserStateResult,
+  InventoryStatusFilter,
+} from "@/types/inventory-management";
 
 const STATUS_OPTIONS: {
   value: InventoryStatusFilter;
@@ -226,6 +231,9 @@ function PaginationFooter({
 }
 
 export default function InventoryPage() {
+  const [historyDispenser, setHistoryDispenser] =
+    useState<DispenserStateResult | null>(null);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const {
     dispensers,
     visibleDispensers,
@@ -261,6 +269,18 @@ export default function InventoryPage() {
     submitAdjustment,
     refresh,
   } = useInventory();
+
+  const openDispenserHistory = (dispenser: DispenserStateResult) => {
+    setHistoryDispenser(dispenser);
+    setIsHistoryOpen(true);
+  };
+
+  const setHistoryOpen = (open: boolean) => {
+    setIsHistoryOpen(open);
+    if (!open) {
+      setHistoryDispenser(null);
+    }
+  };
 
   const hasClientFilters =
     filters.ingredientSearch.trim().length > 0 || filters.status !== "ALL";
@@ -487,6 +507,7 @@ export default function InventoryPage() {
           <InventoryTable
             dispensers={visibleDispensers}
             onViewDetail={openDispenserDetail}
+            onViewHistory={openDispenserHistory}
             onRefill={openRefillDialog}
             onAdjustEstimate={openAdjustDialog}
           />
@@ -550,6 +571,13 @@ export default function InventoryPage() {
         dispenser={selectedDispenser}
         open={isDetailOpen}
         onOpenChange={setDetailOpen}
+      />
+
+      <InventoryHistoryDialog
+        key={historyDispenser?.id ?? "inventory-history"}
+        dispenser={historyDispenser}
+        open={isHistoryOpen}
+        onOpenChange={setHistoryOpen}
       />
 
       {mutationDispenser && mutationKind ? (

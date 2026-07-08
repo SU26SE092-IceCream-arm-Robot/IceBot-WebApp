@@ -4,6 +4,7 @@ import axiosClient from "@/lib/axios-client";
 import type { ApiResult } from "@/types";
 import type {
   AdjustDispenserEstimateRequest,
+  DispenserHistoryResult,
   DispenserStateResult,
   InventoryPagedResult,
   InventoryQuery,
@@ -87,6 +88,30 @@ export async function listStockMovements(
   return requirePagedData(
     response.data,
     "Không thể tải lịch sử biến động tồn kho.",
+  );
+}
+
+export async function listDispenserHistory(
+  dispenserStateId: string,
+  query: Pick<InventoryQuery, "pageNumber" | "pageSize">,
+  signal?: AbortSignal,
+): Promise<InventoryPagedResult<DispenserHistoryResult>> {
+  const response = await axiosClient.get<
+    InventoryPagedResult<DispenserHistoryResult>
+  >(
+    `/api/v1/management/inventory/dispenser-states/${encodeURIComponent(dispenserStateId)}/history`,
+    {
+      params: {
+        pageNumber: query.pageNumber,
+        pageSize: query.pageSize,
+      },
+      signal,
+    },
+  );
+
+  return requirePagedData(
+    response.data,
+    "Không thể tải lịch sử bộ phân phối.",
   );
 }
 

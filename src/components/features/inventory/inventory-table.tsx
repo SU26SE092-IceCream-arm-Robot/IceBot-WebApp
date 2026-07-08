@@ -1,4 +1,4 @@
-import { Eye, PackagePlus, SlidersHorizontal } from "lucide-react";
+import { Eye, History, PackagePlus, SlidersHorizontal } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -144,6 +144,7 @@ function InventoryProgress({ state }: { state: DispenserStateResult }) {
 interface InventoryTableProps {
   dispensers: DispenserStateResult[];
   onViewDetail: (dispenser: DispenserStateResult) => void;
+  onViewHistory: (dispenser: DispenserStateResult) => void;
   onRefill: (dispenser: DispenserStateResult) => void;
   onAdjustEstimate: (dispenser: DispenserStateResult) => void;
 }
@@ -151,6 +152,7 @@ interface InventoryTableProps {
 export function InventoryTable({
   dispensers,
   onViewDetail,
+  onViewHistory,
   onRefill,
   onAdjustEstimate,
 }: InventoryTableProps) {
@@ -253,6 +255,17 @@ export function InventoryTable({
                   onClick={() => onAdjustEstimate(dispenser)}
                 >
                   <SlidersHorizontal className="size-4" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  className="rounded-lg text-warning hover:bg-warning/10 hover:text-warning"
+                  title={`Xem lịch sử ${dispenser.ingredientName}`}
+                  aria-label={`Xem lịch sử ${dispenser.ingredientName}`}
+                  onClick={() => onViewHistory(dispenser)}
+                >
+                  <History className="size-4" />
                 </Button>
                 <Button
                   type="button"
