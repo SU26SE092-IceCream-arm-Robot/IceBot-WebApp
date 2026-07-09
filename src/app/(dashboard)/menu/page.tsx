@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 
 import {
   AlertTriangle,
@@ -16,6 +16,7 @@ import {
   RefreshCw,
   Search,
   ShoppingBasket,
+  SlidersHorizontal,
   type LucideIcon,
 } from "lucide-react";
 
@@ -34,6 +35,7 @@ import {
   ProductFormDialog,
   VariantFormDialog,
 } from "@/components/features/menu/product-crud-dialogs";
+import { ProductOptionsCatalogDialog } from "@/components/features/menu/product-options-catalog-dialog";
 import { ProductTemplatesDialog } from "@/components/features/menu/product-templates-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -56,6 +58,7 @@ import {
   useProductCrud,
   type ProductCrudChange,
 } from "@/hooks/use-product-crud";
+import { useProductOptionsCatalog } from "@/hooks/use-product-options-catalog";
 import { useProductTemplates } from "@/hooks/use-product-templates";
 import {
   MenuDeleteDialog,
@@ -302,6 +305,7 @@ function ProductsPanel({
 }
 
 export default function MenuPage() {
+  const [isProductOptionsOpen, setProductOptionsOpen] = useState(false);
   const { currentUser } = useAuth();
   const {
     organizations,
@@ -444,6 +448,10 @@ export default function MenuPage() {
       await refresh();
     },
   });
+  const productOptions = useProductOptionsCatalog({
+    open: isProductOptionsOpen,
+    organizationId: selectedOrganizationId,
+  });
   const isActionSubmitting =
     productActionId !== null ||
     variantActionId !== null ||
@@ -464,6 +472,7 @@ export default function MenuPage() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" className="h-10" onClick={() => void refresh()} isLoading={menus.isLoading || products.isLoading}><RefreshCw className="size-4" />Làm mới</Button>
+          <Button variant="outline" className="h-10" disabled={!selectedOrganizationId} onClick={() => setProductOptionsOpen(true)}><SlidersHorizontal className="size-4" />Tuỳ chọn</Button>
           {canManage ? <Button variant="outline" className="h-10" disabled={!selectedOrganizationId} onClick={() => productTemplates.setOpen(true)}><LayoutTemplate className="size-4" />Tạo từ mẫu</Button> : null}
           {canManage ? <Button variant="outline" className="h-10" disabled={!selectedOrganizationId} onClick={() => openMenuForm()}><Plus className="size-4" />Tạo thực đơn</Button> : null}
           {canManage ? <Button className="h-10" disabled={!selectedOrganizationId} onClick={openProductCreate}><Plus className="size-4" />Tạo sản phẩm</Button> : null}
@@ -647,6 +656,22 @@ export default function MenuPage() {
         onNextPage={productTemplates.nextPage}
         onRetry={productTemplates.retry}
         onClone={(template) => void productTemplates.cloneTemplate(template)}
+      />
+
+      <ProductOptionsCatalogDialog
+        open={isProductOptionsOpen}
+        organizationName={selectedOrganization?.name || selectedOrganization?.code || selectedOrganizationId || "đã chọn"}
+        searchTerm={productOptions.searchTerm}
+        optionGroups={productOptions.optionGroups}
+        productsCount={productOptions.products.length}
+        pagination={productOptions.pagination}
+        isLoading={productOptions.isLoading}
+        errorMessage={productOptions.errorMessage}
+        onOpenChange={setProductOptionsOpen}
+        onSearchTermChange={productOptions.setSearchTerm}
+        onPreviousPage={productOptions.previousPage}
+        onNextPage={productOptions.nextPage}
+        onRetry={productOptions.retry}
       />
 
       {productFormOpen ? (

@@ -8,6 +8,36 @@ export type MenuItemStatus = "Draft" | "Active" | "Unavailable" | "Archived";
 
 export type FulfillmentType = "Manual" | "Packaged" | "MachineProduced";
 
+export type OptionSelectionType = "Single" | "Multiple";
+
+export interface ProductOptionResult {
+  id: string;
+  optionGroupId: number;
+  code: string;
+  name: string;
+  description?: string | null;
+  priceDelta: number;
+  currency: string;
+  isDefault: boolean;
+  isAvailable: boolean;
+  displayOrder: number;
+}
+
+export interface OptionGroupResult {
+  id: number;
+  productId: string;
+  code: string;
+  name: string;
+  description?: string | null;
+  selectionType: OptionSelectionType;
+  minSelections: number;
+  maxSelections: number;
+  isRequired: boolean;
+  isActive: boolean;
+  displayOrder: number;
+  options: ProductOptionResult[];
+}
+
 export interface ProductVariantResult {
   id: string;
   productId: string;
@@ -51,6 +81,7 @@ export interface ProductResult {
   createdAt: string;
   updatedAt?: string | null;
   variants: ProductVariantResult[];
+  optionGroups: OptionGroupResult[];
 }
 
 export interface MenuItemResult {
