@@ -132,7 +132,7 @@ export function PaymentMethodsView({ currentUser }: PaymentMethodsViewProps) {
                     <span className="font-medium text-muted-foreground">Trạng thái:</span>
                     <span
                       className={`font-medium ${
-                        method.isActive ? "text-emerald-500" : "text-destructive"
+                        method.isActive ? "text-success" : "text-destructive"
                       }`}
                     >
                       {isUpdating ? "Đang cập nhật..." : method.isActive ? "Đang hoạt động" : "Đã tắt"}

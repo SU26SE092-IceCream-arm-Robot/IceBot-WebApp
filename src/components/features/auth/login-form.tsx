@@ -93,7 +93,7 @@ export function LoginForm() {
           </p>
         )}
 
-        <Button type="submit" className="h-11 w-full text-base bg-cyan-600 hover:bg-cyan-700 text-white" isLoading={isSubmitting}>
+        <Button type="submit" className="h-11 w-full text-base" isLoading={isSubmitting}>
           Đăng nhập
         </Button>
       </form>

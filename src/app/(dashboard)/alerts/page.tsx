@@ -38,9 +38,9 @@ import type { AlertSeverity, AlertStatus } from "@/types/alerts";
 
 const SEVERITY_CONFIG: Record<AlertSeverity, { label: string; icon: React.ElementType; className: string }> = {
   Debug: { label: "Gỡ lỗi", icon: Info, className: "border-muted bg-muted/50 text-muted-foreground" },
-  Info: { label: "Thông tin", icon: Info, className: "border-blue-500/20 bg-blue-500/10 text-blue-500" },
-  Warning: { label: "Cảnh báo", icon: AlertTriangle, className: "border-yellow-500/20 bg-yellow-500/10 text-yellow-600" },
-  Error: { label: "Lỗi", icon: AlertCircle, className: "border-red-500/20 bg-red-500/10 text-red-600" },
+  Info: { label: "Thông tin", icon: Info, className: "border-primary/20 bg-primary/10 text-primary" },
+  Warning: { label: "Cảnh báo", icon: AlertTriangle, className: "border-warning/20 bg-warning/10 text-warning" },
+  Error: { label: "Lỗi", icon: AlertCircle, className: "border-destructive/20 bg-destructive/10 text-destructive" },
   Critical: { label: "Nghiêm trọng", icon: AlertOctagon, className: "border-destructive/20 bg-destructive/10 text-destructive" },
 };
 

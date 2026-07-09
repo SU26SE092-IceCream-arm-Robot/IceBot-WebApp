@@ -28,9 +28,9 @@ function formatDateTime(isoString: string) {
 
 const SEVERITY_CONFIG: Record<AlertSeverity, { label: string; icon: React.ElementType; className: string }> = {
   Debug: { label: "Gỡ lỗi", icon: Info, className: "text-muted-foreground" },
-  Info: { label: "Thông tin", icon: Info, className: "text-blue-500" },
-  Warning: { label: "Cảnh báo", icon: AlertTriangle, className: "text-yellow-500" },
-  Error: { label: "Lỗi", icon: AlertCircle, className: "text-red-500" },
+  Info: { label: "Thông tin", icon: Info, className: "text-primary" },
+  Warning: { label: "Cảnh báo", icon: AlertTriangle, className: "text-warning" },
+  Error: { label: "Lỗi", icon: AlertCircle, className: "text-destructive" },
   Critical: { label: "Nghiêm trọng", icon: AlertOctagon, className: "text-destructive" },
 };
 

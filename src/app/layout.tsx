@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { AuthProvider } from "@/hooks/use-auth";
+import { ThemeProvider } from "@/components/shared/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
@@ -23,10 +24,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="vi" className={`${plusJakartaSans.variable} h-full`}>
+    <html lang="vi" className={`${plusJakartaSans.variable} h-full`} suppressHydrationWarning>
       <body className="min-h-full bg-background text-foreground font-sans antialiased">
-        <AuthProvider>{children}</AuthProvider>
-        <Toaster richColors position="bottom-right" />
+        <ThemeProvider>
+          <AuthProvider>{children}</AuthProvider>
+          <Toaster richColors position="bottom-right" />
+        </ThemeProvider>
       </body>
     </html>
   );

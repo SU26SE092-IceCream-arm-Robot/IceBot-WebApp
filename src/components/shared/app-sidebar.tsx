@@ -21,6 +21,7 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { ThemeModeToggle } from "@/components/shared/theme-mode-toggle";
 import { getVisibleRoutes } from "@/lib/rbac";
 import type { DashboardRoutePath, DashboardUser } from "@/types";
 
@@ -209,6 +210,12 @@ export function AppSidebar({
               <p className="text-xs font-medium text-primary">
                 {ROLE_LABELS[currentUser.role]}
               </p>
+            </div>
+            <div className="px-2 pb-2">
+              <p className="mb-1.5 text-[11px] font-medium text-muted-foreground">
+                Giao diện
+              </p>
+              <ThemeModeToggle />
             </div>
             <div className="my-1 h-px bg-border" />
             <button

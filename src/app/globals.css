@@ -2,6 +2,8 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+@custom-variant dark (&:is(.dark *));
+
 /* ============================================================
    IceBot Design System — Semantic Token Layer (Light Theme)
    Source of Truth: 01_DESIGN_SYSTEM.md
@@ -53,6 +55,53 @@
   --sidebar-ring: var(--ring);
 
   --radius: 0.5rem;
+}
+
+.dark {
+  color-scheme: dark;
+
+  --background: oklch(0.14 0.02 255);
+  --foreground: oklch(0.96 0.01 250);
+
+  --card: oklch(0.18 0.02 255);
+  --card-foreground: oklch(0.96 0.01 250);
+
+  --popover: oklch(0.18 0.02 255);
+  --popover-foreground: oklch(0.96 0.01 250);
+
+  --primary: oklch(0.68 0.18 250);
+  --primary-foreground: oklch(0.12 0.02 255);
+
+  --secondary: oklch(0.28 0.04 245);
+  --secondary-foreground: oklch(0.92 0.02 245);
+
+  --muted: oklch(0.24 0.02 255);
+  --muted-foreground: oklch(0.72 0.02 250);
+
+  --accent: oklch(0.25 0.03 250);
+  --accent-foreground: oklch(0.96 0.01 250);
+
+  --destructive: oklch(0.7 0.2 25);
+  --destructive-foreground: oklch(0.98 0.01 25);
+
+  --success: oklch(0.72 0.16 145);
+  --success-foreground: oklch(0.12 0.03 145);
+
+  --warning: oklch(0.78 0.16 80);
+  --warning-foreground: oklch(0.16 0.04 80);
+
+  --border: oklch(0.3 0.02 255);
+  --input: oklch(0.33 0.02 255);
+  --ring: oklch(0.68 0.18 250);
+
+  --sidebar: oklch(0.16 0.02 255);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--accent);
+  --sidebar-accent-foreground: var(--accent-foreground);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
 }
 
 @theme inline {

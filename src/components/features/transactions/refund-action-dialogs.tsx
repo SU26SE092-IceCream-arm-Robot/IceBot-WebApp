@@ -289,7 +289,7 @@ export function ProcessRefundDialog({
           ) : null}
 
           {refund?.refundMethod === "Voucher" ? (
-             <div className="flex items-start gap-2 rounded-lg bg-blue-500/10 p-3 text-sm text-blue-500">
+             <div className="flex items-start gap-2 rounded-lg bg-primary/10 p-3 text-sm text-primary">
                <Info className="mt-0.5 size-4 shrink-0" />
                <p>Phương thức là Voucher. Vui lòng kiểm tra chắc chắn mã voucher đã được cấp/gửi cho khách hàng.</p>
              </div>
