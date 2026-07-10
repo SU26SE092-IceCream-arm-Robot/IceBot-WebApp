@@ -26,6 +26,7 @@ function emptyPagination(page: number): InventoryPaginationMeta {
 }
 
 export function useDispenserHistory(
+  kioskId: string | null | undefined,
   dispenserStateId: string | null | undefined,
   enabled: boolean,
 ) {
@@ -47,11 +48,20 @@ export function useDispenserHistory(
         return;
       }
 
+      if (!kioskId) {
+        setData([]);
+        setPagination(emptyPagination(1));
+        setErrorMessage("Không xác định được kiosk của bộ phân phối.");
+        setIsLoading(false);
+        return;
+      }
+
       setIsLoading(true);
       setErrorMessage(null);
 
       try {
         const result = await listDispenserHistory(
+          kioskId,
           dispenserStateId,
           {
             pageNumber: page,
@@ -85,7 +95,7 @@ export function useDispenserHistory(
         }
       }
     },
-    [dispenserStateId, enabled, page],
+    [dispenserStateId, enabled, kioskId, page],
   );
 
   useEffect(() => {

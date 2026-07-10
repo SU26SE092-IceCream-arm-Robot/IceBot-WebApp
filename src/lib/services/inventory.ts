@@ -93,6 +93,7 @@ export async function listStockMovements(
 }
 
 export async function listDispenserHistory(
+  kioskId: string,
   dispenserStateId: string,
   query: Pick<InventoryQuery, "pageNumber" | "pageSize">,
   signal?: AbortSignal,
@@ -100,7 +101,7 @@ export async function listDispenserHistory(
   const response = await axiosClient.get<
     InventoryPagedResult<DispenserHistoryResult>
   >(
-    `/api/v1/management/inventory/dispenser-states/${encodeURIComponent(dispenserStateId)}/history`,
+    `/api/v1/management/kiosks/${encodeURIComponent(kioskId)}/inventory/dispenser-states/${encodeURIComponent(dispenserStateId)}/history`,
     {
       params: {
         pageNumber: query.pageNumber,
@@ -134,11 +135,12 @@ export async function getKioskInventoryTopology(
 }
 
 export async function refillDispenserState(
+  kioskId: string,
   id: string,
   request: RefillDispenserRequest,
 ): Promise<DispenserStateResult> {
   const response = await axiosClient.post<ApiResult<DispenserStateResult>>(
-    `/api/v1/management/inventory/dispenser-states/${encodeURIComponent(id)}/refill`,
+    `/api/v1/management/kiosks/${encodeURIComponent(kioskId)}/inventory/dispenser-states/${encodeURIComponent(id)}/refill`,
     request,
   );
 
@@ -149,11 +151,12 @@ export async function refillDispenserState(
 }
 
 export async function adjustDispenserEstimate(
+  kioskId: string,
   id: string,
   request: AdjustDispenserEstimateRequest,
 ): Promise<DispenserStateResult> {
   const response = await axiosClient.post<ApiResult<DispenserStateResult>>(
-    `/api/v1/management/inventory/dispenser-states/${encodeURIComponent(id)}/adjust-estimate`,
+    `/api/v1/management/kiosks/${encodeURIComponent(kioskId)}/inventory/dispenser-states/${encodeURIComponent(id)}/adjust-estimate`,
     request,
   );
 

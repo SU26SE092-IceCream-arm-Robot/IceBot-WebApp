@@ -363,7 +363,7 @@ export function InventoryHistoryDialog({
   open,
   onOpenChange,
 }: InventoryHistoryDialogProps) {
-  const history = useDispenserHistory(dispenser?.id, open);
+  const history = useDispenserHistory(dispenser?.kioskId, dispenser?.id, open);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

@@ -462,12 +462,21 @@ export function useInventory(): UseInventoryResult {
         return false;
       }
 
+      if (!mutationDispenser.kioskId) {
+        setMutationErrorMessage("Không xác định được kiosk của bộ phân phối.");
+        return false;
+      }
+
       mutationInFlightRef.current = true;
       setIsMutationSubmitting(true);
       setMutationErrorMessage(null);
 
       try {
-        await refillDispenserState(mutationDispenser.id, request);
+        await refillDispenserState(
+          mutationDispenser.kioskId,
+          mutationDispenser.id,
+          request,
+        );
         await finishMutation(
           `Đã ghi nhận refill cho ${mutationDispenser.ingredientName}.`,
         );
@@ -494,12 +503,21 @@ export function useInventory(): UseInventoryResult {
         return false;
       }
 
+      if (!mutationDispenser.kioskId) {
+        setMutationErrorMessage("Không xác định được kiosk của bộ phân phối.");
+        return false;
+      }
+
       mutationInFlightRef.current = true;
       setIsMutationSubmitting(true);
       setMutationErrorMessage(null);
 
       try {
-        await adjustDispenserEstimate(mutationDispenser.id, request);
+        await adjustDispenserEstimate(
+          mutationDispenser.kioskId,
+          mutationDispenser.id,
+          request,
+        );
         await finishMutation(
           `Đã cập nhật lượng ước tính cho ${mutationDispenser.ingredientName}.`,
         );
