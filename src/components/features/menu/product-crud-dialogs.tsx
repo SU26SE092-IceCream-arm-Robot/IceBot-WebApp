@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 import { AlertTriangle, Box, PackagePlus, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -24,6 +24,7 @@ import type { ProductDeleteTarget } from "@/hooks/use-product-crud";
 import type {
   CreateProductRequest,
   FulfillmentType,
+  ProductCategoryResult,
   ProductResult,
   ProductVariantResult,
   TenantScopeType,
@@ -34,6 +35,7 @@ import type {
 
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const NO_CATEGORY_VALUE = "__none__";
 
 function optional(value: string): string | null {
   return value.trim() || null;
@@ -50,6 +52,9 @@ function FormError({ message }: { message: string | null }) {
 
 interface ProductFormDialogProps {
   product: ProductResult | null;
+  categories: ProductCategoryResult[];
+  isCategoryLoading: boolean;
+  categoryErrorMessage: string | null;
   open: boolean;
   isSubmitting: boolean;
   errorMessage: string | null;
@@ -60,6 +65,9 @@ interface ProductFormDialogProps {
 
 export function ProductFormDialog({
   product,
+  categories,
+  isCategoryLoading,
+  categoryErrorMessage,
   open,
   isSubmitting,
   errorMessage,
@@ -84,8 +92,33 @@ export function ProductFormDialog({
   );
   const [storeId, setStoreId] = useState(product?.storeId ?? "");
   const [kioskId, setKioskId] = useState(product?.kioskId ?? "");
-  const [categoryId, setCategoryId] = useState(product?.categoryId?.toString() ?? "");
+  const [categoryId, setCategoryId] = useState(
+    product?.categoryId ? product.categoryId.toString() : NO_CATEGORY_VALUE,
+  );
   const [validationMessage, setValidationMessage] = useState<string | null>(null);
+  const currentCategoryId = product?.categoryId ?? null;
+  const selectableCategories = useMemo(() => {
+    const activeCategories = categories.filter((category) => category.isActive);
+    const currentCategory = currentCategoryId
+      ? categories.find((category) => category.id === currentCategoryId)
+      : undefined;
+    const merged =
+      currentCategory && !currentCategory.isActive
+        ? [...activeCategories, currentCategory]
+        : activeCategories;
+    return merged.sort(
+      (left, right) =>
+        left.displayOrder - right.displayOrder ||
+        left.name.localeCompare(right.name),
+    );
+  }, [categories, currentCategoryId]);
+  const hasCurrentCategoryOption =
+    currentCategoryId !== null &&
+    !selectableCategories.some((category) => category.id === currentCategoryId);
+  const categorySelectDisabled =
+    isSubmitting ||
+    isCategoryLoading ||
+    Boolean(categoryErrorMessage && !isCreate);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -96,7 +129,10 @@ export function ProductFormDialog({
     }
     const parsedPrice = Number(basePrice);
     const parsedPreparation = preparationTime.trim() ? Number(preparationTime) : null;
-    const parsedCategory = categoryId.trim() ? Number(categoryId) : null;
+    const parsedCategory =
+      categoryId === NO_CATEGORY_VALUE || !categoryId.trim()
+        ? null
+        : Number(categoryId);
     if (!Number.isFinite(parsedPrice) || parsedPrice < 0) {
       setValidationMessage("Giá cơ bản phải là số không âm.");
       return;
@@ -106,7 +142,7 @@ export function ProductFormDialog({
       return;
     }
     if (parsedCategory !== null && (!Number.isInteger(parsedCategory) || parsedCategory <= 0)) {
-      setValidationMessage("Category ID phải là số nguyên dương.");
+      setValidationMessage("Danh mục sản phẩm không hợp lệ.");
       return;
     }
     const requiredScopeIds = [
@@ -160,7 +196,7 @@ export function ProductFormDialog({
             <div className="space-y-1.5"><label htmlFor="product-price" className="text-sm font-medium">Giá cơ bản <span className="text-destructive">*</span></label><Input id="product-price" type="number" min="0" step="any" value={basePrice} disabled={isSubmitting} className="h-10" onChange={(event) => setBasePrice(event.target.value)} /></div>
             <div className="space-y-1.5"><label htmlFor="product-currency" className="text-sm font-medium">Tiền tệ</label><Input id="product-currency" value={currency} disabled={isSubmitting} className="h-10 font-mono uppercase" onChange={(event) => setCurrency(event.target.value)} /></div>
             <div className="space-y-1.5"><label htmlFor="product-preparation" className="text-sm font-medium">Thời gian chuẩn bị (giây)</label><Input id="product-preparation" type="number" min="0" step="1" value={preparationTime} disabled={isSubmitting} className="h-10" onChange={(event) => setPreparationTime(event.target.value)} /></div>
-            <div className="space-y-1.5"><label htmlFor="product-category" className="text-sm font-medium">Category ID</label><Input id="product-category" type="number" min="1" step="1" value={categoryId} disabled={isSubmitting} className="h-10" placeholder="Không bắt buộc" onChange={(event) => setCategoryId(event.target.value)} /></div>
+            <div className="space-y-1.5"><label htmlFor="product-category" className="text-sm font-medium">Danh mục sản phẩm</label><Select value={categoryId} disabled={categorySelectDisabled} onValueChange={(value) => { if (value) setCategoryId(value); }}><SelectTrigger id="product-category" className="h-10 w-full"><SelectValue placeholder={isCategoryLoading ? "Đang tải danh mục..." : "Không phân loại"} /></SelectTrigger><SelectContent><SelectItem value={NO_CATEGORY_VALUE}>Không phân loại</SelectItem>{hasCurrentCategoryOption && currentCategoryId !== null ? <SelectItem value={currentCategoryId.toString()}>Danh mục hiện tại #{currentCategoryId}</SelectItem> : null}{selectableCategories.map((category) => (<SelectItem key={category.id} value={category.id.toString()}>{category.name}{category.isActive ? "" : " (đã tắt)"}</SelectItem>))}</SelectContent></Select>{categoryErrorMessage ? <p className="text-xs text-warning">{isCreate ? "Không tải được danh mục; sản phẩm vẫn có thể tạo không phân loại." : "Không tải được danh mục; hệ thống sẽ giữ danh mục hiện tại nếu bạn lưu."}</p> : null}</div>
             <div className="space-y-1.5 sm:col-span-2"><label htmlFor="product-description" className="text-sm font-medium">Mô tả</label><textarea id="product-description" value={description} rows={3} disabled={isSubmitting} className="w-full resize-y rounded-lg border border-input bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50" onChange={(event) => setDescription(event.target.value)} /></div>
           </div>
 

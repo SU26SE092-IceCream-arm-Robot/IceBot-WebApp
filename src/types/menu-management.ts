@@ -23,6 +23,17 @@ export interface ProductOptionResult {
   displayOrder: number;
 }
 
+export interface ProductCategoryResult {
+  id: number;
+  code: string;
+  name: string;
+  description?: string | null;
+  productType: string;
+  imageUrl?: string | null;
+  isActive: boolean;
+  displayOrder: number;
+}
+
 export interface OptionGroupResult {
   id: number;
   productId: string;

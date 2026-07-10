@@ -11,6 +11,7 @@ import {
   IceCreamBowl,
   Layers3,
   LayoutTemplate,
+  ListTree,
   PackageCheck,
   Plus,
   RefreshCw,
@@ -35,6 +36,7 @@ import {
   ProductFormDialog,
   VariantFormDialog,
 } from "@/components/features/menu/product-crud-dialogs";
+import { ProductCategoriesCatalogDialog } from "@/components/features/menu/product-categories-catalog-dialog";
 import { ProductOptionsCatalogDialog } from "@/components/features/menu/product-options-catalog-dialog";
 import { ProductTemplatesDialog } from "@/components/features/menu/product-templates-dialog";
 import { Button } from "@/components/ui/button";
@@ -58,6 +60,7 @@ import {
   useProductCrud,
   type ProductCrudChange,
 } from "@/hooks/use-product-crud";
+import { useProductCategories } from "@/hooks/use-product-categories";
 import { useProductOptionsCatalog } from "@/hooks/use-product-options-catalog";
 import { useProductTemplates } from "@/hooks/use-product-templates";
 import {
@@ -306,6 +309,7 @@ function ProductsPanel({
 
 export default function MenuPage() {
   const [isProductOptionsOpen, setProductOptionsOpen] = useState(false);
+  const [isProductCategoriesOpen, setProductCategoriesOpen] = useState(false);
   const { currentUser } = useAuth();
   const {
     organizations,
@@ -452,6 +456,7 @@ export default function MenuPage() {
     open: isProductOptionsOpen,
     organizationId: selectedOrganizationId,
   });
+  const productCategories = useProductCategories(Boolean(selectedOrganizationId));
   const isActionSubmitting =
     productActionId !== null ||
     variantActionId !== null ||
@@ -472,6 +477,7 @@ export default function MenuPage() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" className="h-10" onClick={() => void refresh()} isLoading={menus.isLoading || products.isLoading}><RefreshCw className="size-4" />Làm mới</Button>
+          <Button variant="outline" className="h-10" disabled={!selectedOrganizationId} onClick={() => setProductCategoriesOpen(true)}><ListTree className="size-4" />Danh mục</Button>
           <Button variant="outline" className="h-10" disabled={!selectedOrganizationId} onClick={() => setProductOptionsOpen(true)}><SlidersHorizontal className="size-4" />Tuỳ chọn</Button>
           {canManage ? <Button variant="outline" className="h-10" disabled={!selectedOrganizationId} onClick={() => productTemplates.setOpen(true)}><LayoutTemplate className="size-4" />Tạo từ mẫu</Button> : null}
           {canManage ? <Button variant="outline" className="h-10" disabled={!selectedOrganizationId} onClick={() => openMenuForm()}><Plus className="size-4" />Tạo thực đơn</Button> : null}
@@ -658,6 +664,15 @@ export default function MenuPage() {
         onClone={(template) => void productTemplates.cloneTemplate(template)}
       />
 
+      <ProductCategoriesCatalogDialog
+        open={isProductCategoriesOpen}
+        categories={productCategories.categories}
+        isLoading={productCategories.isLoading}
+        errorMessage={productCategories.errorMessage}
+        onOpenChange={setProductCategoriesOpen}
+        onRetry={productCategories.retry}
+      />
+
       <ProductOptionsCatalogDialog
         open={isProductOptionsOpen}
         organizationName={selectedOrganization?.name || selectedOrganization?.code || selectedOrganizationId || "đã chọn"}
@@ -678,6 +693,9 @@ export default function MenuPage() {
         <ProductFormDialog
           key={editingProduct?.id ?? "create-product"}
           product={editingProduct}
+          categories={productCategories.categories}
+          isCategoryLoading={productCategories.isLoading}
+          categoryErrorMessage={productCategories.errorMessage}
           open
           isSubmitting={isCrudSubmitting}
           errorMessage={crudError}

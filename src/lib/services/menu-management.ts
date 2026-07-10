@@ -13,6 +13,7 @@ import type {
   MenuManagementQuery,
   MenuResult,
   MenuStatus,
+  ProductCategoryResult,
   ProductResult,
   ProductTemplatesQuery,
   ProductVariantResult,
@@ -98,6 +99,20 @@ export async function listProductTemplates(
     throw new Error(response.data.message || "Không thể tải danh sách mẫu sản phẩm.");
   }
   return response.data;
+}
+
+export async function listProductCategories(
+  includeInactive = false,
+  signal?: AbortSignal,
+): Promise<ProductCategoryResult[]> {
+  const response = await axiosClient.get<ApiResult<ProductCategoryResult[]>>(
+    "/api/v1/management/product-categories",
+    {
+      params: { includeInactive },
+      signal,
+    },
+  );
+  return requireData(response.data, "Không thể tải danh mục sản phẩm.");
 }
 
 export async function cloneProductTemplate(
