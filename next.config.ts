@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const backendApiUrl = (
-  process.env.ICEBOT_BACKEND_URL || "http://localhost:5000"
+  process.env.ICEBOT_BACKEND_URL || "https://icebot.io.vn"
 ).replace(/\/+$/, "");
 
 const nextConfig: NextConfig = {
