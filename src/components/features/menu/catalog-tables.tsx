@@ -158,18 +158,20 @@ export function MenusTable({
               </div>
             </TableCell>
             <TableCell className="text-center">
-              <div className="flex justify-center">
+              <div className="flex items-center justify-center">
                 <MenuStatusBadge status={menu.status} />
               </div>
             </TableCell>
             <TableCell className="text-center">
-              <Badge variant="outline">{getScopeLabel(menu.scopeType)}</Badge>
+              <div className="flex items-center justify-center">
+                <Badge variant="outline">{getScopeLabel(menu.scopeType)}</Badge>
+              </div>
             </TableCell>
             <TableCell className="text-center">
               {menu.items.length === 0 ? (
                 <span className="text-xs text-muted-foreground">Chưa có món</span>
               ) : (
-                <div className="flex max-w-80 flex-wrap justify-center gap-1.5">
+                <div className="flex max-w-80 flex-wrap items-center justify-center gap-1.5">
                   {menu.items.slice(0, 2).map((item) => (
                     <ItemBadge key={item.id} name={item.displayName} status={item.status} />
                   ))}
@@ -188,7 +190,7 @@ export function MenusTable({
               </div>
             </TableCell>
             <TableCell className="px-5">
-              <div className="flex justify-center gap-1.5">
+              <div className="flex items-center justify-center gap-1.5">
                 <Button
                   variant="ghost"
                   size="icon-sm"
@@ -256,7 +258,7 @@ export function ProductsTable({
           <TableHead className="w-[30%] px-5">Sản phẩm</TableHead>
           <TableHead className="w-[13%] text-center">Khả dụng</TableHead>
           <TableHead className="w-[12%] text-center">Phạm vi</TableHead>
-          <TableHead className="w-[25%] text-center">Biến thể</TableHead>
+          <TableHead className="w-[25%] text-center">Phiên bản</TableHead>
           <TableHead className="w-[11%] text-right">Giá cơ bản</TableHead>
           <TableHead className="w-[9%] px-5 text-center">Thao tác</TableHead>
         </TableRow>
@@ -278,20 +280,24 @@ export function ProductsTable({
               </div>
             </TableCell>
             <TableCell className="text-center">
-              {product.isAvailable ? (
-                <Badge className="border-0 bg-success/10 text-success">Đang bán</Badge>
-              ) : (
-                <Badge className="border border-border bg-muted/20 text-muted-foreground">Ngừng bán</Badge>
-              )}
+              <div className="flex items-center justify-center">
+                {product.isAvailable ? (
+                  <Badge className="border-0 bg-success/10 text-success">Đang bán</Badge>
+                ) : (
+                  <Badge className="border border-border bg-muted/20 text-muted-foreground">Ngừng bán</Badge>
+                )}
+              </div>
             </TableCell>
             <TableCell className="text-center">
-              <Badge variant="outline">{getScopeLabel(product.scopeType)}</Badge>
+              <div className="flex items-center justify-center">
+                <Badge variant="outline">{getScopeLabel(product.scopeType)}</Badge>
+              </div>
             </TableCell>
             <TableCell className="text-center">
               {product.variants.length === 0 ? (
-                <span className="text-xs text-muted-foreground">Không có biến thể</span>
+                <span className="text-xs text-muted-foreground">Không có phiên bản</span>
               ) : (
-                <div className="flex max-w-80 flex-wrap justify-center gap-1.5">
+                <div className="flex max-w-80 flex-wrap items-center justify-center gap-1.5">
                   {product.variants.slice(0, 2).map((variant) => (
                     <Badge
                       key={variant.id}
@@ -318,7 +324,7 @@ export function ProductsTable({
               </span>
             </TableCell>
             <TableCell className="px-5">
-              <div className="flex justify-center gap-1.5">
+              <div className="flex items-center justify-center gap-1.5">
                 <Button
                   variant="ghost"
                   size="icon-sm"

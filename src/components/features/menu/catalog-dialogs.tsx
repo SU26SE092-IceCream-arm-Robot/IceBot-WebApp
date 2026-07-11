@@ -238,7 +238,7 @@ export function ProductDetailDialog({
         <DialogHeader>
           <DialogTitle>Chi tiết sản phẩm</DialogTitle>
           <DialogDescription>
-            Thông tin danh mục và biến thể sản phẩm.
+            Thông tin danh mục và phiên bản sản phẩm.
           </DialogDescription>
         </DialogHeader>
 
@@ -279,9 +279,9 @@ export function ProductDetailDialog({
             <section className="space-y-3">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <h3 className="font-medium text-foreground">Biến thể</h3>
+                  <h3 className="font-medium text-foreground">Phiên bản</h3>
                   <p className="text-xs text-muted-foreground">
-                    Giá và trạng thái khả dụng của từng biến thể.
+                    Giá và trạng thái khả dụng của từng phiên bản.
                   </p>
                 </div>
                 {canManage ? (
@@ -299,7 +299,7 @@ export function ProductDetailDialog({
                       {product.isAvailable ? "Tắt sản phẩm" : "Bật sản phẩm"}
                     </Button>
                     <Button size="sm" onClick={() => onCreateVariant(product)}>
-                      <Plus className="size-3.5" />Thêm biến thể
+                      <Plus className="size-3.5" />Thêm phiên bản
                     </Button>
                   </div>
                 ) : null}
@@ -307,7 +307,7 @@ export function ProductDetailDialog({
 
               {product.variants.length === 0 ? (
                 <div className="rounded-lg border border-dashed border-border p-5 text-center text-sm text-muted-foreground">
-                  Sản phẩm chưa có biến thể.
+                  Sản phẩm chưa có phiên bản.
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -336,12 +336,12 @@ export function ProductDetailDialog({
                       {canManage ? (
                         <div className="flex flex-wrap gap-1">
                           <Button variant="outline" size="sm" isLoading={variantActionId === variant.id} onClick={() => onToggleVariant(variant)}>
-                            {variant.isAvailable ? "Tắt biến thể" : "Bật biến thể"}
+                            {variant.isAvailable ? "Tắt phiên bản" : "Bật phiên bản"}
                           </Button>
-                          <Button variant="ghost" size="icon-sm" title="Chỉnh sửa biến thể" aria-label="Chỉnh sửa biến thể" onClick={() => onEditVariant(product, variant)}>
+                          <Button variant="ghost" size="icon-sm" title="Chỉnh sửa phiên bản" aria-label="Chỉnh sửa phiên bản" onClick={() => onEditVariant(product, variant)}>
                             <Pencil className="size-4" />
                           </Button>
-                          <Button variant="ghost" size="icon-sm" className="text-destructive hover:bg-destructive/10 hover:text-destructive" title="Xóa biến thể" aria-label="Xóa biến thể" onClick={() => onDeleteVariant(product, variant)}>
+                          <Button variant="ghost" size="icon-sm" className="text-destructive hover:bg-destructive/10 hover:text-destructive" title="Xóa phiên bản" aria-label="Xóa phiên bản" onClick={() => onDeleteVariant(product, variant)}>
                             <Trash2 className="size-4" />
                           </Button>
                         </div>
@@ -505,7 +505,7 @@ export function MenuDetailDialog({
                               </Badge>
                             </div>
                             <p className="text-xs text-muted-foreground">
-                              Liên kết sản phẩm và biến thể đã cấu hình
+                              Liên kết sản phẩm và phiên bản đã cấu hình
                             </p>
                             <p className="tabular-nums text-sm font-medium text-foreground">
                               {formatMoney(item.price, item.currency)}
@@ -608,9 +608,9 @@ function getActionCopy(action: CatalogManagementAction | null): {
       };
     case "variant-availability":
       return {
-        title: action.nextAvailable ? "Bật biến thể?" : "Tắt biến thể?",
+        title: action.nextAvailable ? "Bật phiên bản?" : "Tắt phiên bản?",
         description: `${action.label} sẽ được chuyển sang trạng thái ${action.nextAvailable ? "đang bán" : "ngừng bán"}.`,
-        confirmLabel: action.nextAvailable ? "Bật biến thể" : "Tắt biến thể",
+        confirmLabel: action.nextAvailable ? "Bật phiên bản" : "Tắt phiên bản",
       };
     case "menu-status":
       return {

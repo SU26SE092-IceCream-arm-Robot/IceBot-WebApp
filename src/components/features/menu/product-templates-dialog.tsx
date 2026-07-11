@@ -103,7 +103,7 @@ export function ProductTemplatesDialog({
                 <div className="min-w-0 space-y-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="font-medium text-foreground">{template.displayName || template.name}</p>
-                    <Badge variant="outline">{template.variants.length} biến thể</Badge>
+                    <Badge variant="outline">{template.variants.length} phiên bản</Badge>
                     {!template.isAvailable ? <Badge variant="secondary">Không khả dụng</Badge> : null}
                   </div>
                   <p className="font-mono text-xs text-muted-foreground">{template.code}</p>

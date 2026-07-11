@@ -343,7 +343,7 @@ export function MenuItemFormDialog({
     event.preventDefault();
     if (isSubmitting) return;
     if (!productId || !productVariantId) {
-      setValidationMessage("Sản phẩm và biến thể là bắt buộc.");
+      setValidationMessage("Sản phẩm và phiên bản là bắt buộc.");
       return;
     }
     if (!code.trim() || !displayName.trim()) {
@@ -414,9 +414,9 @@ export function MenuItemFormDialog({
             </div>
             
             <div className="space-y-1.5">
-              <label className="text-sm font-medium">Biến thể <span className="text-destructive">*</span></label>
+              <label className="text-sm font-medium">Phiên bản sản phẩm <span className="text-destructive">*</span></label>
               <Select value={productVariantId} disabled={isSubmitting || !productId || !isCreate} onValueChange={handleVariantSelect}>
-                <SelectTrigger className="h-10 w-full"><SelectValue placeholder="Chọn biến thể..." /></SelectTrigger>
+                <SelectTrigger className="h-10 w-full"><SelectValue placeholder="Chọn phiên bản..." /></SelectTrigger>
                 <SelectContent>
                   {variants.map(v => (
                     <SelectItem key={v.id} value={v.id}>{getVariantOptionLabel(v)}</SelectItem>
@@ -430,7 +430,7 @@ export function MenuItemFormDialog({
               <Input disabled className="h-10 bg-muted" placeholder="Chưa tích hợp quản lý công thức trong màn hình này" />
               {isMachineProducedWithoutRecipe ? (
                 <p className="rounded-lg border border-warning/30 bg-warning/5 px-3 py-2 text-sm text-warning">
-                  Biến thể sản xuất bằng máy cần công thức hợp lệ và luồng sản xuất trước khi bật bán. Hãy cấu hình công thức qua luồng quản trị phù hợp trước khi kích hoạt món.
+                  Phiên bản sản xuất bằng máy cần công thức hợp lệ và luồng sản xuất trước khi bật bán. Hãy cấu hình công thức qua luồng quản trị phù hợp trước khi kích hoạt món.
                 </p>
               ) : null}
             </div>
