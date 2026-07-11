@@ -41,6 +41,39 @@ function optional(value: string): string | null {
   return value.trim() || null;
 }
 
+function getScopeTypeLabel(scopeType: TenantScopeType): string {
+  switch (scopeType) {
+    case "Organization":
+      return "Tổ chức";
+    case "Store":
+      return "Cửa hàng";
+    case "Kiosk":
+      return "Kiosk";
+    default:
+      return "Không xác định";
+  }
+}
+
+function getFulfillmentTypeLabel(value: FulfillmentType): string {
+  switch (value) {
+    case "MachineProduced":
+      return "Sản xuất bằng máy";
+    case "Manual":
+      return "Thủ công";
+    case "Packaged":
+    default:
+      return "Đóng gói sẵn";
+  }
+}
+
+function getProductTypeLabel(value: string): string {
+  return value === "IceCream" ? "Kem" : value || "Không xác định";
+}
+
+function getVariantTypeLabel(value: string): string {
+  return value === "Default" ? "Mặc định" : value || "Không xác định";
+}
+
 function FormError({ message }: { message: string | null }) {
   return message ? (
     <div role="alert" className="flex items-start gap-2 rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-2.5 text-sm text-destructive">
@@ -146,8 +179,8 @@ export function ProductFormDialog({
       return;
     }
     const requiredScopeIds = [
-      scopeType === "Store" || scopeType === "Kiosk" ? [storeId, "Store ID"] : null,
-      scopeType === "Kiosk" ? [kioskId, "Kiosk ID"] : null,
+      scopeType === "Store" || scopeType === "Kiosk" ? [storeId, "Cửa hàng"] : null,
+      scopeType === "Kiosk" ? [kioskId, "Kiosk"] : null,
     ].filter(Boolean) as [string, string][];
     const invalidScope = requiredScopeIds.find(
       ([value]) => !UUID_PATTERN.test(value.trim()),
@@ -192,22 +225,22 @@ export function ProductFormDialog({
             <div className="space-y-1.5"><label htmlFor="product-code" className="text-sm font-medium">Mã sản phẩm <span className="text-destructive">*</span></label><Input id="product-code" value={code} disabled={isSubmitting} className="h-10 font-mono uppercase" onChange={(event) => setCode(event.target.value)} /></div>
             <div className="space-y-1.5"><label htmlFor="product-name" className="text-sm font-medium">Tên nội bộ <span className="text-destructive">*</span></label><Input id="product-name" value={name} disabled={isSubmitting} className="h-10" onChange={(event) => setName(event.target.value)} /></div>
             <div className="space-y-1.5"><label htmlFor="product-display" className="text-sm font-medium">Tên hiển thị</label><Input id="product-display" value={displayName} disabled={isSubmitting} className="h-10" onChange={(event) => setDisplayName(event.target.value)} /></div>
-            <div className="space-y-1.5"><label htmlFor="product-type" className="text-sm font-medium">Loại sản phẩm</label><Input id="product-type" value={productType} disabled={isSubmitting} className="h-10" onChange={(event) => setProductType(event.target.value)} /></div>
+            <div className="space-y-1.5"><label className="text-sm font-medium">Loại sản phẩm</label><Select value={productType} disabled={isSubmitting} onValueChange={(value) => setProductType(value || "IceCream")}><SelectTrigger className="h-10 w-full"><SelectValue>{getProductTypeLabel(productType)}</SelectValue></SelectTrigger><SelectContent>{productType !== "IceCream" ? <SelectItem value={productType}>{getProductTypeLabel(productType)}</SelectItem> : null}<SelectItem value="IceCream">Kem</SelectItem></SelectContent></Select></div>
             <div className="space-y-1.5"><label htmlFor="product-price" className="text-sm font-medium">Giá cơ bản <span className="text-destructive">*</span></label><Input id="product-price" type="number" min="0" step="any" value={basePrice} disabled={isSubmitting} className="h-10" onChange={(event) => setBasePrice(event.target.value)} /></div>
             <div className="space-y-1.5"><label htmlFor="product-currency" className="text-sm font-medium">Tiền tệ</label><Input id="product-currency" value={currency} disabled={isSubmitting} className="h-10 font-mono uppercase" onChange={(event) => setCurrency(event.target.value)} /></div>
             <div className="space-y-1.5"><label htmlFor="product-preparation" className="text-sm font-medium">Thời gian chuẩn bị (giây)</label><Input id="product-preparation" type="number" min="0" step="1" value={preparationTime} disabled={isSubmitting} className="h-10" onChange={(event) => setPreparationTime(event.target.value)} /></div>
-            <div className="space-y-1.5"><label htmlFor="product-category" className="text-sm font-medium">Danh mục sản phẩm</label><Select value={categoryId} disabled={categorySelectDisabled} onValueChange={(value) => { if (value) setCategoryId(value); }}><SelectTrigger id="product-category" className="h-10 w-full"><SelectValue placeholder={isCategoryLoading ? "Đang tải danh mục..." : "Không phân loại"} /></SelectTrigger><SelectContent><SelectItem value={NO_CATEGORY_VALUE}>Không phân loại</SelectItem>{hasCurrentCategoryOption && currentCategoryId !== null ? <SelectItem value={currentCategoryId.toString()}>Danh mục hiện tại #{currentCategoryId}</SelectItem> : null}{selectableCategories.map((category) => (<SelectItem key={category.id} value={category.id.toString()}>{category.name}{category.isActive ? "" : " (đã tắt)"}</SelectItem>))}</SelectContent></Select>{categoryErrorMessage ? <p className="text-xs text-warning">{isCreate ? "Không tải được danh mục; sản phẩm vẫn có thể tạo không phân loại." : "Không tải được danh mục; hệ thống sẽ giữ danh mục hiện tại nếu bạn lưu."}</p> : null}</div>
+            <div className="space-y-1.5"><label htmlFor="product-category" className="text-sm font-medium">Danh mục sản phẩm</label><Select value={categoryId} disabled={categorySelectDisabled} onValueChange={(value) => { if (value) setCategoryId(value); }}><SelectTrigger id="product-category" className="h-10 w-full"><SelectValue placeholder={isCategoryLoading ? "Đang tải danh mục..." : "Không có danh mục"} /></SelectTrigger><SelectContent><SelectItem value={NO_CATEGORY_VALUE}>Không có danh mục</SelectItem>{hasCurrentCategoryOption && currentCategoryId !== null ? <SelectItem value={currentCategoryId.toString()}>Danh mục hiện tại #{currentCategoryId}</SelectItem> : null}{selectableCategories.map((category) => (<SelectItem key={category.id} value={category.id.toString()}>{category.name}{category.isActive ? "" : " (đã tắt)"}</SelectItem>))}</SelectContent></Select>{categoryErrorMessage ? <p className="text-xs text-warning">{isCreate ? "Không tải được danh mục; sản phẩm vẫn có thể tạo không phân loại." : "Không tải được danh mục; hệ thống sẽ giữ danh mục hiện tại nếu bạn lưu."}</p> : null}</div>
             <div className="space-y-1.5 sm:col-span-2"><label htmlFor="product-description" className="text-sm font-medium">Mô tả</label><textarea id="product-description" value={description} rows={3} disabled={isSubmitting} className="w-full resize-y rounded-lg border border-input bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50" onChange={(event) => setDescription(event.target.value)} /></div>
           </div>
 
           <div className="space-y-4 rounded-xl border border-border bg-muted/15 p-4">
-            <div className="space-y-1.5"><label className="text-sm font-medium">Phạm vi trong tổ chức</label><Select value={scopeType} disabled={isSubmitting || !isCreate} onValueChange={(value) => { if (["Organization", "Store", "Kiosk"].includes(value ?? "")) setScopeType(value as TenantScopeType); }}><SelectTrigger className="h-10 w-full"><SelectValue>{scopeType === "Organization" ? "Toàn tổ chức" : scopeType === "Store" ? "Cửa hàng" : "Kiosk"}</SelectValue></SelectTrigger><SelectContent><SelectItem value="Organization">Toàn tổ chức</SelectItem><SelectItem value="Store">Cửa hàng</SelectItem><SelectItem value="Kiosk">Kiosk</SelectItem></SelectContent></Select></div>
-            {isCreate && (scopeType === "Store" || scopeType === "Kiosk") ? <div className="grid gap-3 sm:grid-cols-2"><div className="space-y-1.5"><label htmlFor="product-store" className="text-xs font-medium">Store ID</label><Input id="product-store" value={storeId} disabled={isSubmitting} className="h-9 font-mono text-xs" onChange={(event) => setStoreId(event.target.value)} /></div>{scopeType === "Kiosk" ? <div className="space-y-1.5"><label htmlFor="product-kiosk" className="text-xs font-medium">Kiosk ID</label><Input id="product-kiosk" value={kioskId} disabled={isSubmitting} className="h-9 font-mono text-xs" onChange={(event) => setKioskId(event.target.value)} /></div> : null}</div> : null}
+            <div className="space-y-1.5"><label className="text-sm font-medium">Phạm vi trong tổ chức</label><Select value={scopeType} disabled={isSubmitting || !isCreate} onValueChange={(value) => { if (["Organization", "Store", "Kiosk"].includes(value ?? "")) setScopeType(value as TenantScopeType); }}><SelectTrigger className="h-10 w-full"><SelectValue>{getScopeTypeLabel(scopeType)}</SelectValue></SelectTrigger><SelectContent><SelectItem value="Organization">Tổ chức</SelectItem><SelectItem value="Store">Cửa hàng</SelectItem><SelectItem value="Kiosk">Kiosk</SelectItem></SelectContent></Select></div>
+            {isCreate && (scopeType === "Store" || scopeType === "Kiosk") ? <div className="grid gap-3 sm:grid-cols-2"><div className="space-y-1.5"><label htmlFor="product-store" className="text-xs font-medium">Cửa hàng</label><Input id="product-store" value={storeId} disabled={isSubmitting} className="h-9 font-mono text-xs" placeholder="Nhập UUID cửa hàng" onChange={(event) => setStoreId(event.target.value)} /></div>{scopeType === "Kiosk" ? <div className="space-y-1.5"><label htmlFor="product-kiosk" className="text-xs font-medium">Kiosk</label><Input id="product-kiosk" value={kioskId} disabled={isSubmitting} className="h-9 font-mono text-xs" placeholder="Nhập UUID kiosk" onChange={(event) => setKioskId(event.target.value)} /></div> : null}</div> : null}
             {!isCreate ? <p className="text-xs text-muted-foreground">Backend không cho phép chuyển phạm vi sở hữu khi cập nhật sản phẩm.</p> : null}
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-1.5 sm:col-span-2"><label htmlFor="product-image" className="text-sm font-medium">Image URL</label><Input id="product-image" type="url" value={imageUrl} disabled={isSubmitting} className="h-10" onChange={(event) => setImageUrl(event.target.value)} /></div>
+            <div className="space-y-1.5 sm:col-span-2"><label htmlFor="product-image" className="text-sm font-medium">Đường dẫn hình ảnh</label><Input id="product-image" type="url" value={imageUrl} disabled={isSubmitting} className="h-10" onChange={(event) => setImageUrl(event.target.value)} /></div>
             <p className="text-xs text-muted-foreground sm:col-span-2">Trạng thái bán được quản lý riêng sau khi sản phẩm được tạo.</p>
           </div>
           <FormError message={validationMessage || errorMessage} />
@@ -308,16 +341,16 @@ export function VariantFormDialog({
             <div className="space-y-1.5"><label htmlFor="variant-code" className="text-sm font-medium">Mã biến thể <span className="text-destructive">*</span></label><Input id="variant-code" value={code} disabled={isSubmitting} className="h-10 font-mono uppercase" onChange={(event) => setCode(event.target.value)} /></div>
             <div className="space-y-1.5"><label htmlFor="variant-name" className="text-sm font-medium">Tên nội bộ <span className="text-destructive">*</span></label><Input id="variant-name" value={name} disabled={isSubmitting} className="h-10" onChange={(event) => setName(event.target.value)} /></div>
             <div className="space-y-1.5"><label htmlFor="variant-display" className="text-sm font-medium">Tên hiển thị</label><Input id="variant-display" value={displayName} disabled={isSubmitting} className="h-10" onChange={(event) => setDisplayName(event.target.value)} /></div>
-            <div className="space-y-1.5"><label htmlFor="variant-type" className="text-sm font-medium">Loại biến thể</label><Input id="variant-type" value={variantType} disabled={isSubmitting} className="h-10" onChange={(event) => setVariantType(event.target.value)} /></div>
-            <div className="space-y-1.5"><label className="text-sm font-medium">Cách thực hiện</label><Select value={fulfillmentType} disabled={isSubmitting} onValueChange={(value) => { if (["Packaged", "MachineProduced", "Manual"].includes(value ?? "")) setFulfillmentType(value as FulfillmentType); }}><SelectTrigger className="h-10 w-full"><SelectValue>{fulfillmentType === "Packaged" ? "Đóng gói sẵn" : fulfillmentType === "MachineProduced" ? "Máy sản xuất" : "Thủ công"}</SelectValue></SelectTrigger><SelectContent><SelectItem value="Packaged">Đóng gói sẵn</SelectItem><SelectItem value="MachineProduced">Máy sản xuất</SelectItem><SelectItem value="Manual">Thủ công</SelectItem></SelectContent></Select></div>
+            <div className="space-y-1.5"><label className="text-sm font-medium">Loại biến thể</label><Select value={variantType} disabled={isSubmitting} onValueChange={(value) => setVariantType(value || "Default")}><SelectTrigger className="h-10 w-full"><SelectValue>{getVariantTypeLabel(variantType)}</SelectValue></SelectTrigger><SelectContent>{variantType !== "Default" ? <SelectItem value={variantType}>{getVariantTypeLabel(variantType)}</SelectItem> : null}<SelectItem value="Default">Mặc định</SelectItem></SelectContent></Select></div>
+            <div className="space-y-1.5"><label className="text-sm font-medium">Cách thực hiện</label><Select value={fulfillmentType} disabled={isSubmitting} onValueChange={(value) => { if (["Packaged", "MachineProduced", "Manual"].includes(value ?? "")) setFulfillmentType(value as FulfillmentType); }}><SelectTrigger className="h-10 w-full"><SelectValue>{getFulfillmentTypeLabel(fulfillmentType)}</SelectValue></SelectTrigger><SelectContent><SelectItem value="Packaged">Đóng gói sẵn</SelectItem><SelectItem value="MachineProduced">Sản xuất bằng máy</SelectItem><SelectItem value="Manual">Thủ công</SelectItem></SelectContent></Select></div>
             <div className="space-y-1.5"><label htmlFor="variant-size" className="text-sm font-medium">Mã kích cỡ</label><Input id="variant-size" value={sizeCode} disabled={isSubmitting} className="h-10" onChange={(event) => setSizeCode(event.target.value)} /></div>
-            {fulfillmentType === "MachineProduced" ? <div className="sm:col-span-2 rounded-lg border border-warning/30 bg-warning/5 px-3 py-2.5 text-sm text-warning">ProductVariant không chứa recipe trực tiếp. Công thức được liên kết qua MenuItem; form này không tạo hoặc giả lập công thức.</div> : null}
+            {fulfillmentType === "MachineProduced" ? <div className="sm:col-span-2 rounded-lg border border-warning/30 bg-warning/5 px-3 py-2.5 text-sm text-warning">Biến thể sản xuất bằng máy không chứa công thức trực tiếp. Công thức được liên kết qua món trong thực đơn; form này không tạo hoặc giả lập công thức.</div> : null}
             <div className="space-y-1.5"><label htmlFor="variant-price" className="text-sm font-medium">Giá <span className="text-destructive">*</span></label><Input id="variant-price" type="number" min="0" step="any" value={basePrice} disabled={isSubmitting} className="h-10" onChange={(event) => setBasePrice(event.target.value)} /></div>
             <div className="space-y-1.5"><p className="text-sm font-medium">Tiền tệ</p><p className="flex h-10 items-center font-mono text-sm text-muted-foreground">{product.currency}</p></div>
             <div className="space-y-1.5"><label htmlFor="variant-order" className="text-sm font-medium">Thứ tự hiển thị</label><Input id="variant-order" type="number" step="1" value={displayOrder} disabled={isSubmitting} className="h-10" onChange={(event) => setDisplayOrder(event.target.value)} /></div>
             <div className="space-y-1.5"><label htmlFor="variant-preparation" className="text-sm font-medium">Thời gian chuẩn bị (giây)</label><Input id="variant-preparation" type="number" min="0" step="1" value={preparationTime} disabled={isSubmitting} className="h-10" onChange={(event) => setPreparationTime(event.target.value)} /></div>
             <div className="space-y-1.5 sm:col-span-2"><label htmlFor="variant-description" className="text-sm font-medium">Mô tả</label><textarea id="variant-description" value={description} rows={3} disabled={isSubmitting} className="w-full resize-y rounded-lg border border-input bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50" onChange={(event) => setDescription(event.target.value)} /></div>
-            <div className="space-y-1.5"><label htmlFor="variant-image" className="text-sm font-medium">Image URL</label><Input id="variant-image" type="url" value={imageUrl} disabled={isSubmitting} className="h-10" onChange={(event) => setImageUrl(event.target.value)} /></div>
+            <div className="space-y-1.5"><label htmlFor="variant-image" className="text-sm font-medium">Đường dẫn hình ảnh</label><Input id="variant-image" type="url" value={imageUrl} disabled={isSubmitting} className="h-10" onChange={(event) => setImageUrl(event.target.value)} /></div>
             <p className="flex items-end pb-2 text-xs text-muted-foreground">Trạng thái bán được quản lý riêng sau khi lưu biến thể.</p>
           </div>
           <FormError message={validationMessage || errorMessage} />

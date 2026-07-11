@@ -54,6 +54,10 @@ function DetailTile({ label, value }: { label: string; value: React.ReactNode })
   );
 }
 
+function LinkedValue({ value }: { value?: string | null }) {
+  return value ? "Đã liên kết" : <span className="text-muted-foreground">—</span>;
+}
+
 interface AlertDetailDrawerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -152,10 +156,10 @@ export function AlertDetailDrawer({
           />
           
           <div className="grid grid-cols-2 gap-4">
-            <DetailTile label="Organization ID" value={alert.organizationId && <span className="font-mono text-xs">{alert.organizationId}</span>} />
-            <DetailTile label="Store ID" value={alert.storeId && <span className="font-mono text-xs">{alert.storeId}</span>} />
-            <DetailTile label="Kiosk ID" value={alert.kioskId && <span className="font-mono text-xs">{alert.kioskId}</span>} />
-            <DetailTile label="Device ID" value={alert.deviceId && <span className="font-mono text-xs">{alert.deviceId}</span>} />
+            <DetailTile label="Tổ chức" value={<LinkedValue value={alert.organizationId} />} />
+            <DetailTile label="Cửa hàng" value={<LinkedValue value={alert.storeId} />} />
+            <DetailTile label="Kiosk" value={<LinkedValue value={alert.kioskId} />} />
+            <DetailTile label="Thiết bị" value={<LinkedValue value={alert.deviceId} />} />
           </div>
 
           {(alert.sourceType || alert.sourceId) && (

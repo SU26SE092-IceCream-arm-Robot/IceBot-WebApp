@@ -304,9 +304,8 @@ export function InventoryDetailDialog({
                   value={dispenser.kioskName?.trim() || "Chưa gán kiosk"}
                 />
                 <DetailField
-                  label="Kiosk ID"
-                  value={dispenser.kioskId ?? "Chưa có"}
-                  mono
+                  label="Kiosk liên kết"
+                  value={dispenser.kioskId ? "Đã liên kết" : "Chưa có"}
                 />
                 <DetailField
                   label="Mã thiết bị"
@@ -314,9 +313,8 @@ export function InventoryDetailDialog({
                   mono
                 />
                 <DetailField
-                  label="Device ID"
-                  value={dispenser.deviceId}
-                  mono
+                  label="Thiết bị liên kết"
+                  value={dispenser.deviceId ? "Đã liên kết" : "Chưa có"}
                 />
               </div>
             </section>

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { toast } from "sonner";
 import {
   Building2,
   ChevronLeft,
@@ -83,7 +84,6 @@ export function OrganizationsView() {
   const [status, setStatus] = useState<TenantStatusFilter>("ALL");
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [editingOrganization, setEditingOrganization] =
     useState<OrganizationResult | null>(null);
@@ -149,7 +149,7 @@ export function OrganizationsView() {
     setMutationError(null);
     try {
       const result = await mutation();
-      setSuccessMessage(success(result));
+      toast.success(success(result));
       await fetchOrganizations();
       return true;
     } catch (error) {
@@ -200,12 +200,6 @@ export function OrganizationsView() {
 
   return (
     <div className="space-y-7">
-      {successMessage ? (
-        <div role="status" className="flex items-center justify-between gap-3 rounded-lg border border-success/30 bg-success/5 px-4 py-3 text-sm text-success">
-          <span>{successMessage}</span><Button variant="ghost" size="sm" className="h-7 text-success" onClick={() => setSuccessMessage(null)}>Đóng</Button>
-        </div>
-      ) : null}
-
       <section className="flex flex-col gap-4 border-b border-border pb-6 lg:flex-row lg:items-end lg:justify-between">
         <div className="max-w-2xl space-y-2"><h1 className="text-3xl font-semibold tracking-tight text-foreground">Tổ chức & cửa hàng</h1><p className="text-sm leading-6 text-muted-foreground">Quản lý cấu trúc tổ chức, cửa hàng và phạm vi vận hành của IceBot.</p></div>
         <div className="flex gap-2">{isSystemAdmin ? <Button onClick={() => { setEditingOrganization(null); setMutationError(null); setFormOpen(true); }}><Plus className="size-4" />Tạo tổ chức</Button> : null}<Button variant="outline" isLoading={isLoading} onClick={() => void fetchOrganizations()}><RefreshCw className="size-4" />Làm mới</Button></div>
@@ -224,7 +218,7 @@ export function OrganizationsView() {
           </div>
         </div></CardHeader>
         {isLoading ? <TenantLoadingState label="Đang tải tổ chức..." /> : errorMessage ? <TenantErrorState message={errorMessage} onRetry={() => void fetchOrganizations()} /> : organizations.length === 0 ? <TenantEmptyState title="Chưa có tổ chức phù hợp" description="Thử thay đổi bộ lọc hoặc tạo tổ chức mới." /> : (
-          <Table className="min-w-[900px] table-fixed"><TableHeader><TableRow className="hover:bg-transparent"><TableHead className="w-[28%] px-4 text-xs">Tổ chức</TableHead><TableHead className="w-[24%] text-xs">Liên hệ</TableHead><TableHead className="w-[16%] text-center text-xs">Trạng thái</TableHead><TableHead className="w-[18%] text-center text-xs">Cập nhật</TableHead><TableHead className="w-[14%] px-4 text-center text-xs">Thao tác</TableHead></TableRow></TableHeader><TableBody>{organizations.map((organization) => <TableRow key={organization.id} className="hover:bg-muted/40"><TableCell className="px-4 py-3"><p className="font-medium text-foreground">{organization.name}</p><p className="font-mono text-xs text-muted-foreground">{organization.code}</p></TableCell><TableCell><p className="truncate text-sm">{organization.email || "Chưa có email"}</p><p className="text-xs text-muted-foreground">{organization.phoneNumber || "Chưa có số điện thoại"}</p></TableCell><TableCell className="text-center"><div className="flex justify-center"><TenantStatusBadge status={organization.status} /></div></TableCell><TableCell className="text-center text-xs tabular-nums text-muted-foreground">{formatTenantDate(organization.updatedAt ?? organization.createdAt)}</TableCell><TableCell className="px-4"><div className="flex justify-center gap-1.5"><Link href={`/organizations/${organization.id}`} className={cn(buttonVariants({ variant: "ghost", size: "icon-sm" }), "rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground")} title="Xem chi tiết"><Eye className="size-4" /></Link>{canEdit ? <Button variant="ghost" size="icon-sm" className="rounded-lg text-primary hover:bg-primary/10 hover:text-primary" title="Chỉnh sửa" onClick={() => { setEditingOrganization(organization); setMutationError(null); setFormOpen(true); }}><Pencil className="size-4" /></Button> : null}{isSystemAdmin ? <Button variant="ghost" size="icon-sm" className={cn("rounded-lg", organization.status === "Active" ? "text-destructive hover:bg-destructive/10 hover:text-destructive" : "text-success hover:bg-success/10 hover:text-success")} title={organization.status === "Active" ? "Vô hiệu hóa" : "Kích hoạt"} onClick={() => { setMutationError(null); setLifecycleTarget({ organization, activate: organization.status !== "Active" }); }}>{organization.status === "Active" ? <PowerOff className="size-4" /> : <Power className="size-4" />}</Button> : null}</div></TableCell></TableRow>)}</TableBody></Table>
+          <Table className="min-w-[900px] table-fixed"><TableHeader><TableRow className="hover:bg-transparent"><TableHead className="w-[28%] px-4 text-xs">Tổ chức</TableHead><TableHead className="w-[24%] text-xs">Liên hệ</TableHead><TableHead className="w-[16%] text-center text-xs">Trạng thái</TableHead><TableHead className="w-[18%] text-center text-xs">Cập nhật</TableHead><TableHead className="w-[14%] px-4 text-center text-xs">Thao tác</TableHead></TableRow></TableHeader><TableBody>{organizations.map((organization) => <TableRow key={organization.id} className="hover:bg-muted/40"><TableCell className="px-4 py-3"><p className="font-medium text-foreground">{organization.name}</p><p className="font-mono text-xs text-muted-foreground">{organization.code}</p></TableCell><TableCell><p className="truncate text-sm">{organization.email || "Chưa có email"}</p><p className="text-xs text-muted-foreground">{organization.phoneNumber || "Chưa có số điện thoại"}</p></TableCell><TableCell className="text-center"><div className="flex justify-center"><TenantStatusBadge status={organization.status} /></div></TableCell><TableCell className="text-center text-xs tabular-nums text-muted-foreground">{formatTenantDate(organization.updatedAt ?? organization.createdAt)}</TableCell><TableCell className="px-4"><div className="flex justify-center gap-1.5"><Link href={`/organizations/${organization.id}`} className={cn(buttonVariants({ variant: "ghost", size: "icon-sm" }), "rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground")} title="Xem chi tiết" aria-label={`Xem chi tiết ${organization.name}`}><Eye className="size-4" /></Link>{canEdit ? <Button variant="ghost" size="icon-sm" className="rounded-lg text-primary hover:bg-primary/10 hover:text-primary" title="Chỉnh sửa" aria-label={`Chỉnh sửa ${organization.name}`} onClick={() => { setEditingOrganization(organization); setMutationError(null); setFormOpen(true); }}><Pencil className="size-4" /></Button> : null}{isSystemAdmin ? <Button variant="ghost" size="icon-sm" className={cn("rounded-lg", organization.status === "Active" ? "text-destructive hover:bg-destructive/10 hover:text-destructive" : "text-success hover:bg-success/10 hover:text-success")} title={organization.status === "Active" ? "Vô hiệu hóa" : "Kích hoạt"} aria-label={`${organization.status === "Active" ? "Vô hiệu hóa" : "Kích hoạt"} ${organization.name}`} onClick={() => { setMutationError(null); setLifecycleTarget({ organization, activate: organization.status !== "Active" }); }}>{organization.status === "Active" ? <PowerOff className="size-4" /> : <Power className="size-4" />}</Button> : null}</div></TableCell></TableRow>)}</TableBody></Table>
         )}
         <div className="flex items-center justify-between border-t border-border px-5 py-4 text-sm"><p className="text-muted-foreground">Trang <span className="font-medium tabular-nums text-foreground">{page}</span> / <span className="font-medium tabular-nums text-foreground">{Math.max(totalPages, 1)}</span> · <span className="font-medium tabular-nums text-foreground">{totalCount}</span> tổ chức</p><div className="flex gap-2"><Button variant="outline" size="sm" disabled={page <= 1 || isLoading} onClick={() => setPage((value) => Math.max(1, value - 1))}><ChevronLeft className="size-4" />Trước</Button><Button variant="outline" size="sm" disabled={page >= totalPages || isLoading} onClick={() => setPage((value) => value + 1)}>Sau<ChevronRight className="size-4" /></Button></div></div>
       </Card>

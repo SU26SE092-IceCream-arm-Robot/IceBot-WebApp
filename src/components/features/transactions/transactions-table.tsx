@@ -92,8 +92,11 @@ export function formatTransactionDate(value: string | null | undefined): string 
   }
 
   return new Intl.DateTimeFormat("vi-VN", {
-    dateStyle: "short",
-    timeStyle: "short",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   }).format(date);
 }
 
@@ -161,9 +164,9 @@ export function TransactionsTable({
               </div>
             </TableCell>
             <TableCell className="py-2.5 text-center">
-              <span className="font-mono text-xs tabular-nums text-muted-foreground">
-                {order.kioskId.slice(0, 8)}
-              </span>
+              <Badge variant="outline" className="bg-muted/20 text-muted-foreground">
+                {order.kioskId ? "Đã liên kết" : "Chưa có"}
+              </Badge>
             </TableCell>
             <TableCell className="py-2.5 text-center">
               <div className="flex justify-center">

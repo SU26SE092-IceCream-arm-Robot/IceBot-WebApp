@@ -61,8 +61,11 @@ export function formatMaintenanceDate(value: string | null | undefined): string 
   }
 
   return new Intl.DateTimeFormat("vi-VN", {
-    dateStyle: "short",
-    timeStyle: "short",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   }).format(date);
 }
 
@@ -149,15 +152,15 @@ export function MaintenanceTable({
               </div>
             </TableCell>
             <TableCell className="py-2.5 text-center">
-              <span className="font-mono text-xs tabular-nums text-muted-foreground">
-                {ticket.kioskId.slice(0, 8)}
-              </span>
+              <Badge variant="outline" className="bg-muted/20 text-muted-foreground">
+                {ticket.kioskId ? "Đã liên kết" : "Chưa có"}
+              </Badge>
             </TableCell>
             <TableCell className="py-2.5 text-center">
               {ticket.assignedToAccountId ? (
-                <span className="font-mono text-xs tabular-nums text-muted-foreground">
-                  {ticket.assignedToAccountId.slice(0, 8)}
-                </span>
+                <Badge variant="outline" className="bg-primary/10 text-primary">
+                  Đã phân công
+                </Badge>
               ) : (
                 <Badge variant="outline" className="bg-muted/20 text-muted-foreground">
                   Chưa phân công

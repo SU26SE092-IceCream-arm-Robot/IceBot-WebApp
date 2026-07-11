@@ -33,7 +33,11 @@ function formatDate(dateValue?: string | null): string {
   }
 
   return new Intl.DateTimeFormat("vi-VN", {
-    dateStyle: "short",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   }).format(new Date(dateValue));
 }
 
@@ -133,15 +137,15 @@ export function MenusTable({
   onView,
 }: MenusTableProps) {
   return (
-    <Table>
+    <Table className="min-w-[1080px] table-fixed">
       <TableHeader>
-        <TableRow>
-          <TableHead className="px-5">Thực đơn</TableHead>
-          <TableHead>Trạng thái</TableHead>
-          <TableHead>Phạm vi</TableHead>
-          <TableHead>Món hiển thị</TableHead>
-          <TableHead>Hiệu lực</TableHead>
-          <TableHead className="px-5 text-right">Thao tác</TableHead>
+        <TableRow className="hover:bg-transparent">
+          <TableHead className="w-[27%] px-5">Thực đơn</TableHead>
+          <TableHead className="w-[13%] text-center">Trạng thái</TableHead>
+          <TableHead className="w-[12%] text-center">Phạm vi</TableHead>
+          <TableHead className="w-[24%] text-center">Món hiển thị</TableHead>
+          <TableHead className="w-[15%] text-center">Hiệu lực</TableHead>
+          <TableHead className="w-[9%] px-5 text-center">Thao tác</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -153,17 +157,19 @@ export function MenusTable({
                 <p className="tabular-nums text-xs text-muted-foreground">{menu.code}</p>
               </div>
             </TableCell>
-            <TableCell>
-              <MenuStatusBadge status={menu.status} />
+            <TableCell className="text-center">
+              <div className="flex justify-center">
+                <MenuStatusBadge status={menu.status} />
+              </div>
             </TableCell>
-            <TableCell>
+            <TableCell className="text-center">
               <Badge variant="outline">{getScopeLabel(menu.scopeType)}</Badge>
             </TableCell>
-            <TableCell>
+            <TableCell className="text-center">
               {menu.items.length === 0 ? (
                 <span className="text-xs text-muted-foreground">Chưa có món</span>
               ) : (
-                <div className="flex max-w-80 flex-wrap gap-1.5">
+                <div className="flex max-w-80 flex-wrap justify-center gap-1.5">
                   {menu.items.slice(0, 2).map((item) => (
                     <ItemBadge key={item.id} name={item.displayName} status={item.status} />
                   ))}
@@ -175,28 +181,35 @@ export function MenusTable({
                 </div>
               )}
             </TableCell>
-            <TableCell>
+            <TableCell className="text-center">
               <div className="space-y-1 text-xs text-muted-foreground">
                 <p className="tabular-nums">Từ: {formatDate(menu.effectiveFrom)}</p>
                 <p className="tabular-nums">Đến: {formatDate(menu.effectiveTo)}</p>
               </div>
             </TableCell>
             <TableCell className="px-5">
-              <div className="flex justify-end gap-1">
+              <div className="flex justify-center gap-1.5">
                 <Button
                   variant="ghost"
-                  size="sm"
-                  className="h-8 text-xs"
+                  size="icon-sm"
+                  className="rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
+                  title={`Xem chi tiết ${menu.name}`}
+                  aria-label={`Xem chi tiết ${menu.name}`}
                   onClick={() => onView(menu.id)}
                 >
-                  <Eye className="size-3.5" />
-                  Xem chi tiết
+                  <Eye className="size-4" />
                 </Button>
                 {canManage && getNextMenuStatus(menu.status) ? (
                   <Button
                     variant="ghost"
-                    size="sm"
-                    className="h-8 text-xs"
+                    size="icon-sm"
+                    className={
+                      getNextMenuStatus(menu.status) === "Active"
+                        ? "rounded-lg text-success hover:bg-success/10 hover:text-success"
+                        : "rounded-lg text-warning hover:bg-warning/10 hover:text-warning"
+                    }
+                    title={getNextMenuStatus(menu.status) === "Active" ? "Kích hoạt" : "Tạm dừng"}
+                    aria-label={`${getNextMenuStatus(menu.status) === "Active" ? "Kích hoạt" : "Tạm dừng"} ${menu.name}`}
                     isLoading={menuActionId === menu.id}
                     onClick={() => {
                       const nextStatus = getNextMenuStatus(menu.status);
@@ -206,11 +219,10 @@ export function MenusTable({
                     }}
                   >
                     {getNextMenuStatus(menu.status) === "Active" ? (
-                      <CirclePlay className="size-3.5" />
+                      <CirclePlay className="size-4" />
                     ) : (
-                      <CirclePause className="size-3.5" />
+                      <CirclePause className="size-4" />
                     )}
-                    {getNextMenuStatus(menu.status) === "Active" ? "Kích hoạt" : "Tạm dừng"}
                   </Button>
                 ) : null}
               </div>
@@ -238,15 +250,15 @@ export function ProductsTable({
   onView,
 }: ProductsTableProps) {
   return (
-    <Table>
+    <Table className="min-w-[1080px] table-fixed">
       <TableHeader>
-        <TableRow>
-          <TableHead className="px-5">Sản phẩm</TableHead>
-          <TableHead>Khả dụng</TableHead>
-          <TableHead>Phạm vi</TableHead>
-          <TableHead>Biến thể</TableHead>
-          <TableHead className="text-right">Giá cơ bản</TableHead>
-          <TableHead className="px-5 text-right">Thao tác</TableHead>
+        <TableRow className="hover:bg-transparent">
+          <TableHead className="w-[30%] px-5">Sản phẩm</TableHead>
+          <TableHead className="w-[13%] text-center">Khả dụng</TableHead>
+          <TableHead className="w-[12%] text-center">Phạm vi</TableHead>
+          <TableHead className="w-[25%] text-center">Biến thể</TableHead>
+          <TableHead className="w-[11%] text-right">Giá cơ bản</TableHead>
+          <TableHead className="w-[9%] px-5 text-center">Thao tác</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -265,21 +277,21 @@ export function ProductsTable({
                 </div>
               </div>
             </TableCell>
-            <TableCell>
+            <TableCell className="text-center">
               {product.isAvailable ? (
                 <Badge className="border-0 bg-success/10 text-success">Đang bán</Badge>
               ) : (
                 <Badge className="border border-border bg-muted/20 text-muted-foreground">Ngừng bán</Badge>
               )}
             </TableCell>
-            <TableCell>
+            <TableCell className="text-center">
               <Badge variant="outline">{getScopeLabel(product.scopeType)}</Badge>
             </TableCell>
-            <TableCell>
+            <TableCell className="text-center">
               {product.variants.length === 0 ? (
                 <span className="text-xs text-muted-foreground">Không có biến thể</span>
               ) : (
-                <div className="flex max-w-80 flex-wrap gap-1.5">
+                <div className="flex max-w-80 flex-wrap justify-center gap-1.5">
                   {product.variants.slice(0, 2).map((variant) => (
                     <Badge
                       key={variant.id}
@@ -306,25 +318,36 @@ export function ProductsTable({
               </span>
             </TableCell>
             <TableCell className="px-5">
-              <div className="flex justify-end gap-1">
+              <div className="flex justify-center gap-1.5">
                 <Button
                   variant="ghost"
-                  size="sm"
-                  className="h-8 text-xs"
+                  size="icon-sm"
+                  className="rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
+                  title={`Xem chi tiết ${product.displayName?.trim() || product.name}`}
+                  aria-label={`Xem chi tiết ${product.displayName?.trim() || product.name}`}
                   onClick={() => onView(product.id)}
                 >
-                  <Eye className="size-3.5" />
-                  Xem chi tiết
+                  <Eye className="size-4" />
                 </Button>
                 {canManage ? (
                   <Button
                     variant="ghost"
-                    size="sm"
-                    className="h-8 text-xs"
+                    size="icon-sm"
+                    className={
+                      product.isAvailable
+                        ? "rounded-lg text-warning hover:bg-warning/10 hover:text-warning"
+                        : "rounded-lg text-success hover:bg-success/10 hover:text-success"
+                    }
+                    title={product.isAvailable ? "Tắt bán" : "Bật bán"}
+                    aria-label={`${product.isAvailable ? "Tắt bán" : "Bật bán"} ${product.displayName?.trim() || product.name}`}
                     isLoading={productActionId === product.id}
                     onClick={() => onToggleAvailability(product)}
                   >
-                    {product.isAvailable ? "Tắt bán" : "Bật bán"}
+                    {product.isAvailable ? (
+                      <CirclePause className="size-4" />
+                    ) : (
+                      <CirclePlay className="size-4" />
+                    )}
                   </Button>
                 ) : null}
               </div>

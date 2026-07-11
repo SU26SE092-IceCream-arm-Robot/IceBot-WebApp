@@ -83,6 +83,18 @@ const SCOPE_TYPE_LABELS: Record<AssignableScopeType, string> = {
   Kiosk: "Kiosk",
 };
 
+function getRoleDisplayLabel(role: ManagementRoleResult): string {
+  const labelByCode: Record<string, string> = {
+    Admin: "Quản trị hệ thống",
+    SystemAdmin: "Quản trị hệ thống",
+    OrgAdmin: "Quản trị tổ chức",
+    Manager: "Quản lý",
+    Staff: "Nhân viên",
+    Technician: "Kỹ thuật viên",
+  };
+  return labelByCode[role.code] ?? role.name ?? role.code;
+}
+
 function isAssignableScopeType(
   value: string | null
 ): value is AssignableScopeType {
@@ -243,7 +255,7 @@ export function CreateAccountDialog({
     setValidationMessage(null);
 
     if (!fullName.trim() || !userName.trim() || !email.trim()) {
-      setValidationMessage("Vui lòng nhập họ tên, username và email.");
+      setValidationMessage("Vui lòng nhập họ tên, tên đăng nhập và email.");
       return;
     }
 
@@ -352,7 +364,7 @@ export function CreateAccountDialog({
               required
             />
           </FormField>
-          <FormField htmlFor="userName" label="Username">
+          <FormField htmlFor="userName" label="Tên đăng nhập">
             <Input
               id="userName"
               value={userName}
@@ -401,7 +413,7 @@ export function CreateAccountDialog({
                 <SelectContent>
                   {managementRoles.map((role) => (
                     <SelectItem key={role.code} value={role.code}>
-                      {role.name} ({role.code})
+                      {getRoleDisplayLabel(role)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -583,7 +595,7 @@ export function CreateAccountDialog({
               checked={sendInvitationEmail}
               disabled={isSubmitting}
               label="Gửi lời mời qua email"
-              description="Nếu email chưa gửi được, hệ thống vẫn hiển thị liên kết để gửi thủ công."
+              description="Nếu email không gửi được, hệ thống vẫn hiển thị liên kết để gửi thủ công."
               onChange={setSendInvitationEmail}
             />
           </div>
@@ -615,7 +627,7 @@ export function CreateAccountDialog({
             disabled={formBlocked}
           >
             <Send className="size-4" />
-            Tạo và gửi lời mời
+            Tạo lời mời
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -683,8 +695,11 @@ function formatDateTime(value: string): string {
   return Number.isNaN(date.getTime())
     ? value
     : new Intl.DateTimeFormat("vi-VN", {
-        dateStyle: "medium",
-        timeStyle: "short",
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
       }).format(date);
 }
 

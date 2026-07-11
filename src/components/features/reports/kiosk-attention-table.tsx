@@ -10,7 +10,13 @@ import type { ReportKioskAttentionRow } from "@/types/reports";
 
 function formatDate(value?: string | null) {
   if (!value) return "Chưa ghi nhận";
-  return new Intl.DateTimeFormat("vi-VN", { dateStyle: "short", timeStyle: "short" }).format(new Date(value));
+  return new Intl.DateTimeFormat("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
 }
 
 const LIFECYCLE_LABELS: Record<
@@ -64,12 +70,12 @@ export function KioskAttentionTable({ rows }: { rows: ReportKioskAttentionRow[] 
             <TableRow className="hover:bg-transparent">
               <TableHead className="pl-5">Kiosk</TableHead>
               <TableHead>Cửa hàng</TableHead>
-              <TableHead>Vòng đời</TableHead>
+              <TableHead className="text-center">Vòng đời</TableHead>
               <TableHead className="text-center">Tồn kho</TableHead>
               <TableHead className="text-center">Bảo trì</TableHead>
               <TableHead className="text-center">Đơn hàng</TableHead>
               <TableHead>Cần xử lý</TableHead>
-              <TableHead className="pr-5 text-right">Chi tiết</TableHead>
+              <TableHead className="pr-5 text-center">Chi tiết</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -80,7 +86,7 @@ export function KioskAttentionTable({ rows }: { rows: ReportKioskAttentionRow[] 
                   <p className="text-xs text-muted-foreground">{row.kioskCode}</p>
                 </TableCell>
                 <TableCell className="text-muted-foreground">{row.storeName}</TableCell>
-                <TableCell>
+                <TableCell className="text-center">
                   <Badge
                     variant="outline"
                     className={`h-6 rounded-full px-2.5 ${LIFECYCLE_CLASS_NAMES[row.lifecycleStatus]}`}
@@ -103,7 +109,7 @@ export function KioskAttentionTable({ rows }: { rows: ReportKioskAttentionRow[] 
                     <span className="text-sm text-foreground">{row.reasons.join(" · ")}</span>
                   </div>
                 </TableCell>
-                <TableCell className="pr-5 text-right">
+                <TableCell className="pr-5 text-center">
                   <Link
                     className={cn(
                       buttonVariants({ variant: "ghost", size: "icon-sm" }),

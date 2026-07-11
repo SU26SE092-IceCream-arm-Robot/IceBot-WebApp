@@ -81,24 +81,24 @@ export function RecentActivityTable({ items }: { items: ReportActivityItem[] }) 
           <TableHeader className="bg-muted/40">
             <TableRow className="hover:bg-transparent">
               <TableHead className="pl-5">Thời gian</TableHead>
-              <TableHead>Loại</TableHead>
+              <TableHead className="text-center">Loại</TableHead>
               <TableHead>Đối tượng</TableHead>
               <TableHead>Nội dung</TableHead>
-              <TableHead className="pr-5">Trạng thái</TableHead>
+              <TableHead className="pr-5 text-center">Trạng thái</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {items.map((item) => (
               <TableRow key={item.id}>
                 <TableCell className="py-3 pl-5 text-muted-foreground">{formatDate(item.occurredAt)}</TableCell>
-                <TableCell>
+                <TableCell className="text-center">
                   <Badge variant="outline" className="h-6 rounded-full border-border bg-muted/20 px-2.5 text-muted-foreground">
                     {TYPE_LABELS[item.type]}
                   </Badge>
                 </TableCell>
                 <TableCell className="font-medium text-foreground">{item.entity}</TableCell>
                 <TableCell className="max-w-md whitespace-normal text-muted-foreground">{item.summary}</TableCell>
-                <TableCell className="pr-5">
+                <TableCell className="pr-5 text-center">
                   <Badge
                     variant="outline"
                     className={`h-6 rounded-full px-2.5 ${STATUS_CLASS_NAMES[item.tone]}`}

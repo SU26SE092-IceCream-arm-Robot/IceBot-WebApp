@@ -108,12 +108,6 @@ function getScopeLabel(scopeType: TenantScopeType): string {
   }
 }
 
-function getScopeId(
-  resource: Pick<ProductResult | MenuResult, "organizationId" | "storeId" | "kioskId">
-): string | null {
-  return resource.kioskId ?? resource.storeId ?? resource.organizationId ?? null;
-}
-
 function getMenuStatusLabel(status: MenuStatus): string {
   switch (status) {
     case "Draft":
@@ -124,6 +118,18 @@ function getMenuStatusLabel(status: MenuStatus): string {
       return "Tạm dừng";
     case "Archived":
       return "Lưu trữ";
+  }
+}
+
+function getFulfillmentTypeLabel(value: ProductVariantResult["fulfillmentType"]): string {
+  switch (value) {
+    case "MachineProduced":
+      return "Sản xuất bằng máy";
+    case "Manual":
+      return "Thủ công";
+    case "Packaged":
+    default:
+      return "Đóng gói sẵn";
   }
 }
 
@@ -226,8 +232,6 @@ export function ProductDetailDialog({
   onEditVariant,
   onDeleteVariant,
 }: ProductDetailDialogProps) {
-  const scopeId = product ? getScopeId(product) : null;
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
@@ -260,12 +264,7 @@ export function ProductDetailDialog({
                 </span>
               </DetailField>
               <DetailField label="Phạm vi">
-                <div className="space-y-1">
-                  <Badge variant="outline">{getScopeLabel(product.scopeType)}</Badge>
-                  {scopeId ? (
-                    <p className="break-all tabular-nums text-xs text-muted-foreground">{scopeId}</p>
-                  ) : null}
-                </div>
+                <Badge variant="outline">{getScopeLabel(product.scopeType)}</Badge>
               </DetailField>
               <DetailField label="Loại sản phẩm">
                 {product.productType || "Chưa cập nhật"}
@@ -280,7 +279,7 @@ export function ProductDetailDialog({
             <section className="space-y-3">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <h3 className="font-medium text-foreground">Biến thể (Variants)</h3>
+                  <h3 className="font-medium text-foreground">Biến thể</h3>
                   <p className="text-xs text-muted-foreground">
                     Giá và trạng thái khả dụng của từng biến thể.
                   </p>
@@ -301,15 +300,6 @@ export function ProductDetailDialog({
                     </Button>
                     <Button size="sm" onClick={() => onCreateVariant(product)}>
                       <Plus className="size-3.5" />Thêm biến thể
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-                      title="Xóa sản phẩm"
-                      onClick={() => onDeleteProduct(product)}
-                    >
-                      <Trash2 className="size-4" />
                     </Button>
                   </div>
                 ) : null}
@@ -337,13 +327,7 @@ export function ProductDetailDialog({
                           <span className="tabular-nums">{variant.code}</span>
                           {variant.sizeCode ? ` · Kích cỡ ${variant.sizeCode}` : ""}
                           {variant.variantType ? ` · ${variant.variantType}` : ""}
-                          {` · ${
-                            variant.fulfillmentType === "MachineProduced"
-                              ? "Máy sản xuất"
-                              : variant.fulfillmentType === "Manual"
-                                ? "Thủ công"
-                                : "Đóng gói sẵn"
-                          }`}
+                          {` · ${getFulfillmentTypeLabel(variant.fulfillmentType)}`}
                         </p>
                         <p className="tabular-nums text-sm font-medium text-foreground">
                           {formatMoney(variant.basePrice, variant.currency)}
@@ -354,10 +338,10 @@ export function ProductDetailDialog({
                           <Button variant="outline" size="sm" isLoading={variantActionId === variant.id} onClick={() => onToggleVariant(variant)}>
                             {variant.isAvailable ? "Tắt biến thể" : "Bật biến thể"}
                           </Button>
-                          <Button variant="ghost" size="icon-sm" title="Chỉnh sửa biến thể" onClick={() => onEditVariant(product, variant)}>
+                          <Button variant="ghost" size="icon-sm" title="Chỉnh sửa biến thể" aria-label="Chỉnh sửa biến thể" onClick={() => onEditVariant(product, variant)}>
                             <Pencil className="size-4" />
                           </Button>
-                          <Button variant="ghost" size="icon-sm" className="text-destructive hover:bg-destructive/10 hover:text-destructive" title="Xóa biến thể" onClick={() => onDeleteVariant(product, variant)}>
+                          <Button variant="ghost" size="icon-sm" className="text-destructive hover:bg-destructive/10 hover:text-destructive" title="Xóa biến thể" aria-label="Xóa biến thể" onClick={() => onDeleteVariant(product, variant)}>
                             <Trash2 className="size-4" />
                           </Button>
                         </div>
@@ -367,6 +351,29 @@ export function ProductDetailDialog({
                 </div>
               )}
             </section>
+
+            {canManage ? (
+              <section className="rounded-xl border border-destructive/20 bg-destructive/5 p-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <h3 className="font-medium text-destructive">Thao tác khác</h3>
+                    <p className="text-xs text-muted-foreground">
+                      Xóa mềm sản phẩm khỏi danh mục quản lý.
+                    </p>
+                  </div>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    title="Xóa sản phẩm"
+                    aria-label="Xóa sản phẩm"
+                    onClick={() => onDeleteProduct(product)}
+                  >
+                    <Trash2 className="size-4" />
+                    Xóa sản phẩm
+                  </Button>
+                </div>
+              </section>
+            ) : null}
           </div>
         ) : null}
 
@@ -393,32 +400,16 @@ export function MenuDetailDialog({
   onEditMenuItem,
   onDeleteMenuItem,
 }: MenuDetailDialogProps) {
-  const scopeId = menu ? getScopeId(menu) : null;
   const nextMenuStatus = menu ? getNextMenuStatus(menu.status) : null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <DialogTitle>Chi tiết thực đơn</DialogTitle>
-              <DialogDescription>
-                Thông tin thực đơn và danh sách các món.
-              </DialogDescription>
-            </div>
-            {canManage && menu && !isLoading && !errorMessage ? (
-              <div className="flex gap-2 pr-6 sm:pr-0">
-                <Button variant="outline" size="sm" onClick={() => onEditMenu(menu)}>
-                  <Pencil className="size-4" />
-                  Sửa
-                </Button>
-                <Button variant="destructive" size="sm" onClick={() => onDeleteMenu(menu)}>
-                  <Trash2 className="size-4" />
-                </Button>
-              </div>
-            ) : null}
-          </div>
+          <DialogTitle>Chi tiết thực đơn</DialogTitle>
+          <DialogDescription>
+            Thông tin thực đơn và danh sách các món.
+          </DialogDescription>
         </DialogHeader>
 
         {isLoading ? (
@@ -441,12 +432,7 @@ export function MenuDetailDialog({
                 <span className="tabular-nums font-medium">{menu.currency}</span>
               </DetailField>
               <DetailField label="Phạm vi">
-                <div>
-                  <p>{getScopeLabel(menu.scopeType)}</p>
-                  {scopeId ? (
-                    <p className="break-all tabular-nums text-xs text-muted-foreground">{scopeId}</p>
-                  ) : null}
-                </div>
+                <Badge variant="outline">{getScopeLabel(menu.scopeType)}</Badge>
               </DetailField>
               <div className="sm:col-span-2">
                 <DetailField label="Mô tả">
@@ -464,7 +450,11 @@ export function MenuDetailDialog({
                   </p>
                 </div>
                 {canManage ? (
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button variant="outline" size="sm" onClick={() => onEditMenu(menu)}>
+                      <Pencil className="size-4" />
+                      Sửa thực đơn
+                    </Button>
                     {nextMenuStatus ? (
                       <Button
                         variant={nextMenuStatus === "Active" ? "default" : "outline"}
@@ -514,11 +504,8 @@ export function MenuDetailDialog({
                                 {getMenuItemStatusLabel(item.status)}
                               </Badge>
                             </div>
-                            <p className="break-all tabular-nums text-xs text-muted-foreground">
-                              Product: {item.productId}
-                            </p>
-                            <p className="break-all tabular-nums text-xs text-muted-foreground">
-                              Variant: {item.productVariantId}
+                            <p className="text-xs text-muted-foreground">
+                              Liên kết sản phẩm và biến thể đã cấu hình
                             </p>
                             <p className="tabular-nums text-sm font-medium text-foreground">
                               {formatMoney(item.price, item.currency)}
@@ -543,6 +530,8 @@ export function MenuDetailDialog({
                                 variant="outline"
                                 size="sm"
                                 className="px-2"
+                                title="Chỉnh sửa món"
+                                aria-label="Chỉnh sửa món"
                                 onClick={() => onEditMenuItem(menu, item)}
                               >
                                 <Pencil className="size-4" />
@@ -551,6 +540,8 @@ export function MenuDetailDialog({
                                 variant="destructive"
                                 size="sm"
                                 className="px-2"
+                                title="Xóa món"
+                                aria-label="Xóa món"
                                 onClick={() => onDeleteMenuItem(menu, item)}
                               >
                                 <Trash2 className="size-4" />
@@ -563,6 +554,29 @@ export function MenuDetailDialog({
                 </div>
               )}
             </section>
+
+            {canManage ? (
+              <section className="rounded-xl border border-destructive/20 bg-destructive/5 p-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <h3 className="font-medium text-destructive">Thao tác khác</h3>
+                    <p className="text-xs text-muted-foreground">
+                      Xóa mềm thực đơn khỏi danh mục quản lý.
+                    </p>
+                  </div>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    title="Xóa thực đơn"
+                    aria-label="Xóa thực đơn"
+                    onClick={() => onDeleteMenu(menu)}
+                  >
+                    <Trash2 className="size-4" />
+                    Xóa thực đơn
+                  </Button>
+                </div>
+              </section>
+            ) : null}
           </div>
         ) : null}
 

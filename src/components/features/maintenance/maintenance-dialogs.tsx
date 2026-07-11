@@ -71,9 +71,9 @@ function DetailTile({ label, value }: { label: string; value: ReactNode }) {
   );
 }
 
-function IdValue({ value }: { value?: string | null }) {
+function LinkedValue({ value }: { value?: string | null }) {
   return value ? (
-    <span className="font-mono text-xs tabular-nums">{value}</span>
+    <span>Đã liên kết</span>
   ) : (
     <span className="text-muted-foreground">Chưa có</span>
   );
@@ -178,7 +178,7 @@ export function MaintenanceDetailDialog({
                     {ticket.title}
                   </p>
                   <p className="font-mono text-xs tabular-nums text-muted-foreground">
-                    {ticket.ticketNumber} · {ticket.id}
+                    {ticket.ticketNumber}
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -195,14 +195,14 @@ export function MaintenanceDetailDialog({
 
             <div className="grid gap-3 sm:grid-cols-3">
               <DetailTile label="Mã lỗi" value={ticket.issueCode} />
-              <DetailTile label="Kiosk" value={<IdValue value={ticket.kioskId} />} />
-              <DetailTile label="Store" value={<IdValue value={ticket.storeId} />} />
+              <DetailTile label="Kiosk" value={<LinkedValue value={ticket.kioskId} />} />
+              <DetailTile label="Cửa hàng" value={<LinkedValue value={ticket.storeId} />} />
               <DetailTile
-                label="Organization"
-                value={<IdValue value={ticket.organizationId} />}
+                label="Tổ chức"
+                value={<LinkedValue value={ticket.organizationId} />}
               />
-              <DetailTile label="Thiết bị" value={<IdValue value={ticket.deviceId} />} />
-              <DetailTile label="Đơn hàng" value={<IdValue value={ticket.orderId} />} />
+              <DetailTile label="Thiết bị" value={<LinkedValue value={ticket.deviceId} />} />
+              <DetailTile label="Đơn hàng" value={<LinkedValue value={ticket.orderId} />} />
             </div>
 
             <div className="rounded-xl border border-border bg-card p-4">
@@ -225,14 +225,14 @@ export function MaintenanceDetailDialog({
             <div className="grid gap-3 sm:grid-cols-2">
               <DetailTile
                 label="Người phụ trách"
-                value={<IdValue value={ticket.assignedToAccountId} />}
+                value={<LinkedValue value={ticket.assignedToAccountId} />}
               />
               <DetailTile
                 label="Người tạo"
-                value={<IdValue value={ticket.createdByAccountId} />}
+                value={<LinkedValue value={ticket.createdByAccountId} />}
               />
               <DetailTile label="Cập nhật lần cuối" value={formatMaintenanceDate(ticket.updatedAt)} />
-              <DetailTile label="Device event" value={<IdValue value={ticket.deviceEventId} />} />
+              <DetailTile label="Sự kiện thiết bị" value={<LinkedValue value={ticket.deviceEventId} />} />
             </div>
 
             {ticket.resolutionNotes || ticket.cancelReason ? (
@@ -353,9 +353,9 @@ export function MaintenanceEditorDialog({
     }
 
     const uuidError =
-      validateOptionalUuid(deviceId, "Device ID") ||
-      validateOptionalUuid(orderId, "Order ID") ||
-      validateOptionalUuid(deviceEventId, "Device event ID");
+      validateOptionalUuid(deviceId, "Thiết bị liên quan") ||
+      validateOptionalUuid(orderId, "Đơn hàng liên quan") ||
+      validateOptionalUuid(deviceEventId, "Sự kiện thiết bị liên quan");
     if (uuidError) {
       setValidationMessage(uuidError);
       return;
@@ -472,9 +472,9 @@ export function MaintenanceEditorDialog({
 
           <div className="grid gap-3 rounded-xl border border-border bg-muted/15 p-4 sm:grid-cols-3">
             {[
-              ["Device ID", deviceId, setDeviceId],
-              ["Order ID", orderId, setOrderId],
-              ["Device event ID", deviceEventId, setDeviceEventId],
+              ["Thiết bị liên quan", deviceId, setDeviceId],
+              ["Đơn hàng liên quan", orderId, setOrderId],
+              ["Sự kiện thiết bị liên quan", deviceEventId, setDeviceEventId],
             ].map(([label, value, setter]) => (
               <div key={label as string} className="space-y-1.5">
                 <label className="text-xs font-medium text-muted-foreground">{label as string}</label>

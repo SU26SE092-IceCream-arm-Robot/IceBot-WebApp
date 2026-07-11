@@ -13,6 +13,16 @@ import {
 } from "@/components/ui/table";
 import type { ManagementRoleResult } from "@/types/accounts";
 
+const ROLE_NAME_LABELS: Record<string, string> = {
+  Admin: "Quản trị viên",
+  SystemAdmin: "Quản trị hệ thống",
+  Manager: "Quản lý",
+  OrgAdmin: "Quản trị tổ chức",
+  LocationOwner: "Quản lý địa điểm",
+  Staff: "Nhân viên",
+  Technician: "Kỹ thuật viên",
+};
+
 export function RolesTable({ roles }: { roles: ManagementRoleResult[] }) {
   if (roles.length === 0) {
     return (
@@ -27,8 +37,8 @@ export function RolesTable({ roles }: { roles: ManagementRoleResult[] }) {
       <Table>
         <TableHeader className="bg-muted/50">
           <TableRow>
-            <TableHead className="w-[150px]">Mã Vai Trò</TableHead>
-            <TableHead className="w-[200px]">Tên Vai Trò</TableHead>
+            <TableHead className="w-[150px]">Mã vai trò</TableHead>
+            <TableHead className="w-[200px]">Tên vai trò</TableHead>
             <TableHead>Mô tả</TableHead>
             <TableHead className="text-center w-[120px]">Phạm vi</TableHead>
             <TableHead className="text-center w-[120px]">Hệ thống</TableHead>
@@ -43,7 +53,7 @@ export function RolesTable({ roles }: { roles: ManagementRoleResult[] }) {
                   {role.code}
                 </Badge>
               </TableCell>
-              <TableCell>{role.name}</TableCell>
+              <TableCell>{ROLE_NAME_LABELS[role.code] ?? role.name}</TableCell>
               <TableCell className="text-muted-foreground max-w-[300px] truncate">
                 {role.description || "-"}
               </TableCell>

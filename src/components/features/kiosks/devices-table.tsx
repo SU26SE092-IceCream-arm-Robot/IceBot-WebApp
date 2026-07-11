@@ -117,17 +117,17 @@ export function DevicesTable({ kioskId }: DevicesTableProps) {
           />
         ) : (
           <div className="overflow-x-auto">
-            <Table>
+            <Table className="min-w-[900px] table-fixed">
               <TableHeader>
-                <TableRow>
+                <TableRow className="hover:bg-transparent">
                   <TableHead className="pl-5">Mã thiết bị</TableHead>
                   <TableHead>Tên</TableHead>
-                  <TableHead>Loại</TableHead>
-                  <TableHead>Model</TableHead>
-                  <TableHead>Serial</TableHead>
-                  <TableHead>Trạng thái</TableHead>
-                  <TableHead>Firmware</TableHead>
-                  <TableHead className="pr-5">Cài đặt lúc</TableHead>
+                  <TableHead className="text-center">Loại</TableHead>
+                  <TableHead className="text-center">Model</TableHead>
+                  <TableHead className="text-center">Serial</TableHead>
+                  <TableHead className="text-center">Trạng thái</TableHead>
+                  <TableHead className="text-center">Firmware</TableHead>
+                  <TableHead className="pr-5 text-center">Cài đặt lúc</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -139,24 +139,26 @@ export function DevicesTable({ kioskId }: DevicesTableProps) {
                     <TableCell className="font-medium">
                       {device.name}
                     </TableCell>
-                    <TableCell className="text-muted-foreground">
+                    <TableCell className="text-center text-muted-foreground">
                       {device.deviceTypeCode}
                     </TableCell>
-                    <TableCell className="text-muted-foreground">
+                    <TableCell className="text-center text-muted-foreground">
                       {device.deviceModelCode || "--"}
                     </TableCell>
-                    <TableCell className="font-mono text-xs text-muted-foreground">
+                    <TableCell className="text-center font-mono text-xs text-muted-foreground">
                       {device.serialNumber || "--"}
                     </TableCell>
-                    <TableCell>
-                      <Badge variant={getStatusVariant(device.status)}>
-                        {getStatusLabel(device.status)}
-                      </Badge>
+                    <TableCell className="text-center">
+                      <div className="flex justify-center">
+                        <Badge variant={getStatusVariant(device.status)}>
+                          {getStatusLabel(device.status)}
+                        </Badge>
+                      </div>
                     </TableCell>
-                    <TableCell className="font-mono text-xs text-muted-foreground">
+                    <TableCell className="text-center font-mono text-xs text-muted-foreground">
                       {device.firmwareVersion || "--"}
                     </TableCell>
-                    <TableCell className="pr-5 tabular-nums text-xs text-muted-foreground">
+                    <TableCell className="pr-5 text-center tabular-nums text-xs text-muted-foreground">
                       {formatTimestamp(device.installedAt)}
                     </TableCell>
                   </TableRow>

@@ -519,7 +519,7 @@ export default function InventoryPage() {
             description={
               hasClientFilters
                 ? "Thử thay đổi từ khóa hoặc trạng thái đang lọc."
-                : "Chưa có trạng thái bộ phân phối."
+                : "Cần có Kiosk và bộ phân phối nguyên liệu trước khi tồn kho xuất hiện."
             }
           />
         ) : (

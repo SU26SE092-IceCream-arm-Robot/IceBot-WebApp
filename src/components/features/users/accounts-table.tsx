@@ -25,12 +25,13 @@ interface AccountsTableProps {
 }
 
 const ROLE_LABELS: Record<string, string> = {
-  SystemAdmin: "Admin",
-  Manager: "Manager",
-  OrgAdmin: "Org Admin",
-  LocationOwner: "Location Owner",
-  Staff: "Staff",
-  Technician: "Technician",
+  Admin: "Quản trị viên",
+  SystemAdmin: "Quản trị hệ thống",
+  Manager: "Quản lý",
+  OrgAdmin: "Quản trị tổ chức",
+  LocationOwner: "Quản lý địa điểm",
+  Staff: "Nhân viên",
+  Technician: "Kỹ thuật viên",
 };
 
 function getStatusLabel(status: ManagementAccountStatus): string {

@@ -153,15 +153,15 @@ export default function AlertsPage() {
             </div>
           ) : (
             <div className="relative overflow-x-auto">
-              <Table>
+              <Table className="min-w-[980px] table-fixed">
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>Mã & Mức độ</TableHead>
-                    <TableHead>Trạng thái</TableHead>
-                    <TableHead className="min-w-[200px]">Nội dung</TableHead>
-                    <TableHead>Nguồn</TableHead>
-                    <TableHead>Thời gian</TableHead>
-                    <TableHead className="w-[80px]"></TableHead>
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="w-[18%]">Mã & Mức độ</TableHead>
+                    <TableHead className="w-[14%] text-center">Trạng thái</TableHead>
+                    <TableHead className="w-[28%]">Nội dung</TableHead>
+                    <TableHead className="w-[16%] text-center">Nguồn</TableHead>
+                    <TableHead className="w-[16%] text-center">Thời gian</TableHead>
+                    <TableHead className="w-[8%] text-center">Thao tác</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -185,10 +185,12 @@ export default function AlertsPage() {
                               <span className="font-mono text-xs text-muted-foreground">{alert.alertCode}</span>
                             </div>
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="text-center">
+                            <div className="flex justify-center">
                             <Badge variant="outline" className={`h-6 rounded-full px-2.5 ${STATUS_CONFIG[alert.status].className}`}>
                               {STATUS_CONFIG[alert.status].label}
                             </Badge>
+                            </div>
                           </TableCell>
                           <TableCell>
                             <div className="flex max-w-[300px] flex-col">
@@ -202,27 +204,34 @@ export default function AlertsPage() {
                               </div>
                             </div>
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="text-center">
                             <div className="flex flex-col text-xs text-muted-foreground">
                               {alert.kioskId ? (
-                                <span className="font-medium text-foreground">Kiosk: {alert.kioskId}</span>
+                                <span className="font-medium text-foreground">Kiosk liên quan</span>
                               ) : alert.storeId ? (
-                                <span className="font-medium text-foreground">Store: {alert.storeId}</span>
+                                <span className="font-medium text-foreground">Cửa hàng liên quan</span>
                               ) : alert.organizationId ? (
-                                <span>Org: {alert.organizationId}</span>
+                                <span>Tổ chức liên quan</span>
                               ) : (
                                 <span>Hệ thống</span>
                               )}
                             </div>
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="text-center">
                             <div className="flex flex-col text-xs">
                               <span className="font-medium text-foreground">{formatDateTime(alert.lastOccurredAt)}</span>
                               <span className="text-muted-foreground">Lần đầu: {formatDateTime(alert.raisedAt)}</span>
                             </div>
                           </TableCell>
-                          <TableCell>
-                            <Button variant="ghost" size="icon" onClick={() => openAlertDetail(alert.id)}>
+                          <TableCell className="text-center">
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              className="rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
+                              title="Xem chi tiết cảnh báo"
+                              aria-label={`Xem chi tiết cảnh báo ${alert.alertCode}`}
+                              onClick={() => openAlertDetail(alert.id)}
+                            >
                               <Eye className="size-4" />
                             </Button>
                           </TableCell>

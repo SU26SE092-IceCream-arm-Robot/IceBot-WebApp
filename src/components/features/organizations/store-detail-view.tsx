@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { toast } from "sonner";
 import {
   ArrowLeft,
   Eye,
@@ -102,6 +103,14 @@ function formatOpeningHours(store: StoreResult): string {
     .join("; ");
 }
 
+function formatTimeZoneDisplay(timeZone: string): string {
+  if (timeZone === "Asia/Bangkok") {
+    return "Asia/Bangkok · UTC+7";
+  }
+
+  return timeZone;
+}
+
 function KioskStatusBadge({ status }: { status: KioskResult["status"] }) {
   const className =
     status === "Active"
@@ -125,7 +134,6 @@ export function StoreDetailView({ storeId }: StoreDetailViewProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [warningMessage, setWarningMessage] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [lifecycleOpen, setLifecycleOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -198,7 +206,7 @@ export function StoreDetailView({ storeId }: StoreDetailViewProps) {
     try {
       await mutation();
       await loadData();
-      setSuccessMessage(success);
+      toast.success(success);
       return true;
     } catch (error) {
       setMutationError(getStoresErrorMessage(error));
@@ -241,7 +249,6 @@ export function StoreDetailView({ storeId }: StoreDetailViewProps) {
 
   return (
     <div className="space-y-7">
-      {successMessage ? <div role="status" className="flex items-center justify-between gap-3 rounded-lg border border-success/30 bg-success/5 px-4 py-3 text-sm text-success"><span>{successMessage}</span><Button variant="ghost" size="sm" className="h-7 text-success" onClick={() => setSuccessMessage(null)}>Đóng</Button></div> : null}
       {warningMessage ? <div className="rounded-lg border border-warning/30 bg-warning/5 px-4 py-3 text-sm text-warning">{warningMessage}</div> : null}
 
       <section className="flex flex-col gap-4 border-b border-border pb-6 lg:flex-row lg:items-end lg:justify-between">
@@ -249,9 +256,9 @@ export function StoreDetailView({ storeId }: StoreDetailViewProps) {
         <div className="flex flex-wrap gap-2">{canManage ? <Button variant="outline" onClick={() => { setMutationError(null); setFormOpen(true); }}><Pencil className="size-4" />Chỉnh sửa</Button> : null}{canManage ? <Button variant={store.status === "Active" ? "destructive" : "default"} onClick={() => { setMutationError(null); setLifecycleOpen(true); }}>{store.status === "Active" ? <PowerOff className="size-4" /> : <Power className="size-4" />}{store.status === "Active" ? "Vô hiệu hóa" : "Kích hoạt"}</Button> : null}<Button variant="outline" onClick={() => void loadData()}><RefreshCw className="size-4" />Làm mới</Button></div>
       </section>
 
-      <Card className="border border-border/80 shadow-none"><CardHeader className="border-b border-border"><div className="flex items-center gap-3"><span className="flex size-10 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary"><StoreIcon className="size-5" /></span><CardTitle>Thông tin cửa hàng</CardTitle></div></CardHeader><CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"><DetailField label="Tổ chức" value={organization?.name ?? store.organizationId} /><DetailField label="Loại cửa hàng" value={store.storeType} /><DetailField label="Múi giờ" value={store.timeZone} /><DetailField label="Email" value={store.email || "Chưa có"} /><DetailField label="Số điện thoại" value={store.phoneNumber || "Chưa có"} /><DetailField label="Địa chỉ" value={location || "Chưa có"} /><DetailField label="Vĩ độ" value={store.latitude?.toString() ?? "Chưa có"} /><DetailField label="Kinh độ" value={store.longitude?.toString() ?? "Chưa có"} /><DetailField label="Cập nhật" value={formatTenantDate(store.updatedAt ?? store.createdAt)} /><DetailField label="Lịch mở cửa" value={formatOpeningHours(store)} /></CardContent></Card>
+      <Card className="border border-border/80 shadow-none"><CardHeader className="border-b border-border"><div className="flex items-center gap-3"><span className="flex size-10 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary"><StoreIcon className="size-5" /></span><CardTitle>Thông tin cửa hàng</CardTitle></div></CardHeader><CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"><DetailField label="Tổ chức" value={organization?.name ?? "Không xác định"} /><DetailField label="Loại cửa hàng" value={store.storeType} /><DetailField label="Múi giờ" value={formatTimeZoneDisplay(store.timeZone)} /><DetailField label="Email" value={store.email || "Chưa có"} /><DetailField label="Số điện thoại" value={store.phoneNumber || "Chưa có"} /><DetailField label="Địa chỉ" value={location || "Chưa có"} /><DetailField label="Vĩ độ" value={store.latitude?.toString() ?? "Chưa có"} /><DetailField label="Kinh độ" value={store.longitude?.toString() ?? "Chưa có"} /><DetailField label="Cập nhật" value={formatTenantDate(store.updatedAt ?? store.createdAt)} /><DetailField label="Lịch mở cửa" value={formatOpeningHours(store)} /></CardContent></Card>
 
-      <Card className="gap-0 border border-border/80 py-0 shadow-none"><CardHeader className="border-b border-border py-4"><div className="flex items-center gap-3"><span className="flex size-10 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary"><Monitor className="size-5" /></span><div><CardTitle>Kiosk tại cửa hàng</CardTitle><p className="text-sm text-muted-foreground">{kiosks.length} kiosk</p></div></div></CardHeader>{kiosks.length === 0 ? <TenantEmptyState title="Chưa có kiosk" description="Cửa hàng này chưa có kiosk liên quan." /> : <Table className="min-w-[760px] table-fixed"><TableHeader><TableRow><TableHead className="w-[32%] px-4">Kiosk</TableHead><TableHead className="w-[22%] text-center">Trạng thái</TableHead><TableHead className="w-[28%]">Địa chỉ</TableHead><TableHead className="w-[18%] px-4 text-center">Thao tác</TableHead></TableRow></TableHeader><TableBody>{kiosks.map((kiosk) => <TableRow key={kiosk.id}><TableCell className="px-4 py-3"><p className="font-medium">{kiosk.name}</p><p className="font-mono text-xs text-muted-foreground">{kiosk.code}</p></TableCell><TableCell className="text-center"><div className="flex justify-center"><KioskStatusBadge status={kiosk.status} /></div></TableCell><TableCell><span className="inline-flex items-center gap-2 text-muted-foreground"><MapPin className="size-4" />{kiosk.address || "Chưa có địa chỉ"}</span></TableCell><TableCell className="px-4 text-center"><Link href={`/kiosks/${kiosk.id}`} className={cn(buttonVariants({ variant: "outline", size: "sm" }))}><Eye className="size-4" />Xem kiosk</Link></TableCell></TableRow>)}</TableBody></Table>}</Card>
+      <Card className="gap-0 border border-border/80 py-0 shadow-none"><CardHeader className="border-b border-border py-4"><div className="flex items-center gap-3"><span className="flex size-10 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary"><Monitor className="size-5" /></span><div><CardTitle>Kiosk tại cửa hàng</CardTitle><p className="text-sm text-muted-foreground">{kiosks.length} kiosk</p></div></div></CardHeader>{kiosks.length === 0 ? <TenantEmptyState title="Chưa có kiosk" description="Cửa hàng này chưa có kiosk liên quan." /> : <Table className="min-w-[760px] table-fixed"><TableHeader><TableRow><TableHead className="w-[32%] px-4">Kiosk</TableHead><TableHead className="w-[22%] text-center">Trạng thái</TableHead><TableHead className="w-[28%]">Địa chỉ</TableHead><TableHead className="w-[18%] px-4 text-center">Thao tác</TableHead></TableRow></TableHeader><TableBody>{kiosks.map((kiosk) => <TableRow key={kiosk.id}><TableCell className="px-4 py-3"><p className="font-medium">{kiosk.name}</p><p className="font-mono text-xs text-muted-foreground">{kiosk.code}</p></TableCell><TableCell className="text-center"><div className="flex justify-center"><KioskStatusBadge status={kiosk.status} /></div></TableCell><TableCell><span className="inline-flex items-center gap-2 text-muted-foreground"><MapPin className="size-4" />{kiosk.address || "Chưa có địa chỉ"}</span></TableCell><TableCell className="px-4 text-center"><Link href={`/kiosks/${kiosk.id}`} className={cn(buttonVariants({ variant: "ghost", size: "icon-sm" }), "rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground")} title={`Xem kiosk ${kiosk.name}`} aria-label={`Xem kiosk ${kiosk.name}`}><Eye className="size-4" /></Link></TableCell></TableRow>)}</TableBody></Table>}</Card>
 
       {formOpen ? <StoreFormDialog organizationName={organization?.name ?? "Tổ chức"} store={store} open isSubmitting={isSubmitting} errorMessage={mutationError} onOpenChange={(open) => { if (!mutationRef.current) setFormOpen(open); }} onCreate={async () => false} onUpdate={submitUpdate} /> : null}
       {lifecycleOpen ? <LifecycleConfirmDialog entityLabel="cửa hàng" entityName={store.name} activate={store.status !== "Active"} open isSubmitting={isSubmitting} errorMessage={mutationError} onOpenChange={(open) => { if (!mutationRef.current) setLifecycleOpen(open); }} onConfirm={confirmLifecycle} /> : null}

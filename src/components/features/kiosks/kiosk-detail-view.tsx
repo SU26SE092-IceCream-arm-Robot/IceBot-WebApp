@@ -316,8 +316,7 @@ function MetadataPanel({ kiosk }: { kiosk: KioskManagementDetail }) {
           value={getLifecycleLabel(kiosk.lifecycleStatus)}
         />
         <DetailValue label="Cửa hàng" value={kiosk.locationName} />
-        <DetailValue label="Store ID" value={<span className="tabular-nums">{kiosk.locationId}</span>} />
-        <DetailValue label="Organization ID" value={<span className="tabular-nums">{kiosk.organizationId}</span>} />
+        <DetailValue label="Tổ chức" value={kiosk.organizationId ? "Đã liên kết" : "Chưa có"} />
         <DetailValue label="Loại kiosk" value={kiosk.kioskType} />
         <DetailValue label="Serial" value={kiosk.serialNumber || "Chưa cập nhật"} />
         <DetailValue label="Múi giờ" value={kiosk.timeZone} />

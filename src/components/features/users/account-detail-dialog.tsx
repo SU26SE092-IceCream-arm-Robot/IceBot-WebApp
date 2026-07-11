@@ -196,7 +196,7 @@ export function AccountDetailDialog({
                   </div>
 
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <DetailField label="Username">
+                    <DetailField label="Tên đăng nhập">
                       <span className="tabular-nums">{account.userName || "Chưa cập nhật"}</span>
                     </DetailField>
                     <DetailField label="Email">

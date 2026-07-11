@@ -30,6 +30,15 @@ function ProductCategoriesLoading() {
   );
 }
 
+function getProductTypeLabel(productType: string): string {
+  switch (productType) {
+    case "IceCream":
+      return "Kem";
+    default:
+      return productType;
+  }
+}
+
 function ProductCategoryCard({ category }: { category: ProductCategoryResult }) {
   return (
     <article className="rounded-xl border border-border bg-card p-4">
@@ -67,7 +76,9 @@ function ProductCategoryCard({ category }: { category: ProductCategoryResult }) 
       <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
         <div className="rounded-lg bg-muted/40 px-3 py-2">
           <p className="text-muted-foreground">Loại sản phẩm</p>
-          <p className="mt-1 font-medium text-foreground">{category.productType}</p>
+          <p className="mt-1 font-medium text-foreground">
+            {getProductTypeLabel(category.productType)}
+          </p>
         </div>
         <div className="rounded-lg bg-muted/40 px-3 py-2">
           <p className="text-muted-foreground">Thứ tự</p>

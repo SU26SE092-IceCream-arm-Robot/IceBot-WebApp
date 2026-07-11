@@ -39,6 +39,29 @@ function optional(value: string): string | null {
   return value.trim() || null;
 }
 
+function getScopeTypeLabel(scopeType: TenantScopeType): string {
+  switch (scopeType) {
+    case "Organization":
+      return "Tổ chức";
+    case "Store":
+      return "Cửa hàng";
+    case "Kiosk":
+      return "Kiosk";
+    default:
+      return "Không xác định";
+  }
+}
+
+function getProductOptionLabel(product: ProductResult): string {
+  const name = product.displayName?.trim() || product.name?.trim() || product.code;
+  return product.code ? `${name} · ${product.code}` : name || "Không xác định";
+}
+
+function getVariantOptionLabel(variant: ProductResult["variants"][number]): string {
+  const name = variant.displayName?.trim() || variant.name?.trim() || variant.code;
+  return variant.code ? `${name} · ${variant.code}` : name || "Không xác định";
+}
+
 function FormError({ message }: { message: string | null }) {
   return message ? (
     <div role="alert" className="flex items-start gap-2 rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-2.5 text-sm text-destructive">
@@ -94,8 +117,8 @@ export function MenuFormDialog({
     }
 
     const requiredScopeIds = [
-      scopeType === "Store" || scopeType === "Kiosk" ? [storeId, "Store ID"] : null,
-      scopeType === "Kiosk" ? [kioskId, "Kiosk ID"] : null,
+      scopeType === "Store" || scopeType === "Kiosk" ? [storeId, "Cửa hàng"] : null,
+      scopeType === "Kiosk" ? [kioskId, "Kiosk"] : null,
     ].filter(Boolean) as [string, string][];
     const invalidScope = requiredScopeIds.find(
       ([value]) => !UUID_PATTERN.test(value.trim()),
@@ -164,9 +187,9 @@ export function MenuFormDialog({
             <div className="space-y-1.5">
               <label className="text-sm font-medium">Phạm vi trong tổ chức</label>
               <Select value={scopeType} disabled={isSubmitting || !isCreate} onValueChange={(value) => setScopeType(value as TenantScopeType)}>
-                <SelectTrigger className="h-10 w-full"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="h-10 w-full"><SelectValue>{getScopeTypeLabel(scopeType)}</SelectValue></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Organization">Toàn tổ chức</SelectItem>
+                  <SelectItem value="Organization">Tổ chức</SelectItem>
                   <SelectItem value="Store">Cửa hàng</SelectItem>
                   <SelectItem value="Kiosk">Kiosk</SelectItem>
                 </SelectContent>
@@ -176,14 +199,14 @@ export function MenuFormDialog({
               <div className="grid gap-3 sm:grid-cols-2">
                 {scopeType === "Store" || scopeType === "Kiosk" ? (
                   <div className="space-y-1.5">
-                    <label htmlFor="menu-store" className="text-xs font-medium">Store ID</label>
-                    <Input id="menu-store" value={storeId} disabled={isSubmitting} className="h-9 font-mono text-xs" onChange={(event) => setStoreId(event.target.value)} />
+                    <label htmlFor="menu-store" className="text-xs font-medium">Cửa hàng</label>
+                    <Input id="menu-store" value={storeId} disabled={isSubmitting} className="h-9 font-mono text-xs" placeholder="Nhập UUID cửa hàng" onChange={(event) => setStoreId(event.target.value)} />
                   </div>
                 ) : null}
                 {scopeType === "Kiosk" ? (
                   <div className="space-y-1.5">
-                    <label htmlFor="menu-kiosk" className="text-xs font-medium">Kiosk ID</label>
-                    <Input id="menu-kiosk" value={kioskId} disabled={isSubmitting} className="h-9 font-mono text-xs" onChange={(event) => setKioskId(event.target.value)} />
+                    <label htmlFor="menu-kiosk" className="text-xs font-medium">Kiosk</label>
+                    <Input id="menu-kiosk" value={kioskId} disabled={isSubmitting} className="h-9 font-mono text-xs" placeholder="Nhập UUID kiosk" onChange={(event) => setKioskId(event.target.value)} />
                   </div>
                 ) : null}
               </div>
@@ -320,7 +343,7 @@ export function MenuItemFormDialog({
     event.preventDefault();
     if (isSubmitting) return;
     if (!productId || !productVariantId) {
-      setValidationMessage("Sản phẩm và Biến thể là bắt buộc.");
+      setValidationMessage("Sản phẩm và biến thể là bắt buộc.");
       return;
     }
     if (!code.trim() || !displayName.trim()) {
@@ -384,30 +407,30 @@ export function MenuItemFormDialog({
                 <SelectTrigger className="h-10 w-full"><SelectValue placeholder="Chọn sản phẩm..." /></SelectTrigger>
                 <SelectContent>
                   {products.map(p => (
-                    <SelectItem key={p.id} value={p.id}>{p.code} - {p.name}</SelectItem>
+                    <SelectItem key={p.id} value={p.id}>{getProductOptionLabel(p)}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             
             <div className="space-y-1.5">
-              <label className="text-sm font-medium">Biến thể (Variant) <span className="text-destructive">*</span></label>
+              <label className="text-sm font-medium">Biến thể <span className="text-destructive">*</span></label>
               <Select value={productVariantId} disabled={isSubmitting || !productId || !isCreate} onValueChange={handleVariantSelect}>
                 <SelectTrigger className="h-10 w-full"><SelectValue placeholder="Chọn biến thể..." /></SelectTrigger>
                 <SelectContent>
                   {variants.map(v => (
-                    <SelectItem key={v.id} value={v.id}>{v.code} - {v.name}</SelectItem>
+                    <SelectItem key={v.id} value={v.id}>{getVariantOptionLabel(v)}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-muted-foreground">Công thức (Recipe)</label>
-              <Input disabled className="h-10 bg-muted" placeholder="Chưa tích hợp quản lý Recipe trong màn hình này" />
+              <label className="text-sm font-medium text-muted-foreground">Công thức</label>
+              <Input disabled className="h-10 bg-muted" placeholder="Chưa tích hợp quản lý công thức trong màn hình này" />
               {isMachineProducedWithoutRecipe ? (
                 <p className="rounded-lg border border-warning/30 bg-warning/5 px-3 py-2 text-sm text-warning">
-                  Biến thể MachineProduced cần Recipe hợp lệ và production route trước khi bật bán. Hãy cấu hình Recipe qua luồng quản trị phù hợp trước khi kích hoạt món.
+                  Biến thể sản xuất bằng máy cần công thức hợp lệ và luồng sản xuất trước khi bật bán. Hãy cấu hình công thức qua luồng quản trị phù hợp trước khi kích hoạt món.
                 </p>
               ) : null}
             </div>
@@ -435,11 +458,11 @@ export function MenuItemFormDialog({
               <Input id="mi-order" type="number" step="1" value={displayOrder} disabled={isSubmitting} className="h-10" onChange={(event) => setDisplayOrder(event.target.value)} />
             </div>
             <div className="space-y-1.5 sm:col-span-2">
-              <label htmlFor="mi-desc" className="text-sm font-medium">Mô tả (Description)</label>
+              <label htmlFor="mi-desc" className="text-sm font-medium">Mô tả</label>
               <textarea id="mi-desc" value={description} rows={3} disabled={isSubmitting} className="w-full resize-y rounded-lg border border-input bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50" onChange={(event) => setDescription(event.target.value)} />
             </div>
             <div className="space-y-1.5 sm:col-span-2">
-              <label htmlFor="mi-img" className="text-sm font-medium">Image URL</label>
+              <label htmlFor="mi-img" className="text-sm font-medium">Đường dẫn hình ảnh</label>
               <Input id="mi-img" value={imageUrl} disabled={isSubmitting} className="h-10" onChange={(event) => setImageUrl(event.target.value)} />
             </div>
           </div>

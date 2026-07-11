@@ -25,6 +25,11 @@ export const REFUND_STATUS_LABELS: Record<RefundStatus, string> = {
   Cancelled: "Đã hủy",
 };
 
+const REFUND_METHOD_LABELS: Record<string, string> = {
+  FullMoneyRefund: "Hoàn tiền đầy đủ",
+  Voucher: "Voucher",
+};
+
 const REFUND_STATUS_CLASS_NAMES: Record<RefundStatus, string> = {
   Requested: "border-warning/20 bg-warning/10 text-warning",
   Processing: "border-primary/20 bg-primary/10 text-primary",
@@ -91,7 +96,7 @@ export function RefundsTable({ refunds, onViewDetail }: RefundsTableProps) {
               {formatTransactionMoney(refund.amount, refund.currency)}
             </TableCell>
             <TableCell className="py-2.5 text-center text-sm text-muted-foreground">
-              {refund.refundMethod}
+              {REFUND_METHOD_LABELS[refund.refundMethod] ?? refund.refundMethod}
             </TableCell>
             <TableCell className="py-2.5 text-center text-xs tabular-nums text-muted-foreground">
               {formatTransactionDate(refund.requestedAt)}

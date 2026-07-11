@@ -54,8 +54,11 @@ function formatDate(value: string | null | undefined): string {
   return Number.isNaN(date.getTime())
     ? "Không xác định"
     : new Intl.DateTimeFormat("vi-VN", {
-        dateStyle: "short",
-        timeStyle: "short",
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
       }).format(date);
 }
 
