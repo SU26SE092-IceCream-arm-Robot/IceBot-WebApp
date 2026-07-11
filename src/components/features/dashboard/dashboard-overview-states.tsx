@@ -12,15 +12,20 @@ export function DashboardLoadingState() {
             <CardContent className="space-y-4 p-5">
               <div className="h-4 w-28 animate-pulse rounded bg-muted/50" />
               <div className="h-9 w-16 animate-pulse rounded bg-muted/40" />
+              <div className="h-3 w-36 animate-pulse rounded bg-muted/30" />
             </CardContent>
           </Card>
         ))}
       </section>
-      <section className="grid gap-4 xl:grid-cols-2">
-        <div className="h-80 animate-pulse rounded-xl border border-border bg-card" />
-        <div className="h-80 animate-pulse rounded-xl border border-border bg-card" />
+      <section className="grid gap-4 xl:grid-cols-12">
+        <div className="h-72 animate-pulse rounded-xl border border-border bg-card xl:col-span-7" />
+        <div className="h-72 animate-pulse rounded-xl border border-border bg-card xl:col-span-5" />
       </section>
-      <div className="h-80 animate-pulse rounded-xl border border-border bg-card" />
+      <section className="grid gap-4 xl:grid-cols-2">
+        <div className="h-64 animate-pulse rounded-xl border border-border bg-card" />
+        <div className="h-64 animate-pulse rounded-xl border border-border bg-card" />
+      </section>
+      <div className="h-72 animate-pulse rounded-xl border border-border bg-card" />
     </div>
   );
 }

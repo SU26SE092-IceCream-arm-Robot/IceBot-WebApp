@@ -11,6 +11,7 @@ import type { DashboardOverviewData } from "@/types/dashboard-overview";
 export interface UseDashboardOverviewResult {
   data: DashboardOverviewData | null;
   warnings: string[];
+  lastUpdatedAt: Date | null;
   isLoading: boolean;
   isRefreshing: boolean;
   errorMessage: string | null;
@@ -20,6 +21,7 @@ export interface UseDashboardOverviewResult {
 export function useDashboardOverview(): UseDashboardOverviewResult {
   const [data, setData] = useState<DashboardOverviewData | null>(null);
   const [warnings, setWarnings] = useState<string[]>([]);
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<Date | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -36,6 +38,7 @@ export function useDashboardOverview(): UseDashboardOverviewResult {
 
       setData(result.data);
       setWarnings(result.warnings);
+      setLastUpdatedAt(new Date());
     } catch (error) {
       if (signal?.aborted) {
         return;
@@ -67,6 +70,7 @@ export function useDashboardOverview(): UseDashboardOverviewResult {
   return {
     data,
     warnings,
+    lastUpdatedAt,
     isLoading,
     isRefreshing,
     errorMessage,

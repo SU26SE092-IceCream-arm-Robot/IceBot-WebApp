@@ -1,34 +1,26 @@
 "use client";
 
-import {
-  AlertTriangle,
-  Activity,
-  Boxes,
-  Monitor,
-  RefreshCw,
-  ShoppingBag,
-} from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 
-import { DashboardKpiCard } from "@/components/features/dashboard/dashboard-kpi-card";
+import { DashboardAttentionList } from "@/components/features/dashboard/dashboard-attention-list";
+import { DashboardHeader } from "@/components/features/dashboard/dashboard-header";
+import { DashboardKpiGrid } from "@/components/features/dashboard/dashboard-kpi-grid";
 import {
   DashboardEmptyState,
   DashboardErrorState,
   DashboardLoadingState,
 } from "@/components/features/dashboard/dashboard-overview-states";
-import {
-  InventoryOverviewPanel,
-  KioskLifecycleSummaryPanel,
-  OperationalAttentionPanel,
-  OrderOverviewPanel,
-} from "@/components/features/dashboard/dashboard-panels";
+import { DashboardRecentOrders } from "@/components/features/dashboard/dashboard-recent-orders";
+import { DashboardScopeSummary } from "@/components/features/dashboard/dashboard-scope-summary";
+import { DashboardStatusDistribution } from "@/components/features/dashboard/dashboard-status-distribution";
 import { OperationalShortcuts } from "@/components/features/dashboard/operational-shortcuts";
-import { Button } from "@/components/ui/button";
 import { useDashboardOverview } from "@/hooks/use-dashboard-overview";
 
 export default function DashboardPage() {
   const {
     data,
     warnings,
+    lastUpdatedAt,
     isLoading,
     isRefreshing,
     errorMessage,
@@ -45,24 +37,11 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-7">
-      <section className="flex flex-col gap-4 border-b border-border pb-6 lg:flex-row lg:items-end lg:justify-between">
-        <div className="max-w-2xl space-y-2">
-          <h1 className="text-3xl font-semibold tracking-tight text-foreground">
-            Tổng quan vận hành
-          </h1>
-          <p className="text-sm leading-6 text-muted-foreground">
-            Theo dõi nhanh trạng thái kiosk, tồn kho và đơn hàng trong phạm vi quản lý.
-          </p>
-        </div>
-        <Button
-          variant="outline"
-          onClick={() => void refresh()}
-          isLoading={isRefreshing}
-        >
-          <RefreshCw className="size-4" />
-          Làm mới
-        </Button>
-      </section>
+      <DashboardHeader
+        lastUpdatedAt={lastUpdatedAt}
+        isRefreshing={isRefreshing}
+        onRefresh={() => void refresh()}
+      />
 
       {isLoading ? (
         <DashboardLoadingState />
@@ -97,48 +76,45 @@ export default function DashboardPage() {
             </div>
           ) : null}
 
-          <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <DashboardKpiCard
-              icon={Monitor}
-              label="Tổng số kiosk"
-              value={data.dashboard.kioskCount}
-            />
-            <DashboardKpiCard
-              icon={ShoppingBag}
-              label="Đơn chờ thanh toán"
-              value={data.dashboard.pendingOrderCount}
-              tone="warning"
-            />
-            <DashboardKpiCard
-              icon={Boxes}
-              label="Hộp chứa sắp hết"
-              value={data.dashboard.lowStockDispenserCount}
-              tone="warning"
-            />
-            <DashboardKpiCard
-              icon={Activity}
-              label="Sự kiện thiết bị 24 giờ"
-              value={data.dashboard.latestDeviceEventCount}
-              tone="primary"
-            />
-          </section>
+          <DashboardKpiGrid
+            metrics={data.dashboard}
+            inventory={data.inventorySummary}
+          />
 
-          <section className="grid items-start gap-4 xl:grid-cols-[0.58fr_0.42fr]">
-            <OperationalAttentionPanel
-              metrics={data.dashboard}
-              inventory={data.inventorySummary}
-            />
-            <div className="space-y-4">
-              <KioskLifecycleSummaryPanel
+          <section className="grid items-start gap-4 xl:grid-cols-12">
+            <div className="xl:col-span-7">
+              <DashboardAttentionList
                 metrics={data.dashboard}
-                overview={data.kioskStatusOverview}
+                inventory={data.inventorySummary}
               />
-              <InventoryOverviewPanel summary={data.inventorySummary} />
+            </div>
+            <div className="xl:col-span-5">
+              <DashboardScopeSummary metrics={data.dashboard} />
             </div>
           </section>
 
+          <section className="grid items-start gap-4 xl:grid-cols-2">
+            <DashboardStatusDistribution
+              title="Phân bố trạng thái kiosk"
+              description="Trạng thái vòng đời kiosk từ backend, không phải realtime online."
+              kind="kiosk"
+              items={data.kioskStatusOverview.byStatus}
+              total={data.kioskStatusOverview.totalCount}
+              emptyMessage="Chưa có kiosk để phân bố trạng thái."
+            />
+            <DashboardStatusDistribution
+              title="Phân bố trạng thái đơn hàng"
+              description="Tỷ lệ được tính từ tổng số đơn trong order overview."
+              kind="order"
+              items={data.orderOverview.byStatus}
+              total={data.orderOverview.totalCount}
+              emptyMessage="Chưa có đơn hàng để phân bố trạng thái."
+            />
+          </section>
+
+          <DashboardRecentOrders orders={data.orderOverview.recentOrders} />
+
           <OperationalShortcuts />
-          <OrderOverviewPanel overview={data.orderOverview} />
         </>
       )}
     </div>

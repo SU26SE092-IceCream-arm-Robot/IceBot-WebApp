@@ -67,10 +67,10 @@ export function OperationalShortcuts() {
   }
 
   return (
-    <section className="space-y-3">
+    <section className="space-y-3 pt-2">
       <div>
-        <h2 className="text-base font-semibold text-foreground">Lối tắt vận hành</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <h2 className="text-sm font-semibold text-foreground">Lối tắt vận hành</h2>
+        <p className="mt-1 text-xs text-muted-foreground">
           Đi thẳng đến nghiệp vụ cần xử lý.
         </p>
       </div>
@@ -80,9 +80,9 @@ export function OperationalShortcuts() {
 
           return (
             <Link key={item.href} href={item.href} className="group">
-              <Card className="h-full border-border/80 shadow-none transition-colors group-hover:border-primary/30 group-hover:bg-primary/5">
+              <Card className="h-full border-border/80 bg-muted/5 shadow-none transition-colors group-hover:border-primary/30 group-hover:bg-primary/5">
                 <CardContent className="flex items-start gap-3 p-4">
-                  <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-background text-muted-foreground group-hover:text-primary">
                     <Icon className="size-4" />
                   </span>
                   <span className="min-w-0">
