@@ -22,6 +22,7 @@ export type BackendRoleCode =
 
 export type DashboardRoutePath =
   | "/dashboard"
+  | "/readiness"
   | "/organizations"
   | "/kiosks"
   | "/inventory"

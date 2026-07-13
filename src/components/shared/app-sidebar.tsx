@@ -14,6 +14,7 @@ import {
   LogOut,
   Monitor,
   Package,
+  ClipboardCheck,
   ShoppingCart,
   Users,
   Wrench,
@@ -33,6 +34,7 @@ interface SidebarItem {
 
 const SIDEBAR_ITEMS: readonly SidebarItem[] = [
   { href: "/dashboard", label: "Tổng quan", icon: LayoutDashboard },
+  { href: "/readiness", label: "Sẵn sàng vận hành", icon: ClipboardCheck },
   { href: "/kiosks", label: "Quản lý Kiosk", icon: Monitor },
   { href: "/inventory", label: "Tồn kho", icon: Package },
   { href: "/transactions", label: "Giao dịch", icon: ShoppingCart },
@@ -51,7 +53,7 @@ const SIDEBAR_GROUPS: readonly {
 }[] = [
   {
     label: "Vận hành",
-    routes: ["/dashboard", "/alerts", "/kiosks", "/inventory", "/maintenance"],
+    routes: ["/dashboard", "/readiness", "/alerts", "/kiosks", "/inventory", "/maintenance"],
   },
   { label: "Kinh doanh", routes: ["/transactions", "/menu", "/reports"] },
   { label: "Quản trị", routes: ["/organizations", "/users", "/settings/payment-methods"] },

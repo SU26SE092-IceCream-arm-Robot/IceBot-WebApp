@@ -26,6 +26,7 @@ export const PERMISSIONS: Record<DashboardPermission, readonly DashboardRole[]> 
 
 export const ROUTE_PERMISSIONS: Record<DashboardRoutePath, DashboardPermission> = {
   "/dashboard": "dashboard.view",
+  "/readiness": "dashboard.view",
   "/organizations": "organizations.view",
   "/kiosks": "kiosks.view",
   "/inventory": "inventory.view",
@@ -40,6 +41,7 @@ export const ROUTE_PERMISSIONS: Record<DashboardRoutePath, DashboardPermission> 
 
 const DASHBOARD_ROUTES: readonly DashboardRoutePath[] = [
   "/dashboard",
+  "/readiness",
   "/organizations",
   "/kiosks",
   "/inventory",
