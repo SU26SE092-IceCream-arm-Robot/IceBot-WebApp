@@ -93,9 +93,8 @@ export default function ReadinessPage() {
             unknownCount={result.summary.unknownCount}
           />
 
-          <div className="grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
-            <div className="space-y-4">
-              <ReadinessSummaryCard summary={result.summary} />
+          <div className="grid gap-5 xl:grid-cols-12">
+            <div className="space-y-4 xl:col-span-8">
               {GROUP_ORDER.map((group) => {
                 const checks = checksByGroup.get(group) ?? [];
                 return checks.length > 0 ? (
@@ -104,7 +103,8 @@ export default function ReadinessPage() {
               })}
             </div>
 
-            <aside className="space-y-4">
+            <aside className="space-y-4 xl:sticky xl:top-6 xl:col-span-4 xl:self-start">
+              <ReadinessSummaryCard summary={result.summary} />
               <ReadinessNextActions actions={result.nextActions} />
             </aside>
           </div>

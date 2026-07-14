@@ -11,8 +11,11 @@ interface ReadinessHeaderProps {
 }
 
 const DATE_FORMATTER = new Intl.DateTimeFormat("vi-VN", {
-  dateStyle: "short",
-  timeStyle: "short",
+  day: "2-digit",
+  month: "2-digit",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
 });
 
 export function ReadinessHeader({
@@ -23,13 +26,13 @@ export function ReadinessHeader({
   return (
     <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
       <div className="min-w-0 space-y-1">
-        <p className="text-sm font-medium text-primary">Operational readiness</p>
+        <p className="text-sm font-medium text-primary">Kiểm tra thiết lập</p>
         <h1 className="font-heading text-3xl font-semibold tracking-tight text-foreground">
-          Sẵn sàng vận hành
+          Mức độ hoàn tất thiết lập
         </h1>
         <p className="max-w-2xl text-sm text-muted-foreground">
-          Kiểm tra nhanh các cấu hình tối thiểu trước khi đưa cửa hàng và kiosk vào
-          luồng bán hàng.
+          Kiểm tra các cấu hình cần thiết trước khi đưa cửa hàng và kiosk vào sử
+          dụng.
         </p>
         <p className="text-xs text-muted-foreground">
           Cập nhật lần cuối:{" "}

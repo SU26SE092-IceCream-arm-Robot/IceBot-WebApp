@@ -8,8 +8,8 @@ import type { ReadinessSourceFailure } from "@/types/setup-readiness";
 
 export function ReadinessLoadingState() {
   return (
-    <div className="grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
-      <Card>
+    <div className="grid gap-5 xl:grid-cols-12">
+      <Card className="xl:col-span-8">
         <CardHeader>
           <div className="h-5 w-48 animate-pulse rounded bg-muted" />
           <div className="h-4 w-72 animate-pulse rounded bg-muted" />
@@ -20,7 +20,7 @@ export function ReadinessLoadingState() {
           ))}
         </CardContent>
       </Card>
-      <Card>
+      <Card className="xl:col-span-4">
         <CardContent className="space-y-3 pt-4">
           <div className="h-6 w-40 animate-pulse rounded bg-muted" />
           <div className="h-24 animate-pulse rounded-lg bg-muted" />
@@ -65,7 +65,7 @@ export function ReadinessEmptyState() {
         <div>
           <p className="font-medium text-foreground">Chọn tổ chức và cửa hàng</p>
           <p className="text-sm text-muted-foreground">
-            Readiness cần một phạm vi cụ thể để đối chiếu kiosk, thực đơn và thanh
+            Trang này cần một phạm vi cụ thể để đối chiếu kiosk, thực đơn và thanh
             toán.
           </p>
         </div>
@@ -106,8 +106,8 @@ export function ReadinessPartialFailureBanner({
               Một số nguồn dữ liệu chưa kiểm tra được
             </p>
             <p className="text-muted-foreground">
-              Kết quả vẫn hiển thị phần đã đọc được từ backend. Các mục không rõ sẽ
-              không được suy diễn.
+              Kết quả vẫn hiển thị phần đã kiểm tra được. Những mục còn lại sẽ được
+              đánh dấu cần kiểm tra.
             </p>
           </div>
           {failures.length > 0 ? (

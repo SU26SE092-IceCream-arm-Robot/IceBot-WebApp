@@ -19,29 +19,71 @@ const STATUS_TONE: Record<
     icon: typeof CheckCircle2;
     iconClassName: string;
     badgeClassName: string;
+    itemClassName: string;
   }
 > = {
   complete: {
     icon: CheckCircle2,
     iconClassName: "text-emerald-600 dark:text-emerald-400",
     badgeClassName: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+    itemClassName: "bg-card",
   },
   warning: {
     icon: AlertTriangle,
     iconClassName: "text-amber-600 dark:text-amber-400",
     badgeClassName: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
+    itemClassName: "bg-amber-500/5",
   },
   missing: {
     icon: XCircle,
     iconClassName: "text-destructive",
     badgeClassName: "bg-destructive/10 text-destructive",
+    itemClassName: "bg-destructive/5",
   },
   unknown: {
     icon: CircleHelp,
     iconClassName: "text-muted-foreground",
     badgeClassName: "bg-muted text-muted-foreground",
+    itemClassName: "bg-muted/40",
   },
 };
+
+const COUNT_LABELS: Record<ReadinessCheck["id"], string> = {
+  ORG_ACTIVE: "tổ chức",
+  STORE_ACTIVE: "cửa hàng",
+  KIOSK_EXISTS: "kiosk",
+  PRODUCT_EXISTS: "sản phẩm",
+  VARIANT_EXISTS: "phiên bản",
+  MENU_EXISTS: "thực đơn",
+  MENU_ITEM_EXISTS: "món",
+  PAYMENT_ACTIVE: "phương thức thanh toán",
+};
+
+const EMPTY_LABELS: Record<ReadinessCheck["id"], string> = {
+  ORG_ACTIVE: "Chưa tìm thấy tổ chức",
+  STORE_ACTIVE: "Chưa tìm thấy cửa hàng",
+  KIOSK_EXISTS: "Chưa có kiosk",
+  PRODUCT_EXISTS: "Chưa có sản phẩm",
+  VARIANT_EXISTS: "Chưa có phiên bản",
+  MENU_EXISTS: "Chưa có thực đơn",
+  MENU_ITEM_EXISTS: "Chưa có món",
+  PAYMENT_ACTIVE: "Chưa có phương thức thanh toán",
+};
+
+const STATUS_LABELS: Record<string, string> = {
+  Active: "Đang hoạt động",
+  Inactive: "Ngừng hoạt động",
+  Disabled: "Đã vô hiệu hóa",
+  Draft: "Bản nháp",
+};
+
+function localizeStatusLabel(statusLabel?: string) {
+  if (!statusLabel) {
+    return undefined;
+  }
+
+  return STATUS_LABELS[statusLabel] ?? statusLabel.replaceAll("Active", "Đang hoạt động");
+}
 
 function evidenceText(check: ReadinessCheck) {
   const evidence = check.evidence;
@@ -51,8 +93,12 @@ function evidenceText(check: ReadinessCheck) {
 
   const parts = [
     evidence.entityName,
-    evidence.count !== undefined ? `${evidence.count} bản ghi` : undefined,
-    evidence.statusLabel,
+    evidence.count !== undefined
+      ? evidence.count === 0
+        ? EMPTY_LABELS[check.id]
+        : `${evidence.count} ${COUNT_LABELS[check.id]}`
+      : undefined,
+    localizeStatusLabel(evidence.statusLabel),
     evidence.detail,
   ].filter(Boolean);
 
@@ -65,9 +111,14 @@ export function ReadinessCheckItem({ check }: ReadinessCheckItemProps) {
   const evidence = evidenceText(check);
 
   return (
-    <div className="flex flex-col gap-3 rounded-lg border border-border bg-background p-3 sm:flex-row sm:items-start sm:justify-between">
+    <div
+      className={cn(
+        "flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-start sm:justify-between",
+        tone.itemClassName,
+      )}
+    >
       <div className="flex min-w-0 gap-3">
-        <Icon className={cn("mt-0.5 size-5 shrink-0", tone.iconClassName)} />
+        <Icon className={cn("mt-0.5 size-4 shrink-0", tone.iconClassName)} />
         <div className="min-w-0 space-y-1">
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="text-sm font-semibold text-foreground">{check.title}</h3>

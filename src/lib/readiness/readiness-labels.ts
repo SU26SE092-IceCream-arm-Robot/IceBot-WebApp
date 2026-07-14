@@ -23,7 +23,7 @@ export const READINESS_STATUS_LABELS: Record<ReadinessStatus, string> = {
 export const READINESS_OVERALL_LABELS: Record<ReadinessOverallStatus, string> = {
   complete: "Đã hoàn tất thiết lập cơ bản",
   needs_attention: "Cần hoàn thiện",
-  missing_configuration: "Còn thiếu cấu hình",
+  missing_configuration: "Chưa hoàn tất thiết lập",
   unknown: "Không thể xác định",
 };
 
@@ -40,14 +40,14 @@ export const READINESS_CHECK_DEFINITIONS: Record<
   ORG_ACTIVE: {
     group: "scope",
     title: "Tổ chức đang hoạt động",
-    description: "Tổ chức phải tồn tại và ở trạng thái Active.",
+    description: "Tổ chức phải đang hoạt động.",
     isCritical: true,
     action: { label: "Mở tổ chức", href: "/organizations" },
   },
   STORE_ACTIVE: {
     group: "scope",
     title: "Cửa hàng đang hoạt động",
-    description: "Cửa hàng phải thuộc tổ chức đã chọn và ở trạng thái Active.",
+    description: "Cửa hàng phải thuộc tổ chức đã chọn và đang hoạt động.",
     isCritical: true,
     action: { label: "Mở cửa hàng", href: "/organizations" },
   },
@@ -61,7 +61,7 @@ export const READINESS_CHECK_DEFINITIONS: Record<
   PRODUCT_EXISTS: {
     group: "catalog",
     title: "Có sản phẩm",
-    description: "Phạm vi cửa hàng cần có ít nhất một sản phẩm liên quan.",
+    description: "Cửa hàng cần có ít nhất một sản phẩm liên quan.",
     isCritical: true,
     action: { label: "Mở thực đơn", href: "/menu" },
   },
@@ -75,14 +75,14 @@ export const READINESS_CHECK_DEFINITIONS: Record<
   MENU_EXISTS: {
     group: "catalog",
     title: "Có thực đơn",
-    description: "Phạm vi cửa hàng cần có ít nhất một thực đơn.",
+    description: "Cửa hàng cần có ít nhất một thực đơn.",
     isCritical: true,
     action: { label: "Mở thực đơn", href: "/menu" },
   },
   MENU_ITEM_EXISTS: {
     group: "catalog",
     title: "Có món trong thực đơn",
-    description: "Thực đơn cần có ít nhất một món đã liên kết sản phẩm và phiên bản.",
+    description: "Thực đơn cần có ít nhất một món đang hiển thị.",
     isCritical: true,
     action: { label: "Mở món trong thực đơn", href: "/menu" },
   },
@@ -100,10 +100,10 @@ export function getReadinessUnknownDetail(statusCode?: number) {
     return "Không đủ quyền kiểm tra nguồn dữ liệu này.";
   }
   if (statusCode === 404) {
-    return "Không tìm thấy dữ liệu từ backend.";
+    return "Không tìm thấy dữ liệu cần kiểm tra.";
   }
   if (statusCode && statusCode >= 500) {
-    return "Backend đang lỗi khi kiểm tra nguồn dữ liệu này.";
+    return "Không thể kiểm tra nguồn dữ liệu này.";
   }
   return "Nguồn dữ liệu này chưa thể kiểm tra.";
 }
