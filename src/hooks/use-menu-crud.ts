@@ -55,6 +55,7 @@ export function useMenuCrud({ organizationId, onChanged }: UseMenuCrudOptions) {
       mutation: () => Promise<T>,
       change: MenuCrudChange,
       success: string,
+      tone: "success" | "warning" = "success",
     ) => {
       if (mutationRef.current) return false;
       mutationRef.current = true;
@@ -63,7 +64,8 @@ export function useMenuCrud({ organizationId, onChanged }: UseMenuCrudOptions) {
       try {
         await mutation();
         await onChanged(change);
-        toast.success(success);
+        if (tone === "warning") toast.warning(success);
+        else toast.success(success);
         return true;
       } catch (error) {
         setErrorMessage(getMenuManagementErrorMessage(error, "dữ liệu thực đơn"));
@@ -123,6 +125,7 @@ export function useMenuCrud({ organizationId, onChanged }: UseMenuCrudOptions) {
         () => deleteManagementMenu(organizationId ?? "", menu.id),
         { menuId: menu.id, menuDeleted: true },
         `Đã xóa thực đơn ${menu.name}.`,
+        "warning",
       );
       if (ok) setDeleteTarget(null);
       return ok;
@@ -162,6 +165,7 @@ export function useMenuCrud({ organizationId, onChanged }: UseMenuCrudOptions) {
         () => deleteManagementMenuItem(organizationId ?? "", menu.id, menuItem.id),
         { menuId: menu.id },
         `Đã xóa món ${menuItem.displayName}.`,
+        "warning",
       );
       if (ok) setDeleteTarget(null);
       return ok;

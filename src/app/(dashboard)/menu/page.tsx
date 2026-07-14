@@ -52,6 +52,7 @@ import {
 import { useAuth } from "@/hooks/use-auth";
 import { useCatalogOrganization } from "@/hooks/use-catalog-organization";
 import { useMenuManagement, type MenuCollectionState } from "@/hooks/use-menu-management";
+import { useMenuScopeOptions } from "@/hooks/use-menu-scope-options";
 import {
   useMenuCrud,
   type MenuCrudChange,
@@ -457,6 +458,7 @@ export default function MenuPage() {
     organizationId: selectedOrganizationId,
   });
   const productCategories = useProductCategories(Boolean(selectedOrganizationId));
+  const menuScopeOptions = useMenuScopeOptions(selectedOrganizationId);
   const isActionSubmitting =
     productActionId !== null ||
     variantActionId !== null ||
@@ -691,14 +693,18 @@ export default function MenuPage() {
 
       {productFormOpen ? (
         <ProductFormDialog
-          key={editingProduct?.id ?? "create-product"}
+          key={`${selectedOrganizationId ?? "no-organization"}:${editingProduct?.id ?? "create-product"}`}
           product={editingProduct}
           categories={productCategories.categories}
           isCategoryLoading={productCategories.isLoading}
           categoryErrorMessage={productCategories.errorMessage}
+          kiosks={menuScopeOptions.kiosks}
           open
           isSubmitting={isCrudSubmitting}
           errorMessage={crudError}
+          scopeErrorMessage={menuScopeOptions.errorMessage}
+          scopeOptionsLoading={menuScopeOptions.isLoading}
+          stores={menuScopeOptions.stores}
           onOpenChange={setProductFormOpen}
           onCreate={submitProductCreate}
           onUpdate={submitProductUpdate}
@@ -732,11 +738,15 @@ export default function MenuPage() {
 
       {menuFormOpen ? (
         <MenuFormDialog
-          key={editingMenu?.id ?? "create-menu"}
+          key={`${selectedOrganizationId ?? "no-organization"}:${editingMenu?.id ?? "create-menu"}`}
+          kiosks={menuScopeOptions.kiosks}
           menu={editingMenu}
           open
           isSubmitting={isMenuCrudSubmitting}
           errorMessage={menuCrudError}
+          scopeErrorMessage={menuScopeOptions.errorMessage}
+          scopeOptionsLoading={menuScopeOptions.isLoading}
+          stores={menuScopeOptions.stores}
           onOpenChange={setMenuFormOpen}
           onCreate={submitMenuCreate}
           onUpdate={(req) => submitMenuUpdate(editingMenu!.id, req)}

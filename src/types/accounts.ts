@@ -29,10 +29,11 @@ export interface InternalAccountResult {
 }
 
 export interface InternalAccountInvitationResult {
-  invitationToken: string;
+  invitationToken?: string | null;
   invitationUrl?: string | null;
   expiresAt: string;
-  emailSent: boolean;
+  emailSent?: boolean | null;
+  emailSentAt?: string | null;
 }
 
 export interface AccountInvitationResult extends InternalAccountInvitationResult {

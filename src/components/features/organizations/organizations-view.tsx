@@ -142,6 +142,7 @@ export function OrganizationsView() {
   const runMutation = async (
     mutation: () => Promise<OrganizationResult>,
     success: (result: OrganizationResult) => string,
+    tone: "success" | "warning" = "success",
   ) => {
     if (mutationRef.current) return false;
     mutationRef.current = true;
@@ -149,7 +150,8 @@ export function OrganizationsView() {
     setMutationError(null);
     try {
       const result = await mutation();
-      toast.success(success(result));
+      if (tone === "warning") toast.warning(success(result));
+      else toast.success(success(result));
       await fetchOrganizations();
       return true;
     } catch (error) {
@@ -193,6 +195,7 @@ export function OrganizationsView() {
         ),
       (organization) =>
         `Đã ${lifecycleTarget.activate ? "kích hoạt" : "vô hiệu hóa"} ${organization.name}.`,
+      lifecycleTarget.activate ? "success" : "warning",
     );
     if (succeeded) setLifecycleTarget(null);
     return succeeded;

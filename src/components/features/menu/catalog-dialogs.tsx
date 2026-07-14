@@ -133,6 +133,24 @@ function getFulfillmentTypeLabel(value: ProductVariantResult["fulfillmentType"])
   }
 }
 
+function getProductTypeLabel(value: string | null | undefined): string {
+  switch (value?.toLowerCase()) {
+    case "icecream":
+      return "Kem";
+    default:
+      return value || "Chưa cập nhật";
+  }
+}
+
+function getVariantTypeLabel(value: string | null | undefined): string | null {
+  switch (value?.toLowerCase()) {
+    case "default":
+      return "Mặc định";
+    default:
+      return value || null;
+  }
+}
+
 function getMenuItemStatusLabel(status: MenuItemStatus): string {
   switch (status) {
     case "Draft":
@@ -267,7 +285,7 @@ export function ProductDetailDialog({
                 <Badge variant="outline">{getScopeLabel(product.scopeType)}</Badge>
               </DetailField>
               <DetailField label="Loại sản phẩm">
-                {product.productType || "Chưa cập nhật"}
+                {getProductTypeLabel(product.productType)}
               </DetailField>
               <div className="sm:col-span-2">
                 <DetailField label="Mô tả">
@@ -312,41 +330,47 @@ export function ProductDetailDialog({
               ) : (
                 <div className="space-y-2">
                   {product.variants.map((variant) => (
-                    <div
-                      key={variant.id}
-                      className="flex flex-col gap-3 rounded-lg border border-border p-3 sm:flex-row sm:items-center sm:justify-between"
-                    >
-                      <div className="min-w-0 space-y-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <p className="font-medium text-foreground">
-                            {variant.displayName?.trim() || variant.name}
-                          </p>
-                          <AvailabilityBadge isAvailable={variant.isAvailable} />
+                    (() => {
+                      const variantTypeLabel = getVariantTypeLabel(variant.variantType);
+
+                      return (
+                        <div
+                          key={variant.id}
+                          className="flex flex-col gap-3 rounded-lg border border-border p-3 sm:flex-row sm:items-center sm:justify-between"
+                        >
+                          <div className="min-w-0 space-y-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <p className="font-medium text-foreground">
+                                {variant.displayName?.trim() || variant.name}
+                              </p>
+                              <AvailabilityBadge isAvailable={variant.isAvailable} />
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              <span className="tabular-nums">{variant.code}</span>
+                              {variant.sizeCode ? ` · Kích cỡ ${variant.sizeCode}` : ""}
+                              {variantTypeLabel ? ` · ${variantTypeLabel}` : ""}
+                              {` · ${getFulfillmentTypeLabel(variant.fulfillmentType)}`}
+                            </p>
+                            <p className="tabular-nums text-sm font-medium text-foreground">
+                              {formatMoney(variant.basePrice, variant.currency)}
+                            </p>
+                          </div>
+                          {canManage ? (
+                            <div className="flex flex-wrap gap-1">
+                              <Button variant="outline" size="sm" isLoading={variantActionId === variant.id} onClick={() => onToggleVariant(variant)}>
+                                {variant.isAvailable ? "Tắt phiên bản" : "Bật phiên bản"}
+                              </Button>
+                              <Button variant="ghost" size="icon-sm" title="Chỉnh sửa phiên bản" aria-label="Chỉnh sửa phiên bản" onClick={() => onEditVariant(product, variant)}>
+                                <Pencil className="size-4" />
+                              </Button>
+                              <Button variant="ghost" size="icon-sm" className="text-destructive hover:bg-destructive/10 hover:text-destructive" title="Xóa phiên bản" aria-label="Xóa phiên bản" onClick={() => onDeleteVariant(product, variant)}>
+                                <Trash2 className="size-4" />
+                              </Button>
+                            </div>
+                          ) : null}
                         </div>
-                        <p className="text-xs text-muted-foreground">
-                          <span className="tabular-nums">{variant.code}</span>
-                          {variant.sizeCode ? ` · Kích cỡ ${variant.sizeCode}` : ""}
-                          {variant.variantType ? ` · ${variant.variantType}` : ""}
-                          {` · ${getFulfillmentTypeLabel(variant.fulfillmentType)}`}
-                        </p>
-                        <p className="tabular-nums text-sm font-medium text-foreground">
-                          {formatMoney(variant.basePrice, variant.currency)}
-                        </p>
-                      </div>
-                      {canManage ? (
-                        <div className="flex flex-wrap gap-1">
-                          <Button variant="outline" size="sm" isLoading={variantActionId === variant.id} onClick={() => onToggleVariant(variant)}>
-                            {variant.isAvailable ? "Tắt phiên bản" : "Bật phiên bản"}
-                          </Button>
-                          <Button variant="ghost" size="icon-sm" title="Chỉnh sửa phiên bản" aria-label="Chỉnh sửa phiên bản" onClick={() => onEditVariant(product, variant)}>
-                            <Pencil className="size-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon-sm" className="text-destructive hover:bg-destructive/10 hover:text-destructive" title="Xóa phiên bản" aria-label="Xóa phiên bản" onClick={() => onDeleteVariant(product, variant)}>
-                            <Trash2 className="size-4" />
-                          </Button>
-                        </div>
-                      ) : null}
-                    </div>
+                      );
+                    })()
                   ))}
                 </div>
               )}

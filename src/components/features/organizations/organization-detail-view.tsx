@@ -135,6 +135,7 @@ export function OrganizationDetailView({ organizationId }: OrganizationDetailVie
   const runMutation = async (
     mutation: () => Promise<unknown>,
     success: string,
+    tone: "success" | "warning" = "success",
   ) => {
     if (mutationRef.current) return false;
     mutationRef.current = true;
@@ -143,7 +144,8 @@ export function OrganizationDetailView({ organizationId }: OrganizationDetailVie
     try {
       await mutation();
       await loadData();
-      toast.success(success);
+      if (tone === "warning") toast.warning(success);
+      else toast.success(success);
       return true;
     } catch (error) {
       setMutationError(
@@ -189,6 +191,7 @@ export function OrganizationDetailView({ organizationId }: OrganizationDetailVie
       `Đã ${target.activate ? "kích hoạt" : "vô hiệu hóa"} ${
         target.kind === "organization" ? organization.name : target.store.name
       }.`,
+      target.activate ? "success" : "warning",
     );
     if (succeeded) setLifecycleTarget(null);
     return succeeded;

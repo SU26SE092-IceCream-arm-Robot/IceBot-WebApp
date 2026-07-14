@@ -22,6 +22,10 @@ import {
 } from "@/components/ui/select";
 import type { ProductDeleteTarget } from "@/hooks/use-product-crud";
 import type {
+  KioskResult,
+  StoreResult,
+} from "@/types/kiosk-management";
+import type {
   CreateProductRequest,
   FulfillmentType,
   ProductCategoryResult,
@@ -67,11 +71,64 @@ function getFulfillmentTypeLabel(value: FulfillmentType): string {
 }
 
 function getProductTypeLabel(value: string): string {
-  return value === "IceCream" ? "Kem" : value || "Không xác định";
+  return value.toLowerCase() === "icecream" ? "Kem" : value || "Không xác định";
 }
 
 function getVariantTypeLabel(value: string): string {
-  return value === "Default" ? "Mặc định" : value || "Không xác định";
+  return value.toLowerCase() === "default" ? "Mặc định" : value || "Không xác định";
+}
+
+function getCategorySelectLabel(
+  value: string,
+  categories: ProductCategoryResult[],
+): string {
+  if (value === NO_CATEGORY_VALUE || !value.trim()) {
+    return "Không chọn danh mục";
+  }
+
+  const categoryId = Number(value);
+  if (!Number.isInteger(categoryId)) {
+    return "Không chọn danh mục";
+  }
+
+  const category = categories.find((item) => item.id === categoryId);
+  if (!category) {
+    return `Danh mục hiện tại #${categoryId}`;
+  }
+
+  return category.isActive ? category.name : `${category.name} (đã tắt)`;
+}
+
+function formatScopeOptionLabel(option: {
+  code?: string | null;
+  name?: string | null;
+}): string {
+  const name = option.name?.trim();
+  const code = option.code?.trim();
+
+  if (name && code) {
+    return `${name} — ${code}`;
+  }
+
+  return code || "Không xác định";
+}
+
+function getStoreSelectLabel(value: string, stores: StoreResult[]): string {
+  if (!value.trim()) {
+    return "Chọn cửa hàng";
+  }
+
+  const store = stores.find((item) => item.id === value);
+  return store ? formatScopeOptionLabel(store) : "Không xác định";
+}
+
+function getKioskSelectLabel(value: string, kiosks: KioskResult[]): string {
+  if (!value.trim()) {
+    return "Chọn kiosk";
+  }
+
+  const kiosk = kiosks.find((item) => item.id === value);
+  return kiosk ? formatScopeOptionLabel(kiosk) : "Không xác định";
 }
 
 function FormError({ message }: { message: string | null }) {
@@ -86,11 +143,15 @@ function FormError({ message }: { message: string | null }) {
 interface ProductFormDialogProps {
   product: ProductResult | null;
   categories: ProductCategoryResult[];
+  kiosks: KioskResult[];
   isCategoryLoading: boolean;
   categoryErrorMessage: string | null;
+  scopeErrorMessage: string | null;
+  scopeOptionsLoading: boolean;
   open: boolean;
   isSubmitting: boolean;
   errorMessage: string | null;
+  stores: StoreResult[];
   onOpenChange: (open: boolean) => void;
   onCreate: (request: CreateProductRequest) => Promise<boolean>;
   onUpdate: (request: UpdateProductRequest) => Promise<boolean>;
@@ -99,11 +160,15 @@ interface ProductFormDialogProps {
 export function ProductFormDialog({
   product,
   categories,
+  kiosks,
   isCategoryLoading,
   categoryErrorMessage,
+  scopeErrorMessage,
+  scopeOptionsLoading,
   open,
   isSubmitting,
   errorMessage,
+  stores,
   onOpenChange,
   onCreate,
   onUpdate,
@@ -152,6 +217,21 @@ export function ProductFormDialog({
     isSubmitting ||
     isCategoryLoading ||
     Boolean(categoryErrorMessage && !isCreate);
+  const scopedStores = stores.filter(
+    (store) => !product?.organizationId || store.organizationId === product.organizationId,
+  );
+  const scopedKiosks = kiosks.filter((kiosk) => !storeId || kiosk.storeId === storeId);
+  const hasStoreScopeOptions = scopedStores.length > 0;
+  const hasKioskScopeOptions = scopedKiosks.length > 0;
+
+  function handleScopeTypeChange(value: string | null) {
+    if (["Organization", "Store", "Kiosk"].includes(value ?? "")) {
+      setScopeType(value as TenantScopeType);
+      setStoreId("");
+      setKioskId("");
+      setValidationMessage(null);
+    }
+  }
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -178,15 +258,19 @@ export function ProductFormDialog({
       setValidationMessage("Danh mục sản phẩm không hợp lệ.");
       return;
     }
-    const requiredScopeIds = [
-      scopeType === "Store" || scopeType === "Kiosk" ? [storeId, "Cửa hàng"] : null,
-      scopeType === "Kiosk" ? [kioskId, "Kiosk"] : null,
-    ].filter(Boolean) as [string, string][];
-    const invalidScope = requiredScopeIds.find(
-      ([value]) => !UUID_PATTERN.test(value.trim()),
-    );
-    if (invalidScope) {
-      setValidationMessage(`${invalidScope[1]} là bắt buộc và phải là UUID hợp lệ.`);
+    if ((scopeType === "Store" || scopeType === "Kiosk") && !storeId) {
+      setValidationMessage("Vui lòng chọn cửa hàng.");
+      return;
+    }
+    if (scopeType === "Kiosk" && !kioskId) {
+      setValidationMessage("Vui lòng chọn kiosk.");
+      return;
+    }
+    if (
+      (storeId && !UUID_PATTERN.test(storeId.trim())) ||
+      (kioskId && !UUID_PATTERN.test(kioskId.trim()))
+    ) {
+      setValidationMessage("Phạm vi đã chọn không hợp lệ. Vui lòng chọn lại từ danh sách.");
       return;
     }
 
@@ -229,13 +313,14 @@ export function ProductFormDialog({
             <div className="space-y-1.5"><label htmlFor="product-price" className="text-sm font-medium">Giá cơ bản <span className="text-destructive">*</span></label><Input id="product-price" type="number" min="0" step="any" value={basePrice} disabled={isSubmitting} className="h-10" onChange={(event) => setBasePrice(event.target.value)} /></div>
             <div className="space-y-1.5"><label htmlFor="product-currency" className="text-sm font-medium">Tiền tệ</label><Input id="product-currency" value={currency} disabled={isSubmitting} className="h-10 font-mono uppercase" onChange={(event) => setCurrency(event.target.value)} /></div>
             <div className="space-y-1.5"><label htmlFor="product-preparation" className="text-sm font-medium">Thời gian chuẩn bị (giây)</label><Input id="product-preparation" type="number" min="0" step="1" value={preparationTime} disabled={isSubmitting} className="h-10" onChange={(event) => setPreparationTime(event.target.value)} /></div>
-            <div className="space-y-1.5"><label htmlFor="product-category" className="text-sm font-medium">Danh mục sản phẩm</label><Select value={categoryId} disabled={categorySelectDisabled} onValueChange={(value) => { if (value) setCategoryId(value); }}><SelectTrigger id="product-category" className="h-10 w-full"><SelectValue placeholder={isCategoryLoading ? "Đang tải danh mục..." : "Không có danh mục"} /></SelectTrigger><SelectContent><SelectItem value={NO_CATEGORY_VALUE}>Không có danh mục</SelectItem>{hasCurrentCategoryOption && currentCategoryId !== null ? <SelectItem value={currentCategoryId.toString()}>Danh mục hiện tại #{currentCategoryId}</SelectItem> : null}{selectableCategories.map((category) => (<SelectItem key={category.id} value={category.id.toString()}>{category.name}{category.isActive ? "" : " (đã tắt)"}</SelectItem>))}</SelectContent></Select>{categoryErrorMessage ? <p className="text-xs text-warning">{isCreate ? "Không tải được danh mục; sản phẩm vẫn có thể tạo không phân loại." : "Không tải được danh mục; hệ thống sẽ giữ danh mục hiện tại nếu bạn lưu."}</p> : null}</div>
+            <div className="space-y-1.5"><label htmlFor="product-category" className="text-sm font-medium">Danh mục sản phẩm</label><Select value={categoryId} disabled={categorySelectDisabled} onValueChange={(value) => { if (value) setCategoryId(value); }}><SelectTrigger id="product-category" className="h-10 w-full"><SelectValue>{isCategoryLoading ? "Đang tải danh mục..." : getCategorySelectLabel(categoryId, selectableCategories)}</SelectValue></SelectTrigger><SelectContent><SelectItem value={NO_CATEGORY_VALUE}>Không chọn danh mục</SelectItem>{hasCurrentCategoryOption && currentCategoryId !== null ? <SelectItem value={currentCategoryId.toString()}>Danh mục hiện tại #{currentCategoryId}</SelectItem> : null}{selectableCategories.map((category) => (<SelectItem key={category.id} value={category.id.toString()}>{category.name}{category.isActive ? "" : " (đã tắt)"}</SelectItem>))}</SelectContent></Select>{categoryErrorMessage ? <p className="text-xs text-warning">{isCreate ? "Không tải được danh mục; sản phẩm vẫn có thể tạo không phân loại." : "Không tải được danh mục; hệ thống sẽ giữ danh mục hiện tại nếu bạn lưu."}</p> : null}</div>
             <div className="space-y-1.5 sm:col-span-2"><label htmlFor="product-description" className="text-sm font-medium">Mô tả</label><textarea id="product-description" value={description} rows={3} disabled={isSubmitting} className="w-full resize-y rounded-lg border border-input bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50" onChange={(event) => setDescription(event.target.value)} /></div>
           </div>
 
           <div className="space-y-4 rounded-xl border border-border bg-muted/15 p-4">
-            <div className="space-y-1.5"><label className="text-sm font-medium">Phạm vi trong tổ chức</label><Select value={scopeType} disabled={isSubmitting || !isCreate} onValueChange={(value) => { if (["Organization", "Store", "Kiosk"].includes(value ?? "")) setScopeType(value as TenantScopeType); }}><SelectTrigger className="h-10 w-full"><SelectValue>{getScopeTypeLabel(scopeType)}</SelectValue></SelectTrigger><SelectContent><SelectItem value="Organization">Tổ chức</SelectItem><SelectItem value="Store">Cửa hàng</SelectItem><SelectItem value="Kiosk">Kiosk</SelectItem></SelectContent></Select></div>
-            {isCreate && (scopeType === "Store" || scopeType === "Kiosk") ? <div className="grid gap-3 sm:grid-cols-2"><div className="space-y-1.5"><label htmlFor="product-store" className="text-xs font-medium">Cửa hàng</label><Input id="product-store" value={storeId} disabled={isSubmitting} className="h-9 font-mono text-xs" placeholder="Nhập UUID cửa hàng" onChange={(event) => setStoreId(event.target.value)} /></div>{scopeType === "Kiosk" ? <div className="space-y-1.5"><label htmlFor="product-kiosk" className="text-xs font-medium">Kiosk</label><Input id="product-kiosk" value={kioskId} disabled={isSubmitting} className="h-9 font-mono text-xs" placeholder="Nhập UUID kiosk" onChange={(event) => setKioskId(event.target.value)} /></div> : null}</div> : null}
+            <div className="space-y-1.5"><label className="text-sm font-medium">Phạm vi trong tổ chức</label><Select value={scopeType} disabled={isSubmitting || !isCreate} onValueChange={handleScopeTypeChange}><SelectTrigger className="h-10 w-full"><SelectValue>{getScopeTypeLabel(scopeType)}</SelectValue></SelectTrigger><SelectContent><SelectItem value="Organization">Tổ chức</SelectItem><SelectItem value="Store">Cửa hàng</SelectItem><SelectItem value="Kiosk">Kiosk</SelectItem></SelectContent></Select></div>
+            {isCreate && (scopeType === "Store" || scopeType === "Kiosk") ? <div className="grid gap-3 sm:grid-cols-2"><div className="space-y-1.5"><label htmlFor="product-store" className="text-xs font-medium">Cửa hàng</label><Select value={storeId || null} disabled={isSubmitting || scopeOptionsLoading || !hasStoreScopeOptions} onValueChange={(value) => { setStoreId(value ?? ""); setKioskId(""); setValidationMessage(null); }}><SelectTrigger id="product-store" className="h-9 w-full"><SelectValue>{scopeOptionsLoading ? "Đang tải cửa hàng..." : getStoreSelectLabel(storeId, scopedStores)}</SelectValue></SelectTrigger><SelectContent>{scopedStores.map((store) => (<SelectItem key={store.id} value={store.id}>{formatScopeOptionLabel(store)}</SelectItem>))}</SelectContent></Select></div>{scopeType === "Kiosk" ? <div className="space-y-1.5"><label htmlFor="product-kiosk" className="text-xs font-medium">Kiosk</label><Select value={kioskId || null} disabled={isSubmitting || scopeOptionsLoading || !storeId || !hasKioskScopeOptions} onValueChange={(value) => { setKioskId(value ?? ""); setValidationMessage(null); }}><SelectTrigger id="product-kiosk" className="h-9 w-full"><SelectValue>{!storeId ? "Chọn cửa hàng trước" : scopeOptionsLoading ? "Đang tải kiosk..." : getKioskSelectLabel(kioskId, scopedKiosks)}</SelectValue></SelectTrigger><SelectContent>{scopedKiosks.map((kiosk) => (<SelectItem key={kiosk.id} value={kiosk.id}>{formatScopeOptionLabel(kiosk)}</SelectItem>))}</SelectContent></Select></div> : null}</div> : null}
+            {isCreate && scopeErrorMessage ? <p className="text-xs text-warning">{scopeErrorMessage}</p> : null}
             {!isCreate ? <p className="text-xs text-muted-foreground">Backend không cho phép chuyển phạm vi sở hữu khi cập nhật sản phẩm.</p> : null}
           </div>
 

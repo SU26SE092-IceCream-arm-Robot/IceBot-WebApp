@@ -95,6 +95,27 @@ function getRoleDisplayLabel(role: ManagementRoleResult): string {
   return labelByCode[role.code] ?? role.name ?? role.code;
 }
 
+function getRoleDescription(role: ManagementRoleResult): string | null {
+  const descriptionByCode: Record<string, string> = {
+    Admin: "Toàn quyền quản trị hệ thống.",
+    SystemAdmin: "Toàn quyền quản trị hệ thống.",
+    OrgAdmin: "Quản trị dữ liệu trong phạm vi tổ chức được phân quyền.",
+    Manager: "Quản lý vận hành trong phạm vi được phân quyền.",
+    Staff: "Nhân sự vận hành với quyền thao tác giới hạn.",
+    Technician: "Kỹ thuật viên phụ trách bảo trì và xử lý sự cố.",
+  };
+  return descriptionByCode[role.code] ?? role.description ?? null;
+}
+
+function formatScopeOptionLabel(name?: string | null, code?: string | null): string {
+  const safeName = name?.trim();
+  const safeCode = code?.trim();
+  if (safeName && safeCode) return `${safeName} — ${safeCode}`;
+  if (safeName) return safeName;
+  if (safeCode) return safeCode;
+  return "Không xác định";
+}
+
 function isAssignableScopeType(
   value: string | null
 ): value is AssignableScopeType {
@@ -418,9 +439,9 @@ export function CreateAccountDialog({
                   ))}
                 </SelectContent>
               </Select>
-              {selectedRole?.description ? (
+              {selectedRole ? (
                 <p className="text-xs leading-5 text-muted-foreground">
-                  {selectedRole.description}
+                  {getRoleDescription(selectedRole)}
                 </p>
               ) : null}
             </FormField>
@@ -493,7 +514,7 @@ export function CreateAccountDialog({
                     <SelectContent>
                       {roleScopeOptions.organizations.map((organization) => (
                         <SelectItem key={organization.id} value={organization.id}>
-                          {organization.name} ({organization.code})
+                          {formatScopeOptionLabel(organization.name, organization.code)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -520,7 +541,7 @@ export function CreateAccountDialog({
                     <SelectContent>
                       {availableStores.map((store) => (
                         <SelectItem key={store.id} value={store.id}>
-                          {store.name} ({store.code})
+                          {formatScopeOptionLabel(store.name, store.code)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -545,7 +566,7 @@ export function CreateAccountDialog({
                       <SelectContent>
                         {availableKiosks.map((kiosk) => (
                           <SelectItem key={kiosk.id} value={kiosk.id}>
-                            {kiosk.name} ({kiosk.code})
+                            {formatScopeOptionLabel(kiosk.name, kiosk.code)}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -711,11 +732,13 @@ export function InvitationResultDialog({
   onOpenChange,
 }: InvitationResultDialogProps) {
   const [copyMessage, setCopyMessage] = useState<string | null>(null);
+  const token = result?.invitationToken?.trim() ?? "";
   const invitationLink =
     result?.invitationUrl ||
-    (result && typeof window !== "undefined"
-      ? `${window.location.origin}/accept-invitation?token=${encodeURIComponent(result.invitationToken)}`
+    (token && typeof window !== "undefined"
+      ? `${window.location.origin}/accept-invitation?token=${encodeURIComponent(token)}`
       : "");
+  const emailSent = Boolean(result?.emailSentAt || result?.emailSent);
 
   function handleOpenChange(nextOpen: boolean) {
     if (!nextOpen) {
@@ -749,7 +772,7 @@ export function InvitationResultDialog({
           </span>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>
-            Lưu liên kết lời mời cho {accountName}. Liên kết và token chỉ hiển thị một lần — đóng màn hình này sau khi đã sao chép.
+            Lưu liên kết lời mời cho {accountName}. Thông tin lời mời chỉ hiển thị một lần — đóng màn hình này sau khi đã sao chép.
           </DialogDescription>
         </DialogHeader>
 
@@ -757,16 +780,16 @@ export function InvitationResultDialog({
           <div className="space-y-4">
             <div
               className={`flex gap-3 rounded-lg border p-3 ${
-                result.emailSent
+                emailSent
                   ? "border-success/30 bg-success/5 text-success"
                   : "border-warning/30 bg-warning/5 text-warning"
               }`}
             >
               <Mail className="mt-0.5 size-4 shrink-0" />
               <p className="text-sm">
-                {result.emailSent
+                {emailSent
                   ? "Email lời mời đã được gửi."
-                  : "Email chưa được gửi. Hãy sao chép liên kết hoặc token và gửi thủ công."}
+                  : "Email chưa được gửi. Hãy sao chép liên kết lời mời và gửi thủ công."}
               </p>
             </div>
 
@@ -800,28 +823,30 @@ export function InvitationResultDialog({
               ) : null}
             </div>
 
-            <div className="space-y-2">
-              <label htmlFor="invitationToken" className="text-sm font-medium text-foreground">
-                Token dự phòng
-              </label>
-              <div className="flex gap-2">
-                <Input
-                  id="invitationToken"
-                  value={result.invitationToken}
-                  readOnly
-                  className="font-mono text-xs"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  aria-label="Sao chép token lời mời"
-                  onClick={() => void copyValue(result.invitationToken, "Đã sao chép token lời mời.")}
-                >
-                  <Clipboard className="size-4" />
-                </Button>
+            {token ? (
+              <div className="space-y-2">
+                <label htmlFor="invitationToken" className="text-sm font-medium text-foreground">
+                  Token dự phòng
+                </label>
+                <div className="flex gap-2">
+                  <Input
+                    id="invitationToken"
+                    value={token}
+                    readOnly
+                    className="font-mono text-xs"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    aria-label="Sao chép token lời mời"
+                    onClick={() => void copyValue(token, "Đã sao chép token lời mời.")}
+                  >
+                    <Clipboard className="size-4" />
+                  </Button>
+                </div>
               </div>
-            </div>
+            ) : null}
 
             <p className="text-xs text-muted-foreground">
               Hết hạn: <span className="tabular-nums text-foreground">{formatDateTime(result.expiresAt)}</span>

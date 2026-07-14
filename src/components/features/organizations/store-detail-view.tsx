@@ -198,7 +198,11 @@ export function StoreDetailView({ storeId }: StoreDetailViewProps) {
     };
   }, [loadData]);
 
-  const runMutation = async (mutation: () => Promise<unknown>, success: string) => {
+  const runMutation = async (
+    mutation: () => Promise<unknown>,
+    success: string,
+    tone: "success" | "warning" = "success",
+  ) => {
     if (mutationRef.current) return false;
     mutationRef.current = true;
     setIsSubmitting(true);
@@ -206,7 +210,8 @@ export function StoreDetailView({ storeId }: StoreDetailViewProps) {
     try {
       await mutation();
       await loadData();
-      toast.success(success);
+      if (tone === "warning") toast.warning(success);
+      else toast.success(success);
       return true;
     } catch (error) {
       setMutationError(getStoresErrorMessage(error));
@@ -233,6 +238,7 @@ export function StoreDetailView({ storeId }: StoreDetailViewProps) {
     const succeeded = await runMutation(
       () => setManagementStoreActive(store.id, activate),
       `Đã ${activate ? "kích hoạt" : "vô hiệu hóa"} ${store.name}.`,
+      activate ? "success" : "warning",
     );
     if (succeeded) setLifecycleOpen(false);
     return succeeded;

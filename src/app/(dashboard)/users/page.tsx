@@ -197,7 +197,11 @@ export default function UsersPage() {
   // Watch for legacy success message from useAccounts and toast it
   useEffect(() => {
     if (successMessage) {
-      toast.success(successMessage);
+      if (successMessage.includes("vô hiệu hóa")) {
+        toast.warning(successMessage);
+      } else {
+        toast.success(successMessage);
+      }
       clearSuccessMessage();
     }
   }, [successMessage, clearSuccessMessage]);

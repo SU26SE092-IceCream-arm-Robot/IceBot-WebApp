@@ -453,9 +453,11 @@ export function useAccounts(): UseAccountsResult {
         setInvitationResult(createdInvitation);
         setInvitationResultMode("created");
         setIsInvitationResultOpen(Boolean(createdInvitation));
-        setSuccessMessage(
-          `Đã tạo tài khoản ${createdAccount.fullName?.trim() || createdAccount.userName}.`
-        );
+        if (!createdInvitation) {
+          setSuccessMessage(
+            `Đã tạo tài khoản ${createdAccount.fullName?.trim() || createdAccount.userName}.`
+          );
+        }
         return true;
       } catch (error) {
         setCreateErrorMessage(
@@ -511,9 +513,6 @@ export function useAccounts(): UseAccountsResult {
       setIsRegenerateOpen(false);
       setAccountPendingInvitation(null);
       setIsInvitationResultOpen(true);
-      setSuccessMessage(
-        `Đã tạo lại lời mời cho ${accountPendingInvitation.fullName?.trim() || accountPendingInvitation.userName}.`
-      );
     } catch (error) {
       setRegenerateErrorMessage(
         getInvitationErrorMessage(error, "Không thể tạo lại lời mời.")

@@ -22,6 +22,10 @@ import {
 } from "@/components/ui/select";
 import type { MenuDeleteTarget } from "@/hooks/use-menu-crud";
 import type {
+  KioskResult,
+  StoreResult,
+} from "@/types/kiosk-management";
+import type {
   CreateMenuItemRequest,
   CreateMenuRequest,
   MenuItemResult,
@@ -62,6 +66,38 @@ function getVariantOptionLabel(variant: ProductResult["variants"][number]): stri
   return variant.code ? `${name} · ${variant.code}` : name || "Không xác định";
 }
 
+function formatScopeOptionLabel(option: {
+  code?: string | null;
+  name?: string | null;
+}): string {
+  const name = option.name?.trim();
+  const code = option.code?.trim();
+
+  if (name && code) {
+    return `${name} — ${code}`;
+  }
+
+  return code || "Không xác định";
+}
+
+function getStoreSelectLabel(value: string, stores: StoreResult[]): string {
+  if (!value.trim()) {
+    return "Chọn cửa hàng";
+  }
+
+  const store = stores.find((item) => item.id === value);
+  return store ? formatScopeOptionLabel(store) : "Không xác định";
+}
+
+function getKioskSelectLabel(value: string, kiosks: KioskResult[]): string {
+  if (!value.trim()) {
+    return "Chọn kiosk";
+  }
+
+  const kiosk = kiosks.find((item) => item.id === value);
+  return kiosk ? formatScopeOptionLabel(kiosk) : "Không xác định";
+}
+
 function FormError({ message }: { message: string | null }) {
   return message ? (
     <div role="alert" className="flex items-start gap-2 rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-2.5 text-sm text-destructive">
@@ -72,20 +108,28 @@ function FormError({ message }: { message: string | null }) {
 }
 
 interface MenuFormDialogProps {
+  kiosks: KioskResult[];
   menu: MenuResult | null;
   open: boolean;
   isSubmitting: boolean;
   errorMessage: string | null;
+  scopeErrorMessage: string | null;
+  scopeOptionsLoading: boolean;
+  stores: StoreResult[];
   onOpenChange: (open: boolean) => void;
   onCreate: (request: CreateMenuRequest) => Promise<boolean>;
   onUpdate: (request: UpdateMenuRequest) => Promise<boolean>;
 }
 
 export function MenuFormDialog({
+  kiosks,
   menu,
   open,
   isSubmitting,
   errorMessage,
+  scopeErrorMessage,
+  scopeOptionsLoading,
+  stores,
   onOpenChange,
   onCreate,
   onUpdate,
@@ -102,6 +146,18 @@ export function MenuFormDialog({
   const [storeId, setStoreId] = useState(menu?.storeId ?? "");
   const [kioskId, setKioskId] = useState(menu?.kioskId ?? "");
   const [validationMessage, setValidationMessage] = useState<string | null>(null);
+  const scopedKiosks = kiosks.filter((kiosk) => !storeId || kiosk.storeId === storeId);
+  const hasStoreScopeOptions = stores.length > 0;
+  const hasKioskScopeOptions = scopedKiosks.length > 0;
+
+  function handleScopeTypeChange(value: string | null) {
+    if (["Organization", "Store", "Kiosk"].includes(value ?? "")) {
+      setScopeType(value as TenantScopeType);
+      setStoreId("");
+      setKioskId("");
+      setValidationMessage(null);
+    }
+  }
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -116,15 +172,19 @@ export function MenuFormDialog({
       return;
     }
 
-    const requiredScopeIds = [
-      scopeType === "Store" || scopeType === "Kiosk" ? [storeId, "Cửa hàng"] : null,
-      scopeType === "Kiosk" ? [kioskId, "Kiosk"] : null,
-    ].filter(Boolean) as [string, string][];
-    const invalidScope = requiredScopeIds.find(
-      ([value]) => !UUID_PATTERN.test(value.trim()),
-    );
-    if (invalidScope) {
-      setValidationMessage(`${invalidScope[1]} là bắt buộc và phải là UUID hợp lệ.`);
+    if ((scopeType === "Store" || scopeType === "Kiosk") && !storeId) {
+      setValidationMessage("Vui lòng chọn cửa hàng.");
+      return;
+    }
+    if (scopeType === "Kiosk" && !kioskId) {
+      setValidationMessage("Vui lòng chọn kiosk.");
+      return;
+    }
+    if (
+      (storeId && !UUID_PATTERN.test(storeId.trim())) ||
+      (kioskId && !UUID_PATTERN.test(kioskId.trim()))
+    ) {
+      setValidationMessage("Phạm vi đã chọn không hợp lệ. Vui lòng chọn lại từ danh sách.");
       return;
     }
 
@@ -186,7 +246,7 @@ export function MenuFormDialog({
           <div className="space-y-4 rounded-xl border border-border bg-muted/15 p-4">
             <div className="space-y-1.5">
               <label className="text-sm font-medium">Phạm vi trong tổ chức</label>
-              <Select value={scopeType} disabled={isSubmitting || !isCreate} onValueChange={(value) => setScopeType(value as TenantScopeType)}>
+              <Select value={scopeType} disabled={isSubmitting || !isCreate} onValueChange={handleScopeTypeChange}>
                 <SelectTrigger className="h-10 w-full"><SelectValue>{getScopeTypeLabel(scopeType)}</SelectValue></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Organization">Tổ chức</SelectItem>
@@ -195,22 +255,39 @@ export function MenuFormDialog({
                 </SelectContent>
               </Select>
             </div>
-            {isCreate && (scopeType === "Store" || scopeType === "Kiosk") ? (
+            {scopeType === "Store" || scopeType === "Kiosk" ? (
               <div className="grid gap-3 sm:grid-cols-2">
-                {scopeType === "Store" || scopeType === "Kiosk" ? (
-                  <div className="space-y-1.5">
-                    <label htmlFor="menu-store" className="text-xs font-medium">Cửa hàng</label>
-                    <Input id="menu-store" value={storeId} disabled={isSubmitting} className="h-9 font-mono text-xs" placeholder="Nhập UUID cửa hàng" onChange={(event) => setStoreId(event.target.value)} />
-                  </div>
-                ) : null}
+                <div className="space-y-1.5">
+                  <label htmlFor="menu-store" className="text-xs font-medium">Cửa hàng</label>
+                  <Select value={storeId || null} disabled={isSubmitting || !isCreate || scopeOptionsLoading || !hasStoreScopeOptions} onValueChange={(value) => { setStoreId(value ?? ""); setKioskId(""); setValidationMessage(null); }}>
+                    <SelectTrigger id="menu-store" className="h-9 w-full">
+                      <SelectValue>{scopeOptionsLoading ? "Đang tải cửa hàng..." : getStoreSelectLabel(storeId, stores)}</SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {stores.map((store) => (
+                        <SelectItem key={store.id} value={store.id}>{formatScopeOptionLabel(store)}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
                 {scopeType === "Kiosk" ? (
                   <div className="space-y-1.5">
                     <label htmlFor="menu-kiosk" className="text-xs font-medium">Kiosk</label>
-                    <Input id="menu-kiosk" value={kioskId} disabled={isSubmitting} className="h-9 font-mono text-xs" placeholder="Nhập UUID kiosk" onChange={(event) => setKioskId(event.target.value)} />
+                    <Select value={kioskId || null} disabled={isSubmitting || !isCreate || scopeOptionsLoading || !storeId || !hasKioskScopeOptions} onValueChange={(value) => { setKioskId(value ?? ""); setValidationMessage(null); }}>
+                      <SelectTrigger id="menu-kiosk" className="h-9 w-full">
+                        <SelectValue>{!storeId ? "Chọn cửa hàng trước" : scopeOptionsLoading ? "Đang tải kiosk..." : getKioskSelectLabel(kioskId, scopedKiosks)}</SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {scopedKiosks.map((kiosk) => (
+                          <SelectItem key={kiosk.id} value={kiosk.id}>{formatScopeOptionLabel(kiosk)}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 ) : null}
               </div>
             ) : null}
+            {isCreate && scopeErrorMessage ? <p className="text-xs text-warning">{scopeErrorMessage}</p> : null}
             {!isCreate ? <p className="text-xs text-muted-foreground">Backend không cho phép chuyển phạm vi sở hữu khi cập nhật thực đơn.</p> : null}
           </div>
 

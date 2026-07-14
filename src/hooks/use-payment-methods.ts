@@ -38,7 +38,11 @@ export function usePaymentMethods() {
           method.id === id ? { ...method, isActive } : method,
         ),
       );
-      toast.success("Cập nhật trạng thái thành công!");
+      if (isActive) {
+        toast.success("Đã bật phương thức thanh toán.");
+      } else {
+        toast.warning("Đã tắt phương thức thanh toán.");
+      }
     } catch (err: unknown) {
       if (err instanceof Error) {
         toast.error(err.message);

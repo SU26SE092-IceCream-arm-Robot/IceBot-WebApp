@@ -55,6 +55,7 @@ export function useProductCrud({ organizationId, onChanged }: UseProductCrudOpti
       mutation: () => Promise<T>,
       change: ProductCrudChange,
       success: string,
+      tone: "success" | "warning" = "success",
     ) => {
       if (mutationRef.current) return false;
       mutationRef.current = true;
@@ -63,7 +64,8 @@ export function useProductCrud({ organizationId, onChanged }: UseProductCrudOpti
       try {
         await mutation();
         await onChanged(change);
-        toast.success(success);
+        if (tone === "warning") toast.warning(success);
+        else toast.success(success);
         return true;
       } catch (error) {
         setErrorMessage(getMenuManagementErrorMessage(error, "dữ liệu sản phẩm"));
@@ -169,6 +171,7 @@ export function useProductCrud({ organizationId, onChanged }: UseProductCrudOpti
           () => deleteManagementProduct(organizationId ?? "", deleteTarget.product.id),
           { productId: deleteTarget.product.id, productDeleted: true },
           `Đã xóa sản phẩm ${deleteTarget.product.displayName || deleteTarget.product.name}.`,
+          "warning",
         )
       : runMutation(
           () =>
@@ -176,9 +179,10 @@ export function useProductCrud({ organizationId, onChanged }: UseProductCrudOpti
               organizationId ?? "",
               deleteTarget.product.id,
               deleteTarget.variant.id,
-            ),
+          ),
           { productId: deleteTarget.product.id },
           `Đã xóa biến thể ${deleteTarget.variant.displayName || deleteTarget.variant.name}.`,
+          "warning",
         ));
     if (succeeded) setDeleteTarget(null);
     return succeeded;

@@ -31,8 +31,8 @@ function ProductCategoriesLoading() {
 }
 
 function getProductTypeLabel(productType: string): string {
-  switch (productType) {
-    case "IceCream":
+  switch (productType.toLowerCase()) {
+    case "icecream":
       return "Kem";
     default:
       return productType;

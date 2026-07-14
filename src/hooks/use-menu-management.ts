@@ -547,9 +547,9 @@ export function useMenuManagement(organizationId: string | null): UseMenuManagem
             pendingAction.nextAvailable
           );
           updateProduct(result);
-          toast.success(
-            `Đã ${pendingAction.nextAvailable ? "bật" : "tắt"} khả dụng cho sản phẩm ${pendingAction.label}.`
-          );
+          const message = `Đã ${pendingAction.nextAvailable ? "bật" : "tắt"} khả dụng cho sản phẩm ${pendingAction.label}.`;
+          if (pendingAction.nextAvailable) toast.success(message);
+          else toast.warning(message);
           break;
         }
         case "variant-availability": {
@@ -561,9 +561,9 @@ export function useMenuManagement(organizationId: string | null): UseMenuManagem
             pendingAction.nextAvailable
           );
           updateVariant(result);
-          toast.success(
-            `Đã ${pendingAction.nextAvailable ? "bật" : "tắt"} khả dụng cho biến thể ${pendingAction.label}.`
-          );
+          const message = `Đã ${pendingAction.nextAvailable ? "bật" : "tắt"} khả dụng cho phiên bản ${pendingAction.label}.`;
+          if (pendingAction.nextAvailable) toast.success(message);
+          else toast.warning(message);
           break;
         }
         case "menu-status": {
@@ -574,7 +574,9 @@ export function useMenuManagement(organizationId: string | null): UseMenuManagem
             pendingAction.nextStatus
           );
           updateMenu(result);
-          toast.success(`Đã cập nhật trạng thái thực đơn ${pendingAction.label}.`);
+          const message = `Đã cập nhật trạng thái thực đơn ${pendingAction.label}.`;
+          if (pendingAction.nextStatus === "Active") toast.success(message);
+          else toast.warning(message);
           break;
         }
         case "menu-item-status": {
@@ -586,7 +588,9 @@ export function useMenuManagement(organizationId: string | null): UseMenuManagem
             pendingAction.nextStatus
           );
           updateMenuItem(result);
-          toast.success(`Đã cập nhật trạng thái món ${pendingAction.label}.`);
+          const message = `Đã cập nhật trạng thái món ${pendingAction.label}.`;
+          if (pendingAction.nextStatus === "Active") toast.success(message);
+          else toast.warning(message);
           break;
         }
       }

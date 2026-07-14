@@ -295,7 +295,7 @@ export function ProductsTable({
             </TableCell>
             <TableCell className="text-center">
               {product.variants.length === 0 ? (
-                <span className="text-xs text-muted-foreground">Không có phiên bản</span>
+                <span className="text-xs text-muted-foreground">Chưa có phiên bản</span>
               ) : (
                 <div className="flex max-w-80 flex-wrap items-center justify-center gap-1.5">
                   {product.variants.slice(0, 2).map((variant) => (
