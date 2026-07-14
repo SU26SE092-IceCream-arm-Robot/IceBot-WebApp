@@ -208,7 +208,7 @@ function PaginationFooter({
         <span className="font-medium tabular-nums text-foreground">
           {totalCount}
         </span>{" "}
-        bản ghi
+        dòng dữ liệu
       </p>
       <div className="flex gap-2">
         <Button

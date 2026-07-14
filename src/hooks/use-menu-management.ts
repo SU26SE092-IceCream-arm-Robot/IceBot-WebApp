@@ -384,7 +384,7 @@ export function useMenuManagement(organizationId: string | null): UseMenuManagem
             );
             if (variant?.fulfillmentType === "MachineProduced") {
               toast.error(
-                `Không thể kích hoạt: món ${item.displayName} là MachineProduced nhưng chưa có Recipe.`,
+                `Không thể kích hoạt: món ${item.displayName} là món sản xuất bằng máy nhưng chưa có công thức.`,
               );
               return;
             }
@@ -423,7 +423,7 @@ export function useMenuManagement(organizationId: string | null): UseMenuManagem
           );
           if (variant?.fulfillmentType === "MachineProduced") {
             toast.error(
-              "Không thể bật bán món MachineProduced khi chưa có Recipe hợp lệ.",
+              "Không thể bật bán món sản xuất bằng máy khi chưa có công thức hợp lệ.",
             );
             return;
           }

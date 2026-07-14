@@ -71,9 +71,6 @@ export function DashboardRecentOrders({ orders }: DashboardRecentOrdersProps) {
         <CardTitle className="text-base font-semibold text-foreground">
           Đơn hàng gần đây
         </CardTitle>
-        <p className="text-xs leading-5 text-muted-foreground">
-          Dữ liệu lấy từ order overview của backend, không suy diễn trạng thái.
-        </p>
       </CardHeader>
       <CardContent>
         {orders.length === 0 ? (

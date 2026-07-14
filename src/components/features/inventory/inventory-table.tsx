@@ -242,8 +242,8 @@ export function InventoryTable({
                   variant="ghost"
                   size="icon-sm"
                   className="rounded-lg text-success hover:bg-success/10 hover:text-success"
-                  title={`Ghi nhận refill ${dispenser.ingredientName}`}
-                  aria-label={`Ghi nhận refill ${dispenser.ingredientName}`}
+                  title={`Ghi nhận nạp thêm ${dispenser.ingredientName}`}
+                  aria-label={`Ghi nhận nạp thêm ${dispenser.ingredientName}`}
                   onClick={() => onRefill(dispenser)}
                 >
                   <PackagePlus className="size-4" />

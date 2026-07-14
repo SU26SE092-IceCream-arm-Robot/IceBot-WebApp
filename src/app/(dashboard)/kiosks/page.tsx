@@ -135,7 +135,7 @@ export default function KiosksPage() {
           <div className="space-y-2">
             <h1 className="text-3xl font-semibold tracking-tight text-foreground">Giám sát Kiosk</h1>
             <p className="text-sm leading-6 text-muted-foreground">
-              Theo dõi metadata vòng đời của đội máy IceBot và mở trang chi tiết để xem heartbeat, sự kiện từ backend.
+              Theo dõi trạng thái quản lý của đội máy IceBot và mở trang chi tiết để xem heartbeat, sự kiện thiết bị.
             </p>
           </div>
         </div>

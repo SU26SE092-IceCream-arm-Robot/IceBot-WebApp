@@ -76,7 +76,7 @@ export async function getKioskDetail(
       outcome: "ERROR",
       message: getKioskManagementErrorMessage(
         error,
-        "Không thể tải metadata kiosk từ backend.",
+        "Không thể tải thông tin kiosk.",
       ),
     };
   }

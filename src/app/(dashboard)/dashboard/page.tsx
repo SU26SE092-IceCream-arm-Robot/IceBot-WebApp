@@ -47,7 +47,7 @@ export default function DashboardPage() {
         <DashboardLoadingState />
       ) : errorMessage || !data ? (
         <DashboardErrorState
-          message={errorMessage ?? "Backend không trả về dữ liệu tổng quan."}
+          message={errorMessage ?? "Không thể tải dữ liệu tổng quan."}
           onRetry={() => void refresh()}
         />
       ) : isEmpty ? (
@@ -96,7 +96,7 @@ export default function DashboardPage() {
           <section className="grid items-start gap-4 xl:grid-cols-2">
             <DashboardStatusDistribution
               title="Phân bố trạng thái kiosk"
-              description="Trạng thái vòng đời kiosk từ backend, không phải realtime online."
+              description="Trạng thái quản lý của kiosk, không phải kết nối thời gian thực."
               kind="kiosk"
               items={data.kioskStatusOverview.byStatus}
               total={data.kioskStatusOverview.totalCount}
@@ -104,7 +104,7 @@ export default function DashboardPage() {
             />
             <DashboardStatusDistribution
               title="Phân bố trạng thái đơn hàng"
-              description="Tỷ lệ được tính từ tổng số đơn trong order overview."
+              description="Tỷ lệ được tính từ tổng số đơn hàng hiện có."
               kind="order"
               items={data.orderOverview.byStatus}
               total={data.orderOverview.totalCount}

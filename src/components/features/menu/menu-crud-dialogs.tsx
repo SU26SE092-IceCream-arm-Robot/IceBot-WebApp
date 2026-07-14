@@ -430,7 +430,7 @@ export function MenuItemFormDialog({
               <Input disabled className="h-10 bg-muted" placeholder="Chưa tích hợp quản lý công thức trong màn hình này" />
               {isMachineProducedWithoutRecipe ? (
                 <p className="rounded-lg border border-warning/30 bg-warning/5 px-3 py-2 text-sm text-warning">
-                  Phiên bản sản xuất bằng máy cần công thức hợp lệ và luồng sản xuất trước khi bật bán. Hãy cấu hình công thức qua luồng quản trị phù hợp trước khi kích hoạt món.
+                  Phiên bản sản xuất bằng máy cần công thức hợp lệ trước khi bật bán. Vui lòng cấu hình công thức trước khi kích hoạt món.
                 </p>
               ) : null}
             </div>

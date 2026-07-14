@@ -66,7 +66,7 @@ const PAGE_SIZE = 12;
 const STATUS_OPTIONS: { value: TenantStatusFilter; label: string }[] = [
   { value: "ALL", label: "Tất cả trạng thái" },
   { value: "Active", label: "Đang hoạt động" },
-  { value: "Inactive", label: "Không hoạt động" },
+  { value: "Inactive", label: "Ngừng hoạt động" },
   { value: "Suspended", label: "Tạm ngưng" },
   { value: "Disabled", label: "Đã vô hiệu hóa" },
   { value: "Archived", label: "Đã lưu trữ" },

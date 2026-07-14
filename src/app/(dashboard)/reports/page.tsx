@@ -255,7 +255,7 @@ export default function ReportsPage() {
           {snapshot.availability.kiosks ? (
             <KioskAttentionTable rows={snapshot.kioskAttention} />
           ) : (
-            <ReportsSectionUnavailable message="Không thể tải metadata kiosk nên danh sách kiosk cần chú ý chưa được hiển thị." />
+            <ReportsSectionUnavailable message="Không thể tải thông tin kiosk nên danh sách kiosk cần chú ý chưa được hiển thị." />
           )}
           <OperationsSignals panels={snapshot.signalPanels} />
           {snapshot.availability.activity ? (

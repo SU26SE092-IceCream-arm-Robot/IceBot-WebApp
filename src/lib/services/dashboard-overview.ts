@@ -115,11 +115,11 @@ export function getDashboardOverviewErrorMessage(error: unknown): string {
   if (axios.isAxiosError(error)) {
     return (
       error.response?.data?.message ||
-      "Không thể tải dữ liệu tổng quan từ backend."
+      "Không thể tải dữ liệu tổng quan."
     );
   }
 
   return error instanceof Error
     ? error.message
-    : "Không thể tải dữ liệu tổng quan từ backend.";
+    : "Không thể tải dữ liệu tổng quan.";
 }

@@ -166,7 +166,7 @@ async function loadPagedSource<T>(
           "partial",
           items.length,
           totalCount || items.length,
-          `Chỉ tải được ${items.length} bản ghi trước khi nguồn dữ liệu gặp lỗi.`,
+          `Chỉ tải được ${items.length} dòng dữ liệu trước khi nguồn dữ liệu gặp lỗi.`,
         ),
       };
     }
@@ -179,7 +179,7 @@ async function loadPagedSource<T>(
       items.length,
       totalCount || items.length,
       totalCount > items.length
-        ? `Đã đạt giới hạn ${REPORTS_MAX_ROWS.toLocaleString("vi-VN")} bản ghi.`
+        ? `Đã đạt giới hạn ${REPORTS_MAX_ROWS.toLocaleString("vi-VN")} dòng dữ liệu.`
         : undefined,
     ),
   };
@@ -355,7 +355,7 @@ function sumCurrencies(
 
 function coverageLabel(coverage: ReportsCoverage): string {
   if (coverage.isComplete) {
-    return `Đủ dữ liệu (${coverage.loadedCount.toLocaleString("vi-VN")} bản ghi)`;
+    return `Đủ dữ liệu (${coverage.loadedCount.toLocaleString("vi-VN")} dòng dữ liệu)`;
   }
   if (coverage.status === "skipped") {
     return "Không có quyền truy cập nguồn dữ liệu";
@@ -363,7 +363,7 @@ function coverageLabel(coverage: ReportsCoverage): string {
   if (coverage.status === "failed") {
     return "Nguồn dữ liệu không khả dụng";
   }
-  return `Tạm tính từ ${coverage.loadedCount.toLocaleString("vi-VN")}/${coverage.totalCount.toLocaleString("vi-VN")} bản ghi`;
+  return `Tạm tính từ ${coverage.loadedCount.toLocaleString("vi-VN")}/${coverage.totalCount.toLocaleString("vi-VN")} dòng dữ liệu`;
 }
 
 function dayKey(date: Date): string {
@@ -700,8 +700,8 @@ export function buildReportsSnapshot(
         items: [
           { id: "products", label: "Tổng sản phẩm", value: sources.products.coverage.totalCount, tone: "default" },
           { id: "products-unavailable", label: "Sản phẩm tạm ngưng", value: products.filter((item) => !item.isAvailable).length, tone: "warning" },
-          { id: "variants", label: "Tổng biến thể đã tải", value: allVariants.length, tone: "default" },
-          { id: "variants-unavailable", label: "Biến thể tạm ngưng", value: allVariants.filter((item) => !item.isAvailable).length, tone: "warning" },
+          { id: "variants", label: "Tổng phiên bản sản phẩm đã tải", value: allVariants.length, tone: "default" },
+          { id: "variants-unavailable", label: "Phiên bản sản phẩm tạm ngưng", value: allVariants.filter((item) => !item.isAvailable).length, tone: "warning" },
           { id: "menus-active", label: "Thực đơn đang hoạt động", value: menus.filter((item) => item.status === "Active").length, tone: "success" },
           { id: "menus-draft-paused", label: "Thực đơn nháp/tạm dừng", value: menus.filter((item) => item.status === "Draft" || item.status === "Paused").length, tone: "warning" },
           { id: "menu-items-active", label: "Món đang hoạt động", value: allMenuItems.filter((item) => item.status === "Active").length, tone: "success" },

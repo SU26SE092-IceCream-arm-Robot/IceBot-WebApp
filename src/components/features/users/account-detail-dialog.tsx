@@ -254,7 +254,7 @@ export function AccountDetailDialog({
                 <TabsContent value="access" className="mt-0 space-y-4 outline-none">
                   <div className="flex items-center justify-between mb-2">
                     <p className="text-sm text-muted-foreground">
-                      Vai trò và phạm vi hiệu lực do backend tính toán.
+                      Vai trò và phạm vi hiệu lực do hệ thống tính toán.
                     </p>
                     <Button variant="outline" size="sm" onClick={() => void accountActions.loadEffectiveAccess(account.id)} disabled={accountActions.isEffectiveAccessLoading}>
                       Làm mới

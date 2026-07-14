@@ -18,7 +18,7 @@ export function PermissionMatrixView({ matrix }: { matrix: PermissionMatrixResul
     <div className="overflow-hidden rounded-xl border border-border bg-card">
       <div className="hidden grid-cols-[minmax(180px,0.8fr)_minmax(260px,1.5fr)_minmax(180px,1fr)_120px] gap-4 border-b border-border bg-muted/30 px-4 py-3 text-xs font-semibold text-muted-foreground md:grid">
         <span>Policy</span>
-        <span>Mô tả backend</span>
+        <span>Mô tả</span>
         <span>Vai trò</span>
         <span>Phạm vi</span>
       </div>
@@ -38,7 +38,7 @@ export function PermissionMatrixView({ matrix }: { matrix: PermissionMatrixResul
                 </code>
               </div>
               <p className="text-sm leading-5 text-muted-foreground">
-                {item.description || "Backend chưa cung cấp mô tả."}
+                {item.description || "Chưa có mô tả."}
               </p>
               <div className="flex flex-wrap gap-1.5">
                 {roles.length > 0 ? (

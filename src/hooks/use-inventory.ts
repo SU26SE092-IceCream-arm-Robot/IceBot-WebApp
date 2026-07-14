@@ -478,14 +478,14 @@ export function useInventory(): UseInventoryResult {
           request,
         );
         await finishMutation(
-          `Đã ghi nhận refill cho ${mutationDispenser.ingredientName}.`,
+          `Đã ghi nhận nạp thêm cho ${mutationDispenser.ingredientName}.`,
         );
         return true;
       } catch (error) {
         setMutationErrorMessage(
           getInventoryErrorMessage(
             error,
-            "Không thể ghi nhận refill. Vui lòng kiểm tra dữ liệu và thử lại.",
+            "Không thể ghi nhận nạp thêm. Vui lòng kiểm tra dữ liệu và thử lại.",
           ),
         );
         return false;

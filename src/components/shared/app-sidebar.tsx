@@ -34,7 +34,7 @@ interface SidebarItem {
 
 const SIDEBAR_ITEMS: readonly SidebarItem[] = [
   { href: "/dashboard", label: "Tổng quan", icon: LayoutDashboard },
-  { href: "/readiness", label: "Sẵn sàng vận hành", icon: ClipboardCheck },
+  { href: "/readiness", label: "Kiểm tra thiết lập", icon: ClipboardCheck },
   { href: "/kiosks", label: "Quản lý Kiosk", icon: Monitor },
   { href: "/inventory", label: "Tồn kho", icon: Package },
   { href: "/transactions", label: "Giao dịch", icon: ShoppingCart },

@@ -146,7 +146,7 @@ export async function refillDispenserState(
 
   return requireData(
     response.data,
-    "Không thể ghi nhận lượng nguyên liệu vừa refill.",
+    "Không thể ghi nhận lượng nguyên liệu vừa nạp thêm.",
   );
 }
 

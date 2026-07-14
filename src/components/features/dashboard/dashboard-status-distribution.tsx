@@ -39,7 +39,7 @@ function getKioskStatusLabel(status: string) {
     Active: "Đang hoạt động",
     Offline: "Ngoại tuyến",
     Maintenance: "Bảo trì",
-    Disabled: "Đã vô hiệu",
+    Disabled: "Đã vô hiệu hóa",
   };
 
   return labels[status] ?? status;

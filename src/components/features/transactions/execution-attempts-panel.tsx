@@ -108,7 +108,7 @@ export function ExecutionAttemptsPanel({ orderId }: { orderId: string }) {
           </span>
           <div>
             <p className="text-sm font-semibold text-foreground">Lần thực thi</p>
-            <p className="text-xs text-muted-foreground">Thông tin chẩn đoán chỉ đọc từ backend.</p>
+            <p className="text-xs text-muted-foreground">Thông tin chẩn đoán chỉ đọc.</p>
           </div>
         </div>
         {state.pagination.totalCount > 0 ? (

@@ -89,7 +89,7 @@ export function InventoryTopologyPanel({ kioskId }: { kioskId: string | null }) 
           <div className="rounded-lg border border-dashed border-border bg-muted/10 px-4 py-8 text-center">
             <p className="text-sm font-medium">Chọn một kiosk để xem chẩn đoán</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              Dữ liệu topology được backend cung cấp riêng cho từng kiosk.
+              Cấu hình phân phối nguyên liệu theo từng kiosk.
             </p>
           </div>
         ) : isLoading && !topology ? (

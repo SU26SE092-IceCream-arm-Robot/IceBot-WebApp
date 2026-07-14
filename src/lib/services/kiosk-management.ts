@@ -44,7 +44,7 @@ export async function getManagementKioskById(
     { signal },
   );
 
-  return requireData(response.data, "Không thể tải metadata kiosk.");
+  return requireData(response.data, "Không thể tải thông tin kiosk.");
 }
 
 export function getKioskManagementErrorMessage(
@@ -57,7 +57,7 @@ export function getKioskManagementErrorMessage(
 
   if (axios.isAxiosError<ApiResult<unknown>>(error)) {
     if (error.response?.status === 403) {
-      return "Tài khoản hiện tại không có quyền xem metadata kiosk.";
+      return "Tài khoản hiện tại không có quyền xem thông tin kiosk.";
     }
 
     return error.response?.data?.message || fallbackMessage;

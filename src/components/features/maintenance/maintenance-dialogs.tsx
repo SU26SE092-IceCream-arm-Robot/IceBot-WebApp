@@ -410,7 +410,7 @@ export function MaintenanceEditorDialog({
               <DialogDescription>
                 {isCreate
                   ? "Ghi nhận sự cố cần theo dõi và xử lý."
-                  : `${ticket?.ticketNumber ?? "Ticket"} · chỉ cập nhật thông tin được backend cho phép.`}
+                  : `${ticket?.ticketNumber ?? "Ticket"} · chỉ cập nhật các thông tin được phép thay đổi.`}
               </DialogDescription>
             </div>
           </div>

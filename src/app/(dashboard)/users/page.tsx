@@ -47,10 +47,10 @@ import type { ManagementAccountStatusFilter } from "@/types/accounts";
 
 const STATUS_OPTIONS: { value: ManagementAccountStatusFilter; label: string }[] = [
   { value: "ALL", label: "Tất cả trạng thái" },
-  { value: "Active", label: "Hoạt động" },
+  { value: "Active", label: "Đang hoạt động" },
   { value: "PendingVerification", label: "Chờ xác minh" },
   { value: "Suspended", label: "Tạm khóa" },
-  { value: "Disabled", label: "Vô hiệu hóa" },
+  { value: "Disabled", label: "Đã vô hiệu hóa" },
   { value: "Invited", label: "Đã mời" },
 ];
 

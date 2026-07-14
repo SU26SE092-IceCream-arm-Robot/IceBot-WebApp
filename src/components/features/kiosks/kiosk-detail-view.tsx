@@ -390,12 +390,12 @@ function LatestHeartbeatPanel({
         ) : !latest ? (
           <EvidenceUnavailable
             title="Chưa có dữ liệu vận hành"
-            message="Backend chưa ghi nhận heartbeat nào cho kiosk này. Không thể kết luận trạng thái online/offline thời gian thực."
+            message="Chưa ghi nhận heartbeat nào cho kiosk này. Không thể kết luận trạng thái online/offline thời gian thực."
           />
         ) : (
           <div>
             <DetailValue label="Kiosk báo cáo lúc" value={<span className="tabular-nums">{formatTimestamp(latest.reportedAt)}</span>} />
-            <DetailValue label="Backend nhận lúc" value={<span className="tabular-nums">{formatTimestamp(latest.receivedAt)}</span>} />
+            <DetailValue label="Hệ thống nhận lúc" value={<span className="tabular-nums">{formatTimestamp(latest.receivedAt)}</span>} />
             <DetailValue label="Network status" value={latest.networkStatus || "Không được heartbeat cung cấp"} />
             <DetailValue label="Robot status" value={latest.robotStatus || "Không được heartbeat cung cấp"} />
             <DetailValue label="Phiên bản ứng dụng" value={latest.appVersion || "Chưa có dữ liệu"} />
@@ -443,18 +443,18 @@ function HeartbeatsTable({
           </CardTitle>
           {state.pagination ? (
             <span className="text-xs text-muted-foreground">
-              Hiển thị {state.data.length}/{state.pagination.totalCount} bản ghi
+              Hiển thị {state.data.length}/{state.pagination.totalCount} heartbeat
             </span>
           ) : null}
         </div>
       </CardHeader>
       <CardContent className="p-0">
         {state.isLoading ? (
-          <EvidenceUnavailable title="Đang tải heartbeat" message="Đang lấy bằng chứng vận hành từ backend." />
+          <EvidenceUnavailable title="Đang tải heartbeat" message="Đang lấy bằng chứng vận hành." />
         ) : state.errorMessage ? (
           <EvidenceUnavailable title="Không lấy được dữ liệu heartbeat" message={state.errorMessage} />
         ) : state.data.length === 0 ? (
-          <EvidenceUnavailable title="Chưa có heartbeat" message="Kiosk chưa gửi heartbeat nào về backend." />
+          <EvidenceUnavailable title="Chưa có heartbeat" message="Kiosk chưa gửi heartbeat nào." />
         ) : (
           <div className="overflow-x-auto">
             <Table>
@@ -524,11 +524,11 @@ function EventsTable({
       </CardHeader>
       <CardContent className="p-0">
         {state.isLoading ? (
-          <EvidenceUnavailable title="Đang tải sự kiện" message="Đang lấy sự kiện thiết bị từ backend." />
+          <EvidenceUnavailable title="Đang tải sự kiện" message="Đang lấy sự kiện thiết bị." />
         ) : state.errorMessage ? (
           <EvidenceUnavailable title="Không lấy được sự kiện từ kiosk" message={state.errorMessage} />
         ) : state.data.length === 0 ? (
-          <EvidenceUnavailable title="Chưa có sự kiện từ kiosk" message="Backend chưa ghi nhận sự kiện thiết bị nào cho kiosk này." />
+          <EvidenceUnavailable title="Chưa có sự kiện từ kiosk" message="Chưa ghi nhận sự kiện thiết bị nào cho kiosk này." />
         ) : (
           <div className="overflow-x-auto">
             <Table>
@@ -591,7 +591,7 @@ export function KioskDetailView({ kioskId }: KioskDetailViewProps) {
     return (
       <StatePanel
         title="Không tìm thấy kiosk"
-        description={`Không tìm thấy kiosk có ID ${kioskId} trong backend management API.`}
+        description={`Không tìm thấy kiosk có ID ${kioskId}.`}
       />
     );
   }
@@ -611,7 +611,7 @@ export function KioskDetailView({ kioskId }: KioskDetailViewProps) {
       <StatePanel
         destructive
         title="Không thể tải chi tiết kiosk"
-        description={errorMessage ?? "Không thể tải metadata kiosk từ backend."}
+        description={errorMessage ?? "Không thể tải thông tin kiosk."}
         onRetry={() => void refresh()}
       />
     );

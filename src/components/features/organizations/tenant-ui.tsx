@@ -6,7 +6,7 @@ import type { TenantEntityStatus } from "@/types/tenant-management";
 
 const STATUS_LABELS: Record<TenantEntityStatus, string> = {
   Active: "Đang hoạt động",
-  Inactive: "Không hoạt động",
+  Inactive: "Ngừng hoạt động",
   Suspended: "Tạm ngưng",
   Disabled: "Đã vô hiệu hóa",
   Archived: "Đã lưu trữ",

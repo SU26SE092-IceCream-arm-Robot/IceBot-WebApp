@@ -30,7 +30,7 @@ export function DashboardKpiGrid({
         icon={ShoppingBag}
         label="Đơn chờ thanh toán"
         value={metrics.pendingOrderCount}
-        description="Đơn đang ở trạng thái PendingPayment"
+        description="Đơn chưa hoàn tất thanh toán"
         href="/transactions"
         tone="warning"
       />
@@ -38,7 +38,7 @@ export function DashboardKpiGrid({
         icon={RotateCcw}
         label="Cần hoàn tiền"
         value={metrics.refundRequiredOrderCount}
-        description="Đơn cần xử lý hoàn tiền từ backend"
+        description="Đơn cần nhân sự xử lý hoàn tiền"
         href="/transactions"
         tone={metrics.refundRequiredOrderCount > 0 ? "destructive" : "neutral"}
       />

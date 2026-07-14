@@ -465,7 +465,7 @@ export function LifecycleConfirmDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md" showCloseButton={!isSubmitting}>
         <DialogHeader><div className="flex items-start gap-3 pr-8"><span className={`flex size-10 shrink-0 items-center justify-center rounded-xl border ${activate ? "border-success/20 bg-success/10 text-success" : "border-destructive/20 bg-destructive/10 text-destructive"}`}><Icon className="size-5" /></span><div className="space-y-1"><DialogTitle>{activate ? `Kích hoạt ${entityLabel}` : `Vô hiệu hóa ${entityLabel}`}</DialogTitle><DialogDescription>Xác nhận thao tác với {entityName}.</DialogDescription></div></div></DialogHeader>
-        <p className="text-sm leading-6 text-muted-foreground">{activate ? `${entityLabel} sẽ có thể tiếp tục tham gia các luồng vận hành được backend cho phép.` : `${entityLabel} sẽ chuyển sang trạng thái không hoạt động. Dữ liệu hiện có không bị xóa.`}</p>
+        <p className="text-sm leading-6 text-muted-foreground">{activate ? `${entityLabel} sẽ có thể hoạt động trở lại trong hệ thống.` : `${entityLabel} sẽ chuyển sang trạng thái ngừng hoạt động. Dữ liệu hiện có không bị xóa.`}</p>
         <ErrorMessage message={errorMessage} />
         <DialogFooter><Button variant="outline" disabled={isSubmitting} onClick={() => onOpenChange(false)}>Quay lại</Button><Button variant={activate ? "default" : "destructive"} isLoading={isSubmitting} onClick={() => void onConfirm()}><Icon className="size-4" />Xác nhận</Button></DialogFooter>
       </DialogContent>

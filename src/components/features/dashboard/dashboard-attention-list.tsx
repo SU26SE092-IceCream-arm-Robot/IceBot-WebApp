@@ -54,7 +54,7 @@ export function DashboardAttentionList({
     },
     {
       label: "Đơn cần hoàn tiền",
-      description: "Cần xử lý theo workflow refund của backend.",
+      description: "Cần xử lý theo quy trình hoàn tiền.",
       count: metrics.refundRequiredOrderCount,
       href: "/transactions",
       icon: RotateCcw,
@@ -62,7 +62,7 @@ export function DashboardAttentionList({
     },
     {
       label: "Tồn kho sắp hết",
-      description: "Dispenser đang ở mức cảnh báo thấp.",
+      description: "Bộ phân phối đang ở mức cảnh báo thấp.",
       count: inventory.lowStockCount,
       href: "/inventory",
       icon: Boxes,
@@ -70,7 +70,7 @@ export function DashboardAttentionList({
     },
     {
       label: "Tồn kho đã hết",
-      description: "Dispenser cần được kiểm tra trước khi bán tiếp.",
+      description: "Bộ phân phối cần được kiểm tra trước khi bán tiếp.",
       count: inventory.emptyCount,
       href: "/inventory",
       icon: AlertTriangle,
@@ -78,7 +78,7 @@ export function DashboardAttentionList({
     },
     {
       label: "Kiosk ngoại tuyến",
-      description: "Trạng thái vòng đời kiosk đang offline.",
+      description: "Kiosk đang ở trạng thái ngoại tuyến.",
       count: metrics.offlineKioskCount,
       href: "/kiosks",
       icon: MonitorOff,

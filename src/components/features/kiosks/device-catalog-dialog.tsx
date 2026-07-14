@@ -87,7 +87,7 @@ export function DeviceCatalogDialog({
             Danh mục loại và model thiết bị
           </DialogTitle>
           <DialogDescription>
-            Tra cứu cấu hình phần cứng do backend quản lý. Nội dung chỉ đọc.
+            Tra cứu cấu hình phần cứng đang dùng trong hệ thống. Nội dung chỉ đọc.
           </DialogDescription>
         </DialogHeader>
 
@@ -254,7 +254,7 @@ export function DeviceCatalogDialog({
                             ))
                           ) : (
                             <span className="text-xs text-muted-foreground">
-                              Backend chưa khai báo capability.
+                              Chưa khai báo khả năng thiết bị.
                             </span>
                           )}
                         </div>

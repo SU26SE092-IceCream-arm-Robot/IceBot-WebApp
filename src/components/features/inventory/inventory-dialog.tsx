@@ -85,7 +85,7 @@ const EVENT_KIND_LABELS: Record<string, string> = {
 };
 
 const ACTION_LABELS: Record<string, string> = {
-  Refill: "Refill",
+  Refill: "Nạp thêm",
   Consume: "Tiêu thụ",
   AdjustEstimate: "Điều chỉnh ước tính",
   TransferIn: "Chuyển vào",
@@ -333,7 +333,7 @@ export function InventoryDetailDialog({
                   mono
                 />
                 <DetailField
-                  label="Refill gần nhất"
+                  label="Nạp thêm gần nhất"
                   value={formatInventoryDate(dispenser.lastRefilledAt)}
                   mono
                 />
@@ -425,7 +425,7 @@ export function InventoryHistoryDialog({
               Chưa có lịch sử biến động
             </p>
             <p className="mt-1 max-w-md text-sm text-muted-foreground">
-              Bộ phân phối này chưa ghi nhận refill, điều chỉnh, tiêu thụ hoặc
+              Bộ phân phối này chưa ghi nhận nạp thêm, điều chỉnh, tiêu thụ hoặc
               thay đổi cấu hình.
             </p>
           </div>
@@ -452,7 +452,7 @@ export function InventoryHistoryDialog({
               <span className="font-medium tabular-nums text-foreground">
                 {history.pagination.totalCount}
               </span>{" "}
-              bản ghi
+              dòng lịch sử
             </p>
             <div className="flex gap-2">
               <Button
@@ -526,8 +526,8 @@ export function InventoryMutationDialog({
   );
 
   const isRefill = kind === "refill";
-  const fieldLabel = isRefill ? "Lượng refill" : "Lượng ước tính mới";
-  const title = isRefill ? "Ghi nhận refill" : "Điều chỉnh lượng ước tính";
+  const fieldLabel = isRefill ? "Lượng nạp thêm" : "Lượng ước tính mới";
+  const title = isRefill ? "Ghi nhận nạp thêm" : "Điều chỉnh lượng ước tính";
   const Icon = isRefill ? PackagePlus : SlidersHorizontal;
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -631,7 +631,7 @@ export function InventoryMutationDialog({
           {isRefill ? (
             <div className="space-y-1.5">
               <label className="text-sm font-medium">
-                Trạng thái sau refill
+                Trạng thái sau khi nạp thêm
                 <span className="ml-1 font-normal text-muted-foreground">
                   (không bắt buộc)
                 </span>
@@ -685,7 +685,7 @@ export function InventoryMutationDialog({
               value={reasonCode}
               disabled={isSubmitting}
               maxLength={100}
-              placeholder={isRefill ? "Ví dụ: REFILL" : "Ví dụ: ADJUST"}
+              placeholder={isRefill ? "Ví dụ: NAP_THEM" : "Ví dụ: DIEU_CHINH"}
               className="h-10 font-mono"
               onChange={(event) => setReasonCode(event.target.value)}
             />
@@ -712,7 +712,7 @@ export function InventoryMutationDialog({
             </Button>
             <Button type="submit" isLoading={isSubmitting}>
               <Icon className="size-4" />
-              {isRefill ? "Xác nhận refill" : "Lưu điều chỉnh"}
+              {isRefill ? "Xác nhận nạp thêm" : "Lưu điều chỉnh"}
             </Button>
           </DialogFooter>
         </form>

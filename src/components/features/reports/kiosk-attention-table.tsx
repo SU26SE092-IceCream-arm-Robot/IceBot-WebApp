@@ -27,7 +27,7 @@ const LIFECYCLE_LABELS: Record<
   Active: "Đang hoạt động",
   Offline: "Ngoại tuyến",
   Maintenance: "Bảo trì",
-  Disabled: "Vô hiệu hóa",
+  Disabled: "Đã vô hiệu hóa",
   Retired: "Ngừng sử dụng",
 };
 
@@ -62,7 +62,7 @@ export function KioskAttentionTable({ rows }: { rows: ReportKioskAttentionRow[] 
             <MonitorCog className="size-5" />
           </span>
           <p className="font-medium text-foreground">Chưa có kiosk cần chú ý</p>
-          <p className="max-w-md text-sm text-muted-foreground">Không có tín hiệu cảnh báo trong phạm vi đang chọn, dựa trên các nguồn đã tải được.</p>
+          <p className="max-w-md text-sm text-muted-foreground">Không có tín hiệu cảnh báo trong phạm vi đang chọn.</p>
         </CardContent>
       ) : (
         <Table className="min-w-[1080px]">
