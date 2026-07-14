@@ -31,6 +31,18 @@ export interface KioskResult {
   updatedAt?: string | null;
 }
 
+export interface CreateKioskRequest {
+  code: string;
+  name: string;
+  kioskType: string;
+  serialNumber?: string | null;
+  timeZone: string;
+  address?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  supportsOfflineMode: boolean;
+}
+
 export interface StoreResult {
   id: string;
   organizationId: string;

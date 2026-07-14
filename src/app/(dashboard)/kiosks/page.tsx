@@ -6,6 +6,7 @@ import {
   Ban,
   Cpu,
   Monitor,
+  Plus,
   RefreshCw,
   Search,
   SlidersHorizontal,
@@ -15,6 +16,7 @@ import {
 } from "lucide-react";
 
 import { DeviceCatalogDialog } from "@/components/features/kiosks/device-catalog-dialog";
+import { KioskCreateDialog } from "@/components/features/kiosks/kiosk-create-dialog";
 import { KioskCard } from "@/components/features/kiosks/kiosk-card";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,7 +28,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useCreateKiosk } from "@/hooks/use-create-kiosk";
 import { isStatusFilter, useKiosks } from "@/hooks/use-kiosks";
+import { hasPermission } from "@/lib/rbac";
 import type { KioskStatusFilter } from "@/types";
 
 const STATUS_OPTIONS: { value: KioskStatusFilter; label: string }[] = [
@@ -121,12 +125,17 @@ export default function KiosksPage() {
     errorMessage,
     metadataWarning,
     scopedCount,
+    currentUser,
     setSearchTerm,
     setStatusFilter,
     setLocationFilter,
     clearFilters,
     refresh,
   } = useKiosks();
+  const createKiosk = useCreateKiosk({ onCreated: refresh });
+  const canCreateKiosk = currentUser
+    ? hasPermission(currentUser.role, "kiosks.control")
+    : false;
 
   return (
     <div className="space-y-7">
@@ -139,14 +148,22 @@ export default function KiosksPage() {
             </p>
           </div>
         </div>
-        <Button
-          variant="outline"
-          className="w-fit"
-          onClick={() => setIsDeviceCatalogOpen(true)}
-        >
-          <Cpu className="size-4" />
-          Danh mục thiết bị
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          {canCreateKiosk ? (
+            <Button className="w-fit" onClick={createKiosk.open}>
+              <Plus className="size-4" />
+              Tạo kiosk
+            </Button>
+          ) : null}
+          <Button
+            variant="outline"
+            className="w-fit"
+            onClick={() => setIsDeviceCatalogOpen(true)}
+          >
+            <Cpu className="size-4" />
+            Danh mục thiết bị
+          </Button>
+        </div>
       </section>
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
@@ -348,6 +365,7 @@ export default function KiosksPage() {
         open={isDeviceCatalogOpen}
         onOpenChange={setIsDeviceCatalogOpen}
       />
+      <KioskCreateDialog createKiosk={createKiosk} />
     </div>
   );
 }
