@@ -41,16 +41,17 @@ export function ThemeModeToggle({ compact = false }: { compact?: boolean }) {
             type="button"
             onClick={() => setTheme(option.value)}
             className={cn(
-              "inline-flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition-colors",
+              "inline-flex items-center justify-center rounded-md text-xs font-medium transition-colors",
+              compact ? "size-8" : "size-9",
               isActive
                 ? "bg-card text-foreground shadow-sm ring-1 ring-border"
                 : "text-muted-foreground hover:bg-accent hover:text-foreground"
             )}
             aria-pressed={isActive}
+            aria-label={`Giao diện ${option.label.toLowerCase()}`}
             title={`Giao diện ${option.label.toLowerCase()}`}
           >
-            <Icon className="size-3.5" />
-            {!compact ? <span>{option.label}</span> : null}
+            <Icon className="size-4" aria-hidden="true" />
           </button>
         );
       })}
