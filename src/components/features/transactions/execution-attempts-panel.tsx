@@ -28,7 +28,7 @@ function AttemptDetail({ detail }: { detail: ExecutionAttemptDetailResult }) {
   return (
     <div className="space-y-4 border-t border-border bg-muted/10 p-3">
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        <DiagnosticField label="Source command" value={<span className="font-mono text-xs">{attempt.sourceCommandId}</span>} />
+        <DiagnosticField label="Mã lệnh nguồn" value={<span className="font-mono text-xs">{attempt.sourceCommandId}</span>} />
         <DiagnosticField label="Hồ sơ thực thi" value={attempt.executionProfile} />
         <DiagnosticField label="Trạng thái thực thi" value={attempt.executionStatus} />
         <DiagnosticField label="Trạng thái quan sát" value={attempt.observationStatus} />
@@ -92,6 +92,34 @@ function AttemptDetail({ detail }: { detail: ExecutionAttemptDetailResult }) {
           ))}
         </div>
       </div>
+
+      <div className="rounded-lg border border-border bg-background p-3">
+        <p className="mb-2 text-sm font-semibold">Kết quả theo đơn vị sản xuất</p>
+        {detail.productionUnitOutcomes.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Chưa có kết quả theo đơn vị.</p>
+        ) : (
+          <div className="grid gap-2 sm:grid-cols-2">
+            {detail.productionUnitOutcomes.map((outcome) => (
+              <div
+                key={`${outcome.orderItemId}-${outcome.productionUnitStartNo}`}
+                className="rounded-md border border-border p-2 text-xs"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-medium text-foreground">
+                    Từ đơn vị #{outcome.productionUnitStartNo}
+                  </span>
+                  <Badge variant="outline">
+                    {outcome.aggregateStatus ?? "Chưa xác định"}
+                  </Badge>
+                </div>
+                <p className="mt-1 text-muted-foreground">
+                  Hoàn tất {outcome.completedQuantity}/{outcome.expectedQuantity} · Lỗi {outcome.failedQuantity} · Chưa báo {outcome.unreportedQuantity}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -144,7 +172,12 @@ export function ExecutionAttemptsPanel({ orderId }: { orderId: string }) {
                   <div className="grid min-w-0 flex-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
                     <DiagnosticField label="Lần" value={`#${attempt.dispatchAttemptNo}`} />
                     <DiagnosticField label="Trạng thái lệnh" value={<Badge variant="outline">{attempt.commandStatus}</Badge>} />
-                    <DiagnosticField label="Endpoint kiosk" value={<span className="font-mono text-xs">{attempt.kioskExecutionEndpointId}</span>} />
+                    <DiagnosticField
+                      label="Thực thi / quan sát"
+                      value={[attempt.executionStatus, attempt.observationStatus]
+                        .filter(Boolean)
+                        .join(" · ") || "Chưa có bằng chứng"}
+                    />
                     <DiagnosticField label="Tạo lúc" value={formatTransactionDate(attempt.createdAt)} />
                   </div>
                   <Button variant="ghost" size="sm" onClick={() => void state.toggleDetail(attempt.sourceCommandId)}>

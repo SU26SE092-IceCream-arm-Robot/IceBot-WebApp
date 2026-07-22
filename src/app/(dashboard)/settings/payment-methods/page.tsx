@@ -4,7 +4,7 @@ import { PaymentMethodsView } from "@/components/features/settings/payment-metho
 import { useAuth } from "@/hooks/use-auth";
 
 export default function PaymentMethodsPage() {
-  const { currentUser } = useAuth();
+  const { currentUser, session } = useAuth();
 
   if (!currentUser) {
     return null; // Layout handles auth loading/redirect
@@ -15,7 +15,13 @@ export default function PaymentMethodsPage() {
       <div className="flex items-center justify-between space-y-2">
         <h2 className="text-3xl font-bold tracking-tight">Cấu hình hệ thống</h2>
       </div>
-      <PaymentMethodsView currentUser={currentUser} />
+      <PaymentMethodsView
+        canManageStatus={
+          session?.account.roles.some(
+            (role) => role.roleCode === "SystemAdmin",
+          ) ?? false
+        }
+      />
     </div>
   );
 }

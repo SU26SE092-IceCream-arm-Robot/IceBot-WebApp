@@ -41,7 +41,6 @@ interface FormState {
   address: string;
   latitude: string;
   longitude: string;
-  supportsOfflineMode: boolean;
 }
 
 const initialFormState: FormState = {
@@ -55,7 +54,6 @@ const initialFormState: FormState = {
   address: "",
   latitude: "",
   longitude: "",
-  supportsOfflineMode: true,
 };
 
 function formatEntityOption(entity: {
@@ -127,7 +125,6 @@ function buildRequest(form: FormState): CreateKioskRequest {
     address: normalizeOptional(form.address),
     latitude: parseOptionalNumber(form.latitude),
     longitude: parseOptionalNumber(form.longitude),
-    supportsOfflineMode: form.supportsOfflineMode,
   };
 }
 
@@ -417,25 +414,6 @@ export function KioskCreateDialog({ createKiosk }: KioskCreateDialogProps) {
               </label>
             </section>
 
-            <label className="flex items-start gap-3 rounded-lg border border-border bg-card px-3 py-3">
-              <input
-                type="checkbox"
-                checked={form.supportsOfflineMode}
-                onChange={(event) =>
-                  setField("supportsOfflineMode", event.target.checked)
-                }
-                disabled={createKiosk.isSubmitting}
-                className="mt-1 size-4 rounded border-border accent-primary"
-              />
-              <span className="space-y-1">
-                <span className="block text-sm font-medium text-foreground">
-                  Hỗ trợ chế độ ngoại tuyến
-                </span>
-                <span className="block text-xs leading-5 text-muted-foreground">
-                  Chỉ lưu cấu hình quản lý kiosk; không kích hoạt provisioning, IoT hoặc robot.
-                </span>
-              </span>
-            </label>
           </div>
 
           <DialogFooter className="mt-0">

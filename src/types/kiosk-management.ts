@@ -3,10 +3,23 @@ import type { StoreOpeningHoursDay } from "@/types/tenant-management";
 export type KioskLifecycleStatus =
   | "Provisioning"
   | "Active"
-  | "Offline"
-  | "Maintenance"
   | "Disabled"
   | "Retired";
+
+export type KioskOperationalState =
+  | "Operational"
+  | "PausedByOperator"
+  | "Maintenance"
+  | "Cleaning"
+  | "Restocking"
+  | "EmergencyStopRequested"
+  | "OutOfService";
+
+export type KioskConnectivityStatus =
+  | "Online"
+  | "Degraded"
+  | "Unreachable"
+  | "Unknown";
 
 export interface KioskResult {
   id: string;
@@ -16,6 +29,10 @@ export interface KioskResult {
   name: string;
   kioskType: string;
   status: KioskLifecycleStatus;
+  operationalState: KioskOperationalState;
+  operationalStateReason?: string | null;
+  operationalStateChangedAt?: string | null;
+  operationalStateChangedByAccountId?: string | null;
   serialNumber?: string | null;
   timeZone: string;
   address?: string | null;
@@ -23,7 +40,6 @@ export interface KioskResult {
   longitude?: number | null;
   installedAt?: string | null;
   lastOnlineAt?: string | null;
-  supportsOfflineMode: boolean;
   configurationVersion: number;
   settingsSchemaVersion: number;
   settingsJson?: string | null;
@@ -40,7 +56,6 @@ export interface CreateKioskRequest {
   address?: string | null;
   latitude?: number | null;
   longitude?: number | null;
-  supportsOfflineMode: boolean;
 }
 
 export interface StoreResult {

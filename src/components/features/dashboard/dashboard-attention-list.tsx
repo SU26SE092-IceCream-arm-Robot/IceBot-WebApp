@@ -77,8 +77,8 @@ export function DashboardAttentionList({
       tone: "destructive",
     },
     {
-      label: "Kiosk ngoại tuyến",
-      description: "Kiosk đang ở trạng thái ngoại tuyến.",
+      label: "Kiosk mất kết nối",
+      description: "Connectivity backend ghi nhận trạng thái không thể kết nối.",
       count: metrics.offlineKioskCount,
       href: "/kiosks",
       icon: MonitorOff,

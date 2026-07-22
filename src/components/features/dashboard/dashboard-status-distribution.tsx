@@ -14,7 +14,7 @@ import {
   YAxis,
 } from "recharts";
 
-type DistributionKind = "kiosk" | "order";
+type DistributionKind = "kioskLifecycle" | "kioskConnectivity" | "order";
 
 const CHART_COLORS = [
   "var(--primary)",
@@ -34,12 +34,23 @@ const LEGEND_TONES = [
   "bg-accent-foreground",
 ];
 
-function getKioskStatusLabel(status: string) {
+function getKioskLifecycleLabel(status: string) {
   const labels: Record<string, string> = {
+    Provisioning: "Đang cấu hình",
     Active: "Đang hoạt động",
-    Offline: "Ngoại tuyến",
-    Maintenance: "Bảo trì",
     Disabled: "Đã vô hiệu hóa",
+    Retired: "Đã ngừng sử dụng",
+  };
+
+  return labels[status] ?? status;
+}
+
+function getKioskConnectivityLabel(status: string) {
+  const labels: Record<string, string> = {
+    Online: "Trực tuyến",
+    Degraded: "Kết nối không ổn định",
+    Unreachable: "Mất kết nối",
+    Unknown: "Chưa xác định",
   };
 
   return labels[status] ?? status;
@@ -50,7 +61,7 @@ function getOrderStatusLabel(status: string) {
     Draft: "Nháp",
     PendingPayment: "Chờ thanh toán",
     Paid: "Đã thanh toán",
-    ReadyForExecution: "Chờ xử lý",
+    ReadyForFulfillment: "Sẵn sàng hoàn tất đơn",
     Accepted: "Đã tiếp nhận",
     Preparing: "Đang chuẩn bị",
     Ready: "Sẵn sàng nhận",
@@ -61,15 +72,16 @@ function getOrderStatusLabel(status: string) {
     RefundRequired: "Cần hoàn tiền",
     Refunded: "Đã hoàn tiền",
     Compensated: "Đã bù trừ",
+    FulfillmentIssue: "Có sự cố khi hoàn tất đơn",
   };
 
   return labels[status] ?? status;
 }
 
 function getStatusLabel(kind: DistributionKind, status: string) {
-  return kind === "kiosk"
-    ? getKioskStatusLabel(status)
-    : getOrderStatusLabel(status);
+  if (kind === "kioskLifecycle") return getKioskLifecycleLabel(status);
+  if (kind === "kioskConnectivity") return getKioskConnectivityLabel(status);
+  return getOrderStatusLabel(status);
 }
 
 interface ChartDatum {
@@ -157,7 +169,7 @@ export function DashboardStatusDistribution({
           </div>
         ) : (
           <div className="space-y-5">
-            {kind === "kiosk" ? (
+            {kind !== "order" ? (
               <div className="relative h-60">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>

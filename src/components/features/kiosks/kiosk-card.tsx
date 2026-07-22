@@ -11,7 +11,11 @@ import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import type { KioskFleetItem, KioskLifecycleStatus } from "@/types";
+import type {
+  KioskFleetItem,
+  KioskLifecycleStatus,
+  KioskOperationalState,
+} from "@/types";
 
 interface KioskCardProps {
   kiosk: KioskFleetItem;
@@ -42,10 +46,6 @@ function getLifecycleLabel(status: KioskLifecycleStatus): string {
       return "Đang cấu hình";
     case "Active":
       return "Đang hoạt động";
-    case "Offline":
-      return "Ngoại tuyến";
-    case "Maintenance":
-      return "Bảo trì";
     case "Disabled":
       return "Đã vô hiệu hóa";
     case "Retired":
@@ -60,11 +60,11 @@ function getLifecycleVariant(
     return "default";
   }
 
-  if (status === "Offline" || status === "Disabled") {
+  if (status === "Disabled") {
     return "destructive";
   }
 
-  if (status === "Maintenance" || status === "Provisioning") {
+  if (status === "Provisioning") {
     return "secondary";
   }
 
@@ -76,15 +76,35 @@ function getAccentClass(status: KioskLifecycleStatus): string {
     return "bg-primary";
   }
 
-  if (status === "Offline" || status === "Disabled") {
+  if (status === "Disabled") {
     return "bg-destructive";
   }
 
-  if (status === "Maintenance") {
-    return "bg-warning";
-  }
-
   return "bg-muted-foreground";
+}
+
+function getOperationalLabel(state: KioskOperationalState): string {
+  const labels: Record<KioskOperationalState, string> = {
+    Operational: "Đang vận hành",
+    PausedByOperator: "Tạm dừng bởi nhân viên",
+    Maintenance: "Đang bảo trì",
+    Cleaning: "Đang vệ sinh",
+    Restocking: "Đang bổ sung hàng",
+    EmergencyStopRequested: "Đã yêu cầu dừng khẩn cấp",
+    OutOfService: "Ngừng phục vụ",
+  };
+
+  return labels[state];
+}
+
+function getOperationalVariant(
+  state: KioskOperationalState,
+): "default" | "destructive" | "secondary" | "outline" {
+  if (state === "Operational") return "outline";
+  if (state === "OutOfService" || state === "EmergencyStopRequested") {
+    return "destructive";
+  }
+  return "secondary";
 }
 
 export function KioskCard({ kiosk }: KioskCardProps) {
@@ -104,9 +124,14 @@ export function KioskCard({ kiosk }: KioskCardProps) {
               {kiosk.kioskId}
             </p>
           </div>
-          <Badge variant={getLifecycleVariant(kiosk.lifecycleStatus)}>
-            {getLifecycleLabel(kiosk.lifecycleStatus)}
-          </Badge>
+          <div className="flex flex-wrap justify-end gap-1.5">
+            <Badge variant={getLifecycleVariant(kiosk.lifecycleStatus)}>
+              {getLifecycleLabel(kiosk.lifecycleStatus)}
+            </Badge>
+            <Badge variant={getOperationalVariant(kiosk.operationalState)}>
+              {getOperationalLabel(kiosk.operationalState)}
+            </Badge>
+          </div>
         </div>
 
         <div className="flex items-center gap-2 text-xs text-muted-foreground">

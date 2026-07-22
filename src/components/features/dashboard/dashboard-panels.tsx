@@ -58,8 +58,6 @@ function getKioskStatusLabel(status: string): string {
   const labels: Record<string, string> = {
     Provisioning: "Đang cấu hình",
     Active: "Đang hoạt động",
-    Offline: "Ngoại tuyến",
-    Maintenance: "Bảo trì",
     Disabled: "Đã vô hiệu hóa",
     Retired: "Ngừng sử dụng",
   };
@@ -69,8 +67,7 @@ function getKioskStatusLabel(status: string): string {
 
 function getKioskStatusBar(status: string): string {
   if (status === "Active") return "bg-primary";
-  if (status === "Offline" || status === "Disabled") return "bg-destructive";
-  if (status === "Maintenance") return "bg-warning";
+  if (status === "Disabled") return "bg-destructive";
   return "bg-muted-foreground";
 }
 
@@ -90,7 +87,7 @@ function getOrderStatusLabel(status: string): string {
     Draft: "Nháp",
     PendingPayment: "Chờ thanh toán",
     Paid: "Đã thanh toán",
-    ReadyForExecution: "Chờ thực hiện",
+    ReadyForFulfillment: "Sẵn sàng hoàn tất đơn",
     Accepted: "Đã tiếp nhận",
     Preparing: "Đang chuẩn bị",
     Ready: "Sẵn sàng",
@@ -101,6 +98,7 @@ function getOrderStatusLabel(status: string): string {
     RefundRequired: "Cần hoàn tiền",
     Refunded: "Đã hoàn tiền",
     Compensated: "Đã bồi hoàn",
+    FulfillmentIssue: "Có sự cố khi hoàn tất đơn",
   };
 
   return labels[status] ?? status;
@@ -266,7 +264,7 @@ export function OperationalAttentionPanel({
         <AttentionItem
           href="/kiosks"
           icon={Monitor}
-          label="Kiosk có vòng đời ngoại tuyến"
+          label="Kiosk mất kết nối"
           value={metrics.offlineKioskCount}
           tone={metrics.offlineKioskCount > 0 ? "destructive" : "neutral"}
         />
@@ -335,12 +333,12 @@ export function KioskLifecycleSummaryPanel({
         </div>
 
         <div className="space-y-3">
-          {overview.byStatus.length === 0 ? (
+          {overview.byLifecycleStatus.length === 0 ? (
             <p className="text-sm text-muted-foreground">
               Chưa có phân bổ vòng đời kiosk.
             </p>
           ) : (
-            overview.byStatus.map((item) => {
+            overview.byLifecycleStatus.map((item) => {
               const percentage =
                 overview.totalCount > 0
                   ? (item.count / overview.totalCount) * 100

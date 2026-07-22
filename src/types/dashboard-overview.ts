@@ -1,3 +1,8 @@
+import type {
+  KioskConnectivityStatus,
+  KioskLifecycleStatus,
+} from "@/types/kiosk-management";
+
 export interface DashboardMetrics {
   organizationCount: number;
   storeCount: number;
@@ -12,8 +17,8 @@ export interface DashboardMetrics {
   latestDeviceEventCount: number;
 }
 
-export interface DashboardStatusCount {
-  status: string;
+export interface DashboardStatusCount<TStatus extends string = string> {
+  status: TStatus;
   count: number;
 }
 
@@ -24,7 +29,8 @@ export interface DashboardKioskStatusItem {
   organizationId: string;
   storeId: string;
   storeName: string;
-  status: string;
+  lifecycleStatus: KioskLifecycleStatus;
+  connectivityStatus: KioskConnectivityStatus;
   lastHeartbeatAt?: string | null;
   lastEventSeverity?: string | null;
   lastEventAt?: string | null;
@@ -32,7 +38,8 @@ export interface DashboardKioskStatusItem {
 
 export interface KioskStatusOverview {
   totalCount: number;
-  byStatus: DashboardStatusCount[];
+  byLifecycleStatus: DashboardStatusCount<KioskLifecycleStatus>[];
+  byConnectivityStatus: DashboardStatusCount<KioskConnectivityStatus>[];
   items: DashboardKioskStatusItem[];
 }
 

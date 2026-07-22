@@ -31,7 +31,6 @@ export interface KioskManagementDetail extends KioskFleetItem {
   kioskType: string;
   timeZone: string;
   installedAt?: string | null;
-  supportsOfflineMode: boolean;
   configurationVersion: number;
   settingsSchemaVersion: number;
   storeStatus?: string | null;

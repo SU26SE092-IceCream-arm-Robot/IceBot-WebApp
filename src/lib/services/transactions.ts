@@ -16,7 +16,7 @@ import type {
   MarkRefundProcessedRequest,
   RefundReasonRequest,
   ExecutionAttemptDetailResult,
-  ExecutionAttemptResult,
+  ExecutionAttemptSummaryResult,
   OrderChannel,
   OrderItemStatus,
   OrderStatus,
@@ -77,7 +77,7 @@ const ORDER_STATUS_FROM_GRAPHQL: Record<string, OrderStatus> = {
   DRAFT: "Draft",
   PENDING_PAYMENT: "PendingPayment",
   PAID: "Paid",
-  READY_FOR_EXECUTION: "ReadyForExecution",
+  READY_FOR_FULFILLMENT: "ReadyForFulfillment",
   ACCEPTED: "Accepted",
   PREPARING: "Preparing",
   READY: "Ready",
@@ -88,6 +88,7 @@ const ORDER_STATUS_FROM_GRAPHQL: Record<string, OrderStatus> = {
   REFUND_REQUIRED: "RefundRequired",
   REFUNDED: "Refunded",
   COMPENSATED: "Compensated",
+  FULFILLMENT_ISSUE: "FulfillmentIssue",
 };
 
 const PAYMENT_STATUS_FROM_GRAPHQL: Record<string, PaymentStatus> = {
@@ -198,12 +199,8 @@ const ORDER_EXECUTION_ATTEMPTS_QUERY = `
   query ManagementOrderExecutionAttempts($orderId: UUID!, $pageNumber: Int, $pageSize: Int) {
     orderExecutionAttempts(orderId: $orderId, pageNumber: $pageNumber, pageSize: $pageSize) {
       items {
-        sourceCommandId orderId dispatchAttemptNo kioskExecutionEndpointId
-        commandStatus createdAt requestedByAccountId commandExpiryAt deliveredAt respondedAt
-        rejectionCode rejectionMessage executionProfile sourceConfigurationReleaseId releaseChecksum
-        executionStatus observationStatus customerExecutionStatus sourceExecutorId
-        lastAppliedSourceEventId lastAppliedSequenceNumber lastEdgeCreatedAt
-        lastExecutorReportedAt cloudReceivedAt
+        sourceCommandId dispatchAttemptNo commandStatus createdAt deliveredAt respondedAt
+        rejectionCode rejectionMessage executionStatus observationStatus customerExecutionStatus
       }
       pageInfo { page pageSize totalCount totalPages hasNext hasPrevious }
     }
@@ -413,9 +410,9 @@ export async function getManagementOrderExecutionAttempts(
   orderId: string,
   query: OrderStatusHistoryQuery,
   signal?: AbortSignal,
-): Promise<TransactionsPagedResult<ExecutionAttemptResult>> {
+): Promise<TransactionsPagedResult<ExecutionAttemptSummaryResult>> {
   const result = await executeGraphQL<{
-    orderExecutionAttempts: GraphQLPage<ExecutionAttemptResult>;
+    orderExecutionAttempts: GraphQLPage<ExecutionAttemptSummaryResult>;
   }>(
     ORDER_EXECUTION_ATTEMPTS_QUERY,
     {
@@ -431,11 +428,12 @@ export async function getManagementOrderExecutionAttempts(
 }
 
 export async function getManagementExecutionAttempt(
+  orderId: string,
   sourceCommandId: string,
   signal?: AbortSignal,
 ): Promise<ExecutionAttemptDetailResult> {
   const response = await axiosClient.get<ApiResult<ExecutionAttemptDetailResult>>(
-    `/api/v1/management/execution-attempts/${encodeURIComponent(sourceCommandId)}`,
+    `/api/v1/management/orders/${encodeURIComponent(orderId)}/execution-attempts/${encodeURIComponent(sourceCommandId)}/diagnostics`,
     { signal },
   );
 

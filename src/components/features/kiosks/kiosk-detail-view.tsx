@@ -34,7 +34,7 @@ import { DevicesTable } from "./devices-table";
 import type { KioskEvidenceState } from "@/hooks/use-kiosk-detail";
 import { useKioskDetail } from "@/hooks/use-kiosk-detail";
 import { cn } from "@/lib/utils";
-import type { KioskLifecycleStatus } from "@/types";
+import type { KioskLifecycleStatus, KioskOperationalState } from "@/types";
 import type {
   DeviceEventSeverity,
   KioskDeviceEventResult,
@@ -73,10 +73,6 @@ function getLifecycleLabel(status: KioskLifecycleStatus): string {
       return "Đang cấu hình";
     case "Active":
       return "Đang hoạt động";
-    case "Offline":
-      return "Ngoại tuyến";
-    case "Maintenance":
-      return "Bảo trì";
     case "Disabled":
       return "Đã vô hiệu hóa";
     case "Retired":
@@ -91,25 +87,49 @@ function getLifecycleVariant(
     return "default";
   }
 
-  if (status === "Offline" || status === "Disabled") {
+  if (status === "Disabled") {
     return "destructive";
   }
 
-  if (status === "Maintenance" || status === "Provisioning") {
+  if (status === "Provisioning") {
     return "secondary";
   }
 
   return "outline";
 }
 
+function getOperationalLabel(state: KioskOperationalState): string {
+  const labels: Record<KioskOperationalState, string> = {
+    Operational: "Đang vận hành",
+    PausedByOperator: "Tạm dừng bởi nhân viên",
+    Maintenance: "Đang bảo trì",
+    Cleaning: "Đang vệ sinh",
+    Restocking: "Đang bổ sung hàng",
+    EmergencyStopRequested: "Đã yêu cầu dừng khẩn cấp",
+    OutOfService: "Ngừng phục vụ",
+  };
+
+  return labels[state];
+}
+
+function getOperationalVariant(
+  state: KioskOperationalState,
+): "default" | "destructive" | "secondary" | "outline" {
+  if (state === "Operational") return "outline";
+  if (state === "OutOfService" || state === "EmergencyStopRequested") {
+    return "destructive";
+  }
+  return "secondary";
+}
+
 function getHeartbeatLabel(status: KioskHeartbeatStatus): string {
   switch (status) {
     case "Online":
-      return "Online theo heartbeat";
+      return "Trực tuyến theo heartbeat";
     case "Degraded":
-      return "Suy giảm";
+      return "Kết nối không ổn định";
     case "Offline":
-      return "Offline theo heartbeat";
+      return "Mất kết nối theo heartbeat";
   }
 }
 
@@ -266,6 +286,9 @@ function DetailHeader({
             <Badge variant={getLifecycleVariant(kiosk.lifecycleStatus)}>
               {getLifecycleLabel(kiosk.lifecycleStatus)}
             </Badge>
+            <Badge variant={getOperationalVariant(kiosk.operationalState)}>
+              {getOperationalLabel(kiosk.operationalState)}
+            </Badge>
           </div>
           <p className="tabular-nums text-sm font-medium text-muted-foreground">
             {kiosk.kioskId}
@@ -314,6 +337,18 @@ function MetadataPanel({ kiosk }: { kiosk: KioskManagementDetail }) {
         <DetailValue
           label="Trạng thái vòng đời"
           value={getLifecycleLabel(kiosk.lifecycleStatus)}
+        />
+        <DetailValue
+          label="Trạng thái vận hành"
+          value={getOperationalLabel(kiosk.operationalState)}
+        />
+        <DetailValue
+          label="Lý do trạng thái vận hành"
+          value={kiosk.operationalStateReason || "Không có"}
+        />
+        <DetailValue
+          label="Cập nhật trạng thái vận hành"
+          value={formatTimestamp(kiosk.operationalStateChangedAt)}
         />
         <DetailValue label="Cửa hàng" value={kiosk.locationName} />
         <DetailValue label="Tổ chức" value={kiosk.organizationId ? "Đã liên kết" : "Chưa có"} />
@@ -390,7 +425,7 @@ function LatestHeartbeatPanel({
         ) : !latest ? (
           <EvidenceUnavailable
             title="Chưa có dữ liệu vận hành"
-            message="Chưa ghi nhận heartbeat nào cho kiosk này. Không thể kết luận trạng thái online/offline thời gian thực."
+            message="Chưa ghi nhận heartbeat nào cho kiosk này. Không thể kết luận tình trạng kết nối hiện tại."
           />
         ) : (
           <div>

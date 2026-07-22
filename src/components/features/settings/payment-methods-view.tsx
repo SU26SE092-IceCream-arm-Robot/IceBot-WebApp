@@ -20,21 +20,17 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { usePaymentMethods } from "@/hooks/use-payment-methods";
-import type { DashboardUser } from "@/types";
-import { hasPermission } from "@/lib/rbac";
 
 interface PaymentMethodsViewProps {
-  currentUser: DashboardUser;
+  canManageStatus: boolean;
 }
 
-export function PaymentMethodsView({ currentUser }: PaymentMethodsViewProps) {
+export function PaymentMethodsView({ canManageStatus }: PaymentMethodsViewProps) {
   const { methods, state, error, updatingId, refresh, updateStatus } = usePaymentMethods();
   const [confirmDialog, setConfirmDialog] = useState<{ id: number; isActive: boolean; name: string } | null>(null);
 
-  const canEdit = hasPermission(currentUser.role, "payments.manage");
-
   const handleToggle = (id: number, currentStatus: boolean, name: string) => {
-    if (!canEdit) return;
+    if (!canManageStatus) return;
     const newStatus = !currentStatus;
 
     if (!newStatus) {
@@ -110,15 +106,17 @@ export function PaymentMethodsView({ currentUser }: PaymentMethodsViewProps) {
                     </div>
                     <CardTitle className="text-base font-medium">{method.name}</CardTitle>
                   </div>
-                  <Button
-                    variant={method.isActive ? "default" : "secondary"}
-                    size="sm"
-                    className="w-20"
-                    disabled={!canEdit || isUpdating}
-                    onClick={() => handleToggle(method.id, method.isActive, method.name)}
-                  >
-                    {isUpdating ? "Đang xử lý" : method.isActive ? "Tắt" : "Bật"}
-                  </Button>
+                  {canManageStatus ? (
+                    <Button
+                      variant={method.isActive ? "default" : "secondary"}
+                      size="sm"
+                      className="w-20"
+                      disabled={isUpdating}
+                      onClick={() => handleToggle(method.id, method.isActive, method.name)}
+                    >
+                      {isUpdating ? "Đang xử lý" : method.isActive ? "Tắt" : "Bật"}
+                    </Button>
+                  ) : null}
                 </CardHeader>
                 <CardContent>
                   <CardDescription className="mt-2 text-sm">

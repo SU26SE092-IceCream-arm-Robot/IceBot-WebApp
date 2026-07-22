@@ -20,7 +20,7 @@ export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
   Draft: "Nháp",
   PendingPayment: "Chờ thanh toán",
   Paid: "Đã thanh toán",
-  ReadyForExecution: "Sẵn sàng xử lý",
+  ReadyForFulfillment: "Sẵn sàng hoàn tất đơn",
   Accepted: "Đã nhận",
   Preparing: "Đang chuẩn bị",
   Ready: "Sẵn sàng",
@@ -31,6 +31,7 @@ export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
   RefundRequired: "Cần hoàn tiền",
   Refunded: "Đã hoàn tiền",
   Compensated: "Đã bồi hoàn",
+  FulfillmentIssue: "Có sự cố khi hoàn tất đơn",
 };
 
 export const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
@@ -47,7 +48,7 @@ const ORDER_STATUS_CLASS_NAMES: Record<OrderStatus, string> = {
   Draft: "border-border bg-muted/20 text-muted-foreground",
   PendingPayment: "border-warning/20 bg-warning/10 text-warning",
   Paid: "border-primary/20 bg-primary/10 text-primary",
-  ReadyForExecution: "border-primary/20 bg-primary/10 text-primary",
+  ReadyForFulfillment: "border-primary/20 bg-primary/10 text-primary",
   Accepted: "border-primary/20 bg-primary/10 text-primary",
   Preparing: "border-warning/20 bg-warning/10 text-warning",
   Ready: "border-success/20 bg-success/10 text-success",
@@ -58,6 +59,7 @@ const ORDER_STATUS_CLASS_NAMES: Record<OrderStatus, string> = {
   RefundRequired: "border-warning/20 bg-warning/10 text-warning",
   Refunded: "border-primary/20 bg-primary/10 text-primary",
   Compensated: "border-success/20 bg-success/10 text-success",
+  FulfillmentIssue: "border-warning/20 bg-warning/10 text-warning",
 };
 
 const PAYMENT_STATUS_CLASS_NAMES: Record<PaymentStatus, string> = {

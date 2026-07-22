@@ -24,7 +24,11 @@ const DASHBOARD_OVERVIEW_QUERY = `
     }
     kioskStatusOverview {
       totalCount
-      byStatus {
+      byLifecycleStatus {
+        status
+        count
+      }
+      byConnectivityStatus {
         status
         count
       }
@@ -35,7 +39,8 @@ const DASHBOARD_OVERVIEW_QUERY = `
         organizationId
         storeId
         storeName
-        status
+        lifecycleStatus
+        connectivityStatus
         lastHeartbeatAt
         lastEventSeverity
         lastEventAt

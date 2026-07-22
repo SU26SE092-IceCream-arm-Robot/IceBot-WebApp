@@ -10,6 +10,10 @@ export type FulfillmentType = "Manual" | "Packaged" | "MachineProduced";
 
 export type OptionSelectionType = "Single" | "Multiple";
 
+export type ProductOptionExecutionImpact =
+  | "CommercialOnly"
+  | "ProductionAffecting";
+
 export interface ProductOptionResult {
   id: string;
   optionGroupId: number;
@@ -17,6 +21,7 @@ export interface ProductOptionResult {
   name: string;
   description?: string | null;
   priceDelta: number;
+  executionImpact: ProductOptionExecutionImpact;
   currency: string;
   isDefault: boolean;
   isAvailable: boolean;

@@ -32,9 +32,11 @@ function buildSummary(kiosks: KioskFleetItem[]): KioskSummary {
   return {
     total: kiosks.length,
     active: kiosks.filter((kiosk) => kiosk.lifecycleStatus === "Active").length,
-    offline: kiosks.filter((kiosk) => kiosk.lifecycleStatus === "Offline").length,
+    provisioning: kiosks.filter(
+      (kiosk) => kiosk.lifecycleStatus === "Provisioning",
+    ).length,
     maintenance: kiosks.filter(
-      (kiosk) => kiosk.lifecycleStatus === "Maintenance",
+      (kiosk) => kiosk.operationalState === "Maintenance",
     ).length,
     disabled: kiosks.filter(
       (kiosk) =>

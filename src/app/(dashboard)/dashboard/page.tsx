@@ -95,12 +95,20 @@ export default function DashboardPage() {
 
           <section className="grid items-start gap-4 xl:grid-cols-2">
             <DashboardStatusDistribution
-              title="Phân bố trạng thái kiosk"
-              description="Trạng thái quản lý của kiosk, không phải kết nối thời gian thực."
-              kind="kiosk"
-              items={data.kioskStatusOverview.byStatus}
+              title="Vòng đời kiosk"
+              description="Trạng thái quản lý của kiosk, tách biệt với trạng thái kết nối."
+              kind="kioskLifecycle"
+              items={data.kioskStatusOverview.byLifecycleStatus}
               total={data.kioskStatusOverview.totalCount}
-              emptyMessage="Chưa có kiosk để phân bố trạng thái."
+              emptyMessage="Chưa có kiosk để phân bố vòng đời."
+            />
+            <DashboardStatusDistribution
+              title="Kết nối kiosk"
+              description="Trạng thái từ dữ liệu connectivity do backend cung cấp."
+              kind="kioskConnectivity"
+              items={data.kioskStatusOverview.byConnectivityStatus}
+              total={data.kioskStatusOverview.totalCount}
+              emptyMessage="Chưa có dữ liệu kết nối kiosk."
             />
             <DashboardStatusDistribution
               title="Phân bố trạng thái đơn hàng"

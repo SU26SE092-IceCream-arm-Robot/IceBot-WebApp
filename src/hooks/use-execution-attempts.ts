@@ -10,7 +10,7 @@ import {
 } from "@/lib/services/transactions";
 import type {
   ExecutionAttemptDetailResult,
-  ExecutionAttemptResult,
+  ExecutionAttemptSummaryResult,
   TransactionsPaginationMeta,
 } from "@/types/transactions";
 
@@ -29,7 +29,7 @@ function emptyPagination(page = 1): TransactionsPaginationMeta {
 
 export function useExecutionAttempts(orderId: string) {
   const [page, setPage] = useState(1);
-  const [attempts, setAttempts] = useState<ExecutionAttemptResult[]>([]);
+  const [attempts, setAttempts] = useState<ExecutionAttemptSummaryResult[]>([]);
   const [pagination, setPagination] = useState<TransactionsPaginationMeta>(
     emptyPagination(),
   );
@@ -92,7 +92,7 @@ export function useExecutionAttempts(orderId: string) {
       setDetailErrorMessage(null);
       setIsDetailLoading(true);
       try {
-        setDetail(await getManagementExecutionAttempt(sourceCommandId));
+        setDetail(await getManagementExecutionAttempt(orderId, sourceCommandId));
       } catch (error) {
         setDetailErrorMessage(
           getTransactionsErrorMessage(error, "Không thể tải chi tiết lần thực thi."),
@@ -101,7 +101,7 @@ export function useExecutionAttempts(orderId: string) {
         setIsDetailLoading(false);
       }
     },
-    [expandedId],
+    [expandedId, orderId],
   );
 
   return {

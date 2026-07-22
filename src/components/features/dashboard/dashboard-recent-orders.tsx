@@ -6,7 +6,7 @@ const ORDER_STATUS_LABELS: Record<string, string> = {
   Draft: "Nháp",
   PendingPayment: "Chờ thanh toán",
   Paid: "Đã thanh toán",
-  ReadyForExecution: "Chờ xử lý",
+  ReadyForFulfillment: "Sẵn sàng hoàn tất đơn",
   Accepted: "Đã tiếp nhận",
   Preparing: "Đang chuẩn bị",
   Ready: "Sẵn sàng nhận",
@@ -17,6 +17,7 @@ const ORDER_STATUS_LABELS: Record<string, string> = {
   RefundRequired: "Cần hoàn tiền",
   Refunded: "Đã hoàn tiền",
   Compensated: "Đã bù trừ",
+  FulfillmentIssue: "Có sự cố khi hoàn tất đơn",
 };
 
 const PAYMENT_STATUS_LABELS: Record<string, string> = {

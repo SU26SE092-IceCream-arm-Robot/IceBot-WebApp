@@ -51,7 +51,7 @@ const ORDER_STATUS_BUCKETS = [
   {
     id: "processing",
     label: "Đang xử lý",
-    statuses: ["Paid", "ReadyForExecution", "Accepted", "Preparing", "Ready"],
+    statuses: ["Paid", "ReadyForFulfillment", "Accepted", "Preparing", "Ready"],
     tone: "primary" as const,
   },
   {
@@ -65,6 +65,12 @@ const ORDER_STATUS_BUCKETS = [
     label: "Thất bại / hủy",
     statuses: ["Failed", "ExecutionRejected", "Cancelled"],
     tone: "destructive" as const,
+  },
+  {
+    id: "fulfillment-issue",
+    label: "Sự cố hoàn tất",
+    statuses: ["FulfillmentIssue"],
+    tone: "warning" as const,
   },
   {
     id: "refund",
@@ -83,6 +89,7 @@ const ATTENTION_ORDER_STATUSES = new Set([
   "Failed",
   "ExecutionRejected",
   "RefundRequired",
+  "FulfillmentIssue",
 ]);
 
 function selectedId(value: string): string | undefined {
@@ -439,9 +446,17 @@ function kioskAttentionRows(
   const storeNames = new Map(stores.map((store) => [store.id, store.name]));
   const lifecycleReasons: Partial<Record<KioskResult["status"], string>> = {
     Provisioning: "Đang thiết lập",
-    Offline: "Đang ngoại tuyến",
-    Maintenance: "Đang bảo trì",
     Disabled: "Đã vô hiệu hóa",
+  };
+  const operationalReasons: Partial<
+    Record<KioskResult["operationalState"], string>
+  > = {
+    PausedByOperator: "Tạm dừng bởi nhân viên",
+    Maintenance: "Đang bảo trì",
+    Cleaning: "Đang vệ sinh",
+    Restocking: "Đang bổ sung hàng",
+    EmergencyStopRequested: "Đã yêu cầu dừng khẩn cấp",
+    OutOfService: "Ngừng phục vụ",
   };
 
   return kiosks
@@ -470,6 +485,12 @@ function kioskAttentionRows(
       if (kiosk.status !== "Active") {
         reasons.push(lifecycleReasons[kiosk.status] ?? `Trạng thái ${kiosk.status}`);
       }
+      if (kiosk.operationalState !== "Operational") {
+        reasons.push(
+          operationalReasons[kiosk.operationalState] ??
+            `Vận hành ${kiosk.operationalState}`,
+        );
+      }
       // lastOnlineAt is displayed for context, but no stale threshold is inferred without a backend SLA.
       if (inventoryIssueCount > 0) reasons.push(`${inventoryIssueCount} ngăn nguyên liệu cần kiểm tra`);
       if (activeTickets.length > 0) reasons.push(`${activeTickets.length} phiếu bảo trì đang mở`);
@@ -481,6 +502,7 @@ function kioskAttentionRows(
         kioskName: kiosk.name,
         storeName: storeNames.get(kiosk.storeId) ?? "Chưa xác định cửa hàng",
         lifecycleStatus: kiosk.status,
+        operationalState: kiosk.operationalState,
         lastOnlineAt: kiosk.lastOnlineAt,
         inventoryIssueCount,
         maintenanceIssueCount: activeTickets.length,
@@ -488,8 +510,9 @@ function kioskAttentionRows(
         attentionOrderCount,
         reasons,
         level:
-          kiosk.status === "Offline" ||
           kiosk.status === "Disabled" ||
+          kiosk.operationalState === "OutOfService" ||
+          kiosk.operationalState === "EmergencyStopRequested" ||
           criticalMaintenanceCount > 0 ||
           attentionOrderCount > 0
             ? "critical"

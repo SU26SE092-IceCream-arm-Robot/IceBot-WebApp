@@ -34,11 +34,9 @@ import { hasPermission } from "@/lib/rbac";
 import type { KioskStatusFilter } from "@/types";
 
 const STATUS_OPTIONS: { value: KioskStatusFilter; label: string }[] = [
-  { value: "ALL", label: "Tất cả trạng thái" },
+  { value: "ALL", label: "Tất cả vòng đời" },
   { value: "Provisioning", label: "Đang cấu hình" },
   { value: "Active", label: "Đang hoạt động" },
-  { value: "Offline", label: "Ngoại tuyến" },
-  { value: "Maintenance", label: "Bảo trì" },
   { value: "Disabled", label: "Đã vô hiệu hóa" },
   { value: "Retired", label: "Ngừng sử dụng" },
 ];
@@ -144,7 +142,7 @@ export default function KiosksPage() {
           <div className="space-y-2">
             <h1 className="text-3xl font-semibold tracking-tight text-foreground">Giám sát Kiosk</h1>
             <p className="text-sm leading-6 text-muted-foreground">
-              Theo dõi trạng thái quản lý của đội máy IceBot và mở trang chi tiết để xem heartbeat, sự kiện thiết bị.
+              Theo dõi vòng đời quản lý của đội máy IceBot và mở trang chi tiết để xem heartbeat, sự kiện thiết bị.
             </p>
           </div>
         </div>
@@ -180,14 +178,14 @@ export default function KiosksPage() {
           tone="primary"
         />
         <SummaryCard
-          icon={AlertTriangle}
-          label="Ngoại tuyến"
-          value={summary.offline}
-          tone="destructive"
+          icon={Cpu}
+          label="Đang cấu hình"
+          value={summary.provisioning}
+          tone="neutral"
         />
         <SummaryCard
           icon={Wrench}
-          label="Đang bảo trì"
+          label="Vận hành: bảo trì"
           value={summary.maintenance}
           tone="warning"
         />
@@ -246,7 +244,7 @@ export default function KiosksPage() {
               <SelectTrigger className="h-9 w-full bg-card">
                 <SelectValue>
                   {STATUS_OPTIONS.find((option) => option.value === filters.status)?.label ??
-                    "Tất cả trạng thái"}
+                    "Tất cả vòng đời"}
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
@@ -299,12 +297,12 @@ export default function KiosksPage() {
       <section className="space-y-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-base font-semibold text-foreground">Vòng đời đội máy</h2>
+            <h2 className="text-base font-semibold text-foreground">Trạng thái đội máy</h2>
           </div>
           <div className="flex flex-wrap items-center gap-4">
-            <StatusLegend className="bg-primary" label="Đang hoạt động" />
-            <StatusLegend className="bg-warning" label="Bảo trì" />
-            <StatusLegend className="bg-destructive" label="Ngoại tuyến / vô hiệu hóa" />
+            <StatusLegend className="bg-primary" label="Vòng đời: hoạt động" />
+            <StatusLegend className="bg-warning" label="Vận hành: bảo trì" />
+            <StatusLegend className="bg-destructive" label="Vòng đời: vô hiệu hóa" />
           </div>
         </div>
 

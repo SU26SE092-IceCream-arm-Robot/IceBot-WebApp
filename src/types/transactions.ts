@@ -12,7 +12,7 @@ export type OrderStatus =
   | "Draft"
   | "PendingPayment"
   | "Paid"
-  | "ReadyForExecution"
+  | "ReadyForFulfillment"
   | "Accepted"
   | "Preparing"
   | "Ready"
@@ -22,7 +22,8 @@ export type OrderStatus =
   | "ExecutionRejected"
   | "RefundRequired"
   | "Refunded"
-  | "Compensated";
+  | "Compensated"
+  | "FulfillmentIssue";
 
 export type PaymentStatus =
   | "Unpaid"
@@ -131,7 +132,21 @@ export interface OrderStatusHistoryResult {
   changedAt: string;
 }
 
-export interface ExecutionAttemptResult {
+export interface ExecutionAttemptSummaryResult {
+  sourceCommandId: string;
+  dispatchAttemptNo: number;
+  commandStatus: string;
+  createdAt: string;
+  deliveredAt?: string | null;
+  respondedAt?: string | null;
+  rejectionCode?: string | null;
+  rejectionMessage?: string | null;
+  executionStatus?: string | null;
+  observationStatus?: string | null;
+  customerExecutionStatus?: string | null;
+}
+
+export interface ExecutionAttemptDiagnosticsResult {
   sourceCommandId: string;
   orderId: string;
   dispatchAttemptNo: number;
@@ -188,6 +203,9 @@ export interface ExecutionDeliveryAttemptResult {
 export interface ProductionExecutionResult {
   id: string;
   sourceProductionJobId?: string | null;
+  orderItemId: string;
+  productionUnitNo: number;
+  productionUnitQuantity: number;
   workcellId?: string | null;
   controllerId?: string | null;
   executionPlanChecksum?: string | null;
@@ -205,13 +223,26 @@ export interface ProductionExecutionResult {
   cloudReceivedAt: string;
 }
 
+export interface ProductionUnitOutcomeSummaryResult {
+  orderItemId: string;
+  productionUnitStartNo: number;
+  expectedQuantity: number;
+  completedQuantity: number;
+  failedQuantity: number;
+  manualInterventionQuantity: number;
+  inProgressQuantity: number;
+  unreportedQuantity: number;
+  aggregateStatus?: string | null;
+}
+
 export interface ExecutionAttemptDetailResult {
-  attempt: ExecutionAttemptResult;
+  attempt: ExecutionAttemptDiagnosticsResult;
   previousAttempt?: ExecutionAttemptReferenceResult | null;
   nextAttempt?: ExecutionAttemptReferenceResult | null;
   provenance: ExecutionAttemptProvenanceResult;
   deliveryAttempts: ExecutionDeliveryAttemptResult[];
   productionExecutions: ProductionExecutionResult[];
+  productionUnitOutcomes: ProductionUnitOutcomeSummaryResult[];
 }
 
 export interface RefundResult {

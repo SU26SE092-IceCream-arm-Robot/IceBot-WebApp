@@ -45,7 +45,7 @@ export interface UseKiosksResult {
 const EMPTY_SUMMARY: KioskSummary = {
   total: 0,
   active: 0,
-  offline: 0,
+  provisioning: 0,
   maintenance: 0,
   disabled: 0,
 };
@@ -55,8 +55,6 @@ function isStatusFilter(value: string | null): value is KioskStatusFilter {
     value === "ALL" ||
     value === "Provisioning" ||
     value === "Active" ||
-    value === "Offline" ||
-    value === "Maintenance" ||
     value === "Disabled" ||
     value === "Retired"
   );

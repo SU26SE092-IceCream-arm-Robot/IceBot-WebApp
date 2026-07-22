@@ -84,6 +84,7 @@ export interface ReportKioskAttentionRow {
   kioskName: string;
   storeName: string;
   lifecycleStatus: KioskResult["status"];
+  operationalState: KioskResult["operationalState"];
   lastOnlineAt?: string | null;
   inventoryIssueCount: number;
   maintenanceIssueCount: number;

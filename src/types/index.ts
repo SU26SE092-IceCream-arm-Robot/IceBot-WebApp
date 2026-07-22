@@ -1,7 +1,12 @@
-import type { KioskLifecycleStatus } from "@/types/kiosk-management";
+import type {
+  KioskLifecycleStatus,
+  KioskOperationalState,
+} from "@/types/kiosk-management";
 
 export type {
+  KioskConnectivityStatus,
   KioskLifecycleStatus,
+  KioskOperationalState,
   KioskResult,
   ManagementKiosksQuery,
   ManagementStoresQuery,
@@ -166,6 +171,9 @@ export interface KioskFleetItem {
   address?: string | null;
   serialNumber?: string | null;
   lifecycleStatus: KioskLifecycleStatus;
+  operationalState: KioskOperationalState;
+  operationalStateReason?: string | null;
+  operationalStateChangedAt?: string | null;
   lastOnlineAt?: string | null;
   createdAt: string;
   updatedAt?: string | null;
@@ -189,7 +197,7 @@ export interface KioskLocationOption {
 export interface KioskSummary {
   total: number;
   active: number;
-  offline: number;
+  provisioning: number;
   maintenance: number;
   disabled: number;
 }
