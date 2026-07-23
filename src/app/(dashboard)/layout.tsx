@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { LoaderCircle, ShieldAlert } from "lucide-react";
+import { LoaderCircle, RefreshCw, ShieldAlert, WifiOff } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 
 import { AppSidebar } from "@/components/shared/app-sidebar";
@@ -15,7 +15,14 @@ export default function DashboardLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const { status, currentUser, session, logout } = useAuth();
+  const {
+    status,
+    currentUser,
+    session,
+    errorMessage,
+    retryRestore,
+    logout,
+  } = useAuth();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
@@ -43,6 +50,33 @@ export default function DashboardLayout({
           <LoaderCircle className="size-4 animate-spin" />
           Đang xác thực phiên đăng nhập...
         </div>
+      </main>
+    );
+  }
+
+  if (status === "error") {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-background px-4">
+        <Card className="w-full max-w-md border border-border">
+          <CardHeader>
+            <div className="mb-3 flex size-11 items-center justify-center rounded-xl bg-warning/10 text-warning">
+              <WifiOff className="size-5" />
+            </div>
+            <CardTitle className="text-xl font-bold tracking-tight">
+              Chưa thể xác minh phiên đăng nhập
+            </CardTitle>
+            <CardDescription>
+              {errorMessage ??
+                "Kết nối tới máy chủ đang gián đoạn. Phiên đăng nhập của bạn vẫn được giữ lại."}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button className="w-full" onClick={() => void retryRestore()}>
+              <RefreshCw className="size-4" />
+              Thử lại
+            </Button>
+          </CardContent>
+        </Card>
       </main>
     );
   }

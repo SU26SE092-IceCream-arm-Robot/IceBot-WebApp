@@ -12,6 +12,10 @@ import {
   writeAuthSession,
 } from "@/lib/auth-session";
 import {
+  InvalidAuthSessionError,
+  isInvalidAuthSessionError,
+} from "@/lib/auth-errors";
+import {
   API_BASE_URL,
   normalizeApiRequestPath,
 } from "@/lib/api-base-url";
@@ -48,7 +52,7 @@ function isAuthenticationRequest(url?: string): boolean {
 async function rotateBrowserSession(): Promise<string> {
   const session = readAuthSession();
   if (!session?.refreshToken) {
-    throw new Error("Refresh token không tồn tại.");
+    throw new InvalidAuthSessionError("Refresh token không tồn tại.");
   }
 
   const refreshedSession = await refreshAccessToken(session.refreshToken);
@@ -92,8 +96,10 @@ axiosClient.interceptors.response.use(
       config.headers.Authorization = `Bearer ${accessToken}`;
       return axiosClient(config);
     } catch (refreshError) {
-      clearAuthSession();
-      redirectToLogin();
+      if (isInvalidAuthSessionError(refreshError)) {
+        clearAuthSession();
+        redirectToLogin();
+      }
       return Promise.reject(refreshError);
     }
   },

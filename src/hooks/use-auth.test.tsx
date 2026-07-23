@@ -1,7 +1,174 @@
-import { describe, it } from "vitest";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { AxiosError, type AxiosResponse } from "axios";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { AuthProvider, useAuth } from "@/hooks/use-auth";
+import { readAuthSession, writeAuthSession } from "@/lib/auth-session";
+import {
+  getCurrentAccount,
+  refreshAccessToken,
+} from "@/lib/services/auth";
+import type {
+  AuthSession,
+  CurrentAccountResult,
+} from "@/types";
+
+vi.mock("@/lib/services/auth", () => ({
+  getCurrentAccount: vi.fn(),
+  loginWithPassword: vi.fn(),
+  refreshAccessToken: vi.fn(),
+  revokeRefreshToken: vi.fn(),
+}));
+
+const storedSession: AuthSession = {
+  accessToken: "access-token",
+  refreshToken: "refresh-token",
+  account: {
+    id: "11111111-1111-1111-1111-111111111111",
+    userName: "admin",
+    fullName: "System Admin",
+    email: "admin@icebot.vn",
+    roles: [{ roleCode: "SystemAdmin" }],
+    status: "Active",
+    localLoginEnabled: true,
+    googleLoginEnabled: false,
+  },
+};
+
+const currentAccount: CurrentAccountResult = {
+  ...storedSession.account,
+  emailConfirmed: true,
+  phoneNumberConfirmed: false,
+  gender: "Unknown",
+};
+
+const refreshedSession: AuthSession = {
+  ...storedSession,
+  accessToken: "refreshed-access-token",
+  refreshToken: "refreshed-refresh-token",
+};
+
+function unauthorizedError(): AxiosError {
+  const response = {
+    data: {},
+    status: 401,
+    statusText: "Unauthorized",
+    headers: {},
+    config: { headers: {} },
+  } as AxiosResponse;
+
+  return new AxiosError(
+    "Request failed with status code 401",
+    "ERR_BAD_REQUEST",
+    undefined,
+    undefined,
+    response,
+  );
+}
+
+function AuthProbe() {
+  const {
+    status,
+    session,
+    errorMessage,
+    retryRestore,
+  } = useAuth();
+
+  return (
+    <div>
+      <span data-testid="status">{status}</span>
+      <span data-testid="token">{session?.accessToken ?? "none"}</span>
+      <span data-testid="error">{errorMessage ?? "none"}</span>
+      <button type="button" onClick={() => void retryRestore()}>
+        Retry restore
+      </button>
+    </div>
+  );
+}
+
+function renderAuthProvider() {
+  return render(
+    <AuthProvider>
+      <AuthProbe />
+    </AuthProvider>,
+  );
+}
 
 describe("stored-session recovery", () => {
-  it.todo(
-    "preserves the stored session when current-account validation fails with a network timeout",
-  );
+  beforeEach(() => {
+    vi.clearAllMocks();
+    window.localStorage.clear();
+    writeAuthSession(storedSession);
+  });
+
+  it("keeps the stored session after a network timeout and allows retry", async () => {
+    vi.mocked(getCurrentAccount)
+      .mockRejectedValueOnce(
+        new AxiosError("timeout", "ECONNABORTED"),
+      )
+      .mockResolvedValueOnce(currentAccount);
+
+    renderAuthProvider();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("status")).toHaveTextContent("error");
+    });
+    expect(screen.getByTestId("token")).toHaveTextContent("access-token");
+    expect(screen.getByTestId("error")).toHaveTextContent(
+      "Kết nối xác thực đã hết thời gian chờ",
+    );
+    expect(readAuthSession()).toEqual(storedSession);
+    expect(refreshAccessToken).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole("button", { name: "Retry restore" }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("status")).toHaveTextContent("authenticated");
+    });
+    expect(readAuthSession()?.accessToken).toBe("access-token");
+  });
+
+  it("clears the session when refresh fails with HTTP 401", async () => {
+    vi.mocked(getCurrentAccount).mockRejectedValueOnce(unauthorizedError());
+    vi.mocked(refreshAccessToken).mockRejectedValueOnce(unauthorizedError());
+
+    renderAuthProvider();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("status")).toHaveTextContent("unauthenticated");
+    });
+    expect(screen.getByTestId("token")).toHaveTextContent("none");
+    expect(readAuthSession()).toBeNull();
+  });
+
+  it("keeps rotated tokens when account validation is temporarily unavailable", async () => {
+    vi.mocked(getCurrentAccount)
+      .mockRejectedValueOnce(unauthorizedError())
+      .mockRejectedValueOnce(new AxiosError("timeout", "ECONNABORTED"));
+    vi.mocked(refreshAccessToken).mockResolvedValueOnce(refreshedSession);
+
+    renderAuthProvider();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("status")).toHaveTextContent("error");
+    });
+    expect(screen.getByTestId("token")).toHaveTextContent(
+      "refreshed-access-token",
+    );
+    expect(readAuthSession()?.refreshToken).toBe("refreshed-refresh-token");
+  });
+
+  it("keeps the existing successful restore behavior", async () => {
+    vi.mocked(getCurrentAccount).mockResolvedValueOnce(currentAccount);
+
+    renderAuthProvider();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("status")).toHaveTextContent("authenticated");
+    });
+    expect(screen.getByTestId("token")).toHaveTextContent("access-token");
+    expect(screen.getByTestId("error")).toHaveTextContent("none");
+    expect(readAuthSession()?.account.email).toBe("admin@icebot.vn");
+    expect(refreshAccessToken).not.toHaveBeenCalled();
+  });
 });

@@ -1,6 +1,5 @@
 "use client";
 
-import axios from "axios";
 import {
   createContext,
   useCallback,
@@ -20,6 +19,10 @@ import {
   writeAuthSession,
 } from "@/lib/auth-session";
 import {
+  getAuthRestoreErrorMessage,
+  isInvalidAuthSessionError,
+} from "@/lib/auth-errors";
+import {
   getCurrentAccount,
   loginWithPassword,
   refreshAccessToken,
@@ -28,20 +31,33 @@ import {
 } from "@/lib/services/auth";
 import type { AuthSession, DashboardUser } from "@/types";
 
-export type AuthStatus = "loading" | "authenticated" | "forbidden" | "unauthenticated";
+export type AuthStatus =
+  | "loading"
+  | "authenticated"
+  | "forbidden"
+  | "unauthenticated"
+  | "error";
 
 interface AuthContextValue {
   status: AuthStatus;
   session: AuthSession | null;
   currentUser: DashboardUser | null;
+  errorMessage: string | null;
+  retryRestore: () => Promise<void>;
   login: (request: LoginRequest) => Promise<DashboardUser | null>;
   logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-function isUnauthorized(error: unknown): boolean {
-  return axios.isAxiosError(error) && error.response?.status === 401;
+class SessionValidationUnavailableError extends Error {
+  constructor(
+    readonly retainedSession: AuthSession,
+    readonly reason: unknown,
+  ) {
+    super("Session validation is temporarily unavailable.");
+    this.name = "SessionValidationUnavailableError";
+  }
 }
 
 async function validateStoredSession(session: AuthSession): Promise<AuthSession> {
@@ -49,22 +65,35 @@ async function validateStoredSession(session: AuthSession): Promise<AuthSession>
     const account = await getCurrentAccount(session.accessToken);
     return updateSessionAccount(session, account);
   } catch (error) {
-    if (!isUnauthorized(error)) {
+    if (!isInvalidAuthSessionError(error)) {
       throw error;
     }
 
     const refreshedSession = await refreshAccessToken(session.refreshToken);
-    const account = await getCurrentAccount(refreshedSession.accessToken);
-    return updateSessionAccount(refreshedSession, account);
+    try {
+      const account = await getCurrentAccount(refreshedSession.accessToken);
+      return updateSessionAccount(refreshedSession, account);
+    } catch (refreshValidationError) {
+      if (isInvalidAuthSessionError(refreshValidationError)) {
+        throw refreshValidationError;
+      }
+
+      throw new SessionValidationUnavailableError(
+        refreshedSession,
+        refreshValidationError,
+      );
+    }
   }
 }
 
 export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   const [status, setStatus] = useState<AuthStatus>("loading");
   const [session, setSession] = useState<AuthSession | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const applySession = useCallback((nextSession: AuthSession | null) => {
     setSession(nextSession);
+    setErrorMessage(null);
 
     if (!nextSession) {
       setStatus("unauthenticated");
@@ -81,13 +110,38 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       return;
     }
 
+    setStatus("loading");
+    setErrorMessage(null);
+
     try {
       const validatedSession = await validateStoredSession(storedSession);
       writeAuthSession(validatedSession);
       applySession(validatedSession);
-    } catch {
-      clearAuthSession();
-      applySession(null);
+    } catch (error) {
+      if (isInvalidAuthSessionError(error)) {
+        clearAuthSession();
+        applySession(null);
+        return;
+      }
+
+      const retainedSession =
+        error instanceof SessionValidationUnavailableError
+          ? error.retainedSession
+          : storedSession;
+      if (error instanceof SessionValidationUnavailableError) {
+        // A successful refresh rotates the refresh token. Keep its replacement
+        // even when the follow-up account request is temporarily unavailable.
+        writeAuthSession(retainedSession);
+      }
+      setSession(retainedSession);
+      setStatus("error");
+      setErrorMessage(
+        getAuthRestoreErrorMessage(
+          error instanceof SessionValidationUnavailableError
+            ? error.reason
+            : error,
+        ),
+      );
     }
   }, [applySession]);
 
@@ -143,10 +197,12 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       status,
       session,
       currentUser,
+      errorMessage,
+      retryRestore: restoreSession,
       login,
       logout,
     }),
-    [currentUser, login, logout, session, status],
+    [currentUser, errorMessage, login, logout, restoreSession, session, status],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
