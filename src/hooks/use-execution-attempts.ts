@@ -27,7 +27,10 @@ function emptyPagination(page = 1): TransactionsPaginationMeta {
   };
 }
 
-export function useExecutionAttempts(orderId: string) {
+export function useExecutionAttempts(
+  orderId: string,
+  canViewDiagnostics: boolean,
+) {
   const [page, setPage] = useState(1);
   const [attempts, setAttempts] = useState<ExecutionAttemptSummaryResult[]>([]);
   const [pagination, setPagination] = useState<TransactionsPaginationMeta>(
@@ -80,6 +83,10 @@ export function useExecutionAttempts(orderId: string) {
 
   const toggleDetail = useCallback(
     async (sourceCommandId: string) => {
+      if (!canViewDiagnostics) {
+        return;
+      }
+
       if (expandedId === sourceCommandId) {
         setExpandedId(null);
         setDetail(null);
@@ -101,7 +108,7 @@ export function useExecutionAttempts(orderId: string) {
         setIsDetailLoading(false);
       }
     },
-    [expandedId, orderId],
+    [canViewDiagnostics, expandedId, orderId],
   );
 
   return {
@@ -109,10 +116,10 @@ export function useExecutionAttempts(orderId: string) {
     pagination,
     isLoading,
     errorMessage,
-    expandedId,
-    detail,
-    isDetailLoading,
-    detailErrorMessage,
+    expandedId: canViewDiagnostics ? expandedId : null,
+    detail: canViewDiagnostics ? detail : null,
+    isDetailLoading: canViewDiagnostics && isDetailLoading,
+    detailErrorMessage: canViewDiagnostics ? detailErrorMessage : null,
     previousPage: () => setPage((current) => Math.max(1, current - 1)),
     nextPage: () => setPage((current) => current + 1),
     retry: () => void loadAttempts(),

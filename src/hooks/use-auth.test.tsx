@@ -6,15 +6,15 @@ import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import { readAuthSession, writeAuthSession } from "@/lib/auth-session";
 import {
   getCurrentAccount,
+  getCurrentAccountAccess,
   refreshAccessToken,
 } from "@/lib/services/auth";
-import type {
-  AuthSession,
-  CurrentAccountResult,
-} from "@/types";
+import type { AuthSession, CurrentAccountResult } from "@/types";
+import type { EffectiveAccessResult } from "@/types/accounts";
 
 vi.mock("@/lib/services/auth", () => ({
   getCurrentAccount: vi.fn(),
+  getCurrentAccountAccess: vi.fn(),
   loginWithPassword: vi.fn(),
   refreshAccessToken: vi.fn(),
   revokeRefreshToken: vi.fn(),
@@ -48,6 +48,18 @@ const refreshedSession: AuthSession = {
   refreshToken: "refreshed-refresh-token",
 };
 
+const currentAccess: EffectiveAccessResult = {
+  accountId: storedSession.account.id,
+  isSystemAdmin: true,
+  roles: ["SystemAdmin"],
+  roleScopes: [],
+  effectiveScope: {
+    organizationIds: [],
+    storeIds: [],
+    kioskIds: [],
+  },
+};
+
 function unauthorizedError(): AxiosError {
   const response = {
     data: {},
@@ -71,6 +83,7 @@ function AuthProbe() {
     status,
     session,
     errorMessage,
+    effectiveAccess,
     retryRestore,
   } = useAuth();
 
@@ -79,6 +92,9 @@ function AuthProbe() {
       <span data-testid="status">{status}</span>
       <span data-testid="token">{session?.accessToken ?? "none"}</span>
       <span data-testid="error">{errorMessage ?? "none"}</span>
+      <span data-testid="access">
+        {effectiveAccess?.roles.join(",") ?? "none"}
+      </span>
       <button type="button" onClick={() => void retryRestore()}>
         Retry restore
       </button>
@@ -99,6 +115,7 @@ describe("stored-session recovery", () => {
     vi.clearAllMocks();
     window.localStorage.clear();
     writeAuthSession(storedSession);
+    vi.mocked(getCurrentAccountAccess).mockResolvedValue(currentAccess);
   });
 
   it("keeps the stored session after a network timeout and allows retry", async () => {
@@ -168,7 +185,23 @@ describe("stored-session recovery", () => {
     });
     expect(screen.getByTestId("token")).toHaveTextContent("access-token");
     expect(screen.getByTestId("error")).toHaveTextContent("none");
+    expect(screen.getByTestId("access")).toHaveTextContent("SystemAdmin");
     expect(readAuthSession()?.account.email).toBe("admin@icebot.vn");
     expect(refreshAccessToken).not.toHaveBeenCalled();
+  });
+
+  it("keeps authentication but denies effective permissions when access loading fails", async () => {
+    vi.mocked(getCurrentAccount).mockResolvedValueOnce(currentAccount);
+    vi.mocked(getCurrentAccountAccess).mockRejectedValueOnce(
+      new AxiosError("network error", "ERR_NETWORK"),
+    );
+
+    renderAuthProvider();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("status")).toHaveTextContent("authenticated");
+    });
+    expect(screen.getByTestId("access")).toHaveTextContent("none");
+    expect(readAuthSession()).toEqual(storedSession);
   });
 });

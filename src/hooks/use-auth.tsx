@@ -24,12 +24,14 @@ import {
 } from "@/lib/auth-errors";
 import {
   getCurrentAccount,
+  getCurrentAccountAccess,
   loginWithPassword,
   refreshAccessToken,
   revokeRefreshToken,
   type LoginRequest,
 } from "@/lib/services/auth";
 import type { AuthSession, DashboardUser } from "@/types";
+import type { EffectiveAccessResult } from "@/types/accounts";
 
 export type AuthStatus =
   | "loading"
@@ -42,6 +44,7 @@ interface AuthContextValue {
   status: AuthStatus;
   session: AuthSession | null;
   currentUser: DashboardUser | null;
+  effectiveAccess: EffectiveAccessResult | null;
   errorMessage: string | null;
   retryRestore: () => Promise<void>;
   login: (request: LoginRequest) => Promise<DashboardUser | null>;
@@ -86,18 +89,44 @@ async function validateStoredSession(session: AuthSession): Promise<AuthSession>
   }
 }
 
+async function loadEffectiveAccess(
+  accessToken: string,
+): Promise<EffectiveAccessResult | null> {
+  try {
+    return await getCurrentAccountAccess(accessToken);
+  } catch {
+    return null;
+  }
+}
+
 export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   const [status, setStatus] = useState<AuthStatus>("loading");
   const [session, setSession] = useState<AuthSession | null>(null);
+  const [effectiveAccess, setEffectiveAccess] =
+    useState<EffectiveAccessResult | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const applySession = useCallback((nextSession: AuthSession | null) => {
+  const applySession = useCallback((
+    nextSession: AuthSession | null,
+    nextAccess?: EffectiveAccessResult | null,
+  ) => {
     setSession(nextSession);
     setErrorMessage(null);
 
     if (!nextSession) {
+      setEffectiveAccess(null);
       setStatus("unauthenticated");
       return;
+    }
+
+    if (nextAccess !== undefined) {
+      setEffectiveAccess(nextAccess);
+    } else {
+      setEffectiveAccess((currentAccess) =>
+        currentAccess?.accountId === nextSession.account.id
+          ? currentAccess
+          : null,
+      );
     }
 
     setStatus(mapAccountToDashboardUser(nextSession.account) ? "authenticated" : "forbidden");
@@ -115,8 +144,9 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
 
     try {
       const validatedSession = await validateStoredSession(storedSession);
+      const access = await loadEffectiveAccess(validatedSession.accessToken);
       writeAuthSession(validatedSession);
-      applySession(validatedSession);
+      applySession(validatedSession, access);
     } catch (error) {
       if (isInvalidAuthSessionError(error)) {
         clearAuthSession();
@@ -134,6 +164,7 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
         writeAuthSession(retainedSession);
       }
       setSession(retainedSession);
+      setEffectiveAccess(null);
       setStatus("error");
       setErrorMessage(
         getAuthRestoreErrorMessage(
@@ -168,8 +199,9 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   const login = useCallback(
     async (request: LoginRequest) => {
       const authenticatedSession = await loginWithPassword(request);
+      const access = await loadEffectiveAccess(authenticatedSession.accessToken);
       writeAuthSession(authenticatedSession);
-      applySession(authenticatedSession);
+      applySession(authenticatedSession, access);
       return mapAccountToDashboardUser(authenticatedSession.account);
     },
     [applySession],
@@ -197,12 +229,22 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       status,
       session,
       currentUser,
+      effectiveAccess,
       errorMessage,
       retryRestore: restoreSession,
       login,
       logout,
     }),
-    [currentUser, errorMessage, login, logout, restoreSession, session, status],
+    [
+      currentUser,
+      effectiveAccess,
+      errorMessage,
+      login,
+      logout,
+      restoreSession,
+      session,
+      status,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

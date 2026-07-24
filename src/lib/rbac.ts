@@ -1,4 +1,23 @@
-import type { DashboardPermission, DashboardRole, DashboardRoutePath } from "@/types";
+import type {
+  DashboardPermission,
+  DashboardRole,
+  DashboardRoutePath,
+} from "@/types";
+import type { EffectiveAccessResult } from "@/types/accounts";
+
+export type EffectivePermission =
+  | "payments.manage"
+  | "payment-methods.manage"
+  | "operations.diagnostics";
+
+const EFFECTIVE_PERMISSION_ROLES: Record<
+  EffectivePermission,
+  readonly string[]
+> = {
+  "payments.manage": ["SystemAdmin", "Manager"],
+  "payment-methods.manage": ["SystemAdmin"],
+  "operations.diagnostics": ["SystemAdmin", "Technician"],
+};
 
 export const PERMISSIONS: Record<DashboardPermission, readonly DashboardRole[]> = {
   "dashboard.view": ["ADMIN", "MANAGER", "LOCATION_OWNER"],
@@ -58,6 +77,27 @@ const DASHBOARD_ROUTE_SET: ReadonlySet<string> = new Set(DASHBOARD_ROUTES);
 
 export function hasPermission(role: DashboardRole, permission: DashboardPermission): boolean {
   return PERMISSIONS[permission].includes(role);
+}
+
+export function hasEffectivePermission(
+  access: EffectiveAccessResult | null,
+  permission: EffectivePermission,
+): boolean {
+  if (!access) {
+    return false;
+  }
+
+  if (access.isSystemAdmin) {
+    return true;
+  }
+
+  const allowedRoles = EFFECTIVE_PERMISSION_ROLES[permission];
+  const normalizedRoles = new Set(
+    access.roles.map((role) => role.toLocaleLowerCase()),
+  );
+  return allowedRoles.some((role) =>
+    normalizedRoles.has(role.toLocaleLowerCase()),
+  );
 }
 
 export function canAccessRoute(role: DashboardRole, routePath: DashboardRoutePath): boolean {

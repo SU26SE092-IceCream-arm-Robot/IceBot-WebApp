@@ -10,7 +10,9 @@ import {
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/use-auth";
 import { useExecutionAttempts } from "@/hooks/use-execution-attempts";
+import { hasEffectivePermission } from "@/lib/rbac";
 import type { ExecutionAttemptDetailResult } from "@/types/transactions";
 import { formatTransactionDate } from "./transactions-table";
 
@@ -125,7 +127,12 @@ function AttemptDetail({ detail }: { detail: ExecutionAttemptDetailResult }) {
 }
 
 export function ExecutionAttemptsPanel({ orderId }: { orderId: string }) {
-  const state = useExecutionAttempts(orderId);
+  const { effectiveAccess } = useAuth();
+  const canViewDiagnostics = hasEffectivePermission(
+    effectiveAccess,
+    "operations.diagnostics",
+  );
+  const state = useExecutionAttempts(orderId, canViewDiagnostics);
 
   return (
     <section className="rounded-xl border border-border bg-card p-4">
@@ -180,10 +187,12 @@ export function ExecutionAttemptsPanel({ orderId }: { orderId: string }) {
                     />
                     <DiagnosticField label="Tạo lúc" value={formatTransactionDate(attempt.createdAt)} />
                   </div>
-                  <Button variant="ghost" size="sm" onClick={() => void state.toggleDetail(attempt.sourceCommandId)}>
-                    {expanded ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
-                    {expanded ? "Thu gọn" : "Chi tiết"}
-                  </Button>
+                  {canViewDiagnostics ? (
+                    <Button variant="ghost" size="sm" onClick={() => void state.toggleDetail(attempt.sourceCommandId)}>
+                      {expanded ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
+                      {expanded ? "Thu gọn" : "Chi tiết"}
+                    </Button>
+                  ) : null}
                 </div>
 
                 {attempt.rejectionCode || attempt.rejectionMessage ? (

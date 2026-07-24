@@ -5,6 +5,7 @@ import {
   normalizeApiRequestPath,
 } from "@/lib/api-base-url";
 import { createSessionFromLogin } from "@/lib/auth-session";
+import type { EffectiveAccessResult } from "@/types/accounts";
 import type {
   ApiResult,
   AuthSession,
@@ -71,6 +72,21 @@ export async function getCurrentAccount(accessToken: string): Promise<CurrentAcc
       Authorization: `Bearer ${accessToken}`,
     },
   });
+
+  return requireData(response.data);
+}
+
+export async function getCurrentAccountAccess(
+  accessToken: string,
+): Promise<EffectiveAccessResult> {
+  const response = await authHttpClient.get<ApiResult<EffectiveAccessResult>>(
+    "/api/v1/me/access",
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    },
+  );
 
   return requireData(response.data);
 }

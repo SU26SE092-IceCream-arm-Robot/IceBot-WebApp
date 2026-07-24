@@ -2,9 +2,10 @@
 
 import { PaymentMethodsView } from "@/components/features/settings/payment-methods-view";
 import { useAuth } from "@/hooks/use-auth";
+import { hasEffectivePermission } from "@/lib/rbac";
 
 export default function PaymentMethodsPage() {
-  const { currentUser, session } = useAuth();
+  const { currentUser, effectiveAccess } = useAuth();
 
   if (!currentUser) {
     return null; // Layout handles auth loading/redirect
@@ -16,11 +17,10 @@ export default function PaymentMethodsPage() {
         <h2 className="text-3xl font-bold tracking-tight">Cấu hình hệ thống</h2>
       </div>
       <PaymentMethodsView
-        canManageStatus={
-          session?.account.roles.some(
-            (role) => role.roleCode === "SystemAdmin",
-          ) ?? false
-        }
+        canManageStatus={hasEffectivePermission(
+          effectiveAccess,
+          "payment-methods.manage",
+        )}
       />
     </div>
   );
