@@ -92,6 +92,8 @@ export interface UseTransactionsResult {
   actionReason: string;
   actionErrorMessage: string | null;
   actionSuccessMessage: string | null;
+  refreshWarningMessage: string | null;
+  isRefreshRetrying: boolean;
   isCancelOpen: boolean;
   isRefundRequiredOpen: boolean;
   isActionSubmitting: boolean;
@@ -127,6 +129,7 @@ export interface UseTransactionsResult {
   submitRefundProcessed: (refundId: string, request: MarkRefundProcessedRequest) => Promise<void>;
   submitRefundReject: (refundId: string, request: RefundReasonRequest) => Promise<void>;
   submitRefundCancel: (refundId: string, request: RefundReasonRequest) => Promise<void>;
+  retryPostMutationRefresh: () => Promise<boolean>;
   clearActionSuccessMessage: () => void;
   refresh: () => Promise<void>;
 }
@@ -138,6 +141,8 @@ export function useTransactions(): UseTransactionsResult {
   const refundDetailAbortRef = useRef<AbortController | null>(null);
   const refundDetailRequestIdRef = useRef(0);
   const selectedRefundIdRef = useRef<string | null>(null);
+  const refundMutationInFlightRef = useRef(false);
+  const pendingRefreshRef = useRef<(() => Promise<void>) | null>(null);
   const [filters, setFilters] = useState<TransactionsFilters>(INITIAL_FILTERS);
   const [refundFilters, setRefundFilters] =
     useState<RefundsFilters>(INITIAL_REFUND_FILTERS);
@@ -165,6 +170,10 @@ export function useTransactions(): UseTransactionsResult {
   const [actionSuccessMessage, setActionSuccessMessage] = useState<string | null>(
     null,
   );
+  const [refreshWarningMessage, setRefreshWarningMessage] = useState<
+    string | null
+  >(null);
+  const [isRefreshRetrying, setIsRefreshRetrying] = useState(false);
   const [detailErrorMessage, setDetailErrorMessage] = useState<string | null>(
     null,
   );
@@ -197,7 +206,7 @@ export function useTransactions(): UseTransactionsResult {
   });
 
   const fetchOrders = useCallback(
-    async (signal?: AbortSignal) => {
+    async (signal?: AbortSignal, propagateError = false) => {
       setOrders((current) => ({
         ...current,
         isLoading: true,
@@ -243,13 +252,20 @@ export function useTransactions(): UseTransactionsResult {
             "Không thể tải danh sách giao dịch.",
           ),
         });
+        if (propagateError) {
+          throw error;
+        }
       }
     },
     [filters.paymentStatus, filters.searchTerm, filters.status, page],
   );
 
   const fetchStatusHistory = useCallback(
-    async (orderId: string, signal?: AbortSignal) => {
+    async (
+      orderId: string,
+      signal?: AbortSignal,
+      propagateError = false,
+    ) => {
       setStatusHistory((current) => ({
         ...current,
         isLoading: true,
@@ -290,13 +306,16 @@ export function useTransactions(): UseTransactionsResult {
             "Không thể tải lịch sử trạng thái giao dịch.",
           ),
         });
+        if (propagateError) {
+          throw error;
+        }
       }
     },
     [historyPage],
   );
 
   const fetchRefunds = useCallback(
-    async (signal?: AbortSignal) => {
+    async (signal?: AbortSignal, propagateError = false) => {
       setRefunds((current) => ({
         ...current,
         isLoading: true,
@@ -339,6 +358,9 @@ export function useTransactions(): UseTransactionsResult {
             "Không thể tải danh sách hoàn tiền.",
           ),
         });
+        if (propagateError) {
+          throw error;
+        }
       }
     },
     [refundFilters.searchTerm, refundFilters.status, refundPage],
@@ -612,6 +634,36 @@ export function useTransactions(): UseTransactionsResult {
     setActionErrorMessage(null);
   }, []);
 
+  const runPostMutationRefresh = useCallback(
+    async (refreshAction: () => Promise<void>) => {
+      pendingRefreshRef.current = refreshAction;
+      setIsRefreshRetrying(true);
+      try {
+        await refreshAction();
+        pendingRefreshRef.current = null;
+        setRefreshWarningMessage(null);
+        return true;
+      } catch {
+        setRefreshWarningMessage(
+          "Thao tác đã thành công nhưng dữ liệu chi tiết mới chưa tải lại được.",
+        );
+        return false;
+      } finally {
+        setIsRefreshRetrying(false);
+      }
+    },
+    [],
+  );
+
+  const retryPostMutationRefresh = useCallback(async () => {
+    const refreshAction = pendingRefreshRef.current;
+    if (!refreshAction || isRefreshRetrying) {
+      return false;
+    }
+
+    return runPostMutationRefresh(refreshAction);
+  }, [isRefreshRetrying, runPostMutationRefresh]);
+
   const requestCancelOrder = useCallback((order: ManagementOrderListItemResult) => {
     setOrderPendingAction(order);
     setActionReason("");
@@ -654,30 +706,35 @@ export function useTransactions(): UseTransactionsResult {
     setIsActionSubmitting(true);
     setActionErrorMessage(null);
 
+    let updatedOrder: OrderResult;
     try {
-      const updatedOrder = await cancelManagementOrder(orderPendingAction.id, {
+      updatedOrder = await cancelManagementOrder(orderPendingAction.id, {
         reason: actionReason.trim() || null,
       });
-      updateOrderInState(updatedOrder);
-      setActionSuccessMessage(`Đã hủy giao dịch ${updatedOrder.orderNumber}.`);
-      setIsCancelOpen(false);
-      resetActionState();
-      if (isDetailOpen) {
-        await fetchStatusHistory(updatedOrder.id);
-      }
     } catch (error) {
       setActionErrorMessage(
         getTransactionsErrorMessage(error, "Không thể hủy giao dịch."),
       );
-    } finally {
       setIsActionSubmitting(false);
+      return;
     }
+
+    updateOrderInState(updatedOrder);
+    setActionSuccessMessage(`Đã hủy giao dịch ${updatedOrder.orderNumber}.`);
+    setIsCancelOpen(false);
+    resetActionState();
+    await runPostMutationRefresh(async () => {
+      if (selectedOrderIdRef.current === updatedOrder.id) {
+        await fetchStatusHistory(updatedOrder.id, undefined, true);
+      }
+    });
+    setIsActionSubmitting(false);
   }, [
     actionReason,
     fetchStatusHistory,
-    isDetailOpen,
     orderPendingAction,
     resetActionState,
+    runPostMutationRefresh,
     updateOrderInState,
   ]);
 
@@ -695,20 +752,12 @@ export function useTransactions(): UseTransactionsResult {
     setIsActionSubmitting(true);
     setActionErrorMessage(null);
 
+    let updatedOrder: OrderResult;
     try {
-      const updatedOrder = await markManagementOrderRefundRequired(
+      updatedOrder = await markManagementOrderRefundRequired(
         orderPendingAction.id,
         { reason },
       );
-      updateOrderInState(updatedOrder);
-      setActionSuccessMessage(
-        `Đã đánh dấu giao dịch ${updatedOrder.orderNumber} cần hoàn tiền.`,
-      );
-      setIsRefundRequiredOpen(false);
-      resetActionState();
-      if (isDetailOpen) {
-        await fetchStatusHistory(updatedOrder.id);
-      }
     } catch (error) {
       setActionErrorMessage(
         getTransactionsErrorMessage(
@@ -716,34 +765,50 @@ export function useTransactions(): UseTransactionsResult {
           "Không thể đánh dấu giao dịch cần hoàn tiền.",
         ),
       );
-    } finally {
       setIsActionSubmitting(false);
+      return;
     }
+
+    updateOrderInState(updatedOrder);
+    setActionSuccessMessage(
+      `Đã đánh dấu giao dịch ${updatedOrder.orderNumber} cần hoàn tiền.`,
+    );
+    setIsRefundRequiredOpen(false);
+    resetActionState();
+    await runPostMutationRefresh(async () => {
+      if (selectedOrderIdRef.current === updatedOrder.id) {
+        await fetchStatusHistory(updatedOrder.id, undefined, true);
+      }
+    });
+    setIsActionSubmitting(false);
   }, [
     actionReason,
     fetchStatusHistory,
-    isDetailOpen,
     orderPendingAction,
     resetActionState,
+    runPostMutationRefresh,
     updateOrderInState,
   ]);
 
   const refreshAfterRefundMutation = useCallback(
     async (orderId: string, refundId?: string) => {
-      const tasks: Promise<unknown>[] = [fetchOrders(), fetchRefunds()];
+      const tasks: Promise<unknown>[] = [
+        fetchOrders(undefined, true),
+        fetchRefunds(undefined, true),
+      ];
 
-      if (isDetailOpen && selectedOrderId === orderId) {
+      if (selectedOrderIdRef.current === orderId) {
         tasks.push(
           getManagementOrderById(orderId).then((order) => {
             if (selectedOrderIdRef.current === orderId) {
               setSelectedOrder(order);
             }
           }),
-          fetchStatusHistory(orderId),
+          fetchStatusHistory(orderId, undefined, true),
         );
       }
 
-      if (refundId && isRefundDetailOpen) {
+      if (refundId && selectedRefundIdRef.current === refundId) {
         tasks.push(
           getManagementRefundById(refundId).then((refund) => {
             if (selectedRefundIdRef.current === refundId) {
@@ -759,9 +824,6 @@ export function useTransactions(): UseTransactionsResult {
       fetchOrders,
       fetchRefunds,
       fetchStatusHistory,
-      isDetailOpen,
-      isRefundDetailOpen,
-      selectedOrderId,
     ],
   );
 
@@ -770,48 +832,88 @@ export function useTransactions(): UseTransactionsResult {
     request: RequestRefundRequest,
     idempotencyKey: string,
   ) => {
+    if (refundMutationInFlightRef.current) {
+      return;
+    }
+    refundMutationInFlightRef.current = true;
+    let refund: RefundResult;
     try {
-      const refund = await requestManagementRefund(orderId, request, idempotencyKey);
-      toast.success("Đã gửi yêu cầu hoàn tiền thành công.");
-      await refreshAfterRefundMutation(orderId, refund.id);
+      refund = await requestManagementRefund(orderId, request, idempotencyKey);
     } catch (error) {
       const msg = getTransactionsErrorMessage(error, "Không thể gửi yêu cầu hoàn tiền.");
+      refundMutationInFlightRef.current = false;
       throw new Error(msg);
     }
-  }, [refreshAfterRefundMutation]);
+
+    toast.success("Đã gửi yêu cầu hoàn tiền thành công.");
+    await runPostMutationRefresh(() =>
+      refreshAfterRefundMutation(orderId, refund.id)
+    );
+    refundMutationInFlightRef.current = false;
+  }, [refreshAfterRefundMutation, runPostMutationRefresh]);
 
   const submitRefundProcessed = useCallback(async (refundId: string, request: MarkRefundProcessedRequest) => {
+    if (refundMutationInFlightRef.current) {
+      return;
+    }
+    refundMutationInFlightRef.current = true;
+    let updatedRefund: RefundResult;
     try {
-      const updatedRefund = await markManagementRefundProcessed(refundId, request);
-      await refreshAfterRefundMutation(updatedRefund.orderId, updatedRefund.id);
-      toast.success("Đã đánh dấu hoàn tiền là đã xử lý.");
+      updatedRefund = await markManagementRefundProcessed(refundId, request);
     } catch (error) {
       const msg = getTransactionsErrorMessage(error, "Không thể đánh dấu đã xử lý.");
+      refundMutationInFlightRef.current = false;
       throw new Error(msg);
     }
-  }, [refreshAfterRefundMutation]);
+
+    toast.success("Đã đánh dấu hoàn tiền là đã xử lý.");
+    await runPostMutationRefresh(() =>
+      refreshAfterRefundMutation(updatedRefund.orderId, updatedRefund.id)
+    );
+    refundMutationInFlightRef.current = false;
+  }, [refreshAfterRefundMutation, runPostMutationRefresh]);
 
   const submitRefundReject = useCallback(async (refundId: string, request: RefundReasonRequest) => {
+    if (refundMutationInFlightRef.current) {
+      return;
+    }
+    refundMutationInFlightRef.current = true;
+    let updatedRefund: RefundResult;
     try {
-      const updatedRefund = await rejectManagementRefund(refundId, request);
-      await refreshAfterRefundMutation(updatedRefund.orderId, updatedRefund.id);
-      toast.success("Đã từ chối yêu cầu hoàn tiền.");
+      updatedRefund = await rejectManagementRefund(refundId, request);
     } catch (error) {
       const msg = getTransactionsErrorMessage(error, "Không thể từ chối yêu cầu hoàn tiền.");
+      refundMutationInFlightRef.current = false;
       throw new Error(msg);
     }
-  }, [refreshAfterRefundMutation]);
+
+    toast.success("Đã từ chối yêu cầu hoàn tiền.");
+    await runPostMutationRefresh(() =>
+      refreshAfterRefundMutation(updatedRefund.orderId, updatedRefund.id)
+    );
+    refundMutationInFlightRef.current = false;
+  }, [refreshAfterRefundMutation, runPostMutationRefresh]);
 
   const submitRefundCancel = useCallback(async (refundId: string, request: RefundReasonRequest) => {
+    if (refundMutationInFlightRef.current) {
+      return;
+    }
+    refundMutationInFlightRef.current = true;
+    let updatedRefund: RefundResult;
     try {
-      const updatedRefund = await cancelManagementRefund(refundId, request);
-      await refreshAfterRefundMutation(updatedRefund.orderId, updatedRefund.id);
-      toast.success("Đã hủy yêu cầu hoàn tiền.");
+      updatedRefund = await cancelManagementRefund(refundId, request);
     } catch (error) {
       const msg = getTransactionsErrorMessage(error, "Không thể hủy yêu cầu hoàn tiền.");
+      refundMutationInFlightRef.current = false;
       throw new Error(msg);
     }
-  }, [refreshAfterRefundMutation]);
+
+    toast.success("Đã hủy yêu cầu hoàn tiền.");
+    await runPostMutationRefresh(() =>
+      refreshAfterRefundMutation(updatedRefund.orderId, updatedRefund.id)
+    );
+    refundMutationInFlightRef.current = false;
+  }, [refreshAfterRefundMutation, runPostMutationRefresh]);
 
   return {
     orders,
@@ -833,6 +935,8 @@ export function useTransactions(): UseTransactionsResult {
     actionReason,
     actionErrorMessage,
     actionSuccessMessage,
+    refreshWarningMessage,
+    isRefreshRetrying,
     isCancelOpen,
     isRefundRequiredOpen,
     isActionSubmitting,
@@ -866,6 +970,7 @@ export function useTransactions(): UseTransactionsResult {
     submitRefundProcessed,
     submitRefundReject,
     submitRefundCancel,
+    retryPostMutationRefresh,
     clearActionSuccessMessage: () => setActionSuccessMessage(null),
     refresh: async () => {
       await Promise.all([fetchOrders(), fetchRefunds()]);

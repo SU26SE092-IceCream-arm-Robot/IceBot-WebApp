@@ -194,6 +194,8 @@ export default function TransactionsPage() {
     actionReason,
     actionErrorMessage,
     actionSuccessMessage,
+    refreshWarningMessage,
+    isRefreshRetrying,
     isCancelOpen,
     isRefundRequiredOpen,
     isActionSubmitting,
@@ -225,6 +227,7 @@ export default function TransactionsPage() {
     submitRefundProcessed,
     submitRefundReject,
     submitRefundCancel,
+    retryPostMutationRefresh,
     clearActionSuccessMessage,
     refresh,
   } = useTransactions();
@@ -245,6 +248,29 @@ export default function TransactionsPage() {
             onClick={clearActionSuccessMessage}
           >
             Đóng
+          </Button>
+        </div>
+      ) : null}
+
+      {refreshWarningMessage ? (
+        <div
+          role="alert"
+          className="flex flex-col gap-3 rounded-lg border border-warning/30 bg-warning/5 px-4 py-3 text-sm text-warning sm:flex-row sm:items-center sm:justify-between"
+        >
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+            <span>{refreshWarningMessage}</span>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="shrink-0"
+            isLoading={isRefreshRetrying}
+            onClick={() => void retryPostMutationRefresh()}
+          >
+            <RefreshCw className="size-4" />
+            Tải lại dữ liệu
           </Button>
         </div>
       ) : null}
