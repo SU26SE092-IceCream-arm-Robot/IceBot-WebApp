@@ -83,6 +83,8 @@ export interface UseInventoryResult {
   isMutationSubmitting: boolean;
   mutationErrorMessage: string | null;
   mutationSuccessMessage: string | null;
+  mutationRefreshWarningMessage: string | null;
+  isMutationRefreshRetrying: boolean;
   setIngredientSearch: (value: string) => void;
   setStatusFilter: (value: InventoryStatusFilter) => void;
   setStoreFilter: (value: string | null) => void;
@@ -101,6 +103,7 @@ export interface UseInventoryResult {
   submitAdjustment: (
     request: AdjustDispenserEstimateRequest,
   ) => Promise<boolean>;
+  retryMutationRefresh: () => Promise<boolean>;
   refresh: () => Promise<void>;
 }
 
@@ -143,6 +146,10 @@ export function useInventory(): UseInventoryResult {
   const [mutationSuccessMessage, setMutationSuccessMessage] = useState<
     string | null
   >(null);
+  const [mutationRefreshWarningMessage, setMutationRefreshWarningMessage] =
+    useState<string | null>(null);
+  const [isMutationRefreshRetrying, setIsMutationRefreshRetrying] =
+    useState(false);
 
   const serverScope = useMemo(
     () => ({
@@ -153,7 +160,7 @@ export function useInventory(): UseInventoryResult {
   );
 
   const fetchDispensers = useCallback(
-    async (signal?: AbortSignal) => {
+    async (signal?: AbortSignal, propagateError = false) => {
       setDispensers((current) => ({
         ...current,
         isLoading: true,
@@ -194,13 +201,16 @@ export function useInventory(): UseInventoryResult {
             "Không thể tải danh sách tồn kho.",
           ),
         });
+        if (propagateError) {
+          throw error;
+        }
       }
     },
     [dispenserPage, serverScope],
   );
 
   const fetchMovements = useCallback(
-    async (signal?: AbortSignal) => {
+    async (signal?: AbortSignal, propagateError = false) => {
       setMovements((current) => ({
         ...current,
         isLoading: true,
@@ -241,6 +251,9 @@ export function useInventory(): UseInventoryResult {
             "Không thể tải lịch sử biến động tồn kho.",
           ),
         });
+        if (propagateError) {
+          throw error;
+        }
       }
     },
     [movementPage, serverScope],
@@ -444,16 +457,35 @@ export function useInventory(): UseInventoryResult {
     [],
   );
 
+  const refreshAfterMutation = useCallback(async () => {
+    setIsMutationRefreshRetrying(true);
+    try {
+      await Promise.all([
+        fetchDispensers(undefined, true),
+        fetchMovements(undefined, true),
+      ]);
+      setMutationRefreshWarningMessage(null);
+      return true;
+    } catch {
+      setMutationRefreshWarningMessage(
+        "Thao tác đã thành công nhưng dữ liệu tồn kho mới chưa tải lại được.",
+      );
+      return false;
+    } finally {
+      setIsMutationRefreshRetrying(false);
+    }
+  }, [fetchDispensers, fetchMovements]);
+
   const finishMutation = useCallback(
     async (successMessage: string) => {
-      await Promise.all([fetchDispensers(), fetchMovements()]);
       setMutationSuccessMessage(successMessage);
       setIsMutationOpen(false);
       setMutationKind(null);
       setMutationDispenser(null);
       setMutationErrorMessage(null);
+      await refreshAfterMutation();
     },
-    [fetchDispensers, fetchMovements],
+    [refreshAfterMutation],
   );
 
   const submitRefill = useCallback(
@@ -556,6 +588,8 @@ export function useInventory(): UseInventoryResult {
     isMutationSubmitting,
     mutationErrorMessage,
     mutationSuccessMessage,
+    mutationRefreshWarningMessage,
+    isMutationRefreshRetrying,
     setIngredientSearch,
     setStatusFilter,
     setStoreFilter,
@@ -576,6 +610,7 @@ export function useInventory(): UseInventoryResult {
     setMutationOpen,
     submitRefill,
     submitAdjustment,
+    retryMutationRefresh: refreshAfterMutation,
     refresh: async () => {
       await Promise.all([fetchDispensers(), fetchMovements(), loadLookups()]);
     },

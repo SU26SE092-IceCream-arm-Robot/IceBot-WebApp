@@ -256,6 +256,8 @@ export default function InventoryPage() {
     isMutationSubmitting,
     mutationErrorMessage,
     mutationSuccessMessage,
+    mutationRefreshWarningMessage,
+    isMutationRefreshRetrying,
     setIngredientSearch,
     setStatusFilter,
     setStoreFilter,
@@ -272,6 +274,7 @@ export default function InventoryPage() {
     setMutationOpen,
     submitRefill,
     submitAdjustment,
+    retryMutationRefresh,
     refresh,
   } = useInventory();
 
@@ -338,6 +341,29 @@ export default function InventoryPage() {
         >
           <CircleCheck className="mt-0.5 size-4 shrink-0" />
           <p>{mutationSuccessMessage}</p>
+        </div>
+      ) : null}
+
+      {mutationRefreshWarningMessage ? (
+        <div
+          role="alert"
+          className="flex flex-col gap-3 rounded-lg border border-warning/30 bg-warning/5 px-4 py-3 text-sm text-warning sm:flex-row sm:items-center sm:justify-between"
+        >
+          <div className="flex items-start gap-3">
+            <TriangleAlert className="mt-0.5 size-4 shrink-0" />
+            <p>{mutationRefreshWarningMessage}</p>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="shrink-0"
+            isLoading={isMutationRefreshRetrying}
+            onClick={() => void retryMutationRefresh()}
+          >
+            <RefreshCw className="size-4" />
+            Tải lại dữ liệu
+          </Button>
         </div>
       ) : null}
 
