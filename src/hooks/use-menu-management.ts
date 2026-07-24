@@ -99,10 +99,13 @@ export interface UseMenuManagementResult {
   nextProductsPage: () => void;
   previousMenusPage: () => void;
   nextMenusPage: () => void;
-  refresh: () => Promise<void>;
-  openProductDetail: (productId: string) => Promise<void>;
+  refresh: (propagateError?: boolean) => Promise<void>;
+  openProductDetail: (
+    productId: string,
+    propagateError?: boolean,
+  ) => Promise<void>;
   setProductDetailOpen: (open: boolean) => void;
-  openMenuDetail: (menuId: string) => Promise<void>;
+  openMenuDetail: (menuId: string, propagateError?: boolean) => Promise<void>;
   setMenuDetailOpen: (open: boolean) => void;
   requestProductAvailability: (product: ProductResult) => void;
   requestVariantAvailability: (variant: ProductVariantResult) => void;
@@ -145,7 +148,7 @@ export function useMenuManagement(organizationId: string | null): UseMenuManagem
   const [actionError, setActionError] = useState<string | null>(null);
 
   const fetchProducts = useCallback(
-    async (signal?: AbortSignal) => {
+    async (signal?: AbortSignal, propagateError = false) => {
       setProducts((current) => ({ ...current, isLoading: true, errorMessage: null }));
 
       const query: MenuManagementQuery = {
@@ -178,13 +181,16 @@ export function useMenuManagement(organizationId: string | null): UseMenuManagem
           isLoading: false,
           errorMessage: getMenuManagementErrorMessage(error, "danh mục sản phẩm"),
         });
+        if (propagateError) {
+          throw error;
+        }
       }
     },
     [organizationId, productsPage, searchTerm]
   );
 
   const fetchMenus = useCallback(
-    async (signal?: AbortSignal) => {
+    async (signal?: AbortSignal, propagateError = false) => {
       setMenus((current) => ({ ...current, isLoading: true, errorMessage: null }));
 
       const query: MenuManagementQuery = {
@@ -217,6 +223,9 @@ export function useMenuManagement(organizationId: string | null): UseMenuManagem
           isLoading: false,
           errorMessage: getMenuManagementErrorMessage(error, "danh sách thực đơn"),
         });
+        if (propagateError) {
+          throw error;
+        }
       }
     },
     [menusPage, organizationId, searchTerm]
@@ -280,7 +289,10 @@ export function useMenuManagement(organizationId: string | null): UseMenuManagem
     setMenusPage(1);
   }, []);
 
-  const openProductDetail = useCallback(async (productId: string) => {
+  const openProductDetail = useCallback(async (
+    productId: string,
+    propagateError = false,
+  ) => {
     setIsProductDetailOpen(true);
     setIsProductDetailLoading(true);
     setProductDetailError(null);
@@ -293,6 +305,9 @@ export function useMenuManagement(organizationId: string | null): UseMenuManagem
       setProductDetailError(
         getMenuManagementErrorMessage(error, "chi tiết sản phẩm")
       );
+      if (propagateError) {
+        throw error;
+      }
     } finally {
       setIsProductDetailLoading(false);
     }
@@ -306,7 +321,10 @@ export function useMenuManagement(organizationId: string | null): UseMenuManagem
     }
   }, []);
 
-  const openMenuDetail = useCallback(async (menuId: string) => {
+  const openMenuDetail = useCallback(async (
+    menuId: string,
+    propagateError = false,
+  ) => {
     setIsMenuDetailOpen(true);
     setIsMenuDetailLoading(true);
     setMenuDetailError(null);
@@ -317,6 +335,9 @@ export function useMenuManagement(organizationId: string | null): UseMenuManagem
       setSelectedMenu(await getMenuById(organizationId, menuId));
     } catch (error) {
       setMenuDetailError(getMenuManagementErrorMessage(error, "chi tiết thực đơn"));
+      if (propagateError) {
+        throw error;
+      }
     } finally {
       setIsMenuDetailLoading(false);
     }
@@ -636,9 +657,12 @@ export function useMenuManagement(organizationId: string | null): UseMenuManagem
     nextProductsPage: () => setProductsPage((page) => page + 1),
     previousMenusPage: () => setMenusPage((page) => Math.max(page - 1, 1)),
     nextMenusPage: () => setMenusPage((page) => page + 1),
-    refresh: async () => {
+    refresh: async (propagateError = false) => {
       if (!organizationId) return;
-      await Promise.all([fetchProducts(), fetchMenus()]);
+      await Promise.all([
+        fetchProducts(undefined, propagateError),
+        fetchMenus(undefined, propagateError),
+      ]);
     },
     openProductDetail,
     setProductDetailOpen,

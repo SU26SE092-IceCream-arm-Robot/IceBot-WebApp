@@ -360,7 +360,7 @@ export default function MenuPage() {
 
   const handleProductChanged = useCallback(
     async (change: ProductCrudChange) => {
-      await refresh();
+      await refresh(true);
       if (change.productDeleted) {
         if (selectedProduct?.id === change.productId) {
           setProductDetailOpen(false);
@@ -368,7 +368,7 @@ export default function MenuPage() {
         return;
       }
       if (isProductDetailOpen && selectedProduct?.id === change.productId) {
-        await openProductDetail(change.productId);
+        await openProductDetail(change.productId, true);
       }
     },
     [
@@ -382,7 +382,7 @@ export default function MenuPage() {
 
   const handleMenuChanged = useCallback(
     async (change: MenuCrudChange) => {
-      await refresh();
+      await refresh(true);
       if (change.menuDeleted) {
         if (selectedMenu?.id === change.menuId) {
           setMenuDetailOpen(false);
@@ -390,7 +390,7 @@ export default function MenuPage() {
         return;
       }
       if (isMenuDetailOpen && selectedMenu?.id === change.menuId) {
-        await openMenuDetail(change.menuId);
+        await openMenuDetail(change.menuId, true);
       }
     },
     [isMenuDetailOpen, openMenuDetail, refresh, selectedMenu?.id, setMenuDetailOpen],
@@ -399,6 +399,9 @@ export default function MenuPage() {
   const {
     isSubmitting: isMenuCrudSubmitting,
     errorMessage: menuCrudError,
+    refreshWarningMessage: menuRefreshWarningMessage,
+    isRefreshRetrying: isMenuRefreshRetrying,
+    retryRefresh: retryMenuRefresh,
     menuFormOpen,
     editingMenu,
     menuItemFormOpen,
@@ -428,6 +431,9 @@ export default function MenuPage() {
     deleteTarget,
     isSubmitting: isCrudSubmitting,
     errorMessage: crudError,
+    refreshWarningMessage: productRefreshWarningMessage,
+    isRefreshRetrying: isProductRefreshRetrying,
+    retryRefresh: retryProductRefresh,
     openProductCreate,
     openProductEdit,
     setProductFormOpen,
@@ -467,6 +473,13 @@ export default function MenuPage() {
   const activeMenusOnPage = menus.data.filter((menu) => menu.status === "Active").length;
 
   const availableProductsOnPage = products.data.filter((product) => product.isAvailable).length;
+  const refreshWarningMessage =
+    productRefreshWarningMessage ?? menuRefreshWarningMessage;
+  const isCrudRefreshRetrying =
+    isProductRefreshRetrying || isMenuRefreshRetrying;
+  const retryCrudRefresh = productRefreshWarningMessage
+    ? retryProductRefresh
+    : retryMenuRefresh;
 
   return (
     <div className="space-y-7">
@@ -486,6 +499,29 @@ export default function MenuPage() {
           {canManage ? <Button className="h-10" disabled={!selectedOrganizationId} onClick={openProductCreate}><Plus className="size-4" />Tạo sản phẩm</Button> : null}
         </div>
       </section>
+
+      {refreshWarningMessage ? (
+        <div
+          role="alert"
+          className="flex flex-col gap-3 rounded-lg border border-warning/30 bg-warning/5 px-4 py-3 text-sm text-warning sm:flex-row sm:items-center sm:justify-between"
+        >
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+            <span>{refreshWarningMessage}</span>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="shrink-0"
+            isLoading={isCrudRefreshRetrying}
+            onClick={() => void retryCrudRefresh()}
+          >
+            <RefreshCw className="size-4" />
+            Tải lại dữ liệu
+          </Button>
+        </div>
+      ) : null}
 
       <Card className="rounded-xl border border-border bg-card shadow-none">
         <CardContent className="flex flex-col gap-3 p-4 lg:flex-row lg:items-center lg:justify-between">

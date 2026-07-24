@@ -20,6 +20,7 @@ import type {
   UpdateMenuItemRequest,
   UpdateMenuRequest,
 } from "@/types/menu-management";
+import { useMutationRefreshRecovery } from "@/hooks/use-mutation-refresh-recovery";
 
 export type MenuDeleteTarget =
   | { kind: "menu"; menu: MenuResult }
@@ -50,6 +51,10 @@ export function useMenuCrud({ organizationId, onChanged }: UseMenuCrudOptions) {
   const [deleteTarget, setDeleteTarget] = useState<MenuDeleteTarget | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const refreshRecovery = useMutationRefreshRecovery(
+    onChanged,
+    "Thực đơn đã được cập nhật nhưng dữ liệu mới chưa tải lại được.",
+  );
   const runMutation = useCallback(
     async <T,>(
       mutation: () => Promise<T>,
@@ -63,9 +68,9 @@ export function useMenuCrud({ organizationId, onChanged }: UseMenuCrudOptions) {
       setErrorMessage(null);
       try {
         await mutation();
-        await onChanged(change);
         if (tone === "warning") toast.warning(success);
         else toast.success(success);
+        await refreshRecovery.runRefresh(change);
         return true;
       } catch (error) {
         setErrorMessage(getMenuManagementErrorMessage(error, "dữ liệu thực đơn"));
@@ -75,7 +80,7 @@ export function useMenuCrud({ organizationId, onChanged }: UseMenuCrudOptions) {
         setIsSubmitting(false);
       }
     },
-    [onChanged],
+    [refreshRecovery],
   );
 
   const submitMenuCreate = useCallback(
@@ -84,26 +89,28 @@ export function useMenuCrud({ organizationId, onChanged }: UseMenuCrudOptions) {
         setErrorMessage("Vui lòng chọn tổ chức trước khi tạo thực đơn.");
         return false;
       }
-      let createdMenu: MenuResult | null = null;
       if (mutationRef.current) return false;
       mutationRef.current = true;
       setIsSubmitting(true);
       setErrorMessage(null);
+      let createdMenu: MenuResult;
       try {
         createdMenu = await createManagementMenu(organizationId, request);
-        await onChanged({ menuId: createdMenu.id });
-        toast.success(`Đã tạo thực đơn ${createdMenu.name}.`);
-        setMenuFormOpen(false);
-        return true;
       } catch (error) {
         setErrorMessage(getMenuManagementErrorMessage(error, "thực đơn"));
-        return false;
-      } finally {
         mutationRef.current = false;
         setIsSubmitting(false);
+        return false;
       }
+
+      toast.success(`Đã tạo thực đơn ${createdMenu.name}.`);
+      setMenuFormOpen(false);
+      await refreshRecovery.runRefresh({ menuId: createdMenu.id });
+      mutationRef.current = false;
+      setIsSubmitting(false);
+      return true;
     },
-    [onChanged, organizationId],
+    [organizationId, refreshRecovery],
   );
 
   const submitMenuUpdate = useCallback(
@@ -197,6 +204,9 @@ export function useMenuCrud({ organizationId, onChanged }: UseMenuCrudOptions) {
   return {
     isSubmitting,
     errorMessage,
+    refreshWarningMessage: refreshRecovery.refreshWarningMessage,
+    isRefreshRetrying: refreshRecovery.isRefreshRetrying,
+    retryRefresh: refreshRecovery.retryRefresh,
     menuFormOpen,
     editingMenu,
     menuItemFormOpen,

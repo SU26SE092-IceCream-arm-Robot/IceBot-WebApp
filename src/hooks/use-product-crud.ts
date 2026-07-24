@@ -20,6 +20,7 @@ import type {
   UpdateProductVariantRequest,
   UpsertProductVariantRequest,
 } from "@/types/menu-management";
+import { useMutationRefreshRecovery } from "@/hooks/use-mutation-refresh-recovery";
 
 export type ProductDeleteTarget =
   | { kind: "product"; product: ProductResult }
@@ -50,6 +51,10 @@ export function useProductCrud({ organizationId, onChanged }: UseProductCrudOpti
   const [deleteTarget, setDeleteTarget] = useState<ProductDeleteTarget | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const refreshRecovery = useMutationRefreshRecovery(
+    onChanged,
+    "Sản phẩm đã được cập nhật nhưng dữ liệu mới chưa tải lại được.",
+  );
   const runMutation = useCallback(
     async <T,>(
       mutation: () => Promise<T>,
@@ -63,9 +68,9 @@ export function useProductCrud({ organizationId, onChanged }: UseProductCrudOpti
       setErrorMessage(null);
       try {
         await mutation();
-        await onChanged(change);
         if (tone === "warning") toast.warning(success);
         else toast.success(success);
+        await refreshRecovery.runRefresh(change);
         return true;
       } catch (error) {
         setErrorMessage(getMenuManagementErrorMessage(error, "dữ liệu sản phẩm"));
@@ -75,7 +80,7 @@ export function useProductCrud({ organizationId, onChanged }: UseProductCrudOpti
         setIsSubmitting(false);
       }
     },
-    [onChanged],
+    [refreshRecovery],
   );
 
   const submitProductCreate = useCallback(
@@ -84,26 +89,28 @@ export function useProductCrud({ organizationId, onChanged }: UseProductCrudOpti
         setErrorMessage("Vui lòng chọn tổ chức trước khi tạo sản phẩm.");
         return false;
       }
-      let createdProduct: ProductResult | null = null;
       if (mutationRef.current) return false;
       mutationRef.current = true;
       setIsSubmitting(true);
       setErrorMessage(null);
+      let createdProduct: ProductResult;
       try {
         createdProduct = await createManagementProduct(organizationId, request);
-        await onChanged({ productId: createdProduct.id });
-        toast.success(`Đã tạo sản phẩm ${createdProduct.displayName || createdProduct.name}.`);
-        setProductFormOpen(false);
-        return true;
       } catch (error) {
         setErrorMessage(getMenuManagementErrorMessage(error, "sản phẩm"));
-        return false;
-      } finally {
         mutationRef.current = false;
         setIsSubmitting(false);
+        return false;
       }
+
+      toast.success(`Đã tạo sản phẩm ${createdProduct.displayName || createdProduct.name}.`);
+      setProductFormOpen(false);
+      await refreshRecovery.runRefresh({ productId: createdProduct.id });
+      mutationRef.current = false;
+      setIsSubmitting(false);
+      return true;
     },
-    [onChanged, organizationId],
+    [organizationId, refreshRecovery],
   );
 
   const submitProductUpdate = useCallback(
@@ -212,6 +219,9 @@ export function useProductCrud({ organizationId, onChanged }: UseProductCrudOpti
     deleteTarget,
     isSubmitting,
     errorMessage,
+    refreshWarningMessage: refreshRecovery.refreshWarningMessage,
+    isRefreshRetrying: refreshRecovery.isRefreshRetrying,
+    retryRefresh: refreshRecovery.retryRefresh,
     openProductCreate: () => {
       setEditingProduct(null);
       setErrorMessage(null);
