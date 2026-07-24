@@ -1,7 +1,7 @@
 "use client";
 
 import axios from "axios";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
   getManagementExecutionAttempt,
@@ -31,6 +31,8 @@ export function useExecutionAttempts(
   orderId: string,
   canViewDiagnostics: boolean,
 ) {
+  const detailAbortRef = useRef<AbortController | null>(null);
+  const detailRequestIdRef = useRef(0);
   const [page, setPage] = useState(1);
   const [attempts, setAttempts] = useState<ExecutionAttemptSummaryResult[]>([]);
   const [pagination, setPagination] = useState<TransactionsPaginationMeta>(
@@ -81,6 +83,22 @@ export function useExecutionAttempts(
     };
   }, [loadAttempts]);
 
+  useEffect(
+    () => () => {
+      detailRequestIdRef.current += 1;
+      detailAbortRef.current?.abort();
+    },
+    [],
+  );
+
+  useEffect(() => {
+    if (!canViewDiagnostics) {
+      detailRequestIdRef.current += 1;
+      detailAbortRef.current?.abort();
+      detailAbortRef.current = null;
+    }
+  }, [canViewDiagnostics]);
+
   const toggleDetail = useCallback(
     async (sourceCommandId: string) => {
       if (!canViewDiagnostics) {
@@ -88,24 +106,54 @@ export function useExecutionAttempts(
       }
 
       if (expandedId === sourceCommandId) {
+        detailRequestIdRef.current += 1;
+        detailAbortRef.current?.abort();
+        detailAbortRef.current = null;
         setExpandedId(null);
         setDetail(null);
+        setIsDetailLoading(false);
         setDetailErrorMessage(null);
         return;
       }
+
+      detailAbortRef.current?.abort();
+      const controller = new AbortController();
+      detailAbortRef.current = controller;
+      const requestId = ++detailRequestIdRef.current;
 
       setExpandedId(sourceCommandId);
       setDetail(null);
       setDetailErrorMessage(null);
       setIsDetailLoading(true);
       try {
-        setDetail(await getManagementExecutionAttempt(orderId, sourceCommandId));
+        const nextDetail = await getManagementExecutionAttempt(
+          orderId,
+          sourceCommandId,
+          controller.signal,
+        );
+        if (
+          controller.signal.aborted ||
+          requestId !== detailRequestIdRef.current
+        ) {
+          return;
+        }
+        setDetail(nextDetail);
       } catch (error) {
+        if (
+          axios.isCancel(error) ||
+          controller.signal.aborted ||
+          requestId !== detailRequestIdRef.current
+        ) {
+          return;
+        }
         setDetailErrorMessage(
           getTransactionsErrorMessage(error, "Không thể tải chi tiết lần thực thi."),
         );
       } finally {
-        setIsDetailLoading(false);
+        if (requestId === detailRequestIdRef.current) {
+          detailAbortRef.current = null;
+          setIsDetailLoading(false);
+        }
       }
     },
     [canViewDiagnostics, expandedId, orderId],

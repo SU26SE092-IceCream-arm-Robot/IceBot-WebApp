@@ -103,6 +103,8 @@ export interface UseAccountsResult {
 }
 
 export function useAccounts(): UseAccountsResult {
+  const detailAbortRef = useRef<AbortController | null>(null);
+  const detailRequestIdRef = useRef(0);
   const [query, setQuery] = useState<ManagementAccountsQuery>(INITIAL_QUERY);
   const [accounts, setAccounts] = useState<InternalAccountResult[]>([]);
   const [pagination, setPagination] = useState<PaginationMeta>(EMPTY_PAGINATION);
@@ -186,6 +188,14 @@ export function useAccounts(): UseAccountsResult {
     };
   }, [fetchAccounts, query.searchTerm]);
 
+  useEffect(
+    () => () => {
+      detailRequestIdRef.current += 1;
+      detailAbortRef.current?.abort();
+    },
+    [],
+  );
+
   const setSearchTerm = useCallback((value: string) => {
     setQuery((previous) => ({
       ...previous,
@@ -221,27 +231,52 @@ export function useAccounts(): UseAccountsResult {
   }, []);
 
   const openAccountDetail = useCallback(async (accountId: string) => {
+    detailAbortRef.current?.abort();
+    const controller = new AbortController();
+    detailAbortRef.current = controller;
+    const requestId = ++detailRequestIdRef.current;
+
     setIsDetailOpen(true);
     setIsDetailLoading(true);
     setDetailErrorMessage(null);
     setSelectedAccount(null);
 
     try {
-      const account = await getAccountById(accountId);
+      const account = await getAccountById(accountId, controller.signal);
+      if (
+        controller.signal.aborted ||
+        requestId !== detailRequestIdRef.current
+      ) {
+        return;
+      }
       setSelectedAccount(account);
     } catch (error) {
+      if (
+        axios.isCancel(error) ||
+        controller.signal.aborted ||
+        requestId !== detailRequestIdRef.current
+      ) {
+        return;
+      }
       setDetailErrorMessage(
         getAccountsErrorMessage(error, "Không thể tải chi tiết tài khoản.")
       );
     } finally {
-      setIsDetailLoading(false);
+      if (requestId === detailRequestIdRef.current) {
+        detailAbortRef.current = null;
+        setIsDetailLoading(false);
+      }
     }
   }, []);
 
   const setDetailOpen = useCallback((open: boolean) => {
     setIsDetailOpen(open);
     if (!open) {
+      detailRequestIdRef.current += 1;
+      detailAbortRef.current?.abort();
+      detailAbortRef.current = null;
       setSelectedAccount(null);
+      setIsDetailLoading(false);
       setDetailErrorMessage(null);
     }
   }, []);

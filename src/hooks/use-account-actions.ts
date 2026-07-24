@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { assignAccountRoles, getEffectiveAccess, resetAccountPassword } from "@/lib/services/accounts";
 import { getRoleScopeOptions } from "@/lib/services/roles";
@@ -12,6 +12,7 @@ export interface UseAccountActionsResult {
   isEffectiveAccessLoading: boolean;
   effectiveAccessErrorMessage: string | null;
   loadEffectiveAccess: (accountId: string) => Promise<void>;
+  cancelEffectiveAccessLoad: () => void;
 
   // Roles Assignment
   isEditRolesOpen: boolean;
@@ -35,6 +36,8 @@ export interface UseAccountActionsResult {
 export function useAccountActions(
   onSuccess?: (message: string, account?: InternalAccountResult) => void
 ): UseAccountActionsResult {
+  const effectiveAccessAbortRef = useRef<AbortController | null>(null);
+  const effectiveAccessRequestIdRef = useRef(0);
   const [effectiveAccess, setEffectiveAccess] = useState<EffectiveAccessResult | null>(null);
   const [isEffectiveAccessLoading, setIsEffectiveAccessLoading] = useState(false);
   const [effectiveAccessErrorMessage, setEffectiveAccessErrorMessage] = useState<string | null>(null);
@@ -53,17 +56,55 @@ export function useAccountActions(
   const [resetPasswordErrorMessage, setResetPasswordErrorMessage] = useState<string | null>(null);
 
   const loadEffectiveAccess = useCallback(async (accountId: string) => {
+    effectiveAccessAbortRef.current?.abort();
+    const controller = new AbortController();
+    effectiveAccessAbortRef.current = controller;
+    const requestId = ++effectiveAccessRequestIdRef.current;
+
     setIsEffectiveAccessLoading(true);
+    setEffectiveAccess(null);
     setEffectiveAccessErrorMessage(null);
     try {
-      const result = await getEffectiveAccess(accountId);
+      const result = await getEffectiveAccess(accountId, controller.signal);
+      if (
+        controller.signal.aborted ||
+        requestId !== effectiveAccessRequestIdRef.current
+      ) {
+        return;
+      }
       setEffectiveAccess(result);
     } catch (error) {
+      if (
+        controller.signal.aborted ||
+        requestId !== effectiveAccessRequestIdRef.current
+      ) {
+        return;
+      }
       setEffectiveAccessErrorMessage(error instanceof Error ? error.message : "Đã xảy ra lỗi.");
     } finally {
-      setIsEffectiveAccessLoading(false);
+      if (requestId === effectiveAccessRequestIdRef.current) {
+        effectiveAccessAbortRef.current = null;
+        setIsEffectiveAccessLoading(false);
+      }
     }
   }, []);
+
+  const cancelEffectiveAccessLoad = useCallback(() => {
+    effectiveAccessRequestIdRef.current += 1;
+    effectiveAccessAbortRef.current?.abort();
+    effectiveAccessAbortRef.current = null;
+    setEffectiveAccess(null);
+    setIsEffectiveAccessLoading(false);
+    setEffectiveAccessErrorMessage(null);
+  }, []);
+
+  useEffect(
+    () => () => {
+      effectiveAccessRequestIdRef.current += 1;
+      effectiveAccessAbortRef.current?.abort();
+    },
+    [],
+  );
 
   const loadRoleScopeOptions = useCallback(async (roleCode: string) => {
     if (!roleCode) {
@@ -129,6 +170,7 @@ export function useAccountActions(
     isEffectiveAccessLoading,
     effectiveAccessErrorMessage,
     loadEffectiveAccess,
+    cancelEffectiveAccessLoad,
 
     isEditRolesOpen,
     isEditingRoles,

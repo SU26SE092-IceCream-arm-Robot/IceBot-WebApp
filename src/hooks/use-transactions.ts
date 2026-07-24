@@ -1,7 +1,7 @@
 "use client";
 
 import axios from "axios";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import {
@@ -132,6 +132,12 @@ export interface UseTransactionsResult {
 }
 
 export function useTransactions(): UseTransactionsResult {
+  const orderDetailAbortRef = useRef<AbortController | null>(null);
+  const orderDetailRequestIdRef = useRef(0);
+  const selectedOrderIdRef = useRef<string | null>(null);
+  const refundDetailAbortRef = useRef<AbortController | null>(null);
+  const refundDetailRequestIdRef = useRef(0);
+  const selectedRefundIdRef = useRef<string | null>(null);
   const [filters, setFilters] = useState<TransactionsFilters>(INITIAL_FILTERS);
   const [refundFilters, setRefundFilters] =
     useState<RefundsFilters>(INITIAL_REFUND_FILTERS);
@@ -378,6 +384,16 @@ export function useTransactions(): UseTransactionsResult {
     };
   }, [fetchStatusHistory, isDetailOpen, selectedOrderId]);
 
+  useEffect(
+    () => () => {
+      orderDetailRequestIdRef.current += 1;
+      orderDetailAbortRef.current?.abort();
+      refundDetailRequestIdRef.current += 1;
+      refundDetailAbortRef.current?.abort();
+    },
+    [],
+  );
+
   const summary = useMemo<TransactionsSummary>(
     () => ({
       total: orders.pagination.totalCount,
@@ -448,6 +464,12 @@ export function useTransactions(): UseTransactionsResult {
 
   const openOrderDetail = useCallback(
     async (orderId: string) => {
+      orderDetailAbortRef.current?.abort();
+      const controller = new AbortController();
+      orderDetailAbortRef.current = controller;
+      const requestId = ++orderDetailRequestIdRef.current;
+      selectedOrderIdRef.current = orderId;
+
       setSelectedOrderId(orderId);
       setSelectedOrder(null);
       setHistoryPage(1);
@@ -462,9 +484,23 @@ export function useTransactions(): UseTransactionsResult {
       setDetailErrorMessage(null);
 
       try {
-        const order = await getManagementOrderById(orderId);
+        const order = await getManagementOrderById(orderId, controller.signal);
+        if (
+          controller.signal.aborted ||
+          requestId !== orderDetailRequestIdRef.current ||
+          selectedOrderIdRef.current !== orderId
+        ) {
+          return;
+        }
         setSelectedOrder(order);
       } catch (error) {
+        if (
+          axios.isCancel(error) ||
+          controller.signal.aborted ||
+          requestId !== orderDetailRequestIdRef.current
+        ) {
+          return;
+        }
         setDetailErrorMessage(
           getTransactionsErrorMessage(
             error,
@@ -472,22 +508,45 @@ export function useTransactions(): UseTransactionsResult {
           ),
         );
       } finally {
-        setIsDetailLoading(false);
+        if (requestId === orderDetailRequestIdRef.current) {
+          orderDetailAbortRef.current = null;
+          setIsDetailLoading(false);
+        }
       }
     },
     [],
   );
 
   const openRefundDetail = useCallback(async (refundId: string) => {
+    refundDetailAbortRef.current?.abort();
+    const controller = new AbortController();
+    refundDetailAbortRef.current = controller;
+    const requestId = ++refundDetailRequestIdRef.current;
+    selectedRefundIdRef.current = refundId;
+
     setSelectedRefund(null);
     setIsRefundDetailOpen(true);
     setIsRefundDetailLoading(true);
     setRefundDetailErrorMessage(null);
 
     try {
-      const refund = await getManagementRefundById(refundId);
+      const refund = await getManagementRefundById(refundId, controller.signal);
+      if (
+        controller.signal.aborted ||
+        requestId !== refundDetailRequestIdRef.current ||
+        selectedRefundIdRef.current !== refundId
+      ) {
+        return;
+      }
       setSelectedRefund(refund);
     } catch (error) {
+      if (
+        axios.isCancel(error) ||
+        controller.signal.aborted ||
+        requestId !== refundDetailRequestIdRef.current
+      ) {
+        return;
+      }
       setRefundDetailErrorMessage(
         getTransactionsErrorMessage(
           error,
@@ -495,15 +554,23 @@ export function useTransactions(): UseTransactionsResult {
         ),
       );
     } finally {
-      setIsRefundDetailLoading(false);
+      if (requestId === refundDetailRequestIdRef.current) {
+        refundDetailAbortRef.current = null;
+        setIsRefundDetailLoading(false);
+      }
     }
   }, []);
 
   const setDetailOpen = useCallback((open: boolean) => {
     setIsDetailOpen(open);
     if (!open) {
+      selectedOrderIdRef.current = null;
+      orderDetailRequestIdRef.current += 1;
+      orderDetailAbortRef.current?.abort();
+      orderDetailAbortRef.current = null;
       setSelectedOrderId(null);
       setSelectedOrder(null);
+      setIsDetailLoading(false);
       setDetailErrorMessage(null);
       setStatusHistory({
         data: [],
@@ -517,7 +584,12 @@ export function useTransactions(): UseTransactionsResult {
   const setRefundDetailOpen = useCallback((open: boolean) => {
     setIsRefundDetailOpen(open);
     if (!open) {
+      selectedRefundIdRef.current = null;
+      refundDetailRequestIdRef.current += 1;
+      refundDetailAbortRef.current?.abort();
+      refundDetailAbortRef.current = null;
       setSelectedRefund(null);
+      setIsRefundDetailLoading(false);
       setRefundDetailErrorMessage(null);
     }
   }, []);
@@ -662,13 +734,23 @@ export function useTransactions(): UseTransactionsResult {
 
       if (isDetailOpen && selectedOrderId === orderId) {
         tasks.push(
-          getManagementOrderById(orderId).then(setSelectedOrder),
+          getManagementOrderById(orderId).then((order) => {
+            if (selectedOrderIdRef.current === orderId) {
+              setSelectedOrder(order);
+            }
+          }),
           fetchStatusHistory(orderId),
         );
       }
 
       if (refundId && isRefundDetailOpen) {
-        tasks.push(getManagementRefundById(refundId).then(setSelectedRefund));
+        tasks.push(
+          getManagementRefundById(refundId).then((refund) => {
+            if (selectedRefundIdRef.current === refundId) {
+              setSelectedRefund(refund);
+            }
+          }),
+        );
       }
 
       await Promise.all(tasks);

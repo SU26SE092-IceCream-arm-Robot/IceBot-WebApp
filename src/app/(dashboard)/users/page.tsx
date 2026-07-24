@@ -193,6 +193,15 @@ export default function UsersPage() {
     [isDetailOpen, openAccountDetail, refresh],
   );
   const accountActions = useAccountActions(handleAccountActionSuccess);
+  const handleDetailOpenChange = useCallback(
+    (open: boolean) => {
+      setDetailOpen(open);
+      if (!open) {
+        accountActions.cancelEffectiveAccessLoad();
+      }
+    },
+    [accountActions, setDetailOpen],
+  );
 
   // Watch for legacy success message from useAccounts and toast it
   useEffect(() => {
@@ -368,7 +377,7 @@ export default function UsersPage() {
         errorMessage={detailErrorMessage}
         isLoading={isDetailLoading}
         open={isDetailOpen}
-        onOpenChange={setDetailOpen}
+        onOpenChange={handleDetailOpenChange}
         accountActions={accountActions}
       />
 

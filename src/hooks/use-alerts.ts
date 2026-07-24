@@ -35,6 +35,8 @@ function emptyPagination(page: number): PaginationMeta {
 
 export function useAlerts() {
   const mutationInFlightRef = useRef(false);
+  const detailAbortRef = useRef<AbortController | null>(null);
+  const detailRequestIdRef = useRef(0);
   const [filters, setFilters] = useState<AlertsListQuery>(INITIAL_FILTERS);
   const [alerts, setAlerts] = useState<AlertResult[]>([]);
   const [pagination, setPagination] = useState<PaginationMeta>(emptyPagination(1));
@@ -79,6 +81,14 @@ export function useAlerts() {
     return () => controller.abort();
   }, [filters, loadAlerts]);
 
+  useEffect(
+    () => () => {
+      detailRequestIdRef.current += 1;
+      detailAbortRef.current?.abort();
+    },
+    [],
+  );
+
   const refresh = useCallback(async () => {
     await loadAlerts(filters);
   }, [filters, loadAlerts]);
@@ -91,20 +101,52 @@ export function useAlerts() {
   }, []);
 
   const openAlertDetail = useCallback(async (alertId: string) => {
+    detailAbortRef.current?.abort();
+    const controller = new AbortController();
+    detailAbortRef.current = controller;
+    const requestId = ++detailRequestIdRef.current;
+
     setDetailErrorMessage(null);
     setIsDetailOpen(true);
     setIsDetailLoading(true);
 
     try {
-      const detail = await getAlertById(alertId);
+      const detail = await getAlertById(alertId, controller.signal);
+      if (
+        controller.signal.aborted ||
+        requestId !== detailRequestIdRef.current
+      ) {
+        return;
+      }
       setSelectedAlert(detail);
       updateAlertInList(detail);
     } catch (error) {
+      if (
+        axios.isCancel(error) ||
+        controller.signal.aborted ||
+        requestId !== detailRequestIdRef.current
+      ) {
+        return;
+      }
       setDetailErrorMessage(getAlertErrorMessage(error, "Không thể tải chi tiết cảnh báo."));
     } finally {
-      setIsDetailLoading(false);
+      if (requestId === detailRequestIdRef.current) {
+        detailAbortRef.current = null;
+        setIsDetailLoading(false);
+      }
     }
   }, [updateAlertInList]);
+
+  const setDetailOpen = useCallback((open: boolean) => {
+    setIsDetailOpen(open);
+    if (!open) {
+      detailRequestIdRef.current += 1;
+      detailAbortRef.current?.abort();
+      detailAbortRef.current = null;
+      setIsDetailLoading(false);
+      setDetailErrorMessage(null);
+    }
+  }, []);
 
   const setStatusFilter = useCallback((status: AlertStatus | "ALL") => {
     setFilters((current) => ({ ...current, status, pageNumber: 1 }));
@@ -203,7 +245,7 @@ export function useAlerts() {
     previousPage,
     nextPage,
     openAlertDetail,
-    setIsDetailOpen,
+    setIsDetailOpen: setDetailOpen,
     acknowledgeAlert,
     resolveAlert,
     clearSuccessMessage,
