@@ -129,6 +129,7 @@ export interface UseTransactionsResult {
   submitRefundProcessed: (refundId: string, request: MarkRefundProcessedRequest) => Promise<void>;
   submitRefundReject: (refundId: string, request: RefundReasonRequest) => Promise<void>;
   submitRefundCancel: (refundId: string, request: RefundReasonRequest) => Promise<void>;
+  applyOrderUpdate: (order: OrderResult) => void;
   retryPostMutationRefresh: () => Promise<boolean>;
   clearActionSuccessMessage: () => void;
   refresh: () => Promise<void>;
@@ -970,6 +971,7 @@ export function useTransactions(): UseTransactionsResult {
     submitRefundProcessed,
     submitRefundReject,
     submitRefundCancel,
+    applyOrderUpdate: updateOrderInState,
     retryPostMutationRefresh,
     clearActionSuccessMessage: () => setActionSuccessMessage(null),
     refresh: async () => {

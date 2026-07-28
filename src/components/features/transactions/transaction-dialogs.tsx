@@ -5,6 +5,7 @@ import {
   Ban,
   CalendarClock,
   History,
+  HandPlatter,
   PackageCheck,
   ReceiptText,
   RotateCcw,
@@ -50,7 +51,9 @@ interface TransactionDetailDialogProps {
   onPreviousHistoryPage: () => void;
   onNextHistoryPage: () => void;
   onRequestRefundClick?: () => void;
+  onFulfillmentClick?: (item: OrderResult["items"][number]) => void;
   canRequestRefund: boolean;
+  canManageFulfillment: boolean;
 }
 
 interface OrderActionDialogProps {
@@ -107,7 +110,9 @@ export function TransactionDetailDialog({
   onPreviousHistoryPage,
   onNextHistoryPage,
   onRequestRefundClick,
+  onFulfillmentClick,
   canRequestRefund,
+  canManageFulfillment,
 }: TransactionDetailDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -192,6 +197,21 @@ export function TransactionDetailDialog({
               />
             </div>
 
+            <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
+              <div className="flex items-start gap-3">
+                <ReceiptText className="mt-0.5 size-4 shrink-0 text-primary" />
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-foreground">
+                    Bằng chứng thanh toán từ backend
+                  </p>
+                  <p className="text-xs leading-5 text-muted-foreground">
+                    Trạng thái và số tiền bên trên là dữ liệu tài chính đã được backend ghi nhận.
+                    Admin Web không tự suy diễn kết quả từ màn hình thanh toán hoặc callback nhà cung cấp.
+                  </p>
+                </div>
+              </div>
+            </div>
+
             <div className="rounded-xl border border-border bg-card p-4">
               <div className="mb-3 flex items-center gap-2">
                 <span className="flex size-8 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary">
@@ -206,15 +226,37 @@ export function TransactionDetailDialog({
                   {order.items.map((item) => (
                     <div
                       key={item.id}
-                      className="flex flex-col gap-2 rounded-lg border border-border bg-muted/15 p-3 sm:flex-row sm:items-center sm:justify-between"
+                      className="flex flex-col gap-3 rounded-lg border border-border bg-muted/15 p-3 sm:flex-row sm:items-center sm:justify-between"
                     >
-                      <div className="min-w-0">
+                      <div className="min-w-0 space-y-1">
                         <p className="truncate text-sm font-medium text-foreground">
                           {item.productName} · {item.productVariantName}
                         </p>
                         <p className="truncate text-xs text-muted-foreground">
                           {item.menuItemName} · SL {item.quantity}
                         </p>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Badge variant="outline" className="bg-background text-muted-foreground">
+                            {item.fulfillmentType === "Manual"
+                              ? "Chuẩn bị thủ công"
+                              : item.fulfillmentType === "Packaged"
+                                ? "Món đóng gói"
+                                : "Máy sản xuất"}
+                          </Badge>
+                          <Badge variant="outline" className="bg-background text-muted-foreground">
+                            {item.status === "Pending"
+                              ? "Chờ xử lý"
+                              : item.status === "Accepted"
+                                ? "Đã nhận"
+                                : item.status === "Preparing"
+                                  ? "Đang chuẩn bị"
+                                  : item.status === "Completed"
+                                    ? "Đã hoàn tất"
+                                    : item.status === "Cancelled"
+                                      ? "Đã hủy"
+                                      : "Thất bại"}
+                          </Badge>
+                        </div>
                         {item.selectedOptions.length > 0 ? (
                           <p className="mt-1 text-xs text-muted-foreground">
                             {item.selectedOptions
@@ -223,9 +265,25 @@ export function TransactionDetailDialog({
                           </p>
                         ) : null}
                       </div>
-                      <span className="text-sm font-medium tabular-nums text-foreground">
-                        {formatTransactionMoney(item.totalAmount, order.currency)}
-                      </span>
+                      <div className="flex shrink-0 flex-col items-start gap-2 sm:items-end">
+                        <span className="text-sm font-medium tabular-nums text-foreground">
+                          {formatTransactionMoney(item.totalAmount, order.currency)}
+                        </span>
+                        {canManageFulfillment &&
+                        item.fulfillmentType !== "MachineProduced" &&
+                        item.status !== "Completed" &&
+                        item.status !== "Cancelled" ? (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => onFulfillmentClick?.(item)}
+                          >
+                            <HandPlatter className="size-4" />
+                            Cập nhật tiến độ
+                          </Button>
+                        ) : null}
+                      </div>
                     </div>
                   ))}
                 </div>

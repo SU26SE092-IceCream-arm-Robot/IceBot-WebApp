@@ -276,7 +276,7 @@ export function ProcessRefundDialog({
           </span>
           <DialogTitle>Đánh dấu đã xử lý</DialogTitle>
           <DialogDescription>
-            Xác nhận rằng yêu cầu hoàn tiền {refund?.refundNumber} đã được xử lý xong.
+            Ghi nhận thủ công rằng yêu cầu hoàn tiền {refund?.refundNumber} đã được xử lý xong.
           </DialogDescription>
         </DialogHeader>
 
@@ -298,7 +298,10 @@ export function ProcessRefundDialog({
           {refund?.refundMethod !== "Voucher" ? (
             <div className="flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/5 p-3 text-sm text-warning">
               <Info className="mt-0.5 size-4 shrink-0" />
-              <p>Chỉ xác nhận sau khi khoản tiền đã được hoàn trả đầy đủ. Thao tác này sẽ cập nhật trạng thái đơn và thanh toán.</p>
+              <p>
+                Chỉ xác nhận sau khi đã kiểm tra khoản tiền thực sự được hoàn trả qua nhà cung cấp.
+                Nút này chỉ ghi nhận bằng chứng vận hành trong IceBot, không tự gửi lệnh hoàn tiền tới nhà cung cấp.
+              </p>
             </div>
           ) : null}
 

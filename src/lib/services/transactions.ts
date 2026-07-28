@@ -21,6 +21,14 @@ import type {
   OrderItemStatus,
   OrderStatus,
   PaymentStatus,
+  FulfillmentType,
+  ManualOrderItemFulfillmentRequest,
+  PackagedOrderItemFulfillmentRequest,
+  ManagementProductionIncidentsQuery,
+  ProductionIncidentResult,
+  RecordProductionInspectionRequest,
+  SelectProductionIncidentResolutionRequest,
+  CompleteProductionIncidentRequest,
 } from "@/types/transactions";
 
 interface GraphQLErrorItem {
@@ -45,8 +53,9 @@ interface RawManagementOrderListItem
 }
 
 interface RawOrderItem
-  extends Omit<OrderResult["items"][number], "status"> {
+  extends Omit<OrderResult["items"][number], "status" | "fulfillmentType"> {
   status: string;
+  fulfillmentType: string;
 }
 
 interface RawOrderDetail
@@ -119,6 +128,12 @@ const ORDER_ITEM_STATUS_FROM_GRAPHQL: Record<string, OrderItemStatus> = {
   FAILED: "Failed",
 };
 
+const FULFILLMENT_TYPE_FROM_GRAPHQL: Record<string, FulfillmentType> = {
+  MANUAL: "Manual",
+  PACKAGED: "Packaged",
+  MACHINE_PRODUCED: "MachineProduced",
+};
+
 const ORDER_STATUS_TO_GRAPHQL: Record<OrderStatus, string> = Object.fromEntries(
   Object.entries(ORDER_STATUS_FROM_GRAPHQL).map(([key, value]) => [value, key]),
 ) as Record<OrderStatus, string>;
@@ -176,7 +191,7 @@ const MANAGEMENT_ORDER_QUERY = `
         id menuItemId productId productVariantId recipeId clientLineId
         menuItemCode menuItemName productCode productName
         productVariantCode productVariantName recipeVersion
-        quantity unitPrice discountAmount totalAmount status
+        quantity unitPrice discountAmount totalAmount status fulfillmentType
         selectedOptions { productOptionId optionGroupCode code name priceDelta }
       }
     }
@@ -283,6 +298,11 @@ function mapOrderDetail(order: RawOrderDetail): OrderResult {
         item.status,
         ORDER_ITEM_STATUS_FROM_GRAPHQL,
         "trạng thái món",
+      ),
+      fulfillmentType: requireMappedEnum(
+        item.fulfillmentType,
+        FULFILLMENT_TYPE_FROM_GRAPHQL,
+        "phương thức hoàn tất món",
       ),
     })),
   };
@@ -580,4 +600,97 @@ export async function cancelManagementRefund(
   );
 
   return requireData(response.data, "Không thể hủy yêu cầu hoàn tiền.");
+}
+
+export async function recordManualOrderItemFulfillment(
+  orderId: string,
+  orderItemId: string,
+  request: ManualOrderItemFulfillmentRequest,
+): Promise<OrderResult> {
+  const response = await axiosClient.post<ApiResult<OrderResult>>(
+    `/api/v1/management/orders/${encodeURIComponent(orderId)}/items/${encodeURIComponent(orderItemId)}/manual-fulfillment-events`,
+    request,
+  );
+
+  return requireData(response.data, "Không thể cập nhật tiến độ hoàn tất món.");
+}
+
+export async function setPackagedOrderItemFulfillment(
+  orderId: string,
+  orderItemId: string,
+  action: "fulfill" | "fail",
+  request: PackagedOrderItemFulfillmentRequest,
+): Promise<OrderResult> {
+  const response = await axiosClient.post<ApiResult<OrderResult>>(
+    `/api/v1/management/orders/${encodeURIComponent(orderId)}/items/${encodeURIComponent(orderItemId)}/${action}`,
+    request,
+  );
+
+  return requireData(response.data, "Không thể cập nhật trạng thái món đóng gói.");
+}
+
+export async function listManagementProductionIncidents(
+  query: ManagementProductionIncidentsQuery,
+  signal?: AbortSignal,
+): Promise<TransactionsPagedResult<ProductionIncidentResult>> {
+  const response = await axiosClient.get<
+    TransactionsPagedResult<ProductionIncidentResult>
+  >("/api/v1/management/production-incidents", {
+    params: query,
+    signal,
+  });
+
+  return requirePagedData(response.data, "Không thể tải danh sách sự cố sản xuất.");
+}
+
+export async function getManagementProductionIncident(
+  orderId: string,
+  incidentId: string,
+  signal?: AbortSignal,
+): Promise<ProductionIncidentResult> {
+  const response = await axiosClient.get<ApiResult<ProductionIncidentResult>>(
+    `/api/v1/management/orders/${encodeURIComponent(orderId)}/production-incidents/${encodeURIComponent(incidentId)}`,
+    { signal },
+  );
+
+  return requireData(response.data, "Không thể tải chi tiết sự cố sản xuất.");
+}
+
+export async function recordManagementProductionInspection(
+  orderId: string,
+  incidentId: string,
+  request: RecordProductionInspectionRequest,
+): Promise<ProductionIncidentResult> {
+  const response = await axiosClient.patch<ApiResult<ProductionIncidentResult>>(
+    `/api/v1/management/orders/${encodeURIComponent(orderId)}/production-incidents/${encodeURIComponent(incidentId)}/inspection`,
+    request,
+  );
+
+  return requireData(response.data, "Không thể ghi nhận kết quả kiểm tra.");
+}
+
+export async function selectManagementProductionIncidentResolution(
+  orderId: string,
+  incidentId: string,
+  request: SelectProductionIncidentResolutionRequest,
+): Promise<ProductionIncidentResult> {
+  const response = await axiosClient.post<ApiResult<ProductionIncidentResult>>(
+    `/api/v1/management/orders/${encodeURIComponent(orderId)}/production-incidents/${encodeURIComponent(incidentId)}/resolution`,
+    request,
+  );
+
+  return requireData(response.data, "Không thể chọn hướng xử lý sự cố.");
+}
+
+export async function completeManagementProductionIncident(
+  orderId: string,
+  incidentId: string,
+  request: CompleteProductionIncidentRequest,
+): Promise<ProductionIncidentResult> {
+  const response = await axiosClient.patch<ApiResult<ProductionIncidentResult>>(
+    `/api/v1/management/orders/${encodeURIComponent(orderId)}/production-incidents/${encodeURIComponent(incidentId)}/complete`,
+    request,
+  );
+
+  return requireData(response.data, "Không thể hoàn tất sự cố sản xuất.");
 }

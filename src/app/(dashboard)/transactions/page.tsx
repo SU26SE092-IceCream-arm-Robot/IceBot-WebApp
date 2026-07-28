@@ -9,6 +9,7 @@ import {
   RefreshCw,
   RotateCcw,
   Search,
+  ShieldAlert,
   XCircle,
 } from "lucide-react";
 
@@ -23,6 +24,8 @@ import {
   RejectRefundDialog,
   RequestRefundDialog,
 } from "@/components/features/transactions/refund-action-dialogs";
+import { OrderItemFulfillmentDialog } from "@/components/features/transactions/order-item-fulfillment-dialog";
+import { ProductionIncidentsPanel } from "@/components/features/transactions/production-incidents-panel";
 import {
   REFUND_STATUS_LABELS,
   RefundsTable,
@@ -44,6 +47,7 @@ import {
 } from "@/components/ui/select";
 import { useAuth } from "@/hooks/use-auth";
 import { useTransactions } from "@/hooks/use-transactions";
+import { useOrderItemFulfillment } from "@/hooks/use-order-item-fulfillment";
 import { hasPermission } from "@/lib/rbac";
 import type {
   OrderStatus,
@@ -90,7 +94,7 @@ function isRefundStatusFilter(value: string | null): value is RefundStatusFilter
   return REFUND_STATUS_OPTIONS.some((option) => option.value === value);
 }
 
-type TransactionsTab = "orders" | "refunds";
+type TransactionsTab = "orders" | "refunds" | "incidents";
 
 type StatTone = "primary" | "success" | "warning" | "destructive";
 
@@ -230,8 +234,10 @@ export default function TransactionsPage() {
     submitRefundCancel,
     retryPostMutationRefresh,
     clearActionSuccessMessage,
+    applyOrderUpdate,
     refresh,
   } = useTransactions();
+  const fulfillment = useOrderItemFulfillment(applyOrderUpdate);
   const canManageOrders = hasPermission(effectiveAccess, "orders.manage");
   const canManageRefunds = hasPermission(effectiveAccess, "refunds.manage");
   return (
@@ -295,6 +301,7 @@ export default function TransactionsPage() {
         </Button>
       </section>
 
+      {activeTab !== "incidents" ? (
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           icon={ReceiptText}
@@ -333,6 +340,7 @@ export default function TransactionsPage() {
           tone="destructive"
         />
       </section>
+      ) : null}
 
       <div className="inline-flex w-fit rounded-lg border border-border bg-card p-1">
         <button
@@ -357,8 +365,34 @@ export default function TransactionsPage() {
         >
           Hoàn tiền
         </button>
+        <button
+          type="button"
+          className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+            activeTab === "incidents"
+              ? "bg-primary text-primary-foreground"
+              : "text-muted-foreground hover:bg-muted/40 hover:text-foreground"
+          }`}
+          onClick={() => setActiveTab("incidents")}
+        >
+          Sự cố sản xuất
+        </button>
       </div>
 
+      {activeTab === "incidents" ? (
+        <Card className="rounded-xl border border-border bg-card shadow-none">
+          <CardHeader className="border-b border-border pb-4">
+            <div className="flex items-start gap-3">
+              <span className="mt-0.5 flex size-10 items-center justify-center rounded-xl border border-warning/20 bg-warning/10 text-warning">
+                <ShieldAlert className="size-5" />
+              </span>
+              <CardTitle className="text-base">Điều phối sự cố sản xuất</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="p-5">
+            <ProductionIncidentsPanel enabled={activeTab === "incidents"} />
+          </CardContent>
+        </Card>
+      ) : (
       <Card className="rounded-xl border border-border bg-card shadow-none">
         <CardHeader className="border-b border-border pb-4">
           <div className="flex items-start gap-3">
@@ -601,9 +635,11 @@ export default function TransactionsPage() {
           </div>
         </div>
       </Card>
+      )}
 
       <TransactionDetailDialog
         canRequestRefund={canManageRefunds}
+        canManageFulfillment={canManageOrders}
         order={selectedOrder}
         errorMessage={detailErrorMessage}
         isLoading={isDetailLoading}
@@ -616,6 +652,19 @@ export default function TransactionsPage() {
         onPreviousHistoryPage={previousHistoryPage}
         onNextHistoryPage={nextHistoryPage}
         onRequestRefundClick={() => setIsRequestRefundOpen(true)}
+        onFulfillmentClick={(item) => {
+          if (selectedOrder) fulfillment.open(selectedOrder, item);
+        }}
+      />
+
+      <OrderItemFulfillmentDialog
+        key={fulfillment.intent?.item.id ?? "no-fulfillment-item"}
+        item={fulfillment.intent?.item ?? null}
+        open={fulfillment.isOpen}
+        isSubmitting={fulfillment.isSubmitting}
+        errorMessage={fulfillment.errorMessage}
+        onOpenChange={fulfillment.setOpen}
+        onSubmit={fulfillment.submit}
       />
 
       <RefundDetailDialog

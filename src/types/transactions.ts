@@ -50,6 +50,14 @@ export type OrderItemStatus =
   | "Cancelled"
   | "Failed";
 
+export type FulfillmentType = "Manual" | "Packaged" | "MachineProduced";
+
+export type ManualFulfillmentEventType =
+  | "Accepted"
+  | "Preparing"
+  | "Completed"
+  | "Failed";
+
 export type OrderStatusFilter = "ALL" | OrderStatus;
 
 export type PaymentStatusFilter = "ALL" | PaymentStatus;
@@ -75,6 +83,7 @@ export interface OrderItemResult {
   discountAmount: number;
   totalAmount: number;
   status: OrderItemStatus;
+  fulfillmentType: FulfillmentType;
   selectedOptions: OrderItemOptionResult[];
 }
 
@@ -343,4 +352,108 @@ export interface MarkRefundProcessedRequest {
 
 export interface RefundReasonRequest {
   reason: string;
+}
+
+export interface ManualOrderItemFulfillmentRequest {
+  fulfillmentEventId: string;
+  eventType: ManualFulfillmentEventType;
+  reason?: string | null;
+}
+
+export interface PackagedOrderItemFulfillmentRequest {
+  fulfillmentEventId: string;
+  reason?: string | null;
+}
+
+export type ProductionIncidentStatus =
+  | "Open"
+  | "AwaitingInspection"
+  | "ResolutionSelected"
+  | "ResolutionInProgress"
+  | "Resolved"
+  | "Cancelled";
+
+export type ProductionInspectionOutcome =
+  | "ConfirmedGood"
+  | "NotProduced"
+  | "Defective"
+  | "PartialOrUncertain"
+  | "Unknown";
+
+export type ProductionIncidentResolution =
+  | "DeliverExistingOutput"
+  | "DiscardProduct"
+  | "RequestRemake"
+  | "RequestRefund"
+  | "IssueVoucher"
+  | "AwaitTechnicalReview"
+  | "NoAction";
+
+export interface ProductionIncidentHistoryResult {
+  id: string;
+  action: string;
+  fromStatus?: string | null;
+  toStatus: string;
+  actorAccountId?: string | null;
+  reason: string;
+  occurredAt: string;
+  relatedEntityId?: string | null;
+}
+
+export interface ProductionIncidentResult {
+  id: string;
+  organizationId?: string | null;
+  storeId?: string | null;
+  kioskId: string;
+  orderId: string;
+  orderItemId: string;
+  orderNumber: string;
+  productName: string;
+  productVariantName: string;
+  sourceCommandId: string;
+  sourceProductionJobId: string;
+  productionUnitNo: number;
+  productionUnitQuantity: number;
+  trigger: string;
+  status: ProductionIncidentStatus;
+  physicalOutputState: string;
+  inspectionOutcome?: ProductionInspectionOutcome | null;
+  resolution?: ProductionIncidentResolution | null;
+  errorCode?: string | null;
+  errorMessage?: string | null;
+  relatedEdgeCommandId?: string | null;
+  relatedRefundId?: string | null;
+  createdAt: string;
+  inspectedAt?: string | null;
+  resolvedAt?: string | null;
+  resolutionNotes?: string | null;
+  history: ProductionIncidentHistoryResult[];
+}
+
+export interface ManagementProductionIncidentsQuery {
+  status?: ProductionIncidentStatus;
+  organizationId?: string;
+  storeId?: string;
+  kioskId?: string;
+  pageNumber: number;
+  pageSize: number;
+}
+
+export interface RecordProductionInspectionRequest {
+  outcome: ProductionInspectionOutcome;
+  reason: string;
+}
+
+export interface SelectProductionIncidentResolutionRequest {
+  resolutionRequestId: string;
+  resolution: ProductionIncidentResolution;
+  reason: string;
+  paymentTransactionId?: string | null;
+  voucherCode?: string | null;
+  voucherValue?: number | null;
+  acknowledgeFullOrderCompensation: boolean;
+}
+
+export interface CompleteProductionIncidentRequest {
+  notes: string;
 }
