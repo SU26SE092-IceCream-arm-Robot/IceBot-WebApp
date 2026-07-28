@@ -14,7 +14,13 @@ export interface RefillDispenserRequest {
 
 export interface AdjustDispenserEstimateRequest {
   estimatedQuantity: number;
+  reportedLevelAfter?: IngredientLevelStatus | null;
   reasonCode?: string | null;
+}
+
+export interface DispenserLevelQuantityPoint {
+  level: Exclude<IngredientLevelStatus, "Unknown">;
+  estimatedQuantity: number;
 }
 
 export interface DispenserStateResult {
@@ -33,6 +39,8 @@ export interface DispenserStateResult {
   unit: string;
   lastMeasuredAt: string;
   lastRefilledAt?: string | null;
+  isActive: boolean;
+  levelToQuantityProfile: DispenserLevelQuantityPoint[];
 }
 
 export interface StockMovementResult {
@@ -118,6 +126,43 @@ export interface KioskInventoryTopologyResult {
   kioskCode: string;
   kioskName: string;
   devices: InventoryTopologyDeviceResult[];
+}
+
+export interface CreateDispenserStateRequest {
+  deviceId: string;
+  ingredientId: string;
+  containerCode: string;
+  capacityQuantity?: number | null;
+  unit: string;
+  levelToQuantityProfile: DispenserLevelQuantityPoint[];
+}
+
+export interface UpdateDispenserStateRequest {
+  capacityQuantity?: number | null;
+  unit: string;
+  levelToQuantityProfile: DispenserLevelQuantityPoint[];
+  reason: string;
+}
+
+export interface SetDispenserStateStatusRequest {
+  isActive: boolean;
+  reason: string;
+}
+
+export type InventoryEstimateDisposition = "None" | "Discard" | "Transfer";
+
+export interface RebindDispenserStateRequest
+  extends CreateDispenserStateRequest {
+  estimateDisposition: InventoryEstimateDisposition;
+  reason: string;
+}
+
+export interface DispenserRebindResult {
+  sourceDispenserStateId: string;
+  replacement: DispenserStateResult;
+  estimateDisposition: InventoryEstimateDisposition;
+  previousEstimatedQuantity?: number | null;
+  transferredQuantity: number;
 }
 
 export interface InventoryQuery {

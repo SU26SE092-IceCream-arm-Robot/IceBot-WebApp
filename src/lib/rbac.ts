@@ -22,6 +22,7 @@ const PERMISSION_ROLES: Record<
   "devices.manage": ["SystemAdmin", "OrgAdmin", "Manager", "Technician"],
   "inventory.view": ["SystemAdmin", "OrgAdmin", "Manager", "Staff", "Technician"],
   "inventory.manage": ["SystemAdmin", "Manager", "Staff", "Technician"],
+  "inventory.configure": ["SystemAdmin", "Manager", "Technician"],
   "orders.view": ["SystemAdmin", "OrgAdmin", "Manager", "Staff"],
   "orders.manage": ["SystemAdmin", "OrgAdmin", "Manager", "Staff"],
   "refunds.manage": ["SystemAdmin", "Manager", "Staff"],

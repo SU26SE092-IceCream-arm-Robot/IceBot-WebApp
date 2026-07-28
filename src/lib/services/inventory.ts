@@ -11,6 +11,11 @@ import type {
   KioskInventoryTopologyResult,
   RefillDispenserRequest,
   StockMovementResult,
+  CreateDispenserStateRequest,
+  UpdateDispenserStateRequest,
+  SetDispenserStateStatusRequest,
+  RebindDispenserStateRequest,
+  DispenserRebindResult,
 } from "@/types/inventory-management";
 
 function buildInventoryParams(query: InventoryQuery) {
@@ -164,6 +169,53 @@ export async function adjustDispenserEstimate(
     response.data,
     "Không thể điều chỉnh lượng tồn kho ước tính.",
   );
+}
+
+export async function createDispenserState(
+  kioskId: string,
+  request: CreateDispenserStateRequest,
+): Promise<DispenserStateResult> {
+  const response = await axiosClient.post<ApiResult<DispenserStateResult>>(
+    `/api/v1/management/kiosks/${encodeURIComponent(kioskId)}/inventory/dispenser-states`,
+    request,
+  );
+  return requireData(response.data, "Không thể tạo bộ phân phối nguyên liệu.");
+}
+
+export async function updateDispenserState(
+  kioskId: string,
+  dispenserStateId: string,
+  request: UpdateDispenserStateRequest,
+): Promise<DispenserStateResult> {
+  const response = await axiosClient.put<ApiResult<DispenserStateResult>>(
+    `/api/v1/management/kiosks/${encodeURIComponent(kioskId)}/inventory/dispenser-states/${encodeURIComponent(dispenserStateId)}`,
+    request,
+  );
+  return requireData(response.data, "Không thể cập nhật cấu hình bộ phân phối.");
+}
+
+export async function setDispenserStateStatus(
+  kioskId: string,
+  dispenserStateId: string,
+  request: SetDispenserStateStatusRequest,
+): Promise<DispenserStateResult> {
+  const response = await axiosClient.patch<ApiResult<DispenserStateResult>>(
+    `/api/v1/management/kiosks/${encodeURIComponent(kioskId)}/inventory/dispenser-states/${encodeURIComponent(dispenserStateId)}/status`,
+    request,
+  );
+  return requireData(response.data, "Không thể cập nhật trạng thái bộ phân phối.");
+}
+
+export async function rebindDispenserState(
+  kioskId: string,
+  dispenserStateId: string,
+  request: RebindDispenserStateRequest,
+): Promise<DispenserRebindResult> {
+  const response = await axiosClient.post<ApiResult<DispenserRebindResult>>(
+    `/api/v1/management/kiosks/${encodeURIComponent(kioskId)}/inventory/dispenser-states/${encodeURIComponent(dispenserStateId)}/rebind`,
+    request,
+  );
+  return requireData(response.data, "Không thể thay thế liên kết bộ phân phối.");
 }
 
 export function getInventoryErrorMessage(

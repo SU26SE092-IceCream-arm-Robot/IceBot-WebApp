@@ -146,6 +146,7 @@ function InventoryProgress({ state }: { state: DispenserStateResult }) {
 
 interface InventoryTableProps {
   dispensers: DispenserStateResult[];
+  canManageInventory: boolean;
   onViewDetail: (dispenser: DispenserStateResult) => void;
   onViewHistory: (dispenser: DispenserStateResult) => void;
   onRefill: (dispenser: DispenserStateResult) => void;
@@ -154,6 +155,7 @@ interface InventoryTableProps {
 
 export function InventoryTable({
   dispensers,
+  canManageInventory,
   onViewDetail,
   onViewHistory,
   onRefill,
@@ -228,8 +230,19 @@ export function InventoryTable({
               <InventoryProgress state={dispenser} />
             </TableCell>
             <TableCell className="py-2.5 text-center">
-              <div className="flex justify-center">
+              <div className="flex flex-col items-center justify-center gap-1">
                 <InventoryLevelBadge status={dispenser.currentLevelStatus} />
+                <span
+                  className={
+                    dispenser.isActive
+                      ? "text-[11px] text-success"
+                      : "text-[11px] text-muted-foreground"
+                  }
+                >
+                  {dispenser.isActive
+                    ? "Đang sử dụng"
+                    : "Đã ngừng sử dụng"}
+                </span>
               </div>
             </TableCell>
             <TableCell className="py-2.5 text-center text-xs tabular-nums text-muted-foreground">
@@ -237,28 +250,32 @@ export function InventoryTable({
             </TableCell>
             <TableCell className="px-4 py-2.5 text-center">
               <div className="flex items-center justify-center gap-1">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-sm"
-                  className="rounded-lg text-success hover:bg-success/10 hover:text-success"
-                  title={`Ghi nhận nạp thêm ${dispenser.ingredientName}`}
-                  aria-label={`Ghi nhận nạp thêm ${dispenser.ingredientName}`}
-                  onClick={() => onRefill(dispenser)}
-                >
-                  <PackagePlus className="size-4" />
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-sm"
-                  className="rounded-lg text-primary hover:bg-primary/10 hover:text-primary"
-                  title={`Điều chỉnh lượng ước tính ${dispenser.ingredientName}`}
-                  aria-label={`Điều chỉnh lượng ước tính ${dispenser.ingredientName}`}
-                  onClick={() => onAdjustEstimate(dispenser)}
-                >
-                  <SlidersHorizontal className="size-4" />
-                </Button>
+                {canManageInventory && dispenser.isActive ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
+                    className="rounded-lg text-success hover:bg-success/10 hover:text-success"
+                    title={`Ghi nhận nạp thêm ${dispenser.ingredientName}`}
+                    aria-label={`Ghi nhận nạp thêm ${dispenser.ingredientName}`}
+                    onClick={() => onRefill(dispenser)}
+                  >
+                    <PackagePlus className="size-4" />
+                  </Button>
+                ) : null}
+                {canManageInventory && dispenser.isActive ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
+                    className="rounded-lg text-primary hover:bg-primary/10 hover:text-primary"
+                    title={`Điều chỉnh lượng ước tính ${dispenser.ingredientName}`}
+                    aria-label={`Điều chỉnh lượng ước tính ${dispenser.ingredientName}`}
+                    onClick={() => onAdjustEstimate(dispenser)}
+                  >
+                    <SlidersHorizontal className="size-4" />
+                  </Button>
+                ) : null}
                 <Button
                   type="button"
                   variant="ghost"

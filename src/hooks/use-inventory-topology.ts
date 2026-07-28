@@ -25,7 +25,7 @@ export function useInventoryTopology(
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const fetchTopology = useCallback(
-    async (signal?: AbortSignal) => {
+    async (signal?: AbortSignal, propagateError = false) => {
       if (!kioskId) {
         setTopology(null);
         setErrorMessage(null);
@@ -53,6 +53,9 @@ export function useInventoryTopology(
             "Không thể tải chẩn đoán cấu hình tồn kho của kiosk.",
           ),
         );
+        if (propagateError) {
+          throw error;
+        }
       } finally {
         if (!signal?.aborted) {
           setIsLoading(false);
@@ -78,6 +81,6 @@ export function useInventoryTopology(
     topology,
     isLoading,
     errorMessage,
-    refresh: () => fetchTopology(),
+    refresh: () => fetchTopology(undefined, true),
   };
 }

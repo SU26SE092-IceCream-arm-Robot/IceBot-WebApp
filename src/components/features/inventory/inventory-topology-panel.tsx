@@ -5,14 +5,27 @@ import {
   Box,
   CircleCheck,
   Cpu,
+  Link2,
+  Pencil,
+  Plus,
+  Power,
   RefreshCw,
 } from "lucide-react";
+import { useCallback, useState } from "react";
 
+import {
+  InventoryTopologyOperationDialog,
+  type TopologyOperationMode,
+} from "@/components/features/inventory/inventory-topology-operation-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useInventoryTopology } from "@/hooks/use-inventory-topology";
-import type { InventoryTopologyWarning } from "@/types/inventory-management";
+import { useInventoryTopologyOperations } from "@/hooks/use-inventory-topology-operations";
+import type {
+  DispenserStateResult,
+  InventoryTopologyWarning,
+} from "@/types/inventory-management";
 
 const WARNING_LABELS: Record<string, string> = {
   DeviceInactive: "Thiết bị không hoạt động",
@@ -25,9 +38,43 @@ function warningLabel(warning: InventoryTopologyWarning): string {
   return WARNING_LABELS[warning] ?? warning;
 }
 
-export function InventoryTopologyPanel({ kioskId }: { kioskId: string | null }) {
+interface InventoryTopologyPanelProps {
+  kioskId: string | null;
+  canConfigure: boolean;
+  onInventoryChanged: () => Promise<void>;
+}
+
+export function InventoryTopologyPanel({
+  kioskId,
+  canConfigure,
+  onInventoryChanged,
+}: InventoryTopologyPanelProps) {
   const { topology, isLoading, errorMessage, refresh } =
     useInventoryTopology(kioskId);
+  const refreshEvidence = useCallback(async () => {
+    await Promise.all([refresh(), onInventoryChanged()]);
+  }, [onInventoryChanged, refresh]);
+  const operations = useInventoryTopologyOperations(kioskId, refreshEvidence);
+  const [operationMode, setOperationMode] =
+    useState<TopologyOperationMode>("create");
+  const [operationTarget, setOperationTarget] =
+    useState<DispenserStateResult | null>(null);
+  const [isOperationOpen, setIsOperationOpen] = useState(false);
+
+  const openOperation = async (
+    mode: TopologyOperationMode,
+    dispenserStateId?: string,
+  ) => {
+    const resources = await operations.loadResources();
+    const target = dispenserStateId
+      ? resources.find((state) => state.id === dispenserStateId) ?? null
+      : null;
+    if (mode !== "create" && !target) return;
+    operations.clearMutationError();
+    setOperationMode(mode);
+    setOperationTarget(target);
+    setIsOperationOpen(true);
+  };
 
   const warnings = topology?.devices.flatMap((device) => [
     ...device.warnings.map((warning) => ({
@@ -71,20 +118,41 @@ export function InventoryTopologyPanel({ kioskId }: { kioskId: string | null }) 
             </div>
           </div>
           {kioskId ? (
-            <Button
-              variant="outline"
-              size="sm"
-              isLoading={isLoading}
-              onClick={() => void refresh()}
-            >
-              <RefreshCw className="size-4" />
-              Làm mới
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              {canConfigure ? (
+                <Button size="sm" onClick={() => void openOperation("create")}>
+                  <Plus className="size-4" />
+                  Tạo bộ phân phối
+                </Button>
+              ) : null}
+              <Button
+                variant="outline"
+                size="sm"
+                isLoading={isLoading}
+                onClick={() => void refresh()}
+              >
+                <RefreshCw className="size-4" />
+                Làm mới
+              </Button>
+            </div>
           ) : null}
         </div>
       </CardHeader>
 
       <CardContent className="p-4">
+        {operations.refreshWarningMessage ? (
+          <div className="mb-4 flex flex-col gap-3 rounded-lg border border-warning/30 bg-warning/5 p-3 text-sm text-warning sm:flex-row sm:items-center sm:justify-between">
+            <p>{operations.refreshWarningMessage}</p>
+            <Button
+              variant="outline"
+              size="sm"
+              isLoading={operations.isRefreshRetrying}
+              onClick={() => void operations.retryRefresh()}
+            >
+              Tải lại dữ liệu
+            </Button>
+          </div>
+        ) : null}
         {!kioskId ? (
           <div className="rounded-lg border border-dashed border-border bg-muted/10 px-4 py-8 text-center">
             <p className="text-sm font-medium">Chọn một kiosk để xem chẩn đoán</p>
@@ -173,7 +241,7 @@ export function InventoryTopologyPanel({ kioskId }: { kioskId: string | null }) 
                       device.containers.map((container) => (
                         <div
                           key={container.dispenserStateId}
-                          className="flex items-center justify-between gap-3 rounded-md bg-muted/20 px-3 py-2"
+                          className="flex flex-col gap-2 rounded-md bg-muted/20 px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
                         >
                           <div className="flex min-w-0 items-center gap-2">
                             <Box className="size-4 shrink-0 text-muted-foreground" />
@@ -186,9 +254,26 @@ export function InventoryTopologyPanel({ kioskId }: { kioskId: string | null }) 
                               </p>
                             </div>
                           </div>
-                          <Badge variant={container.isActive ? "secondary" : "destructive"}>
-                            {container.isActive ? "Đang dùng" : "Đã tắt"}
-                          </Badge>
+                          <div className="flex shrink-0 items-center gap-1">
+                            <Badge variant={container.isActive ? "secondary" : "destructive"}>
+                              {container.isActive ? "Đang dùng" : "Đã tắt"}
+                            </Badge>
+                            {canConfigure ? (
+                              <>
+                                <Button type="button" variant="ghost" size="icon-sm" title="Cập nhật cấu hình khay" aria-label="Cập nhật cấu hình khay" onClick={() => void openOperation("update", container.dispenserStateId)}>
+                                  <Pencil className="size-4" />
+                                </Button>
+                                {container.isActive ? (
+                                  <Button type="button" variant="ghost" size="icon-sm" title="Thay thế liên kết khay" aria-label="Thay thế liên kết khay" onClick={() => void openOperation("rebind", container.dispenserStateId)}>
+                                    <Link2 className="size-4" />
+                                  </Button>
+                                ) : null}
+                                <Button type="button" variant="ghost" size="icon-sm" title={container.isActive ? "Ngừng sử dụng khay" : "Kích hoạt lại khay"} aria-label={container.isActive ? "Ngừng sử dụng khay" : "Kích hoạt lại khay"} onClick={() => void openOperation("status", container.dispenserStateId)}>
+                                  <Power className="size-4" />
+                                </Button>
+                              </>
+                            ) : null}
+                          </div>
                         </div>
                       ))
                     )}
@@ -199,6 +284,27 @@ export function InventoryTopologyPanel({ kioskId }: { kioskId: string | null }) 
           </div>
         )}
       </CardContent>
+
+      <InventoryTopologyOperationDialog
+        key={`${operationMode}-${operationTarget?.id ?? "new"}-${isOperationOpen ? "open" : "closed"}`}
+        mode={operationMode}
+        target={operationTarget}
+        devices={topology?.devices ?? []}
+        ingredients={operations.ingredients}
+        isLoadingIngredients={operations.isLoadingIngredients}
+        lookupErrorMessage={operations.lookupErrorMessage}
+        mutationErrorMessage={operations.mutationErrorMessage}
+        isSubmitting={operations.isMutating}
+        open={isOperationOpen}
+        onOpenChange={(open) => {
+          setIsOperationOpen(open);
+          if (!open) setOperationTarget(null);
+        }}
+        onCreate={operations.create}
+        onUpdate={operations.update}
+        onRebind={operations.rebind}
+        onSetStatus={operations.setStatus}
+      />
     </Card>
   );
 }

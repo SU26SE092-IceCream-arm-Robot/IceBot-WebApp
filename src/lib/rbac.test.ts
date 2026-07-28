@@ -66,6 +66,24 @@ describe("Phase 3 tenant and kiosk operation permissions", () => {
     expect(hasPermission(accessFor("Manager"), "devices.manage")).toBe(true);
     expect(hasPermission(accessFor("Staff"), "devices.manage")).toBe(false);
   });
+
+  it("limits inventory topology configuration to the backend policy roles", () => {
+    expect(hasPermission(accessFor("SystemAdmin"), "inventory.configure")).toBe(
+      true,
+    );
+    expect(hasPermission(accessFor("Manager"), "inventory.configure")).toBe(
+      true,
+    );
+    expect(
+      hasPermission(accessFor("Technician"), "inventory.configure"),
+    ).toBe(true);
+    expect(hasPermission(accessFor("OrgAdmin"), "inventory.configure")).toBe(
+      false,
+    );
+    expect(hasPermission(accessFor("Staff"), "inventory.configure")).toBe(
+      false,
+    );
+  });
 });
 
 describe("exact backend roles and route visibility", () => {

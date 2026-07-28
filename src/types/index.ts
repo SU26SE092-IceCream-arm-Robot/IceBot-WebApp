@@ -53,6 +53,7 @@ export type DashboardPermission =
   | "devices.manage"
   | "inventory.view"
   | "inventory.manage"
+  | "inventory.configure"
   | "orders.view"
   | "orders.manage"
   | "refunds.manage"

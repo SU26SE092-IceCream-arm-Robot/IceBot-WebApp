@@ -537,13 +537,25 @@ export function InventoryMutationDialog({
     }
 
     const parsedQuantity = Number(quantity);
-    if (!quantity.trim() || !Number.isFinite(parsedQuantity) || parsedQuantity <= 0) {
-      setValidationMessage(`${fieldLabel} phải là một số lớn hơn 0.`);
+    if (
+      !quantity.trim() ||
+      !Number.isFinite(parsedQuantity) ||
+      (isRefill ? parsedQuantity <= 0 : parsedQuantity < 0)
+    ) {
+      setValidationMessage(
+        isRefill
+          ? `${fieldLabel} phải là một số lớn hơn 0.`
+          : `${fieldLabel} phải là một số từ 0 trở lên.`,
+      );
       return;
     }
 
+    const normalizedReasonCode = reasonCode.trim();
+    if (normalizedReasonCode.length < 3) {
+      setValidationMessage("Vui lòng nhập lý do ít nhất 3 ký tự.");
+      return;
+    }
     setValidationMessage(null);
-    const normalizedReasonCode = reasonCode.trim() || null;
 
     if (isRefill) {
       await onSubmitRefill({
@@ -557,6 +569,8 @@ export function InventoryMutationDialog({
 
     await onSubmitAdjustment({
       estimatedQuantity: parsedQuantity,
+      reportedLevelAfter:
+        reportedLevelAfter === "UNCHANGED" ? null : reportedLevelAfter,
       reasonCode: normalizedReasonCode,
     });
   };
@@ -600,6 +614,19 @@ export function InventoryMutationDialog({
                 )}
               </span>
             </div>
+            <div className="mt-2 flex items-center justify-between gap-4 border-t border-border pt-2">
+              <span className="text-muted-foreground">Sau thao tác dự kiến</span>
+              <span className="font-medium tabular-nums text-foreground">
+                {quantity.trim() && Number.isFinite(Number(quantity))
+                  ? formatInventoryQuantity(
+                      isRefill
+                        ? (dispenser.estimatedQuantity ?? 0) + Number(quantity)
+                        : Number(quantity),
+                      dispenser.unit,
+                    )
+                  : "Chưa nhập"}
+              </span>
+            </div>
           </div>
 
           <div className="space-y-1.5">
@@ -610,7 +637,7 @@ export function InventoryMutationDialog({
             <Input
               id="inventory-quantity"
               type="number"
-              min="0"
+              min={isRefill ? "0.000001" : "0"}
               step="any"
               inputMode="decimal"
               autoFocus
@@ -628,7 +655,7 @@ export function InventoryMutationDialog({
             />
           </div>
 
-          {isRefill ? (
+          {(
             <div className="space-y-1.5">
               <label className="text-sm font-medium">
                 Trạng thái sau khi nạp thêm
@@ -671,22 +698,20 @@ export function InventoryMutationDialog({
                 </SelectContent>
               </Select>
             </div>
-          ) : null}
+          )}
 
           <div className="space-y-1.5">
             <label htmlFor="inventory-reason" className="text-sm font-medium">
-              Mã lý do
-              <span className="ml-1 font-normal text-muted-foreground">
-                (không bắt buộc)
-              </span>
+              Lý do
+              <span className="ml-1 text-destructive">*</span>
             </label>
             <Input
               id="inventory-reason"
               value={reasonCode}
               disabled={isSubmitting}
               maxLength={100}
-              placeholder={isRefill ? "Ví dụ: NAP_THEM" : "Ví dụ: DIEU_CHINH"}
-              className="h-10 font-mono"
+              placeholder={isRefill ? "Ví dụ: Nạp nguyên liệu đầu ca" : "Ví dụ: Đối chiếu số lượng thực tế"}
+              className="h-10"
               onChange={(event) => setReasonCode(event.target.value)}
             />
           </div>

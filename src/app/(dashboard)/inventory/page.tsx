@@ -46,6 +46,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useInventory } from "@/hooks/use-inventory";
+import { useAuth } from "@/hooks/use-auth";
+import { hasPermission } from "@/lib/rbac";
 import type {
   DispenserStateResult,
   InventoryStatusFilter,
@@ -239,6 +241,12 @@ export default function InventoryPage() {
   const [historyDispenser, setHistoryDispenser] =
     useState<DispenserStateResult | null>(null);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const { effectiveAccess } = useAuth();
+  const canManageInventory = hasPermission(effectiveAccess, "inventory.manage");
+  const canConfigureInventory = hasPermission(
+    effectiveAccess,
+    "inventory.configure",
+  );
   const {
     dispensers,
     visibleDispensers,
@@ -504,6 +512,8 @@ export default function InventoryPage() {
 
       <InventoryTopologyPanel
         kioskId={filters.kioskId === "ALL" ? null : filters.kioskId}
+        canConfigure={canConfigureInventory}
+        onInventoryChanged={refresh}
       />
 
       <Card className="gap-0 rounded-xl border border-border/80 bg-card py-0 shadow-none">
@@ -555,6 +565,7 @@ export default function InventoryPage() {
             onViewHistory={openDispenserHistory}
             onRefill={openRefillDialog}
             onAdjustEstimate={openAdjustDialog}
+            canManageInventory={canManageInventory}
           />
         )}
 
