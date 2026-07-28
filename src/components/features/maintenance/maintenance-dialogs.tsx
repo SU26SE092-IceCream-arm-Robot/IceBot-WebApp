@@ -41,6 +41,7 @@ import type { KioskResult } from "@/types/kiosk-management";
 import type {
   CreateMaintenanceTicketRequest,
   MaintenanceEditorMode,
+  MaintenanceOperationalImpact,
   MaintenancePriority,
   MaintenanceTicketResult,
   MaintenanceWorkflowAction,
@@ -55,8 +56,17 @@ const PRIORITY_OPTIONS: { value: MaintenancePriority; label: string }[] = [
   { value: "Critical", label: "Khẩn cấp" },
 ];
 
-const UUID_PATTERN =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const IMPACT_OPTIONS: {
+  value: MaintenanceOperationalImpact;
+  label: string;
+}[] = [
+  { value: "None", label: "Không ảnh hưởng nhận đơn" },
+  { value: "BlocksNewOrders", label: "Chặn nhận đơn mới" },
+  {
+    value: "RequestsEmergencyStop",
+    label: "Yêu cầu dừng khẩn cấp trên Cloud",
+  },
+];
 
 function DetailTile({ label, value }: { label: string; value: ReactNode }) {
   return (
@@ -83,22 +93,48 @@ function canEditTicket(ticket: MaintenanceTicketResult): boolean {
   return ["Open", "Assigned", "InProgress"].includes(ticket.status);
 }
 
-function getAvailableWorkflowActions(
+export function getAvailableMaintenanceWorkflowActions(
   ticket: MaintenanceTicketResult,
+  canCoordinate = true,
+  canWork = true,
 ): MaintenanceWorkflowAction[] {
+  let actions: MaintenanceWorkflowAction[];
   switch (ticket.status) {
     case "Open":
-      return ["assign", "start", "cancel"];
+      actions = ["assign", "start", "cancel"];
+      break;
     case "Assigned":
-      return ["start", "cancel"];
+      actions = ["start", "cancel"];
+      break;
     case "InProgress":
-      return ["resolve", "cancel"];
+      actions = ["resolve", "cancel"];
+      break;
     case "Resolved":
-      return ["close"];
+      actions = ["close"];
+      break;
     case "Closed":
     case "Cancelled":
       return [];
   }
+
+  return actions.filter((action) =>
+    action === "start" || action === "resolve"
+      ? canWork
+      : canCoordinate,
+  );
+}
+
+export function isEligibleMaintenanceAssignee(
+  account: InternalAccountResult,
+  ticket: MaintenanceTicketResult,
+): boolean {
+  return account.roles.some(
+    (role) =>
+      ["Technician", "Manager", "OrgAdmin"].includes(role.roleCode) &&
+      (role.kioskId === ticket.kioskId ||
+        role.storeId === ticket.storeId ||
+        role.organizationId === ticket.organizationId),
+  );
 }
 
 const WORKFLOW_BUTTONS: Record<
@@ -118,6 +154,8 @@ interface MaintenanceDetailDialogProps {
   open: boolean;
   ticket: MaintenanceTicketResult | null;
   canManage: boolean;
+  canCoordinate: boolean;
+  canWork: boolean;
   onOpenChange: (open: boolean) => void;
   onEdit: (ticket: MaintenanceTicketResult) => void;
   onWorkflow: (
@@ -132,11 +170,15 @@ export function MaintenanceDetailDialog({
   open,
   ticket,
   canManage,
+  canCoordinate,
+  canWork,
   onOpenChange,
   onEdit,
   onWorkflow,
 }: MaintenanceDetailDialogProps) {
-  const actions = ticket && canManage ? getAvailableWorkflowActions(ticket) : [];
+  const actions = ticket
+    ? getAvailableMaintenanceWorkflowActions(ticket, canCoordinate, canWork)
+    : [];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -195,6 +237,14 @@ export function MaintenanceDetailDialog({
 
             <div className="grid gap-3 sm:grid-cols-3">
               <DetailTile label="Mã lỗi" value={ticket.issueCode} />
+              <DetailTile
+                label="Ảnh hưởng vận hành"
+                value={
+                  IMPACT_OPTIONS.find(
+                    (option) => option.value === ticket.operationalImpact,
+                  )?.label ?? ticket.operationalImpact
+                }
+              />
               <DetailTile label="Kiosk" value={<LinkedValue value={ticket.kioskId} />} />
               <DetailTile label="Cửa hàng" value={<LinkedValue value={ticket.storeId} />} />
               <DetailTile
@@ -253,6 +303,12 @@ export function MaintenanceDetailDialog({
                     <p className="mt-2 text-sm text-foreground">{ticket.cancelReason}</p>
                   </div>
                 ) : null}
+              </div>
+            ) : null}
+
+            {ticket.status === "Resolved" || ticket.status === "Closed" ? (
+              <div className="rounded-lg border border-warning/30 bg-warning/5 p-3 text-sm text-warning">
+                Ticket đã được xử lý không đồng nghĩa kiosk hoặc thiết bị đã phục hồi vật lý. Hãy đối chiếu trạng thái kiosk, cảnh báo và nhật ký vận hành trước khi mở lại nhận đơn.
               </div>
             ) : null}
           </div>
@@ -323,17 +379,11 @@ export function MaintenanceEditorDialog({
   const [priority, setPriority] = useState<MaintenancePriority>(
     ticket?.priority ?? "Medium",
   );
-  const [deviceId, setDeviceId] = useState(ticket?.deviceId ?? "");
-  const [orderId, setOrderId] = useState(ticket?.orderId ?? "");
-  const [deviceEventId, setDeviceEventId] = useState(ticket?.deviceEventId ?? "");
+  const [operationalImpact, setOperationalImpact] =
+    useState<MaintenanceOperationalImpact>(
+      ticket?.operationalImpact ?? "None",
+    );
   const [validationMessage, setValidationMessage] = useState<string | null>(null);
-
-  const validateOptionalUuid = (value: string, label: string): string | null => {
-    const normalized = value.trim();
-    return normalized && !UUID_PATTERN.test(normalized)
-      ? `${label} phải là UUID hợp lệ.`
-      : null;
-  };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -352,22 +402,14 @@ export function MaintenanceEditorDialog({
       return;
     }
 
-    const uuidError =
-      validateOptionalUuid(deviceId, "Thiết bị liên quan") ||
-      validateOptionalUuid(orderId, "Đơn hàng liên quan") ||
-      validateOptionalUuid(deviceEventId, "Sự kiện thiết bị liên quan");
-    if (uuidError) {
-      setValidationMessage(uuidError);
-      return;
-    }
-
     const sharedRequest: UpdateMaintenanceTicketRequest = {
       title: title.trim(),
       description: description.trim() || null,
       priority,
-      deviceId: deviceId.trim() || null,
-      orderId: orderId.trim() || null,
-      deviceEventId: deviceEventId.trim() || null,
+      operationalImpact,
+      deviceId: ticket?.deviceId ?? null,
+      orderId: ticket?.orderId ?? null,
+      deviceEventId: ticket?.deviceEventId ?? null,
     };
 
     setValidationMessage(null);
@@ -388,10 +430,9 @@ export function MaintenanceEditorDialog({
 
     await onCreate({
       ...sharedRequest,
-      organizationId: kiosk.organizationId,
-      storeId: kiosk.storeId,
       kioskId: kiosk.id,
       issueCode: issueCode.trim() || null,
+      operationalImpact,
     });
   };
 
@@ -465,22 +506,41 @@ export function MaintenanceEditorDialog({
               </Select>
             </div>
             <div className="space-y-1.5 sm:col-span-2">
+              <label className="text-sm font-medium">Ảnh hưởng vận hành</label>
+              <Select
+                value={operationalImpact}
+                disabled={isSubmitting}
+                onValueChange={(value) => {
+                  if (IMPACT_OPTIONS.some((option) => option.value === value)) {
+                    setOperationalImpact(value as MaintenanceOperationalImpact);
+                  }
+                }}
+              >
+                <SelectTrigger className="h-10 w-full">
+                  <SelectValue>
+                    {IMPACT_OPTIONS.find(
+                      (option) => option.value === operationalImpact,
+                    )?.label}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {IMPACT_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {operationalImpact === "RequestsEmergencyStop" ? (
+                <p className="text-xs text-warning">
+                  Đây là yêu cầu trên Cloud, không phải bằng chứng thiết bị đã dừng vật lý.
+                </p>
+              ) : null}
+            </div>
+            <div className="space-y-1.5 sm:col-span-2">
               <label htmlFor="maintenance-description" className="text-sm font-medium">Mô tả</label>
               <textarea id="maintenance-description" value={description} maxLength={1000} disabled={isSubmitting} rows={4} className="w-full resize-y rounded-lg border border-input bg-transparent px-3 py-2 text-sm outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50" onChange={(event) => setDescription(event.target.value)} />
             </div>
-          </div>
-
-          <div className="grid gap-3 rounded-xl border border-border bg-muted/15 p-4 sm:grid-cols-3">
-            {[
-              ["Thiết bị liên quan", deviceId, setDeviceId],
-              ["Đơn hàng liên quan", orderId, setOrderId],
-              ["Sự kiện thiết bị liên quan", deviceEventId, setDeviceEventId],
-            ].map(([label, value, setter]) => (
-              <div key={label as string} className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground">{label as string}</label>
-                <Input value={value as string} disabled={isSubmitting} placeholder="Không bắt buộc" className="h-9 font-mono text-xs" onChange={(event) => (setter as (value: string) => void)(event.target.value)} />
-              </div>
-            ))}
           </div>
 
           {visibleError ? (
@@ -506,7 +566,7 @@ export function MaintenanceEditorDialog({
 interface MaintenanceWorkflowDialogProps {
   action: MaintenanceWorkflowAction;
   ticket: MaintenanceTicketResult;
-  technicians: InternalAccountResult[];
+  assignees: InternalAccountResult[];
   open: boolean;
   isSubmitting: boolean;
   errorMessage: string | null;
@@ -517,7 +577,7 @@ interface MaintenanceWorkflowDialogProps {
 export function MaintenanceWorkflowDialog({
   action,
   ticket,
-  technicians,
+  assignees,
   open,
   isSubmitting,
   errorMessage,
@@ -529,22 +589,22 @@ export function MaintenanceWorkflowDialog({
   const [validationMessage, setValidationMessage] = useState<string | null>(null);
   const config = WORKFLOW_BUTTONS[action];
   const Icon = config.icon;
-  const eligibleTechnicians = technicians.filter((account) =>
-    account.roles.some(
-      (role) =>
-        role.roleCode === "Technician" &&
-        (!role.organizationId || role.organizationId === ticket.organizationId) &&
-        (!role.storeId || role.storeId === ticket.storeId) &&
-        (!role.kioskId || role.kioskId === ticket.kioskId),
-    ),
+  const eligibleAssignees = assignees.filter((account) =>
+    isEligibleMaintenanceAssignee(account, ticket),
+  );
+  const selectedAssignee = eligibleAssignees.find(
+    (account) => account.id === accountId,
   );
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (isSubmitting) return;
 
-    if (action === "assign" && !UUID_PATTERN.test(accountId.trim())) {
-      setValidationMessage("Vui lòng chọn hoặc nhập Account ID hợp lệ.");
+    if (
+      action === "assign" &&
+      !eligibleAssignees.some((account) => account.id === accountId)
+    ) {
+      setValidationMessage("Vui lòng chọn một người phụ trách phù hợp phạm vi.");
       return;
     }
     if (action === "resolve" && !notes.trim()) {
@@ -565,7 +625,7 @@ export function MaintenanceWorkflowDialog({
   };
 
   const descriptions: Record<MaintenanceWorkflowAction, string> = {
-    assign: "Chọn kỹ thuật viên chịu trách nhiệm xử lý ticket.",
+    assign: "Chọn người có vai trò và phạm vi phù hợp để xử lý ticket.",
     start: "Ticket sẽ chuyển sang trạng thái Đang xử lý.",
     resolve: "Ghi lại kết quả xử lý trước khi chờ đóng ticket.",
     close: "Ticket đã xử lý sẽ được đóng và kết thúc workflow.",
@@ -590,19 +650,31 @@ export function MaintenanceWorkflowDialog({
         <form className="space-y-4" onSubmit={handleSubmit}>
           {action === "assign" ? (
             <div className="space-y-1.5">
-              <label htmlFor="maintenance-account" className="text-sm font-medium">Kỹ thuật viên <span className="text-destructive">*</span></label>
-              <Input id="maintenance-account" list="maintenance-technician-options" value={accountId} disabled={isSubmitting} placeholder="Chọn hoặc nhập Account ID" className="h-10 font-mono" onChange={(event) => setAccountId(event.target.value)} />
-              <datalist id="maintenance-technician-options">
-                {eligibleTechnicians.map((account) => (
-                  <option key={account.id} value={account.id}>
-                    {account.fullName?.trim() || account.userName} · {account.email}
-                  </option>
-                ))}
-              </datalist>
+              <label className="text-sm font-medium">Người phụ trách <span className="text-destructive">*</span></label>
+              <Select
+                value={accountId || null}
+                disabled={isSubmitting || eligibleAssignees.length === 0}
+                onValueChange={(value) => setAccountId(value ?? "")}
+              >
+                <SelectTrigger className="h-10 w-full">
+                  <SelectValue placeholder="Chọn người phụ trách">
+                    {selectedAssignee
+                      ? `${selectedAssignee.fullName?.trim() || selectedAssignee.userName} · ${selectedAssignee.email}`
+                      : "Chọn người phụ trách"}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {eligibleAssignees.map((account) => (
+                    <SelectItem key={account.id} value={account.id}>
+                      {account.fullName?.trim() || account.userName} · {account.email}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <p className="text-xs text-muted-foreground">
-                {eligibleTechnicians.length > 0
-                  ? `${eligibleTechnicians.length} tài khoản Technician phù hợp phạm vi.`
-                  : "Không tải được danh sách Technician; có thể nhập Account ID hợp lệ."}
+                {eligibleAssignees.length > 0
+                  ? `${eligibleAssignees.length} tài khoản phù hợp phạm vi.`
+                  : "Không có tài khoản phù hợp; không thể phân công bằng ID thủ công."}
               </p>
             </div>
           ) : null}

@@ -35,6 +35,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DevicesTable } from "./devices-table";
 import { ExecutionEndpointsTable } from "./execution-endpoints-table";
+import { OperationLogsPanel } from "./operation-logs-panel";
 import { useAuth } from "@/hooks/use-auth";
 import type { KioskEvidenceState } from "@/hooks/use-kiosk-detail";
 import { useKioskDetail } from "@/hooks/use-kiosk-detail";
@@ -731,6 +732,7 @@ export function KioskDetailView({ kioskId }: KioskDetailViewProps) {
             </div>
             <DevicesTable kioskId={kioskId} canManage={canManageDevices} />
             <ExecutionEndpointsTable kioskId={kioskId} canManage={canManageDevices} />
+            <OperationLogsPanel kioskId={kioskId} />
           </div>
         </TabsContent>
       </Tabs>

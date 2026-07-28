@@ -4,6 +4,8 @@ import {
   canAccessRoute,
   getDashboardRoutePath,
   getVisibleRoutes,
+  hasAnyRole,
+  hasScopedRole,
   hasEffectivePermission,
   hasPermission,
 } from "@/lib/rbac";
@@ -139,6 +141,52 @@ describe("operations diagnostics permission", () => {
     ).toBe(true);
     expect(
       hasEffectivePermission(accessFor("Manager"), "operations.diagnostics"),
+    ).toBe(false);
+  });
+});
+
+describe("maintenance lifecycle role checks", () => {
+  it("distinguishes coordinator roles from Technician work access", () => {
+    expect(
+      hasAnyRole(accessFor("Manager"), ["SystemAdmin", "OrgAdmin", "Manager"]),
+    ).toBe(true);
+    expect(
+      hasAnyRole(accessFor("Technician"), [
+        "SystemAdmin",
+        "OrgAdmin",
+        "Manager",
+      ]),
+    ).toBe(false);
+    expect(
+      hasAnyRole(accessFor("Technician"), [
+        "SystemAdmin",
+        "OrgAdmin",
+        "Manager",
+        "Technician",
+      ]),
+    ).toBe(true);
+  });
+
+  it("does not reuse a Manager role outside its assigned scope", () => {
+    const access = accessFor("Manager", "Staff");
+    access.roleScopes = [
+      { roleCode: "Manager", organizationId: "org-1" },
+      { roleCode: "Staff", organizationId: "org-2" },
+    ];
+
+    expect(
+      hasScopedRole(
+        access,
+        ["SystemAdmin", "OrgAdmin", "Manager"],
+        { organizationId: "org-1", storeId: "store-1", kioskId: "kiosk-1" },
+      ),
+    ).toBe(true);
+    expect(
+      hasScopedRole(
+        access,
+        ["SystemAdmin", "OrgAdmin", "Manager"],
+        { organizationId: "org-2", storeId: "store-2", kioskId: "kiosk-2" },
+      ),
     ).toBe(false);
   });
 });

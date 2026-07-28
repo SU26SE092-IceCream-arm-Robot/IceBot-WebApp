@@ -35,7 +35,7 @@ import {
 } from "@/components/ui/select";
 import { useMaintenance } from "@/hooks/use-maintenance";
 import { useAuth } from "@/hooks/use-auth";
-import { hasPermission } from "@/lib/rbac";
+import { hasPermission, hasScopedRole } from "@/lib/rbac";
 import type {
   MaintenancePriority,
   MaintenancePriorityFilter,
@@ -150,7 +150,7 @@ export default function MaintenancePage() {
     filters,
     summary,
     kiosks,
-    technicians,
+    assignees,
     lookupWarning,
     selectedTicket,
     isDetailOpen,
@@ -165,6 +165,8 @@ export default function MaintenancePage() {
     isMutationSubmitting,
     mutationErrorMessage,
     successMessage,
+    refreshWarningMessage,
+    isRefreshRetrying,
     setSearchTerm,
     setStatusFilter,
     setPriorityFilter,
@@ -182,10 +184,32 @@ export default function MaintenancePage() {
     setWorkflowOpen,
     submitWorkflow,
     clearSuccessMessage,
+    retryRefresh,
     refresh,
   } = useMaintenance();
   const canCreate = hasPermission(effectiveAccess, "maintenance.create");
   const canManage = hasPermission(effectiveAccess, "maintenance.manage");
+  const selectedScope = selectedTicket
+    ? {
+        organizationId: selectedTicket.organizationId,
+        storeId: selectedTicket.storeId,
+        kioskId: selectedTicket.kioskId,
+      }
+    : null;
+  const canCoordinateSelected = selectedScope
+    ? hasScopedRole(
+        effectiveAccess,
+        ["SystemAdmin", "OrgAdmin", "Manager"],
+        selectedScope,
+      )
+    : false;
+  const canWorkSelected = selectedScope
+    ? hasScopedRole(
+        effectiveAccess,
+        ["SystemAdmin", "OrgAdmin", "Manager", "Technician"],
+        selectedScope,
+      )
+    : false;
 
   return (
     <div className="space-y-7">
@@ -202,6 +226,23 @@ export default function MaintenancePage() {
             onClick={clearSuccessMessage}
           >
             Đóng
+          </Button>
+        </div>
+      ) : null}
+
+      {refreshWarningMessage ? (
+        <div
+          role="status"
+          className="flex flex-col gap-3 rounded-lg border border-warning/30 bg-warning/5 px-4 py-3 text-sm text-warning sm:flex-row sm:items-center sm:justify-between"
+        >
+          <span>{refreshWarningMessage}</span>
+          <Button
+            variant="outline"
+            size="sm"
+            isLoading={isRefreshRetrying}
+            onClick={() => void retryRefresh()}
+          >
+            Tải lại dữ liệu
           </Button>
         </div>
       ) : null}
@@ -440,7 +481,9 @@ export default function MaintenancePage() {
         isLoading={isDetailLoading}
         open={isDetailOpen}
         ticket={selectedTicket}
-        canManage={canManage}
+        canManage={canManage && canWorkSelected}
+        canCoordinate={canCoordinateSelected}
+        canWork={canWorkSelected}
         onOpenChange={setDetailOpen}
         onEdit={openEditEditor}
         onWorkflow={requestWorkflow}
@@ -466,7 +509,7 @@ export default function MaintenancePage() {
           key={`${workflowAction}-${workflowTicket.id}`}
           action={workflowAction}
           ticket={workflowTicket}
-          technicians={technicians}
+          assignees={assignees}
           open={isWorkflowOpen}
           isSubmitting={isMutationSubmitting}
           errorMessage={mutationErrorMessage}

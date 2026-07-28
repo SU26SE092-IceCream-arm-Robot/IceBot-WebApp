@@ -77,6 +77,35 @@ function effectiveRoles(access: EffectiveAccessResult): Set<string> {
   return roles;
 }
 
+export function hasAnyRole(
+  access: EffectiveAccessResult | null,
+  roles: readonly BackendRoleCode[],
+): boolean {
+  if (!access) return false;
+  const assignedRoles = effectiveRoles(access);
+  return roles.some((role) => assignedRoles.has(role.toLocaleLowerCase()));
+}
+
+export function hasScopedRole(
+  access: EffectiveAccessResult | null,
+  roles: readonly BackendRoleCode[],
+  scope: { organizationId: string; storeId: string; kioskId: string },
+): boolean {
+  if (!access) return false;
+  if (access.isSystemAdmin && roles.includes("SystemAdmin")) return true;
+
+  const allowed = new Set(roles.map((role) => role.toLocaleLowerCase()));
+  return access.roleScopes.some((assignment) => {
+    if (!allowed.has(assignment.roleCode.toLocaleLowerCase())) return false;
+    if (assignment.kioskId) return assignment.kioskId === scope.kioskId;
+    if (assignment.storeId) return assignment.storeId === scope.storeId;
+    if (assignment.organizationId) {
+      return assignment.organizationId === scope.organizationId;
+    }
+    return true;
+  });
+}
+
 export function hasPermission(
   access: EffectiveAccessResult | null,
   permission: DashboardPermission,

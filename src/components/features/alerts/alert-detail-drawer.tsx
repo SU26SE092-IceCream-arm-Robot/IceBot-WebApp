@@ -12,7 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useAuth } from "@/hooks/use-auth";
-import { hasPermission } from "@/lib/rbac";
+import { hasScopedRole } from "@/lib/rbac";
 import type { AlertResult, AlertSeverity, AlertStatus } from "@/types/alerts";
 
 function formatDateTime(isoString: string) {
@@ -67,6 +67,12 @@ interface AlertDetailDrawerProps {
   isSubmitting: boolean;
 }
 
+const SOURCE_TYPE_LABELS: Record<string, string> = {
+  DeviceEvent: "Sự kiện thiết bị",
+  InventoryDispenserState: "Trạng thái bộ phân phối nguyên liệu",
+  ExecutionEndpointMqttCredential: "Kết nối endpoint vận hành",
+};
+
 export function AlertDetailDrawer({
   open,
   onOpenChange,
@@ -81,7 +87,20 @@ export function AlertDetailDrawer({
 
   if (!alert) return null;
 
-  const canManage = hasPermission(effectiveAccess, "alerts.manage");
+  const canManage = Boolean(
+    alert.organizationId &&
+      alert.storeId &&
+      alert.kioskId &&
+      hasScopedRole(
+        effectiveAccess,
+        ["SystemAdmin", "OrgAdmin", "Manager", "Technician"],
+        {
+          organizationId: alert.organizationId,
+          storeId: alert.storeId,
+          kioskId: alert.kioskId,
+        },
+      ),
+  );
   const SeverityIcon = SEVERITY_CONFIG[alert.severity].icon;
   const statusConfig = STATUS_CONFIG[alert.status];
 
@@ -146,6 +165,7 @@ export function AlertDetailDrawer({
           <DetailTile label="Mã cảnh báo" value={<span className="font-mono">{alert.alertCode}</span>} />
           <DetailTile label="Lần đầu xuất hiện" value={formatDateTime(alert.raisedAt)} />
           <DetailTile label="Lần cuối xuất hiện" value={formatDateTime(alert.lastOccurredAt)} />
+          <DetailTile label="Số lần ghi nhận" value={`${alert.occurrenceCount} lần`} />
           <DetailTile label="Ngày cập nhật" value={alert.updatedAt ? formatDateTime(alert.updatedAt) : formatDateTime(alert.createdAt)} />
         </div>
 
@@ -162,18 +182,18 @@ export function AlertDetailDrawer({
             <DetailTile label="Thiết bị" value={<LinkedValue value={alert.deviceId} />} />
           </div>
 
-          {(alert.sourceType || alert.sourceId) && (
-            <div className="grid grid-cols-2 gap-4">
-              <DetailTile label="Nguồn (Loại)" value={alert.sourceType} />
-              <DetailTile label="Nguồn (ID)" value={alert.sourceId && <span className="font-mono text-xs">{alert.sourceId}</span>} />
-            </div>
-          )}
+          {alert.sourceType ? (
+            <DetailTile
+              label="Nguồn cảnh báo"
+              value={SOURCE_TYPE_LABELS[alert.sourceType] ?? "Nguồn vận hành khác"}
+            />
+          ) : null}
 
           {alert.status !== "Open" && (
             <div className="grid grid-cols-2 gap-4 border-t pt-4">
               <DetailTile 
                 label="Người tiếp nhận" 
-                value={alert.acknowledgedByAccountId && <span className="font-mono text-xs">{alert.acknowledgedByAccountId}</span>} 
+                value={alert.acknowledgedByAccountId ? "Đã ghi nhận" : "Chưa có"}
               />
               <DetailTile 
                 label="Thời gian tiếp nhận" 

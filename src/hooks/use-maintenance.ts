@@ -3,6 +3,7 @@
 import axios from "axios";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { useMutationRefreshRecovery } from "@/hooks/use-mutation-refresh-recovery";
 import { getAccountsErrorMessage, listManagementAccounts } from "@/lib/services/accounts";
 import {
   getKioskManagementErrorMessage,
@@ -68,7 +69,7 @@ export interface UseMaintenanceResult {
   filters: MaintenanceFilters;
   summary: MaintenanceSummary;
   kiosks: KioskResult[];
-  technicians: InternalAccountResult[];
+  assignees: InternalAccountResult[];
   lookupWarning: string | null;
   selectedTicket: MaintenanceTicketResult | null;
   isDetailOpen: boolean;
@@ -83,6 +84,8 @@ export interface UseMaintenanceResult {
   isMutationSubmitting: boolean;
   mutationErrorMessage: string | null;
   successMessage: string | null;
+  refreshWarningMessage: string | null;
+  isRefreshRetrying: boolean;
   setSearchTerm: (value: string) => void;
   setStatusFilter: (value: MaintenanceStatusFilter) => void;
   setPriorityFilter: (value: MaintenancePriorityFilter) => void;
@@ -105,6 +108,7 @@ export interface UseMaintenanceResult {
     submission: MaintenanceWorkflowSubmission,
   ) => Promise<boolean>;
   clearSuccessMessage: () => void;
+  retryRefresh: () => Promise<boolean>;
   refresh: () => Promise<void>;
 }
 
@@ -144,7 +148,7 @@ export function useMaintenance(): UseMaintenanceResult {
   const [isDetailLoading, setIsDetailLoading] = useState(false);
   const [detailErrorMessage, setDetailErrorMessage] = useState<string | null>(null);
   const [kiosks, setKiosks] = useState<KioskResult[]>([]);
-  const [technicians, setTechnicians] = useState<InternalAccountResult[]>([]);
+  const [assignees, setAssignees] = useState<InternalAccountResult[]>([]);
   const [lookupWarning, setLookupWarning] = useState<string | null>(null);
   const [editorMode, setEditorMode] = useState<MaintenanceEditorMode | null>(null);
   const [editorTicket, setEditorTicket] =
@@ -168,7 +172,7 @@ export function useMaintenance(): UseMaintenanceResult {
   });
 
   const fetchTickets = useCallback(
-    async (signal?: AbortSignal) => {
+    async (signal?: AbortSignal, propagateError = false) => {
       setTickets((current) => ({
         ...current,
         isLoading: true,
@@ -208,6 +212,7 @@ export function useMaintenance(): UseMaintenanceResult {
             "Không thể tải danh sách yêu cầu bảo trì.",
           ),
         });
+        if (propagateError) throw error;
       }
     },
     [filters.priority, filters.status, page],
@@ -241,17 +246,19 @@ export function useMaintenance(): UseMaintenanceResult {
     }
 
     if (accountResult.status === "fulfilled") {
-      setTechnicians(
+      setAssignees(
         (accountResult.value.data ?? []).filter((account) =>
-          account.roles.some((role) => role.roleCode === "Technician"),
+          account.roles.some((role) =>
+            ["Technician", "Manager", "OrgAdmin"].includes(role.roleCode),
+          ),
         ),
       );
     } else {
-      setTechnicians([]);
+      setAssignees([]);
       warnings.push(
         getAccountsErrorMessage(
           accountResult.reason,
-          "Không thể tải danh sách kỹ thuật viên; vẫn có thể nhập Account ID.",
+          "Không thể tải danh sách người phụ trách; thao tác phân công tạm thời không khả dụng.",
         ),
       );
     }
@@ -324,7 +331,10 @@ export function useMaintenance(): UseMaintenanceResult {
     }
   }, []);
 
-  const refreshDetailIfSelected = useCallback(async (ticketId: string) => {
+  const refreshDetailIfSelected = useCallback(async (
+    ticketId: string,
+    propagateError = false,
+  ) => {
     if (selectedTicketIdRef.current !== ticketId) {
       return;
     }
@@ -344,19 +354,22 @@ export function useMaintenance(): UseMaintenanceResult {
           ),
         );
       }
+      if (propagateError) throw error;
     }
   }, []);
 
-  const completeMutation = useCallback(
-    async (ticketId: string | null, message: string) => {
-      await fetchTickets();
-      if (ticketId) {
-        await refreshDetailIfSelected(ticketId);
-      }
-      setMutationErrorMessage(null);
-      setSuccessMessage(message);
+  const refreshAfterMutation = useCallback(
+    async (ticketId: string) => {
+      await Promise.all([
+        fetchTickets(undefined, true),
+        refreshDetailIfSelected(ticketId, true),
+      ]);
     },
     [fetchTickets, refreshDetailIfSelected],
+  );
+  const refreshRecovery = useMutationRefreshRecovery(
+    refreshAfterMutation,
+    "Thao tác đã thành công nhưng dữ liệu bảo trì mới chưa tải lại được.",
   );
 
   const runMutation = useCallback(
@@ -375,7 +388,9 @@ export function useMaintenance(): UseMaintenanceResult {
       try {
         const result = await mutation();
         setSelectedTicket((current) => (current?.id === result.id ? result : current));
-        await completeMutation(result.id, success(result));
+        setMutationErrorMessage(null);
+        setSuccessMessage(success(result));
+        await refreshRecovery.runRefresh(result.id);
         return true;
       } catch (error) {
         setMutationErrorMessage(
@@ -390,7 +405,7 @@ export function useMaintenance(): UseMaintenanceResult {
         setIsMutationSubmitting(false);
       }
     },
-    [completeMutation],
+    [refreshRecovery],
   );
 
   const submitCreate = useCallback(
@@ -506,7 +521,7 @@ export function useMaintenance(): UseMaintenanceResult {
     filters,
     summary,
     kiosks,
-    technicians,
+    assignees,
     lookupWarning,
     selectedTicket,
     isDetailOpen,
@@ -521,6 +536,8 @@ export function useMaintenance(): UseMaintenanceResult {
     isMutationSubmitting,
     mutationErrorMessage,
     successMessage,
+    refreshWarningMessage: refreshRecovery.refreshWarningMessage,
+    isRefreshRetrying: refreshRecovery.isRefreshRetrying,
     setSearchTerm: (value) =>
       setFilters((current) => ({ ...current, searchTerm: value })),
     setStatusFilter: (value) => {
@@ -571,6 +588,7 @@ export function useMaintenance(): UseMaintenanceResult {
     setWorkflowOpen: (open) => closeMutationDialog(open, "workflow"),
     submitWorkflow,
     clearSuccessMessage: () => setSuccessMessage(null),
+    retryRefresh: refreshRecovery.retryRefresh,
     refresh: async () => {
       await Promise.all([fetchTickets(), loadLookups()]);
       if (selectedTicket) {

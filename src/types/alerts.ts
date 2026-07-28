@@ -6,9 +6,9 @@ export type AlertStatus = "Open" | "Acknowledged" | "Resolved" | "Suppressed";
 
 export interface AlertResult {
   id: string;
-  organizationId?: string | null;
-  storeId?: string | null;
-  kioskId?: string | null;
+  organizationId: string;
+  storeId: string;
+  kioskId: string;
   deviceId?: string | null;
   alertCode: string;
   severity: AlertSeverity;

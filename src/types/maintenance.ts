@@ -10,6 +10,11 @@ export type MaintenanceTicketStatus =
 
 export type MaintenancePriority = "Low" | "Medium" | "High" | "Critical";
 
+export type MaintenanceOperationalImpact =
+  | "None"
+  | "BlocksNewOrders"
+  | "RequestsEmergencyStop";
+
 export type MaintenanceStatusFilter = "ALL" | MaintenanceTicketStatus;
 
 export type MaintenancePriorityFilter = "ALL" | MaintenancePriority;
@@ -24,8 +29,6 @@ export type MaintenanceWorkflowAction =
   | "cancel";
 
 export interface CreateMaintenanceTicketRequest {
-  organizationId: string;
-  storeId: string;
   kioskId: string;
   deviceId?: string | null;
   orderId?: string | null;
@@ -34,12 +37,14 @@ export interface CreateMaintenanceTicketRequest {
   description?: string | null;
   issueCode?: string | null;
   priority: MaintenancePriority;
+  operationalImpact: MaintenanceOperationalImpact;
 }
 
 export interface UpdateMaintenanceTicketRequest {
   title: string;
   description?: string | null;
   priority: MaintenancePriority;
+  operationalImpact?: MaintenanceOperationalImpact | null;
   deviceId?: string | null;
   orderId?: string | null;
   deviceEventId?: string | null;
@@ -72,11 +77,13 @@ export interface MaintenanceTicketResult {
   deviceId?: string | null;
   orderId?: string | null;
   deviceEventId?: string | null;
+  alertId?: string | null;
   issueCode: string;
   title: string;
   description?: string | null;
   priority: MaintenancePriority;
   status: MaintenanceTicketStatus;
+  operationalImpact: MaintenanceOperationalImpact;
   assignedToAccountId?: string | null;
   createdByAccountId?: string | null;
   reportedAt: string;
