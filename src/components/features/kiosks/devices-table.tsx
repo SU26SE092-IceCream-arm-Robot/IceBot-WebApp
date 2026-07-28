@@ -1,7 +1,14 @@
 "use client";
 
-import { AlertTriangle, Cpu, PackageSearch } from "lucide-react";
+import { useState } from "react";
+import { AlertTriangle, Cpu, PackageSearch, Pencil, Plus, Power, Trash2 } from "lucide-react";
 
+import {
+  DeviceFormDialog,
+  DeviceStatusDialog,
+  getDeviceStatusLabel,
+  RetireDeviceDialog,
+} from "./device-management-dialogs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,40 +21,28 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useDevices } from "@/hooks/use-devices";
+import type { DeviceResult } from "@/types/devices";
 
 interface DevicesTableProps {
   kioskId: string;
+  canManage: boolean;
 }
 
 function getStatusVariant(status: string): "default" | "secondary" | "destructive" | "outline" {
   switch (status) {
-    case "Active":
+    case "Online":
       return "default";
     case "Maintenance":
     case "Provisioning":
       return "secondary";
+    case "Error":
+      return "destructive";
+    case "Offline":
     case "Disabled":
     case "Retired":
-      return "destructive";
+      return "outline";
     default:
       return "outline";
-  }
-}
-
-function getStatusLabel(status: string): string {
-  switch (status) {
-    case "Provisioning":
-      return "Đang cấu hình";
-    case "Active":
-      return "Đang hoạt động";
-    case "Maintenance":
-      return "Bảo trì";
-    case "Disabled":
-      return "Vô hiệu hóa";
-    case "Retired":
-      return "Ngừng sử dụng";
-    default:
-      return status;
   }
 }
 
@@ -83,8 +78,13 @@ function EmptyState({ title, message, isError = false, onRetry }: { title: strin
   );
 }
 
-export function DevicesTable({ kioskId }: DevicesTableProps) {
-  const { state, devices, errorMessage, refresh } = useDevices(kioskId);
+export function DevicesTable({ kioskId, canManage }: DevicesTableProps) {
+  const [formOpen, setFormOpen] = useState(false);
+  const [editingDevice, setEditingDevice] = useState<DeviceResult | null>(null);
+  const [statusDevice, setStatusDevice] = useState<DeviceResult | null>(null);
+  const [retireDevice, setRetireDevice] = useState<DeviceResult | null>(null);
+  const management = useDevices(kioskId);
+  const { state, devices, errorMessage, refresh } = management;
 
   return (
     <Card className="border-border/80 shadow-none">
@@ -94,9 +94,15 @@ export function DevicesTable({ kioskId }: DevicesTableProps) {
             <Cpu className="size-4 text-primary" />
             Danh sách thiết bị
           </CardTitle>
-          <span className="text-xs text-muted-foreground">
-            Hiển thị {devices.length} thiết bị
-          </span>
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-muted-foreground">Hiển thị {devices.length} thiết bị</span>
+            {canManage ? (
+              <Button size="sm" onClick={() => { management.clearMutationError(); setEditingDevice(null); setFormOpen(true); }}>
+                <Plus className="size-4" />
+                Tạo thiết bị
+              </Button>
+            ) : null}
+          </div>
         </div>
       </CardHeader>
       <CardContent className="p-0">
@@ -117,7 +123,7 @@ export function DevicesTable({ kioskId }: DevicesTableProps) {
           />
         ) : (
           <div className="overflow-x-auto">
-            <Table className="min-w-[900px] table-fixed">
+            <Table className="min-w-[1040px] table-fixed">
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
                   <TableHead className="pl-5">Mã thiết bị</TableHead>
@@ -128,6 +134,7 @@ export function DevicesTable({ kioskId }: DevicesTableProps) {
                   <TableHead className="text-center">Trạng thái</TableHead>
                   <TableHead className="text-center">Firmware</TableHead>
                   <TableHead className="pr-5 text-center">Cài đặt lúc</TableHead>
+                  {canManage ? <TableHead className="pr-5 text-right">Thao tác</TableHead> : null}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -151,7 +158,7 @@ export function DevicesTable({ kioskId }: DevicesTableProps) {
                     <TableCell className="text-center">
                       <div className="flex justify-center">
                         <Badge variant={getStatusVariant(device.status)}>
-                          {getStatusLabel(device.status)}
+                          {getDeviceStatusLabel(device.status)}
                         </Badge>
                       </div>
                     </TableCell>
@@ -161,6 +168,15 @@ export function DevicesTable({ kioskId }: DevicesTableProps) {
                     <TableCell className="pr-5 text-center tabular-nums text-xs text-muted-foreground">
                       {formatTimestamp(device.installedAt)}
                     </TableCell>
+                    {canManage ? (
+                      <TableCell className="pr-5">
+                        <div className="flex justify-end gap-1">
+                          <Button variant="ghost" size="icon-sm" title="Chỉnh sửa thiết bị" aria-label={`Chỉnh sửa ${device.name}`} disabled={management.isMutating || device.status === "Retired"} onClick={() => { management.clearMutationError(); setEditingDevice(device); setFormOpen(true); }}><Pencil className="size-4" /></Button>
+                          <Button variant="ghost" size="icon-sm" title="Đổi trạng thái thiết bị" aria-label={`Đổi trạng thái ${device.name}`} disabled={management.isMutating || device.status === "Retired"} onClick={() => { management.clearMutationError(); setStatusDevice(device); }}><Power className="size-4" /></Button>
+                          <Button variant="ghost" size="icon-sm" className="text-destructive hover:text-destructive" title="Ngừng sử dụng thiết bị" aria-label={`Ngừng sử dụng ${device.name}`} disabled={management.isMutating || device.status === "Retired"} onClick={() => { management.clearMutationError(); setRetireDevice(device); }}><Trash2 className="size-4" /></Button>
+                        </div>
+                      </TableCell>
+                    ) : null}
                   </TableRow>
                 ))}
               </TableBody>
@@ -168,6 +184,38 @@ export function DevicesTable({ kioskId }: DevicesTableProps) {
           </div>
         )}
       </CardContent>
+
+      {formOpen ? (
+        <DeviceFormDialog
+          open
+          device={editingDevice}
+          isSubmitting={management.isMutating}
+          errorMessage={management.mutationErrorMessage}
+          onOpenChange={(open) => { if (!management.isMutating) setFormOpen(open); }}
+          onCreate={management.createDevice}
+          onUpdate={management.updateDevice}
+        />
+      ) : null}
+      {statusDevice ? (
+        <DeviceStatusDialog
+          device={statusDevice}
+          open
+          isSubmitting={management.isMutating}
+          errorMessage={management.mutationErrorMessage}
+          onOpenChange={(open) => { if (!open && !management.isMutating) setStatusDevice(null); }}
+          onSubmit={(status) => management.setDeviceStatus(statusDevice.id, status)}
+        />
+      ) : null}
+      {retireDevice ? (
+        <RetireDeviceDialog
+          device={retireDevice}
+          open
+          isSubmitting={management.isMutating}
+          errorMessage={management.mutationErrorMessage}
+          onOpenChange={(open) => { if (!open && !management.isMutating) setRetireDevice(null); }}
+          onSubmit={(reason) => management.retireDevice(retireDevice.id, reason)}
+        />
+      ) : null}
     </Card>
   );
 }

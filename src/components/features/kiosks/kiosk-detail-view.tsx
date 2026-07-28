@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import {
   Activity,
@@ -15,9 +16,11 @@ import {
   Network,
   RefreshCw,
   Server,
+  Settings2,
   ShieldAlert,
 } from "lucide-react";
 
+import { KioskOperationalStateDialog } from "@/components/features/operations/sales-admission-dialogs";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,8 +34,11 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DevicesTable } from "./devices-table";
+import { ExecutionEndpointsTable } from "./execution-endpoints-table";
+import { useAuth } from "@/hooks/use-auth";
 import type { KioskEvidenceState } from "@/hooks/use-kiosk-detail";
 import { useKioskDetail } from "@/hooks/use-kiosk-detail";
+import { hasPermission } from "@/lib/rbac";
 import { cn } from "@/lib/utils";
 import type { KioskLifecycleStatus, KioskOperationalState } from "@/types";
 import type {
@@ -259,10 +265,14 @@ function DetailSkeleton() {
 }
 
 function DetailHeader({
+  canManage,
   kiosk,
+  onChangeOperationalState,
   onRefresh,
 }: {
+  canManage: boolean;
   kiosk: KioskManagementDetail;
+  onChangeOperationalState: () => void;
   onRefresh: () => void;
 }) {
   return (
@@ -299,10 +309,18 @@ function DetailHeader({
           </p>
         </div>
       </div>
-      <Button variant="outline" onClick={onRefresh}>
-        <RefreshCw className="size-4" />
-        Làm mới
-      </Button>
+      <div className="flex flex-wrap gap-2">
+        {canManage ? (
+          <Button variant="outline" onClick={onChangeOperationalState}>
+            <Settings2 className="size-4" />
+            Trạng thái vận hành
+          </Button>
+        ) : null}
+        <Button variant="outline" onClick={onRefresh}>
+          <RefreshCw className="size-4" />
+          Làm mới
+        </Button>
+      </div>
     </header>
   );
 }
@@ -608,6 +626,8 @@ function EventsTable({
 }
 
 export function KioskDetailView({ kioskId }: KioskDetailViewProps) {
+  const { effectiveAccess } = useAuth();
+  const [operationalStateOpen, setOperationalStateOpen] = useState(false);
   const {
     kiosk,
     state,
@@ -615,8 +635,17 @@ export function KioskDetailView({ kioskId }: KioskDetailViewProps) {
     metadataWarning,
     heartbeats,
     events,
+    isOperationalStateSubmitting,
+    operationalStateErrorMessage,
+    setOperationalState,
+    clearOperationalStateError,
     refresh,
   } = useKioskDetail(kioskId);
+  const canManageOperationalState = hasPermission(
+    effectiveAccess,
+    "kiosks.manage",
+  );
+  const canManageDevices = hasPermission(effectiveAccess, "devices.manage");
 
   if (state === "LOADING") {
     return <DetailSkeleton />;
@@ -654,7 +683,15 @@ export function KioskDetailView({ kioskId }: KioskDetailViewProps) {
 
   return (
     <div className="space-y-6">
-      <DetailHeader kiosk={kiosk} onRefresh={() => void refresh()} />
+      <DetailHeader
+        canManage={canManageOperationalState}
+        kiosk={kiosk}
+        onChangeOperationalState={() => {
+          clearOperationalStateError();
+          setOperationalStateOpen(true);
+        }}
+        onRefresh={() => void refresh()}
+      />
 
       {metadataWarning ? (
         <div className="rounded-lg border border-warning/30 bg-warning/5 px-4 py-3" role="status">
@@ -670,7 +707,7 @@ export function KioskDetailView({ kioskId }: KioskDetailViewProps) {
           <TabsTrigger value="overview">Tổng quan</TabsTrigger>
           <TabsTrigger value="heartbeats">Heartbeats</TabsTrigger>
           <TabsTrigger value="events">Sự kiện</TabsTrigger>
-          <TabsTrigger value="devices">Thiết bị</TabsTrigger>
+          <TabsTrigger value="devices">Vận hành nâng cao</TabsTrigger>
         </TabsList>
         <TabsContent value="overview" className="space-y-6">
           <div className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
@@ -688,9 +725,33 @@ export function KioskDetailView({ kioskId }: KioskDetailViewProps) {
         </TabsContent>
 
         <TabsContent value="devices">
-          <DevicesTable kioskId={kioskId} />
+          <div className="space-y-4">
+            <div className="rounded-lg border border-warning/30 bg-warning/5 px-4 py-3 text-sm text-warning">
+              Khu vực này hiển thị metadata thiết bị và bằng chứng endpoint. Thông tin xác thực, MQTT và lệnh trực tiếp không được hiển thị.
+            </div>
+            <DevicesTable kioskId={kioskId} canManage={canManageDevices} />
+            <ExecutionEndpointsTable kioskId={kioskId} canManage={canManageDevices} />
+          </div>
         </TabsContent>
       </Tabs>
+
+      {operationalStateOpen ? (
+        <KioskOperationalStateDialog
+          kioskName={kiosk.name}
+          currentState={kiosk.operationalState}
+          open
+          isSubmitting={isOperationalStateSubmitting}
+          errorMessage={operationalStateErrorMessage}
+          onOpenChange={(open) => {
+            if (!isOperationalStateSubmitting) setOperationalStateOpen(open);
+          }}
+          onSubmit={async (request) => {
+            const succeeded = await setOperationalState(request);
+            if (succeeded) setOperationalStateOpen(false);
+            return succeeded;
+          }}
+        />
+      ) : null}
     </div>
   );
 }

@@ -21,6 +21,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { MenuDeleteTarget } from "@/hooks/use-menu-crud";
+import { useMenuItemAuthoringOptions } from "@/hooks/use-menu-item-authoring-options";
+import { getMenuItemReadinessBlockers } from "@/lib/presenters/menu-item-readiness";
 import type {
   KioskResult,
   StoreResult,
@@ -394,26 +396,52 @@ export function MenuItemFormDialog({
   const [discountAmount, setDiscountAmount] = useState(menuItem?.discountAmount.toString() ?? "0");
   const [displayOrder, setDisplayOrder] = useState(menuItem?.displayOrder.toString() ?? "0");
   const [imageUrl, setImageUrl] = useState(menuItem?.imageUrl ?? "");
+  const [recipeId, setRecipeId] = useState(menuItem?.recipeId ?? "");
+  const [productOptionIds, setProductOptionIds] = useState<string[]>(
+    menuItem?.productOptionIds ?? [],
+  );
   const [validationMessage, setValidationMessage] = useState<string | null>(null);
 
-  const selectedProduct = products.find(p => p.id === productId);
+  const selectedProduct = products.find((product) => product.id === productId);
   const variants = selectedProduct?.variants ?? [];
   const selectedVariant = variants.find((variant) => variant.id === productVariantId);
-  const isMachineProducedWithoutRecipe =
-    selectedVariant?.fulfillmentType === "MachineProduced" && !menuItem?.recipeId;
+  const recipeOptions = useMenuItemAuthoringOptions({
+    open,
+    organizationId: menu.organizationId,
+    productId,
+    variantId: productVariantId,
+  });
+  const readinessBlockers = getMenuItemReadinessBlockers({
+    menuCurrency: menu.currency,
+    product: selectedProduct,
+    recipeId,
+    selectedOptionIds: productOptionIds,
+    variant: selectedVariant,
+  });
 
   // Auto-fill values when a variant is selected
   const handleVariantSelect = (vId: string | null) => {
     if (!vId) return;
     setProductVariantId(vId);
-    const selectedVariant = variants.find(v => v.id === vId);
-    if (selectedVariant && isCreate) {
-      if (!code) setCode(selectedVariant.code);
-      if (!displayName) setDisplayName(selectedVariant.displayName || selectedVariant.name);
-      if (price === "0") setPrice(selectedVariant.basePrice.toString());
-      if (!imageUrl && selectedVariant.imageUrl) setImageUrl(selectedVariant.imageUrl);
+    setRecipeId("");
+    const nextVariant = variants.find((variant) => variant.id === vId);
+    if (nextVariant && isCreate) {
+      if (!code) setCode(nextVariant.code);
+      if (!displayName) setDisplayName(nextVariant.displayName || nextVariant.name);
+      if (price === "0") setPrice(nextVariant.basePrice.toString());
+      if (!imageUrl && nextVariant.imageUrl) setImageUrl(nextVariant.imageUrl);
       else if (!imageUrl && selectedProduct?.imageUrl) setImageUrl(selectedProduct.imageUrl);
     }
+  };
+
+  const toggleOption = (optionId: string, checked: boolean) => {
+    setProductOptionIds((current) =>
+      checked
+        ? current.includes(optionId)
+          ? current
+          : [...current, optionId]
+        : current.filter((id) => id !== optionId),
+    );
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -439,10 +467,14 @@ export function MenuItemFormDialog({
       setValidationMessage("Giảm giá phải là số không âm.");
       return;
     }
+    if (parsedDiscount > parsedPrice) {
+      setValidationMessage("Giảm giá không được lớn hơn giá món.");
+      return;
+    }
 
     const request: CreateMenuItemRequest = {
       productVariantId,
-      recipeId: menuItem?.recipeId ?? null,
+      recipeId: recipeId || null,
       code: code.trim().toUpperCase(),
       displayName: displayName.trim(),
       description: optional(description),
@@ -450,14 +482,17 @@ export function MenuItemFormDialog({
       discountAmount: parsedDiscount,
       displayOrder: parsedOrder,
       imageUrl: optional(imageUrl),
-      productOptionIds: menuItem?.productOptionIds ?? [],
+      productOptionIds,
     };
 
     setValidationMessage(null);
     if (isCreate) {
       await onCreate(request);
     } else {
-      await onUpdate(request);
+      await onUpdate({
+        ...request,
+        clearRecipe: Boolean(menuItem?.recipeId && !recipeId),
+      });
     }
   };
 
@@ -480,7 +515,7 @@ export function MenuItemFormDialog({
           <div className="space-y-4 rounded-xl border border-border bg-muted/15 p-4">
             <div className="space-y-1.5">
               <label className="text-sm font-medium">Sản phẩm <span className="text-destructive">*</span></label>
-              <Select value={productId} disabled={isSubmitting || !isCreate} onValueChange={(val) => { setProductId(val || ""); setProductVariantId(""); }}>
+              <Select value={productId} disabled={isSubmitting || !isCreate} onValueChange={(val) => { setProductId(val || ""); setProductVariantId(""); setRecipeId(""); setProductOptionIds([]); }}>
                 <SelectTrigger className="h-10 w-full"><SelectValue placeholder="Chọn sản phẩm..." /></SelectTrigger>
                 <SelectContent>
                   {products.map(p => (
@@ -503,14 +538,84 @@ export function MenuItemFormDialog({
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-muted-foreground">Công thức</label>
-              <Input disabled className="h-10 bg-muted" placeholder="Chưa tích hợp quản lý công thức trong màn hình này" />
-              {isMachineProducedWithoutRecipe ? (
-                <p className="rounded-lg border border-warning/30 bg-warning/5 px-3 py-2 text-sm text-warning">
-                  Phiên bản sản xuất bằng máy cần công thức hợp lệ trước khi bật bán. Vui lòng cấu hình công thức trước khi kích hoạt món.
-                </p>
+              <label className="text-sm font-medium">Công thức</label>
+              <Select
+                value={recipeId || "__none__"}
+                disabled={isSubmitting || !productVariantId || recipeOptions.isLoading}
+                onValueChange={(value) => setRecipeId(value === "__none__" || !value ? "" : value)}
+              >
+                <SelectTrigger className="h-10 w-full">
+                  <SelectValue placeholder={recipeOptions.isLoading ? "Đang tải công thức..." : "Chọn công thức"}>
+                    {recipeId
+                      ? recipeOptions.recipes.find((recipe) => recipe.id === recipeId)?.name || "Công thức hiện tại"
+                      : "Không chọn công thức"}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">Không chọn công thức</SelectItem>
+                  {recipeOptions.recipes.map((recipe) => (
+                    <SelectItem key={recipe.id} value={recipe.id}>
+                      {recipe.name} v{recipe.version} · {recipe.status === "Active" ? "Đang hoạt động" : "Đã xuất bản"}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {recipeOptions.errorMessage ? (
+                <div className="flex items-center justify-between gap-2 rounded-lg border border-warning/30 bg-warning/5 px-3 py-2 text-sm text-warning">
+                  <span>{recipeOptions.errorMessage}</span>
+                  <Button type="button" size="sm" variant="outline" onClick={() => void recipeOptions.retry()}>Thử lại</Button>
+                </div>
               ) : null}
             </div>
+
+            {selectedProduct?.optionGroups.some((group) => group.isActive) ? (
+              <div className="space-y-3">
+                <div>
+                  <p className="text-sm font-medium">Tùy chọn được phép</p>
+                  <p className="text-xs text-muted-foreground">Chỉ các tùy chọn được chọn mới xuất hiện cho món này.</p>
+                </div>
+                {selectedProduct.optionGroups.filter((group) => group.isActive).map((group) => (
+                  <fieldset key={group.id} className="space-y-2 rounded-lg border border-border p-3">
+                    <legend className="px-1 text-sm font-medium">
+                      {group.name} · {group.minSelections}-{group.maxSelections}
+                      {group.isRequired ? " · Bắt buộc" : ""}
+                    </legend>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {group.options.filter((option) => option.isAvailable).map((option) => {
+                        const incompatible = selectedVariant?.fulfillmentType === "Packaged" && option.executionImpact === "ProductionAffecting";
+                        return (
+                          <label key={option.id} className="flex items-start gap-2 rounded-md border border-border px-3 py-2 text-sm">
+                            <input
+                              type="checkbox"
+                              className="mt-0.5"
+                              checked={productOptionIds.includes(option.id)}
+                              disabled={isSubmitting || incompatible}
+                              onChange={(event) => toggleOption(option.id, event.target.checked)}
+                            />
+                            <span>
+                              <span className="block font-medium">{option.name}</span>
+                              <span className="text-xs text-muted-foreground">
+                                +{option.priceDelta.toLocaleString("vi-VN")} {option.currency}
+                                {incompatible ? " · Không dùng cho món đóng gói" : ""}
+                              </span>
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </fieldset>
+                ))}
+              </div>
+            ) : null}
+
+            {readinessBlockers.length > 0 ? (
+              <div className="rounded-lg border border-warning/30 bg-warning/5 px-3 py-2 text-sm text-warning">
+                <p className="font-medium">Các điều kiện sẽ chặn kích hoạt món:</p>
+                <ul className="mt-1 list-disc space-y-1 pl-5">
+                  {readinessBlockers.map((blocker) => <li key={blocker}>{blocker}</li>)}
+                </ul>
+              </div>
+            ) : null}
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">

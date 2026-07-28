@@ -83,10 +83,10 @@ export interface OrderOverview {
 }
 
 export interface DashboardOverviewData {
-  dashboard: DashboardMetrics;
-  kioskStatusOverview: KioskStatusOverview;
-  inventorySummary: InventorySummary;
-  orderOverview: OrderOverview;
+  dashboard?: DashboardMetrics | null;
+  kioskStatusOverview?: KioskStatusOverview | null;
+  inventorySummary?: InventorySummary | null;
+  orderOverview?: OrderOverview | null;
 }
 
 export interface DashboardOverviewResult {

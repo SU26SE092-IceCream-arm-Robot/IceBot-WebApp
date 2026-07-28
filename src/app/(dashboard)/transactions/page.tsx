@@ -44,6 +44,7 @@ import {
 } from "@/components/ui/select";
 import { useAuth } from "@/hooks/use-auth";
 import { useTransactions } from "@/hooks/use-transactions";
+import { hasPermission } from "@/lib/rbac";
 import type {
   OrderStatus,
   OrderStatusFilter,
@@ -173,7 +174,7 @@ export default function TransactionsPage() {
   const [isProcessRefundOpen, setIsProcessRefundOpen] = useState(false);
   const [isRejectRefundOpen, setIsRejectRefundOpen] = useState(false);
   const [isCancelRefundOpen, setIsCancelRefundOpen] = useState(false);
-  const { currentUser } = useAuth();
+  const { effectiveAccess } = useAuth();
   const {
     orders,
     refunds,
@@ -231,8 +232,8 @@ export default function TransactionsPage() {
     clearActionSuccessMessage,
     refresh,
   } = useTransactions();
-  const canManageOrders =
-    currentUser?.role === "ADMIN" || currentUser?.role === "MANAGER";
+  const canManageOrders = hasPermission(effectiveAccess, "orders.manage");
+  const canManageRefunds = hasPermission(effectiveAccess, "refunds.manage");
   return (
     <div className="space-y-7">
       {actionSuccessMessage ? (
@@ -602,7 +603,7 @@ export default function TransactionsPage() {
       </Card>
 
       <TransactionDetailDialog
-        canRequestRefund={canManageOrders}
+        canRequestRefund={canManageRefunds}
         order={selectedOrder}
         errorMessage={detailErrorMessage}
         isLoading={isDetailLoading}
@@ -618,7 +619,7 @@ export default function TransactionsPage() {
       />
 
       <RefundDetailDialog
-        canManageRefunds={canManageOrders}
+        canManageRefunds={canManageRefunds}
         open={isRefundDetailOpen}
         refund={selectedRefund}
         isLoading={isRefundDetailLoading}

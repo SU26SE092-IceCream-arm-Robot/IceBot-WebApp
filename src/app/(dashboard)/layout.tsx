@@ -8,7 +8,7 @@ import { AppSidebar } from "@/components/shared/app-sidebar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/hooks/use-auth";
-import { canAccessRoute, isDashboardRoutePath } from "@/lib/rbac";
+import { canAccessRoute, getDashboardRoutePath, getVisibleRoutes } from "@/lib/rbac";
 
 export default function DashboardLayout({
   children,
@@ -18,6 +18,7 @@ export default function DashboardLayout({
   const {
     status,
     currentUser,
+    effectiveAccess,
     session,
     errorMessage,
     retryRestore,
@@ -26,6 +27,15 @@ export default function DashboardLayout({
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
+  const guardedRoute = getDashboardRoutePath(pathname);
+  const fallbackRoute = effectiveAccess
+    ? getVisibleRoutes(effectiveAccess)[0]
+    : undefined;
+  const routeDenied = Boolean(
+    effectiveAccess &&
+      guardedRoute &&
+      !canAccessRoute(effectiveAccess, guardedRoute),
+  );
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -36,12 +46,14 @@ export default function DashboardLayout({
     if (
       status === "authenticated" &&
       currentUser &&
-      isDashboardRoutePath(pathname) &&
-      !canAccessRoute(currentUser.role, pathname)
+      effectiveAccess &&
+      routeDenied &&
+      fallbackRoute &&
+      fallbackRoute !== pathname
     ) {
-      router.replace("/kiosks");
+      router.replace(fallbackRoute);
     }
-  }, [currentUser, pathname, router, status]);
+  }, [currentUser, effectiveAccess, fallbackRoute, pathname, routeDenied, router, status]);
 
   if (status === "loading" || status === "unauthenticated") {
     return (
@@ -118,10 +130,64 @@ export default function DashboardLayout({
     );
   }
 
+  if (!effectiveAccess) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-background px-4">
+        <Card className="w-full max-w-md border border-border">
+          <CardHeader>
+            <div className="mb-3 flex size-11 items-center justify-center rounded-xl bg-warning/10 text-warning">
+              <ShieldAlert className="size-5" />
+            </div>
+            <CardTitle className="text-xl font-bold tracking-tight">
+              Chưa thể xác minh quyền truy cập
+            </CardTitle>
+            <CardDescription>
+              Phiên đăng nhập vẫn được giữ nhưng thông tin vai trò và phạm vi chưa tải được.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button className="w-full" onClick={() => void retryRestore()}>
+              <RefreshCw className="size-4" />
+              Thử lại
+            </Button>
+          </CardContent>
+        </Card>
+      </main>
+    );
+  }
+
+  if (routeDenied) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-background px-4">
+        <Card className="w-full max-w-md border border-border">
+          <CardHeader>
+            <div className="mb-3 flex size-11 items-center justify-center rounded-xl bg-destructive/10 text-destructive">
+              <ShieldAlert className="size-5" />
+            </div>
+            <CardTitle className="text-xl font-bold tracking-tight">
+              Không có quyền truy cập trang này
+            </CardTitle>
+            <CardDescription>
+              Bạn đang được chuyển tới khu vực phù hợp với vai trò và phạm vi hiện tại.
+            </CardDescription>
+          </CardHeader>
+          {fallbackRoute ? (
+            <CardContent>
+              <Button className="w-full" onClick={() => router.replace(fallbackRoute)}>
+                Đi tới khu vực được phép
+              </Button>
+            </CardContent>
+          ) : null}
+        </Card>
+      </main>
+    );
+  }
+
   return (
     <div className="flex h-screen overflow-hidden">
       <AppSidebar
         currentUser={currentUser}
+        effectiveAccess={effectiveAccess}
         collapsed={sidebarCollapsed}
         onToggleCollapsed={() => setSidebarCollapsed((previous) => !previous)}
         onLogout={async () => {

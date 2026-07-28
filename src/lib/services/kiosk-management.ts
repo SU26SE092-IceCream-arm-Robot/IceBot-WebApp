@@ -6,6 +6,7 @@ import type {
   CreateKioskRequest,
   KioskResult,
   ManagementKiosksQuery,
+  SetKioskOperationalStateRequest,
 } from "@/types/kiosk-management";
 
 function requireData<T>(result: ApiResult<T>, fallbackMessage: string): T {
@@ -71,6 +72,19 @@ export async function createManagementKiosk(
   return requireData(response.data, "Không thể tạo kiosk.");
 }
 
+export async function setManagementKioskOperationalState(
+  storeId: string,
+  kioskId: string,
+  request: SetKioskOperationalStateRequest,
+): Promise<KioskResult> {
+  const response = await axiosClient.patch<ApiResult<KioskResult>>(
+    `/api/v1/management/stores/${encodeURIComponent(storeId)}/kiosks/${encodeURIComponent(kioskId)}/operational-state`,
+    request,
+  );
+
+  return requireData(response.data, "Không thể cập nhật trạng thái vận hành kiosk.");
+}
+
 export function getKioskManagementErrorMessage(
   error: unknown,
   fallbackMessage = "Không thể tải dữ liệu kiosk quản lý.",
@@ -81,7 +95,7 @@ export function getKioskManagementErrorMessage(
 
   if (axios.isAxiosError<ApiResult<unknown>>(error)) {
     if (error.response?.status === 403) {
-      return "Tài khoản hiện tại không có quyền xem thông tin kiosk.";
+      return "Tài khoản hiện tại không có quyền truy cập hoặc thực hiện thao tác này với kiosk.";
     }
 
     return getApiResultMessage(error.response?.data, fallbackMessage);

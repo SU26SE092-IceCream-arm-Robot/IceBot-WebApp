@@ -16,6 +16,7 @@ import {
   Package,
   ClipboardCheck,
   ShoppingCart,
+  ShieldCheck,
   Users,
   Wrench,
 } from "lucide-react";
@@ -24,7 +25,9 @@ import { usePathname } from "next/navigation";
 
 import { ThemeModeToggle } from "@/components/shared/theme-mode-toggle";
 import { getVisibleRoutes } from "@/lib/rbac";
+import { getRoleLabel, isBackendRoleCode } from "@/lib/role-labels";
 import type { DashboardRoutePath, DashboardUser } from "@/types";
+import type { EffectiveAccessResult } from "@/types/accounts";
 
 interface SidebarItem {
   href: DashboardRoutePath;
@@ -42,6 +45,7 @@ const SIDEBAR_ITEMS: readonly SidebarItem[] = [
   { href: "/reports", label: "Báo cáo", icon: BarChart3 },
   { href: "/organizations", label: "Tổ chức & cửa hàng", icon: Building2 },
   { href: "/users", label: "Tài khoản", icon: Users },
+  { href: "/roles", label: "Vai trò & quyền", icon: ShieldCheck },
   { href: "/alerts", label: "Cảnh báo", icon: Bell },
   { href: "/maintenance", label: "Bảo trì", icon: Wrench },
   { href: "/settings/payment-methods", label: "Cấu hình thanh toán", icon: CreditCard },
@@ -56,24 +60,20 @@ const SIDEBAR_GROUPS: readonly {
     routes: ["/dashboard", "/readiness", "/alerts", "/kiosks", "/inventory", "/maintenance"],
   },
   { label: "Kinh doanh", routes: ["/transactions", "/menu", "/reports"] },
-  { label: "Quản trị", routes: ["/organizations", "/users", "/settings/payment-methods"] },
+  { label: "Quản trị", routes: ["/organizations", "/users", "/roles", "/settings/payment-methods"] },
 ];
 
 interface AppSidebarProps {
   currentUser: DashboardUser;
+  effectiveAccess: EffectiveAccessResult;
   collapsed: boolean;
   onToggleCollapsed: () => void;
   onLogout: () => Promise<void>;
 }
 
-const ROLE_LABELS = {
-  ADMIN: "System Admin",
-  MANAGER: "Manager",
-  LOCATION_OWNER: "Location Owner",
-} as const;
-
 export function AppSidebar({
   currentUser,
+  effectiveAccess,
   collapsed,
   onToggleCollapsed,
   onLogout,
@@ -81,7 +81,30 @@ export function AppSidebar({
   const pathname = usePathname();
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const accountAreaRef = useRef<HTMLDivElement>(null);
-  const visibleRoutes = new Set(getVisibleRoutes(currentUser.role));
+  const visibleRoutes = new Set(getVisibleRoutes(effectiveAccess));
+  const effectiveRoleLabels = Array.from(
+    new Set([
+      ...effectiveAccess.roles,
+      ...effectiveAccess.roleScopes.map((scope) => scope.roleCode),
+    ]),
+  )
+    .filter(isBackendRoleCode)
+    .map(getRoleLabel);
+  const scopeSummary = effectiveAccess.isSystemAdmin
+    ? "Phạm vi toàn hệ thống"
+    : [
+        effectiveAccess.effectiveScope.organizationIds.length
+          ? `${effectiveAccess.effectiveScope.organizationIds.length} tổ chức`
+          : null,
+        effectiveAccess.effectiveScope.storeIds.length
+          ? `${effectiveAccess.effectiveScope.storeIds.length} cửa hàng`
+          : null,
+        effectiveAccess.effectiveScope.kioskIds.length
+          ? `${effectiveAccess.effectiveScope.kioskIds.length} kiosk`
+          : null,
+      ]
+        .filter(Boolean)
+        .join(" · ") || "Chưa có phạm vi được giao";
 
   const visibleItems = SIDEBAR_ITEMS.filter((item) => visibleRoutes.has(item.href));
   const visibleItemsByRoute = new Map(visibleItems.map((item) => [item.href, item]));
@@ -210,8 +233,12 @@ export function AppSidebar({
                 {currentUser.email}
               </p>
               <p className="text-xs font-medium text-primary">
-                {ROLE_LABELS[currentUser.role]}
+                {getRoleLabel(currentUser.primaryRole)}
               </p>
+              <p className="text-xs text-muted-foreground">
+                {effectiveRoleLabels.join(" · ")}
+              </p>
+              <p className="text-xs text-muted-foreground">{scopeSummary}</p>
             </div>
             <div className="px-2 pb-2">
               <p className="mb-1.5 text-[11px] font-medium text-muted-foreground">
@@ -265,7 +292,7 @@ export function AppSidebar({
               {currentUser.name}
             </span>
             <span className="block truncate text-[11px] text-muted-foreground">
-              {ROLE_LABELS[currentUser.role]}
+              {getRoleLabel(currentUser.primaryRole)}
             </span>
           </span>
         </button>

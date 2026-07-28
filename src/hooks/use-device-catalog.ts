@@ -15,7 +15,7 @@ import type {
 
 export type DeviceTypeStatusFilter = "ALL" | "ACTIVE" | "INACTIVE";
 
-export function useDeviceCatalog(open: boolean) {
+export function useDeviceCatalog(open: boolean, initialTypeId?: number | null) {
   const [types, setTypes] = useState<DeviceTypeResult[]>([]);
   const [models, setModels] = useState<DeviceModelResult[]>([]);
   const [typeSearch, setTypeSearch] = useState("");
@@ -41,11 +41,19 @@ export function useDeviceCatalog(open: boolean) {
         );
         if (signal?.aborted) return;
         setTypes(result);
-        setSelectedTypeId((current) =>
-          current !== null && result.some((type) => type.id === current)
-            ? current
-            : (result[0]?.id ?? null),
-        );
+        setSelectedTypeId((current) => {
+          if (current !== null && result.some((type) => type.id === current)) {
+            return current;
+          }
+          if (
+            initialTypeId !== null &&
+            initialTypeId !== undefined &&
+            result.some((type) => type.id === initialTypeId)
+          ) {
+            return initialTypeId;
+          }
+          return result[0]?.id ?? null;
+        });
       } catch (error) {
         if (axios.isCancel(error) || signal?.aborted) return;
         setTypes([]);
@@ -60,7 +68,7 @@ export function useDeviceCatalog(open: boolean) {
         if (!signal?.aborted) setTypesLoading(false);
       }
     },
-    [status, typeSearch],
+    [initialTypeId, status, typeSearch],
   );
 
   const loadModels = useCallback(

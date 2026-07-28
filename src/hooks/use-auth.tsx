@@ -176,6 +176,27 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     }
   }, [applySession]);
 
+  const refreshEffectiveAccess = useCallback(async () => {
+    const currentSession = readAuthSession();
+    if (!currentSession) {
+      setEffectiveAccess(null);
+      return;
+    }
+
+    try {
+      const access = await getCurrentAccountAccess(currentSession.accessToken);
+      setEffectiveAccess((existingAccess) =>
+        access.accountId === currentSession.account.id
+          ? access
+          : existingAccess,
+      );
+    } catch (error) {
+      if (isInvalidAuthSessionError(error)) {
+        setEffectiveAccess(null);
+      }
+    }
+  }, []);
+
   useEffect(() => {
     const restoreTimeoutId = window.setTimeout(() => {
       void restoreSession();
@@ -195,6 +216,15 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       window.removeEventListener(authSessionEvent, syncSession);
     };
   }, [applySession, restoreSession]);
+
+  useEffect(() => {
+    const handleWindowFocus = () => {
+      void refreshEffectiveAccess();
+    };
+
+    window.addEventListener("focus", handleWindowFocus);
+    return () => window.removeEventListener("focus", handleWindowFocus);
+  }, [refreshEffectiveAccess]);
 
   const login = useCallback(
     async (request: LoginRequest) => {

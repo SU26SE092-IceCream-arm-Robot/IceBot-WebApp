@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/table";
 import { useAuth } from "@/hooks/use-auth";
 import { useTenantMutationRefresh } from "@/hooks/use-tenant-mutation-refresh";
+import { hasPermission } from "@/lib/rbac";
 import {
   getManagementOrganizationById,
   getOrganizationsErrorMessage,
@@ -77,7 +78,7 @@ function DetailField({ label, value }: { label: string; value: string }) {
 }
 
 export function OrganizationDetailView({ organizationId }: OrganizationDetailViewProps) {
-  const { currentUser } = useAuth();
+  const { effectiveAccess } = useAuth();
   const currentOrganizationIdRef = useRef(organizationId);
   useEffect(() => {
     currentOrganizationIdRef.current = organizationId;
@@ -90,10 +91,9 @@ export function OrganizationDetailView({ organizationId }: OrganizationDetailVie
   const [storeFormOpen, setStoreFormOpen] = useState(false);
   const [lifecycleTarget, setLifecycleTarget] = useState<LifecycleTarget | null>(null);
 
-  const isSystemAdmin = currentUser?.role === "ADMIN";
-  const canEditOrganization =
-    currentUser?.role === "ADMIN" || currentUser?.role === "LOCATION_OWNER";
-  const canManageStores = canEditOrganization;
+  const canManageOrganization = hasPermission(effectiveAccess, "organizations.manage");
+  const canEditOrganization = hasPermission(effectiveAccess, "organizations.update");
+  const canManageStores = hasPermission(effectiveAccess, "stores.manage");
 
   const loadData = useCallback(async (
     signal?: AbortSignal,
@@ -221,7 +221,7 @@ export function OrganizationDetailView({ organizationId }: OrganizationDetailVie
 
       <section className="flex flex-col gap-4 border-b border-border pb-6 lg:flex-row lg:items-end lg:justify-between">
         <div className="space-y-3"><Link href="/organizations" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="size-4" />Tổ chức & cửa hàng</Link><div className="flex flex-wrap items-center gap-3"><h1 className="text-3xl font-semibold tracking-tight">{organization.name}</h1><TenantStatusBadge status={organization.status} /></div><p className="font-mono text-sm text-muted-foreground">{organization.code}</p></div>
-        <div className="flex flex-wrap gap-2">{canEditOrganization ? <Button variant="outline" onClick={() => { mutationState.clearError(); setOrganizationFormOpen(true); }}><Pencil className="size-4" />Chỉnh sửa</Button> : null}{isSystemAdmin ? <Button variant={organization.status === "Active" ? "destructive" : "default"} onClick={() => { mutationState.clearError(); setLifecycleTarget({ kind: "organization", activate: organization.status !== "Active" }); }}>{organization.status === "Active" ? <PowerOff className="size-4" /> : <Power className="size-4" />}{organization.status === "Active" ? "Vô hiệu hóa" : "Kích hoạt"}</Button> : null}<Button variant="outline" isLoading={isLoading} onClick={() => void loadData()}><RefreshCw className="size-4" />Làm mới</Button></div>
+        <div className="flex flex-wrap gap-2">{canEditOrganization ? <Button variant="outline" onClick={() => { mutationState.clearError(); setOrganizationFormOpen(true); }}><Pencil className="size-4" />Chỉnh sửa</Button> : null}{canManageOrganization ? <Button variant={organization.status === "Active" ? "destructive" : "default"} onClick={() => { mutationState.clearError(); setLifecycleTarget({ kind: "organization", activate: organization.status !== "Active" }); }}>{organization.status === "Active" ? <PowerOff className="size-4" /> : <Power className="size-4" />}{organization.status === "Active" ? "Vô hiệu hóa" : "Kích hoạt"}</Button> : null}<Button variant="outline" isLoading={isLoading} onClick={() => void loadData()}><RefreshCw className="size-4" />Làm mới</Button></div>
       </section>
 
       <Card className="rounded-xl border border-border/80 shadow-none"><CardHeader className="border-b border-border px-5 py-4"><div className="flex items-center gap-3"><span className="flex size-10 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary"><Building2 className="size-5" /></span><CardTitle className="text-base font-semibold">Thông tin tổ chức</CardTitle></div></CardHeader><CardContent className="grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-3"><DetailField label="Tên pháp lý" value={organization.legalName || "Chưa có"} /><DetailField label="Mã số thuế" value={organization.taxCode || "Chưa có"} /><DetailField label="Email" value={organization.email || "Chưa có"} /><DetailField label="Số điện thoại" value={organization.phoneNumber || "Chưa có"} /><DetailField label="Địa chỉ" value={organization.address || "Chưa có"} /><DetailField label="Cập nhật" value={formatTenantDate(organization.updatedAt ?? organization.createdAt)} /></CardContent></Card>

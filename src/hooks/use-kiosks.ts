@@ -9,7 +9,6 @@ import {
   getManagementFleetKiosks,
 } from "@/lib/services/kiosks";
 import type {
-  DashboardRole,
   DashboardUser,
   KioskFleetItem,
   KioskFilters,
@@ -17,6 +16,7 @@ import type {
   KioskStatusFilter,
   KioskSummary,
 } from "@/types";
+import type { EffectiveAccessResult } from "@/types/accounts";
 
 const INITIAL_FILTERS: KioskFilters = {
   searchTerm: "",
@@ -25,8 +25,8 @@ const INITIAL_FILTERS: KioskFilters = {
 };
 
 export interface UseKiosksResult {
-  role: DashboardRole | null;
   currentUser: DashboardUser | null;
+  effectiveAccess: EffectiveAccessResult | null;
   kiosks: KioskFleetItem[];
   summary: KioskSummary;
   locations: KioskLocationOption[];
@@ -61,8 +61,7 @@ function isStatusFilter(value: string | null): value is KioskStatusFilter {
 }
 
 export function useKiosks(): UseKiosksResult {
-  const { currentUser } = useAuth();
-  const role = currentUser?.role ?? null;
+  const { currentUser, effectiveAccess } = useAuth();
   const [filters, setFilters] = useState<KioskFilters>(INITIAL_FILTERS);
   const [scopedKiosks, setScopedKiosks] = useState<KioskFleetItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -80,7 +79,7 @@ export function useKiosks(): UseKiosksResult {
       setErrorMessage(null);
       setMetadataWarning(null);
 
-      if (!role) {
+      if (!currentUser || !effectiveAccess) {
         setScopedKiosks([]);
         setIsLoading(false);
         return;
@@ -107,7 +106,7 @@ export function useKiosks(): UseKiosksResult {
         }
       }
     },
-    [role],
+    [currentUser, effectiveAccess],
   );
 
   useEffect(() => {
@@ -142,8 +141,8 @@ export function useKiosks(): UseKiosksResult {
   }, []);
 
   return {
-    role,
     currentUser,
+    effectiveAccess,
     kiosks: fleetResult.filteredKiosks,
     summary: scopedKiosks.length === 0 ? EMPTY_SUMMARY : fleetResult.summary,
     locations: fleetResult.locations,

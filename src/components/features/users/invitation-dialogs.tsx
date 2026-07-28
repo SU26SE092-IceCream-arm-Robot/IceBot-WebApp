@@ -85,7 +85,6 @@ const SCOPE_TYPE_LABELS: Record<AssignableScopeType, string> = {
 
 function getRoleDisplayLabel(role: ManagementRoleResult): string {
   const labelByCode: Record<string, string> = {
-    Admin: "Quản trị hệ thống",
     SystemAdmin: "Quản trị hệ thống",
     OrgAdmin: "Quản trị tổ chức",
     Manager: "Quản lý",
@@ -97,7 +96,6 @@ function getRoleDisplayLabel(role: ManagementRoleResult): string {
 
 function getRoleDescription(role: ManagementRoleResult): string | null {
   const descriptionByCode: Record<string, string> = {
-    Admin: "Toàn quyền quản trị hệ thống.",
     SystemAdmin: "Toàn quyền quản trị hệ thống.",
     OrgAdmin: "Quản trị dữ liệu trong phạm vi tổ chức được phân quyền.",
     Manager: "Quản lý vận hành trong phạm vi được phân quyền.",

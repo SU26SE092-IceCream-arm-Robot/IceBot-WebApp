@@ -46,7 +46,7 @@ function resolveSource<T>(
 }
 
 export function useReports() {
-  const { currentUser, status: authStatus } = useAuth();
+  const { effectiveAccess, status: authStatus } = useAuth();
   const [filters, setFilters] = useState<ReportsFilters>(INITIAL_FILTERS);
   const [snapshot, setSnapshot] = useState<ReportsSnapshot | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -55,12 +55,9 @@ export function useReports() {
   const [refreshVersion, setRefreshVersion] = useState(0);
   const hasLoadedRef = useRef(false);
 
-  const role = currentUser?.role;
-  const canViewCatalog = role ? hasPermission(role, "menu.view") : false;
-  const canViewInventory = role ? hasPermission(role, "inventory.view") : false;
-  const canViewMaintenance = role
-    ? hasPermission(role, "maintenance.view")
-    : false;
+  const canViewCatalog = hasPermission(effectiveAccess, "products.manage");
+  const canViewInventory = hasPermission(effectiveAccess, "inventory.view");
+  const canViewMaintenance = hasPermission(effectiveAccess, "maintenance.view");
 
   const loadReports = useCallback(
     async (signal?: AbortSignal) => {
@@ -135,7 +132,7 @@ export function useReports() {
   );
 
   useEffect(() => {
-    if (authStatus !== "authenticated" || !role) {
+    if (authStatus !== "authenticated" || !effectiveAccess) {
       return;
     }
 
@@ -153,7 +150,7 @@ export function useReports() {
       window.clearTimeout(timeoutId);
       controller.abort();
     };
-  }, [authStatus, loadReports, refreshVersion, role]);
+  }, [authStatus, effectiveAccess, loadReports, refreshVersion]);
 
   const setRangeDays = useCallback((rangeDays: ReportsRangeDays) => {
     setFilters((current) => ({ ...current, rangeDays }));

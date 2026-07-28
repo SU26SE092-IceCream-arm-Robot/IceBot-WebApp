@@ -31,10 +31,9 @@ interface AccountDetailDialogProps {
 }
 
 const ROLE_LABELS: Record<string, string> = {
-  SystemAdmin: "Admin hệ thống",
-  Manager: "Quản lý",
+  SystemAdmin: "Quản trị hệ thống",
+  Manager: "Quản lý vận hành",
   OrgAdmin: "Quản trị tổ chức",
-  LocationOwner: "Chủ địa điểm",
   Staff: "Nhân viên",
   Technician: "Kỹ thuật viên",
 };

@@ -43,6 +43,7 @@ import {
 import { useAccounts } from "@/hooks/use-accounts";
 import { useAccountActions } from "@/hooks/use-account-actions";
 import { useAuth } from "@/hooks/use-auth";
+import { hasPermission } from "@/lib/rbac";
 import type { ManagementAccountStatusFilter } from "@/types/accounts";
 
 const STATUS_OPTIONS: { value: ManagementAccountStatusFilter; label: string }[] = [
@@ -125,7 +126,7 @@ function StatCard({
 }
 
 export default function UsersPage() {
-  const { currentUser } = useAuth();
+  const { currentUser, effectiveAccess } = useAuth();
   const {
     accounts,
     query,
@@ -215,7 +216,7 @@ export default function UsersPage() {
     }
   }, [successMessage, clearSuccessMessage]);
 
-  const canManageAccounts = currentUser?.role === "ADMIN";
+  const canManageAccounts = hasPermission(effectiveAccess, "accounts.manage");
   const roleCount = accounts.reduce((count, account) => count + account.roles.length, 0);
   const activeOnPage = accounts.filter((account) => account.status === "Active").length;
 

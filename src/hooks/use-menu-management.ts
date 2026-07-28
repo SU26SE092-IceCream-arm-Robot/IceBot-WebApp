@@ -4,6 +4,7 @@ import axios from "axios";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
+import { getMenuItemReadinessBlockers } from "@/lib/presenters/menu-item-readiness";
 import {
   getMenuById,
   getMenuManagementErrorMessage,
@@ -430,7 +431,7 @@ export function useMenuManagement(organizationId: string | null): UseMenuManagem
 
   const requestMenuItemStatus = useCallback(
     async (item: MenuItemResult, status: MenuItemStatus) => {
-      if (status === "Active" && !item.recipeId) {
+      if (status === "Active") {
         try {
           const product =
             products.data.find((candidate) => candidate.id === item.productId) ??
@@ -442,10 +443,23 @@ export function useMenuManagement(organizationId: string | null): UseMenuManagem
           const variant = product.variants.find(
             (candidate) => candidate.id === item.productVariantId,
           );
-          if (variant?.fulfillmentType === "MachineProduced") {
-            toast.error(
-              "Không thể bật bán món sản xuất bằng máy khi chưa có công thức hợp lệ.",
-            );
+          const blockers = getMenuItemReadinessBlockers({
+            menuCurrency:
+              selectedMenu?.id === item.menuId
+                ? selectedMenu.currency
+                : product.currency,
+            product,
+            recipeId: item.recipeId,
+            selectedOptionIds: item.productOptionIds ?? [],
+            variant,
+          });
+          if (blockers.length > 0) {
+            toast.error(blockers[0], {
+              description:
+                blockers.length > 1
+                  ? `Còn ${blockers.length - 1} điều kiện cần hoàn thiện.`
+                  : undefined,
+            });
             return;
           }
         } catch (error) {
@@ -462,7 +476,7 @@ export function useMenuManagement(organizationId: string | null): UseMenuManagem
         nextStatus: status,
       });
     },
-    [openActionDialog, organizationId, products.data]
+    [openActionDialog, organizationId, products.data, selectedMenu]
   );
 
   const setActionDialogOpen = useCallback(

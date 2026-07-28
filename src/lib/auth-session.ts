@@ -10,7 +10,13 @@ import type {
 
 const AUTH_SESSION_STORAGE_KEY = "icebot_auth_session";
 const AUTH_SESSION_EVENT = "icebot-auth-session-changed";
-const ROLE_PRIORITY: readonly DashboardRole[] = ["ADMIN", "MANAGER", "LOCATION_OWNER"];
+const ROLE_PRIORITY: readonly DashboardRole[] = [
+  "SystemAdmin",
+  "OrgAdmin",
+  "Manager",
+  "Technician",
+  "Staff",
+];
 
 /**
  * Demo/dev strategy: browser storage keeps access and refresh tokens so the
@@ -18,19 +24,7 @@ const ROLE_PRIORITY: readonly DashboardRole[] = ["ADMIN", "MANAGER", "LOCATION_O
  * refresh tokens to HttpOnly cookies behind a BFF/session boundary.
  */
 function mapBackendRole(roleCode: string): DashboardRole | null {
-  if (roleCode === "SystemAdmin") {
-    return "ADMIN";
-  }
-
-  if (roleCode === "Manager") {
-    return "MANAGER";
-  }
-
-  if (roleCode === "OrgAdmin" || roleCode === "LocationOwner") {
-    return "LOCATION_OWNER";
-  }
-
-  return null;
+  return ROLE_PRIORITY.find((role) => role === roleCode) ?? null;
 }
 
 function getInitials(nameOrEmail: string): string {
@@ -152,32 +146,19 @@ export function resolveDashboardRole(roles: AccountRoleScope[]): DashboardRole |
   return ROLE_PRIORITY.find((role) => mappedRoles.includes(role)) ?? null;
 }
 
-export function resolveLocationScope(roles: AccountRoleScope[]): string[] {
-  // UI-only scoping until management APIs enforce scoped resource access.
-  const locationIds = roles
-    .filter((roleScope) => roleScope.roleCode === "LocationOwner")
-    .map((roleScope) => roleScope.storeId)
-    .filter((storeId): storeId is string => Boolean(storeId));
-
-  return Array.from(new Set(locationIds));
-}
-
 export function mapAccountToDashboardUser(account: AuthSessionAccount): DashboardUser | null {
-  const role = resolveDashboardRole(account.roles);
-  if (!role) {
+  const primaryRole = resolveDashboardRole(account.roles);
+  if (!primaryRole) {
     return null;
   }
 
-  const locationIds = resolveLocationScope(account.roles);
   const displayName = account.fullName?.trim() || account.userName;
 
   return {
     id: account.id,
     name: displayName,
     email: account.email,
-    role,
-    locationId: locationIds[0],
-    locationIds,
+    primaryRole,
     avatarInitials: getInitials(displayName || account.email),
   };
 }

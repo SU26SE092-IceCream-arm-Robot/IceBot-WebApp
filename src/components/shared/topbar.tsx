@@ -3,18 +3,13 @@
 import { Bell, LogOut } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
+import { getRoleLabel } from "@/lib/role-labels";
 import type { DashboardUser } from "@/types";
 
 interface TopbarProps {
   currentUser: DashboardUser;
   onLogout: () => Promise<void>;
 }
-
-const ROLE_LABELS = {
-  ADMIN: "Admin",
-  MANAGER: "Manager",
-  LOCATION_OWNER: "Location Owner",
-} as const;
 
 export function Topbar({ currentUser, onLogout }: TopbarProps) {
   return (
@@ -44,7 +39,7 @@ export function Topbar({ currentUser, onLogout }: TopbarProps) {
               {currentUser.name}
             </span>
             <span className="block text-[11px] leading-tight text-muted-foreground">
-              {ROLE_LABELS[currentUser.role]}
+              {getRoleLabel(currentUser.primaryRole)}
             </span>
           </div>
         </div>

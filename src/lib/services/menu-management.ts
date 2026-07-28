@@ -6,6 +6,7 @@ import type {
   CreateMenuItemRequest,
   CreateMenuRequest,
   CreateProductRequest,
+  CreateRecipeRequest,
   CloneProductTemplateRequest,
   MenuItemResult,
   MenuItemStatus,
@@ -15,12 +16,21 @@ import type {
   MenuStatus,
   ProductCategoryResult,
   ProductResult,
+  ProductOptionResult,
+  OptionGroupResult,
+  RecipeResult,
+  RecipeStatus,
   ProductTemplatesQuery,
   ProductVariantResult,
   UpdateMenuItemRequest,
   UpdateMenuRequest,
   UpdateProductRequest,
   UpdateProductVariantRequest,
+  UpdateRecipeRequest,
+  UpsertOptionGroupRequest,
+  UpsertProductOptionRequest,
+  ReplaceProductOptionIngredientRequirementsRequest,
+  ReplaceRecipeItemsRequest,
   UpsertProductVariantRequest,
 } from "@/types/menu-management";
 
@@ -29,7 +39,9 @@ function getApiResultMessage(
   fallbackMessage: string,
 ): string {
   if (!result) return fallbackMessage;
-  const validationMessages = Object.values(result.validationErrors ?? {}).flat();
+  const validationMessages = Object.values(
+    result.validationErrors ?? {},
+  ).flat();
   return validationMessages.length > 0
     ? validationMessages.join(" ")
     : result.message || result.businessError || fallbackMessage;
@@ -45,7 +57,9 @@ function requireData<T>(result: ApiResult<T>, fallbackMessage: string): T {
 function requireOrganizationId(organizationId: string | undefined): string {
   const normalized = organizationId?.trim();
   if (!normalized) {
-    throw new Error("Vui lòng chọn tổ chức trước khi tải danh mục và thực đơn.");
+    throw new Error(
+      "Vui lòng chọn tổ chức trước khi tải danh mục và thực đơn.",
+    );
   }
   return encodeURIComponent(normalized);
 }
@@ -56,6 +70,18 @@ function productsRoot(organizationId: string | undefined): string {
 
 function menusRoot(organizationId: string | undefined): string {
   return `/api/v1/management/organizations/${requireOrganizationId(organizationId)}/menus`;
+}
+
+function optionGroupsRoot(organizationId: string, productId: string): string {
+  return `${productsRoot(organizationId)}/${encodeURIComponent(productId)}/option-groups`;
+}
+
+function recipesRoot(
+  organizationId: string,
+  productId: string,
+  variantId: string,
+): string {
+  return `${productsRoot(organizationId)}/${encodeURIComponent(productId)}/variants/${encodeURIComponent(variantId)}/recipes`;
 }
 
 function buildListParams(query: MenuManagementQuery) {
@@ -70,12 +96,16 @@ export async function listManagementProducts(
   query: MenuManagementQuery,
   signal?: AbortSignal,
 ): Promise<MenuManagementPagedResult<ProductResult>> {
-  const response = await axiosClient.get<MenuManagementPagedResult<ProductResult>>(
-    productsRoot(query.organizationId),
-    { params: buildListParams(query), signal },
-  );
+  const response = await axiosClient.get<
+    MenuManagementPagedResult<ProductResult>
+  >(productsRoot(query.organizationId), {
+    params: buildListParams(query),
+    signal,
+  });
   if (!response.data.succeeded) {
-    throw new Error(response.data.message || "Không thể tải danh mục sản phẩm.");
+    throw new Error(
+      response.data.message || "Không thể tải danh mục sản phẩm.",
+    );
   }
   return response.data;
 }
@@ -84,19 +114,20 @@ export async function listProductTemplates(
   query: ProductTemplatesQuery,
   signal?: AbortSignal,
 ): Promise<MenuManagementPagedResult<ProductResult>> {
-  const response = await axiosClient.get<MenuManagementPagedResult<ProductResult>>(
-    "/api/v1/management/product-templates",
-    {
-      params: {
-        search: query.searchTerm.trim() || undefined,
-        pageNumber: query.pageNumber,
-        pageSize: query.pageSize,
-      },
-      signal,
+  const response = await axiosClient.get<
+    MenuManagementPagedResult<ProductResult>
+  >("/api/v1/management/product-templates", {
+    params: {
+      search: query.searchTerm.trim() || undefined,
+      pageNumber: query.pageNumber,
+      pageSize: query.pageSize,
     },
-  );
+    signal,
+  });
   if (!response.data.succeeded) {
-    throw new Error(response.data.message || "Không thể tải danh sách mẫu sản phẩm.");
+    throw new Error(
+      response.data.message || "Không thể tải danh sách mẫu sản phẩm.",
+    );
   }
   return response.data;
 }
@@ -135,7 +166,9 @@ export async function listManagementMenus(
     { params: buildListParams(query), signal },
   );
   if (!response.data.succeeded) {
-    throw new Error(response.data.message || "Không thể tải danh sách thực đơn.");
+    throw new Error(
+      response.data.message || "Không thể tải danh sách thực đơn.",
+    );
   }
   return response.data;
 }
@@ -244,6 +277,215 @@ export async function setProductVariantAvailability(
     { isAvailable },
   );
   return requireData(response.data, "Không thể cập nhật trạng thái biến thể.");
+}
+
+export async function createOptionGroup(
+  organizationId: string,
+  productId: string,
+  request: UpsertOptionGroupRequest,
+): Promise<OptionGroupResult> {
+  const response = await axiosClient.post<ApiResult<OptionGroupResult>>(
+    optionGroupsRoot(organizationId, productId),
+    request,
+  );
+  return requireData(response.data, "Không thể tạo nhóm tùy chọn.");
+}
+
+export async function updateOptionGroup(
+  organizationId: string,
+  productId: string,
+  optionGroupId: number,
+  request: UpsertOptionGroupRequest,
+): Promise<OptionGroupResult> {
+  const response = await axiosClient.put<ApiResult<OptionGroupResult>>(
+    `${optionGroupsRoot(organizationId, productId)}/${optionGroupId}`,
+    request,
+  );
+  return requireData(response.data, "Không thể cập nhật nhóm tùy chọn.");
+}
+
+export async function setOptionGroupStatus(
+  organizationId: string,
+  productId: string,
+  optionGroupId: number,
+  isActive: boolean,
+): Promise<OptionGroupResult> {
+  const response = await axiosClient.patch<ApiResult<OptionGroupResult>>(
+    `${optionGroupsRoot(organizationId, productId)}/${optionGroupId}/status`,
+    { isActive },
+  );
+  return requireData(
+    response.data,
+    "Không thể cập nhật trạng thái nhóm tùy chọn.",
+  );
+}
+
+export async function deleteOptionGroup(
+  organizationId: string,
+  productId: string,
+  optionGroupId: number,
+): Promise<boolean> {
+  const response = await axiosClient.delete<ApiResult<boolean>>(
+    `${optionGroupsRoot(organizationId, productId)}/${optionGroupId}`,
+  );
+  return requireData(response.data, "Không thể xóa nhóm tùy chọn.");
+}
+
+export async function createProductOption(
+  organizationId: string,
+  productId: string,
+  optionGroupId: number,
+  request: UpsertProductOptionRequest,
+): Promise<ProductOptionResult> {
+  const response = await axiosClient.post<ApiResult<ProductOptionResult>>(
+    `${optionGroupsRoot(organizationId, productId)}/${optionGroupId}/options`,
+    request,
+  );
+  return requireData(response.data, "Không thể tạo tùy chọn.");
+}
+
+export async function updateProductOption(
+  organizationId: string,
+  productId: string,
+  optionGroupId: number,
+  optionId: string,
+  request: UpsertProductOptionRequest,
+): Promise<ProductOptionResult> {
+  const response = await axiosClient.put<ApiResult<ProductOptionResult>>(
+    `${optionGroupsRoot(organizationId, productId)}/${optionGroupId}/options/${encodeURIComponent(optionId)}`,
+    request,
+  );
+  return requireData(response.data, "Không thể cập nhật tùy chọn.");
+}
+
+export async function setProductOptionAvailability(
+  organizationId: string,
+  productId: string,
+  optionGroupId: number,
+  optionId: string,
+  isAvailable: boolean,
+): Promise<ProductOptionResult> {
+  const response = await axiosClient.patch<ApiResult<ProductOptionResult>>(
+    `${optionGroupsRoot(organizationId, productId)}/${optionGroupId}/options/${encodeURIComponent(optionId)}/availability`,
+    { isAvailable },
+  );
+  return requireData(response.data, "Không thể cập nhật trạng thái tùy chọn.");
+}
+
+export async function deleteProductOption(
+  organizationId: string,
+  productId: string,
+  optionGroupId: number,
+  optionId: string,
+): Promise<boolean> {
+  const response = await axiosClient.delete<ApiResult<boolean>>(
+    `${optionGroupsRoot(organizationId, productId)}/${optionGroupId}/options/${encodeURIComponent(optionId)}`,
+  );
+  return requireData(response.data, "Không thể xóa tùy chọn.");
+}
+
+export async function replaceProductOptionIngredientRequirements(
+  organizationId: string,
+  productId: string,
+  optionGroupId: number,
+  optionId: string,
+  request: ReplaceProductOptionIngredientRequirementsRequest,
+): Promise<ProductOptionResult> {
+  const response = await axiosClient.put<ApiResult<ProductOptionResult>>(
+    `${optionGroupsRoot(organizationId, productId)}/${optionGroupId}/options/${encodeURIComponent(optionId)}/ingredient-requirements`,
+    request,
+  );
+  return requireData(
+    response.data,
+    "Không thể cập nhật nguyên liệu thực thi của tùy chọn.",
+  );
+}
+
+export async function listRecipes(
+  organizationId: string,
+  productId: string,
+  variantId: string,
+  signal?: AbortSignal,
+): Promise<MenuManagementPagedResult<RecipeResult>> {
+  const response = await axiosClient.get<
+    MenuManagementPagedResult<RecipeResult>
+  >(recipesRoot(organizationId, productId, variantId), {
+    params: { pageNumber: 1, pageSize: 100 },
+    signal,
+  });
+  if (!response.data.succeeded)
+    throw new Error(response.data.message || "Không thể tải công thức.");
+  return response.data;
+}
+
+export async function createRecipe(
+  organizationId: string,
+  productId: string,
+  variantId: string,
+  request: CreateRecipeRequest,
+): Promise<RecipeResult> {
+  const response = await axiosClient.post<ApiResult<RecipeResult>>(
+    recipesRoot(organizationId, productId, variantId),
+    request,
+  );
+  return requireData(response.data, "Không thể tạo công thức.");
+}
+
+export async function updateRecipe(
+  organizationId: string,
+  productId: string,
+  variantId: string,
+  recipeId: string,
+  request: UpdateRecipeRequest,
+): Promise<RecipeResult> {
+  const response = await axiosClient.put<ApiResult<RecipeResult>>(
+    `${recipesRoot(organizationId, productId, variantId)}/${encodeURIComponent(recipeId)}`,
+    request,
+  );
+  return requireData(response.data, "Không thể cập nhật công thức.");
+}
+
+export async function replaceRecipeItems(
+  organizationId: string,
+  productId: string,
+  variantId: string,
+  recipeId: string,
+  request: ReplaceRecipeItemsRequest,
+): Promise<RecipeResult> {
+  const response = await axiosClient.put<ApiResult<RecipeResult>>(
+    `${recipesRoot(organizationId, productId, variantId)}/${encodeURIComponent(recipeId)}/items`,
+    request,
+  );
+  return requireData(
+    response.data,
+    "Không thể cập nhật nguyên liệu công thức.",
+  );
+}
+
+export async function setRecipeStatus(
+  organizationId: string,
+  productId: string,
+  variantId: string,
+  recipeId: string,
+  status: RecipeStatus,
+): Promise<RecipeResult> {
+  const response = await axiosClient.patch<ApiResult<RecipeResult>>(
+    `${recipesRoot(organizationId, productId, variantId)}/${encodeURIComponent(recipeId)}/status`,
+    { status },
+  );
+  return requireData(response.data, "Không thể cập nhật vòng đời công thức.");
+}
+
+export async function createRecipeVersion(
+  organizationId: string,
+  productId: string,
+  variantId: string,
+  recipeId: string,
+): Promise<RecipeResult> {
+  const response = await axiosClient.post<ApiResult<RecipeResult>>(
+    `${recipesRoot(organizationId, productId, variantId)}/${encodeURIComponent(recipeId)}/versions`,
+  );
+  return requireData(response.data, "Không thể tạo phiên bản công thức mới.");
 }
 
 export async function getMenuById(
@@ -361,7 +603,12 @@ export function getMenuManagementErrorMessage(
     if (error.response?.status === 403) {
       return "Tài khoản hiện tại không có quyền truy cập hoặc quản lý danh mục và thực đơn.";
     }
-    return getApiResultMessage(error.response?.data, `Không thể tải ${resourceName}.`);
+    return getApiResultMessage(
+      error.response?.data,
+      `Không thể tải ${resourceName}.`,
+    );
   }
-  return error instanceof Error ? error.message : `Không thể tải ${resourceName}.`;
+  return error instanceof Error
+    ? error.message
+    : `Không thể tải ${resourceName}.`;
 }

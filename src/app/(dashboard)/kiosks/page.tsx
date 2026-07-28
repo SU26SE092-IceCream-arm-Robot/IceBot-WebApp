@@ -123,7 +123,7 @@ export default function KiosksPage() {
     errorMessage,
     metadataWarning,
     scopedCount,
-    currentUser,
+    effectiveAccess,
     setSearchTerm,
     setStatusFilter,
     setLocationFilter,
@@ -131,9 +131,7 @@ export default function KiosksPage() {
     refresh,
   } = useKiosks();
   const createKiosk = useCreateKiosk({ onCreated: refresh });
-  const canCreateKiosk = currentUser
-    ? hasPermission(currentUser.role, "kiosks.control")
-    : false;
+  const canCreateKiosk = hasPermission(effectiveAccess, "kiosks.manage");
 
   return (
     <div className="space-y-7">

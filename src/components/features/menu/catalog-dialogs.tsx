@@ -5,11 +5,13 @@ import {
   Boxes,
   CirclePause,
   CirclePlay,
+  FlaskConical,
   PackageCheck,
   PackageX,
   Pencil,
   Plus,
   ShoppingBasket,
+  SlidersHorizontal,
   Trash2,
 } from "lucide-react";
 
@@ -48,6 +50,11 @@ interface ProductDetailDialogProps {
   onEditProduct: (product: ProductResult) => void;
   onDeleteProduct: (product: ProductResult) => void;
   onCreateVariant: (product: ProductResult) => void;
+  onManageOptions: (product: ProductResult) => void;
+  onManageRecipes: (
+    product: ProductResult,
+    variant: ProductVariantResult,
+  ) => void;
   onEditVariant: (
     product: ProductResult,
     variant: ProductVariantResult,
@@ -247,6 +254,8 @@ export function ProductDetailDialog({
   onEditProduct,
   onDeleteProduct,
   onCreateVariant,
+  onManageOptions,
+  onManageRecipes,
   onEditVariant,
   onDeleteVariant,
 }: ProductDetailDialogProps) {
@@ -307,6 +316,9 @@ export function ProductDetailDialog({
                     <Button variant="outline" size="sm" onClick={() => onEditProduct(product)}>
                       <Pencil className="size-3.5" />Sửa sản phẩm
                     </Button>
+                    <Button variant="outline" size="sm" onClick={() => onManageOptions(product)}>
+                      <SlidersHorizontal className="size-3.5" />Tùy chọn
+                    </Button>
                     <Button
                       variant={product.isAvailable ? "outline" : "default"}
                       size="sm"
@@ -357,6 +369,14 @@ export function ProductDetailDialog({
                           </div>
                           {canManage ? (
                             <div className="flex flex-wrap gap-1">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => onManageRecipes(product, variant)}
+                              >
+                                <FlaskConical className="size-3.5" />
+                                Công thức
+                              </Button>
                               <Button variant="outline" size="sm" isLoading={variantActionId === variant.id} onClick={() => onToggleVariant(variant)}>
                                 {variant.isAvailable ? "Tắt phiên bản" : "Bật phiên bản"}
                               </Button>

@@ -74,3 +74,18 @@ export function DashboardEmptyState() {
     </Card>
   );
 }
+
+export function DashboardSectionUnavailable({ label }: { label: string }) {
+  return (
+    <Card className="h-full border-warning/30 bg-warning/5 shadow-none">
+      <CardContent className="flex min-h-40 items-center justify-center p-6 text-center">
+        <div className="space-y-1">
+          <p className="text-sm font-medium text-warning">{label} chưa tải được</p>
+          <p className="text-xs text-muted-foreground">
+            Các phần dữ liệu khác vẫn được hiển thị. Hãy thử làm mới sau.
+          </p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}

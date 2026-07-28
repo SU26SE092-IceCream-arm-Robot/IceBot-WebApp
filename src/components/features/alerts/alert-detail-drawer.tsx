@@ -75,13 +75,13 @@ export function AlertDetailDrawer({
   onResolve,
   isSubmitting,
 }: AlertDetailDrawerProps) {
-  const { currentUser } = useAuth();
+  const { effectiveAccess } = useAuth();
   const [resolutionNotes, setResolutionNotes] = useState("");
   const [showResolveInput, setShowResolveInput] = useState(false);
 
   if (!alert) return null;
 
-  const canManage = currentUser && hasPermission(currentUser.role, "alerts.manage");
+  const canManage = hasPermission(effectiveAccess, "alerts.manage");
   const SeverityIcon = SEVERITY_CONFIG[alert.severity].icon;
   const statusConfig = STATUS_CONFIG[alert.status];
 

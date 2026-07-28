@@ -4,6 +4,7 @@ import axiosClient from "@/lib/axios-client";
 import type { ApiResult } from "@/types";
 import type {
   ManagementStoresQuery,
+  PauseStoreSalesRequest,
   StoreResult,
 } from "@/types/kiosk-management";
 import type {
@@ -95,6 +96,30 @@ export async function setManagementStoreActive(
     response.data,
     active ? "Không thể kích hoạt cửa hàng." : "Không thể vô hiệu hóa cửa hàng.",
   );
+}
+
+export async function pauseManagementStoreSales(
+  organizationId: string,
+  storeId: string,
+  request: PauseStoreSalesRequest,
+): Promise<StoreResult> {
+  const response = await axiosClient.patch<ApiResult<StoreResult>>(
+    `/api/v1/management/organizations/${encodeURIComponent(organizationId)}/stores/${encodeURIComponent(storeId)}/sales-pause`,
+    request,
+  );
+
+  return requireData(response.data, "Không thể tạm dừng nhận đơn mới.");
+}
+
+export async function resumeManagementStoreSales(
+  organizationId: string,
+  storeId: string,
+): Promise<StoreResult> {
+  const response = await axiosClient.patch<ApiResult<StoreResult>>(
+    `/api/v1/management/organizations/${encodeURIComponent(organizationId)}/stores/${encodeURIComponent(storeId)}/sales-resume`,
+  );
+
+  return requireData(response.data, "Không thể tiếp tục nhận đơn mới.");
 }
 
 export function getStoresErrorMessage(

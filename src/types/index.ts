@@ -13,17 +13,16 @@ export type {
   StoreResult,
 } from "@/types/kiosk-management";
 
-export type DashboardRole = "ADMIN" | "MANAGER" | "LOCATION_OWNER";
-
-export type Role = DashboardRole;
-
 export type BackendRoleCode =
   | "SystemAdmin"
-  | "Manager"
   | "OrgAdmin"
-  | "LocationOwner"
+  | "Manager"
   | "Staff"
   | "Technician";
+
+export type DashboardRole = BackendRoleCode;
+
+export type Role = DashboardRole;
 
 export type DashboardRoutePath =
   | "/dashboard"
@@ -35,6 +34,7 @@ export type DashboardRoutePath =
   | "/menu"
   | "/reports"
   | "/users"
+  | "/roles"
   | "/maintenance"
   | "/alerts"
   | "/settings/payment-methods";
@@ -42,32 +42,40 @@ export type DashboardRoutePath =
 export type DashboardPermission =
   | "dashboard.view"
   | "organizations.view"
-  | "organizations.edit"
+  | "organizations.manage"
+  | "organizations.update"
+  | "stores.view"
+  | "stores.manage"
+  | "stores.update"
   | "kiosks.view"
-  | "kiosks.control"
+  | "kiosks.manage"
+  | "devices.view"
+  | "devices.manage"
   | "inventory.view"
-  | "inventory.edit"
-  | "transactions.view"
-  | "transactions.edit"
-  | "transactions.refund"
-  | "menu.view"
-  | "menu.edit"
+  | "inventory.manage"
+  | "orders.view"
+  | "orders.manage"
+  | "refunds.manage"
+  | "products.manage"
+  | "menus.manage"
   | "reports.view"
-  | "users.view"
-  | "users.edit"
+  | "accounts.read"
+  | "accounts.manage"
+  | "roles.view"
   | "maintenance.view"
-  | "maintenance.edit"
+  | "maintenance.create"
+  | "maintenance.manage"
   | "alerts.view"
   | "alerts.manage"
-  | "payments.manage";
+  | "payments.manage"
+  | "payment-methods.manage"
+  | "operations.diagnostics";
 
 export interface DashboardUser {
   id: string;
   name: string;
   email: string;
-  role: DashboardRole;
-  locationId?: string;
-  locationIds?: string[];
+  primaryRole: DashboardRole;
   avatarInitials: string;
 }
 

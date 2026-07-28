@@ -30,7 +30,7 @@ const TONES: Record<
 interface DashboardKpiCardProps {
   icon: LucideIcon;
   label: string;
-  value: number;
+  value: number | null;
   description: string;
   href?: string;
   tone?: DashboardKpiTone;
@@ -54,7 +54,7 @@ export function DashboardKpiCard({
           <p
             className={`tabular-nums text-3xl font-bold tracking-tight lg:text-4xl ${TONES[tone].value}`}
           >
-            {value.toLocaleString("vi-VN")}
+            {value === null ? "—" : value.toLocaleString("vi-VN")}
           </p>
           <p className="text-xs leading-5 text-muted-foreground">
             {description}

@@ -1,4 +1,13 @@
-import type { PagedResult } from "@/types/accounts";
+import type { ApiResult } from "@/types";
+
+export type DeviceStatus =
+  | "Provisioning"
+  | "Online"
+  | "Offline"
+  | "Maintenance"
+  | "Error"
+  | "Disabled"
+  | "Retired";
 
 export interface DeviceResult {
   id: string;
@@ -13,7 +22,7 @@ export interface DeviceResult {
   code: string;
   name: string;
   serialNumber: string | null;
-  status: string;
+  status: DeviceStatus;
   positionLabel: string | null;
   firmwareVersion: string | null;
   installedAt: string | null;
@@ -22,4 +31,21 @@ export interface DeviceResult {
   updatedAt: string | null;
 }
 
-export type DeviceListResult = PagedResult<DeviceResult>;
+export interface CreateDeviceRequest {
+  deviceTypeId: number;
+  deviceModelId?: string | null;
+  code: string;
+  name: string;
+  serialNumber?: string | null;
+  positionLabel?: string | null;
+  firmwareVersion?: string | null;
+  installedAt?: string | null;
+}
+
+export type UpdateDeviceRequest = Omit<CreateDeviceRequest, "code">;
+
+export interface SetDeviceStatusRequest {
+  status: Exclude<DeviceStatus, "Retired">;
+}
+
+export type DeviceListResult = ApiResult<DeviceResult[]>;

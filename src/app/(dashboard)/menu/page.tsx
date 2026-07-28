@@ -38,7 +38,9 @@ import {
 } from "@/components/features/menu/product-crud-dialogs";
 import { ProductCategoriesCatalogDialog } from "@/components/features/menu/product-categories-catalog-dialog";
 import { ProductOptionsCatalogDialog } from "@/components/features/menu/product-options-catalog-dialog";
+import { ProductOptionAuthoringDialog } from "@/components/features/menu/product-option-authoring-dialog";
 import { ProductTemplatesDialog } from "@/components/features/menu/product-templates-dialog";
+import { RecipeAuthoringDialog } from "@/components/features/menu/recipe-authoring-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -75,6 +77,7 @@ import type {
   MenuManagementPagination,
   MenuResult,
   ProductResult,
+  ProductVariantResult,
 } from "@/types/menu-management";
 
 function CatalogLoadingTable() {
@@ -311,7 +314,12 @@ function ProductsPanel({
 export default function MenuPage() {
   const [isProductOptionsOpen, setProductOptionsOpen] = useState(false);
   const [isProductCategoriesOpen, setProductCategoriesOpen] = useState(false);
-  const { currentUser } = useAuth();
+  const [isOptionAuthoringOpen, setOptionAuthoringOpen] = useState(false);
+  const [recipeTarget, setRecipeTarget] = useState<{
+    product: ProductResult;
+    variant: ProductVariantResult;
+  } | null>(null);
+  const { effectiveAccess } = useAuth();
   const {
     organizations,
     selectedOrganizationId,
@@ -450,9 +458,7 @@ export default function MenuPage() {
     confirmDelete,
   } = useProductCrud({ organizationId: selectedOrganizationId, onChanged: handleProductChanged });
 
-  const canManage = currentUser
-    ? hasPermission(currentUser.role, "menu.edit")
-    : false;
+  const canManage = hasPermission(effectiveAccess, "products.manage");
   const productTemplates = useProductTemplates({
     organizationId: selectedOrganizationId,
     onCloned: async () => {
@@ -654,6 +660,10 @@ export default function MenuPage() {
         onEditProduct={openProductEdit}
         onDeleteProduct={requestProductDelete}
         onCreateVariant={openVariantCreate}
+        onManageOptions={() => setOptionAuthoringOpen(true)}
+        onManageRecipes={(product, variant) =>
+          setRecipeTarget({ product, variant })
+        }
         onEditVariant={openVariantEdit}
         onDeleteVariant={requestVariantDelete}
       />
@@ -726,6 +736,28 @@ export default function MenuPage() {
         onNextPage={productOptions.nextPage}
         onRetry={productOptions.retry}
       />
+
+      {selectedOrganizationId && selectedProduct ? (
+        <ProductOptionAuthoringDialog
+          organizationId={selectedOrganizationId}
+          product={selectedProduct}
+          open={isOptionAuthoringOpen}
+          onOpenChange={setOptionAuthoringOpen}
+          onChanged={() => openProductDetail(selectedProduct.id, true)}
+        />
+      ) : null}
+
+      {selectedOrganizationId && recipeTarget ? (
+        <RecipeAuthoringDialog
+          organizationId={selectedOrganizationId}
+          product={recipeTarget.product}
+          variant={recipeTarget.variant}
+          open
+          onOpenChange={(open) => {
+            if (!open) setRecipeTarget(null);
+          }}
+        />
+      ) : null}
 
       {productFormOpen ? (
         <ProductFormDialog

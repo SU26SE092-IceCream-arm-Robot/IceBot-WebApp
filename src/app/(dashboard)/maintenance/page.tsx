@@ -143,7 +143,7 @@ function MaintenanceLoadingTable() {
 }
 
 export default function MaintenancePage() {
-  const { currentUser } = useAuth();
+  const { effectiveAccess } = useAuth();
   const {
     tickets,
     visibleTickets,
@@ -184,9 +184,8 @@ export default function MaintenancePage() {
     clearSuccessMessage,
     refresh,
   } = useMaintenance();
-  const canManage = currentUser
-    ? hasPermission(currentUser.role, "maintenance.edit")
-    : false;
+  const canCreate = hasPermission(effectiveAccess, "maintenance.create");
+  const canManage = hasPermission(effectiveAccess, "maintenance.manage");
 
   return (
     <div className="space-y-7">
@@ -226,7 +225,7 @@ export default function MaintenancePage() {
             <RefreshCw className="size-4" />
             Làm mới
           </Button>
-          {canManage ? (
+          {canCreate ? (
             <Button className="h-10" onClick={openCreateEditor}>
               <Plus className="size-4" />
               Tạo yêu cầu

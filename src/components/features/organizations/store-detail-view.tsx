@@ -4,6 +4,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
+  CirclePause,
+  CirclePlay,
   Eye,
   MapPin,
   Monitor,
@@ -13,6 +15,8 @@ import {
   RefreshCw,
   Store as StoreIcon,
 } from "lucide-react";
+
+import { StoreSalesAdmissionDialog } from "@/components/features/operations/sales-admission-dialogs";
 
 import {
   LifecycleConfirmDialog,
@@ -39,6 +43,8 @@ import {
 } from "@/components/ui/table";
 import { useAuth } from "@/hooks/use-auth";
 import { useTenantMutationRefresh } from "@/hooks/use-tenant-mutation-refresh";
+import { hasPermission } from "@/lib/rbac";
+import { getStoreOpeningState } from "@/lib/presenters/sales-admission";
 import {
   getKioskManagementErrorMessage,
   getManagementKiosks,
@@ -50,6 +56,8 @@ import {
 import {
   getManagementStoreById,
   getStoresErrorMessage,
+  pauseManagementStoreSales,
+  resumeManagementStoreSales,
   setManagementStoreActive,
   updateManagementStore,
 } from "@/lib/services/stores";
@@ -157,7 +165,7 @@ function KioskOperationalStateBadge({
 }
 
 export function StoreDetailView({ storeId }: StoreDetailViewProps) {
-  const { currentUser } = useAuth();
+  const { effectiveAccess } = useAuth();
   const currentStoreIdRef = useRef(storeId);
   useEffect(() => {
     currentStoreIdRef.current = storeId;
@@ -170,9 +178,10 @@ export function StoreDetailView({ storeId }: StoreDetailViewProps) {
   const [warningMessage, setWarningMessage] = useState<string | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [lifecycleOpen, setLifecycleOpen] = useState(false);
+  const [salesActionOpen, setSalesActionOpen] = useState(false);
 
-  const canManage =
-    currentUser?.role === "ADMIN" || currentUser?.role === "LOCATION_OWNER";
+  const canEdit = hasPermission(effectiveAccess, "stores.update");
+  const canManage = hasPermission(effectiveAccess, "stores.manage");
 
   const loadData = useCallback(async (
     signal?: AbortSignal,
@@ -283,6 +292,35 @@ export function StoreDetailView({ storeId }: StoreDetailViewProps) {
     });
   };
 
+  const pauseSales = async (request: {
+    reason: string;
+    resumeAt?: string | null;
+  }) => {
+    if (!store) return false;
+    return mutationState.runMutation({
+      mutation: () =>
+        pauseManagementStoreSales(store.organizationId, store.id, request),
+      refreshContext: { storeId },
+      successMessage: `Đã tạm dừng nhận đơn mới tại ${store.name}.`,
+      getErrorMessage: (error) =>
+        getStoresErrorMessage(error, "Không thể tạm dừng nhận đơn mới."),
+      tone: "warning",
+      onMutationSuccess: () => setSalesActionOpen(false),
+    });
+  };
+
+  const resumeSales = async () => {
+    if (!store) return false;
+    return mutationState.runMutation({
+      mutation: () => resumeManagementStoreSales(store.organizationId, store.id),
+      refreshContext: { storeId },
+      successMessage: `Đã tiếp tục nhận đơn mới tại ${store.name}.`,
+      getErrorMessage: (error) =>
+        getStoresErrorMessage(error, "Không thể tiếp tục nhận đơn mới."),
+      onMutationSuccess: () => setSalesActionOpen(false),
+    });
+  };
+
   if (isLoading) return <TenantLoadingState label="Đang tải thông tin cửa hàng..." />;
   if (!store) {
     return <TenantErrorState message={errorMessage ?? "Không tìm thấy cửa hàng."} onRetry={() => void loadData()} />;
@@ -291,6 +329,15 @@ export function StoreDetailView({ storeId }: StoreDetailViewProps) {
   const location = [store.address, store.city, store.province, store.country]
     .filter(Boolean)
     .join(", ");
+  const openingState = getStoreOpeningState(store);
+  const openingStateLabel =
+    openingState === "OPEN"
+      ? "Đang trong giờ mở cửa"
+      : openingState === "CLOSED"
+        ? "Ngoài giờ mở cửa"
+        : openingState === "UNRESTRICTED"
+          ? "Không giới hạn theo lịch"
+          : "Chưa thể xác định";
 
   return (
     <div className="space-y-7">
@@ -303,8 +350,10 @@ export function StoreDetailView({ storeId }: StoreDetailViewProps) {
 
       <section className="flex flex-col gap-4 border-b border-border pb-6 lg:flex-row lg:items-end lg:justify-between">
         <div className="space-y-3"><Link href={`/organizations/${store.organizationId}`} className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="size-4" />{organization?.name ?? "Tổ chức"}</Link><div className="flex flex-wrap items-center gap-3"><h1 className="text-3xl font-semibold tracking-tight">{store.name}</h1><TenantStatusBadge status={store.status} /></div><p className="font-mono text-sm text-muted-foreground">{store.code}</p></div>
-        <div className="flex flex-wrap gap-2">{canManage ? <Button variant="outline" onClick={() => { mutationState.clearError(); setFormOpen(true); }}><Pencil className="size-4" />Chỉnh sửa</Button> : null}{canManage ? <Button variant={store.status === "Active" ? "destructive" : "default"} onClick={() => { mutationState.clearError(); setLifecycleOpen(true); }}>{store.status === "Active" ? <PowerOff className="size-4" /> : <Power className="size-4" />}{store.status === "Active" ? "Vô hiệu hóa" : "Kích hoạt"}</Button> : null}<Button variant="outline" onClick={() => void loadData()}><RefreshCw className="size-4" />Làm mới</Button></div>
+        <div className="flex flex-wrap gap-2">{canEdit ? <Button variant="outline" onClick={() => { mutationState.clearError(); setFormOpen(true); }}><Pencil className="size-4" />Chỉnh sửa</Button> : null}{canManage && (store.status === "Active" || store.isSalesPaused) ? <Button variant={store.isSalesPaused ? "default" : "outline"} onClick={() => { mutationState.clearError(); setSalesActionOpen(true); }}>{store.isSalesPaused ? <CirclePlay className="size-4" /> : <CirclePause className="size-4" />}{store.isSalesPaused ? "Tiếp tục nhận đơn" : "Tạm dừng nhận đơn"}</Button> : null}{canManage ? <Button variant={store.status === "Active" ? "destructive" : "default"} onClick={() => { mutationState.clearError(); setLifecycleOpen(true); }}>{store.status === "Active" ? <PowerOff className="size-4" /> : <Power className="size-4" />}{store.status === "Active" ? "Vô hiệu hóa" : "Kích hoạt"}</Button> : null}<Button variant="outline" onClick={() => void loadData()}><RefreshCw className="size-4" />Làm mới</Button></div>
       </section>
+
+      <Card className="border border-border/80 shadow-none"><CardHeader className="border-b border-border"><CardTitle>Trạng thái tiếp nhận đơn</CardTitle><p className="text-sm text-muted-foreground">Vòng đời cửa hàng, lịch mở cửa và tạm dừng nhận đơn là các điều kiện riêng biệt.</p></CardHeader><CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"><DetailField label="Vòng đời cửa hàng" value={store.status === "Active" ? "Đang hoạt động" : "Không hoạt động"} /><DetailField label="Lịch mở cửa hiện tại" value={openingStateLabel} /><DetailField label="Nhận đơn mới" value={store.isSalesPaused ? "Đang tạm dừng" : "Không bị tạm dừng"} /><DetailField label="Lý do tạm dừng" value={store.salesPauseReason || "Không có"} /><DetailField label="Tạm dừng từ" value={formatTenantDate(store.salesPausedAt)} /><DetailField label="Tự tiếp tục lúc" value={formatTenantDate(store.salesPausedUntil)} /></CardContent><div className="border-t border-border px-6 py-3 text-xs text-muted-foreground">Dừng nhận đơn mới không hủy đơn đã thanh toán hoặc công việc đang xử lý.</div></Card>
 
       <Card className="border border-border/80 shadow-none"><CardHeader className="border-b border-border"><div className="flex items-center gap-3"><span className="flex size-10 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary"><StoreIcon className="size-5" /></span><CardTitle>Thông tin cửa hàng</CardTitle></div></CardHeader><CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"><DetailField label="Tổ chức" value={organization?.name ?? "Không xác định"} /><DetailField label="Loại cửa hàng" value={store.storeType} /><DetailField label="Múi giờ" value={formatTimeZoneDisplay(store.timeZone)} /><DetailField label="Email" value={store.email || "Chưa có"} /><DetailField label="Số điện thoại" value={store.phoneNumber || "Chưa có"} /><DetailField label="Địa chỉ" value={location || "Chưa có"} /><DetailField label="Vĩ độ" value={store.latitude?.toString() ?? "Chưa có"} /><DetailField label="Kinh độ" value={store.longitude?.toString() ?? "Chưa có"} /><DetailField label="Cập nhật" value={formatTenantDate(store.updatedAt ?? store.createdAt)} /><DetailField label="Lịch mở cửa" value={formatOpeningHours(store)} /></CardContent></Card>
 
@@ -312,6 +361,7 @@ export function StoreDetailView({ storeId }: StoreDetailViewProps) {
 
       {formOpen ? <StoreFormDialog organizationName={organization?.name ?? "Tổ chức"} store={store} open isSubmitting={mutationState.isSubmitting} errorMessage={mutationState.errorMessage} onOpenChange={(open) => { if (!mutationState.mutationRef.current) setFormOpen(open); }} onCreate={async () => false} onUpdate={submitUpdate} /> : null}
       {lifecycleOpen ? <LifecycleConfirmDialog entityLabel="cửa hàng" entityName={store.name} activate={store.status !== "Active"} open isSubmitting={mutationState.isSubmitting} errorMessage={mutationState.errorMessage} onOpenChange={(open) => { if (!mutationState.mutationRef.current) setLifecycleOpen(open); }} onConfirm={confirmLifecycle} /> : null}
+      {salesActionOpen ? <StoreSalesAdmissionDialog storeName={store.name} isPaused={store.isSalesPaused} open isSubmitting={mutationState.isSubmitting} errorMessage={mutationState.errorMessage} onOpenChange={(open) => { if (!mutationState.mutationRef.current) setSalesActionOpen(open); }} onPause={pauseSales} onResume={resumeSales} /> : null}
     </div>
   );
 }

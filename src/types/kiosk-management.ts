@@ -58,6 +58,16 @@ export interface CreateKioskRequest {
   longitude?: number | null;
 }
 
+export interface SetKioskOperationalStateRequest {
+  state: KioskOperationalState;
+  reason: string;
+}
+
+export interface PauseStoreSalesRequest {
+  reason: string;
+  resumeAt?: string | null;
+}
+
 export interface StoreResult {
   id: string;
   organizationId: string;
@@ -75,6 +85,13 @@ export interface StoreResult {
   phoneNumber?: string | null;
   email?: string | null;
   openingHours: StoreOpeningHoursDay[];
+  isSalesPaused: boolean;
+  salesPausedAt?: string | null;
+  salesPausedUntil?: string | null;
+  salesPauseReason?: string | null;
+  salesPausedByAccountId?: string | null;
+  salesResumedAt?: string | null;
+  salesResumedByAccountId?: string | null;
   createdAt: string;
   updatedAt?: string | null;
 }

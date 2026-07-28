@@ -106,6 +106,16 @@ export async function getDashboardOverview(
     );
   }
 
+  const hasUsableRoot = Object.values(response.data.data).some(
+    (root) => root !== null && root !== undefined,
+  );
+
+  if (!hasUsableRoot) {
+    throw new Error(
+      warnings.join(" ") || "Backend không trả về dữ liệu tổng quan.",
+    );
+  }
+
   return {
     data: response.data.data,
     warnings,

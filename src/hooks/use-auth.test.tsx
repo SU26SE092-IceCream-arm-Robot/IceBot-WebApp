@@ -204,4 +204,48 @@ describe("stored-session recovery", () => {
     expect(screen.getByTestId("access")).toHaveTextContent("none");
     expect(readAuthSession()).toEqual(storedSession);
   });
+
+  it("refreshes effective access when the window regains focus", async () => {
+    const updatedAccess: EffectiveAccessResult = {
+      ...currentAccess,
+      isSystemAdmin: false,
+      roles: ["Manager"],
+    };
+    vi.mocked(getCurrentAccount).mockResolvedValueOnce(currentAccount);
+    vi.mocked(getCurrentAccountAccess)
+      .mockResolvedValueOnce(currentAccess)
+      .mockResolvedValueOnce(updatedAccess);
+
+    renderAuthProvider();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("access")).toHaveTextContent("SystemAdmin");
+    });
+
+    fireEvent(window, new Event("focus"));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("access")).toHaveTextContent("Manager");
+    });
+  });
+
+  it("keeps known access when focus refresh has a temporary network error", async () => {
+    vi.mocked(getCurrentAccount).mockResolvedValueOnce(currentAccount);
+    vi.mocked(getCurrentAccountAccess)
+      .mockResolvedValueOnce(currentAccess)
+      .mockRejectedValueOnce(new AxiosError("network error", "ERR_NETWORK"));
+
+    renderAuthProvider();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("access")).toHaveTextContent("SystemAdmin");
+    });
+
+    fireEvent(window, new Event("focus"));
+
+    await waitFor(() => {
+      expect(getCurrentAccountAccess).toHaveBeenCalledTimes(2);
+    });
+    expect(screen.getByTestId("access")).toHaveTextContent("SystemAdmin");
+  });
 });

@@ -54,10 +54,8 @@ const SHORTCUTS: Array<{
 ];
 
 export function OperationalShortcuts() {
-  const { currentUser } = useAuth();
-  const visibleRoutes = new Set(
-    currentUser ? getVisibleRoutes(currentUser.role) : [],
-  );
+  const { effectiveAccess } = useAuth();
+  const visibleRoutes = new Set(getVisibleRoutes(effectiveAccess));
   const visibleShortcuts = SHORTCUTS.filter((item) =>
     visibleRoutes.has(item.href),
   );

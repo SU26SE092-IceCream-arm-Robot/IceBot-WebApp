@@ -14,11 +14,9 @@ import {
 import type { ManagementRoleResult } from "@/types/accounts";
 
 const ROLE_NAME_LABELS: Record<string, string> = {
-  Admin: "Quản trị viên",
   SystemAdmin: "Quản trị hệ thống",
-  Manager: "Quản lý",
+  Manager: "Quản lý vận hành",
   OrgAdmin: "Quản trị tổ chức",
-  LocationOwner: "Quản lý địa điểm",
   Staff: "Nhân viên",
   Technician: "Kỹ thuật viên",
 };

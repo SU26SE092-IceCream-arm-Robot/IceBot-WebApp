@@ -1,6 +1,7 @@
 import type { ApiResult } from "@/types";
 
-export type TenantScopeType = "Global" | "Organization" | "Store" | "Kiosk" | "Device";
+export type TenantScopeType =
+  "Global" | "Organization" | "Store" | "Kiosk" | "Device";
 
 export type MenuStatus = "Draft" | "Active" | "Paused" | "Archived";
 
@@ -11,8 +12,7 @@ export type FulfillmentType = "Manual" | "Packaged" | "MachineProduced";
 export type OptionSelectionType = "Single" | "Multiple";
 
 export type ProductOptionExecutionImpact =
-  | "CommercialOnly"
-  | "ProductionAffecting";
+  "CommercialOnly" | "ProductionAffecting";
 
 export interface ProductOptionResult {
   id: string;
@@ -26,6 +26,14 @@ export interface ProductOptionResult {
   isDefault: boolean;
   isAvailable: boolean;
   displayOrder: number;
+  ingredientRequirements: ProductOptionIngredientRequirementResult[];
+}
+
+export interface ProductOptionIngredientRequirementResult {
+  ingredientId: string;
+  quantity: number;
+  unit: string;
+  requiredWorkcellCapabilityCode: string;
 }
 
 export interface ProductCategoryResult {
@@ -52,6 +60,93 @@ export interface OptionGroupResult {
   isActive: boolean;
   displayOrder: number;
   options: ProductOptionResult[];
+}
+
+export interface UpsertOptionGroupRequest {
+  code: string;
+  name: string;
+  description?: string | null;
+  selectionType: OptionSelectionType;
+  minSelections: number;
+  maxSelections: number;
+  isRequired: boolean;
+  displayOrder: number;
+}
+
+export interface UpsertProductOptionRequest {
+  code: string;
+  name: string;
+  description?: string | null;
+  priceDelta: number;
+  executionImpact: ProductOptionExecutionImpact;
+  isDefault: boolean;
+  displayOrder: number;
+}
+
+export interface ReplaceProductOptionIngredientRequirementsRequest {
+  items: Array<{
+    ingredientId: string;
+    quantity: number;
+    unit: string;
+    requiredWorkcellCapabilityCode: string;
+  }>;
+}
+
+export type RecipeStatus = "Draft" | "Published" | "Active" | "Retired";
+
+export interface RecipeItemResult {
+  id: string;
+  ingredientId: string;
+  ingredientCode: string;
+  ingredientName: string;
+  quantity: number;
+  unit: string;
+  displayOrder: number;
+  isOptional: boolean;
+  notes?: string | null;
+}
+
+export interface RecipeResult {
+  id: string;
+  productVariantId: string;
+  templateRecipeId?: string | null;
+  code: string;
+  name: string;
+  version: number;
+  status: RecipeStatus;
+  isDefault: boolean;
+  yieldQuantity: number;
+  unit: string;
+  estimatedDurationSeconds?: number | null;
+  effectiveFrom?: string | null;
+  effectiveTo?: string | null;
+  createdAt: string;
+  updatedAt?: string | null;
+  items: RecipeItemResult[];
+}
+
+export interface CreateRecipeRequest {
+  code: string;
+  name: string;
+  yieldQuantity: number;
+  unit: string;
+  estimatedDurationSeconds?: number | null;
+  effectiveFrom?: string | null;
+  effectiveTo?: string | null;
+  isDefault: boolean;
+}
+
+export type UpdateRecipeRequest = Omit<CreateRecipeRequest, "code">;
+
+export interface ReplaceRecipeItemsRequest {
+  items: Array<{
+    ingredientId: string;
+    quantity: number;
+    unit: string;
+    displayOrder: number;
+    isOptional: boolean;
+    notes?: string | null;
+  }>;
 }
 
 export interface ProductVariantResult {
@@ -263,4 +358,7 @@ export interface CreateMenuItemRequest {
   productOptionIds: string[];
 }
 
-export type UpdateMenuItemRequest = Partial<CreateMenuItemRequest>;
+export interface UpdateMenuItemRequest
+  extends Partial<CreateMenuItemRequest> {
+  clearRecipe?: boolean;
+}
