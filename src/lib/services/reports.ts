@@ -451,11 +451,11 @@ function kioskAttentionRows(
   const operationalReasons: Partial<
     Record<KioskResult["operationalState"], string>
   > = {
-    PausedByOperator: "Tạm dừng bởi nhân viên",
-    Maintenance: "Đang bảo trì",
-    Cleaning: "Đang vệ sinh",
-    Restocking: "Đang bổ sung hàng",
-    EmergencyStopRequested: "Đã yêu cầu dừng khẩn cấp",
+    PausedByOperator: "Đã tạm dừng nhận đơn",
+    Maintenance: "Tạm dừng để bảo trì",
+    Cleaning: "Tạm dừng để vệ sinh",
+    Restocking: "Tạm dừng để bổ sung hàng",
+    EmergencyStopRequested: "Đang yêu cầu dừng khẩn cấp",
     OutOfService: "Ngừng phục vụ",
   };
 

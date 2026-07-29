@@ -40,7 +40,11 @@ import { ProductionOperationsPanel } from "./production-operations-panel";
 import { useAuth } from "@/hooks/use-auth";
 import type { KioskEvidenceState } from "@/hooks/use-kiosk-detail";
 import { useKioskDetail } from "@/hooks/use-kiosk-detail";
-import { hasPermission, hasScopedRole } from "@/lib/rbac";
+import { hasScopedRole } from "@/lib/rbac";
+import {
+  getKioskLifecycleLabel,
+  getKioskOperationalLabel,
+} from "@/lib/presenters/kiosk-state-labels";
 import { cn } from "@/lib/utils";
 import type { KioskLifecycleStatus, KioskOperationalState } from "@/types";
 import type {
@@ -75,19 +79,6 @@ function formatTimestamp(value?: string | null): string {
   }).format(date);
 }
 
-function getLifecycleLabel(status: KioskLifecycleStatus): string {
-  switch (status) {
-    case "Provisioning":
-      return "Đang cấu hình";
-    case "Active":
-      return "Đang hoạt động";
-    case "Disabled":
-      return "Đã vô hiệu hóa";
-    case "Retired":
-      return "Ngừng sử dụng";
-  }
-}
-
 function getLifecycleVariant(
   status: KioskLifecycleStatus,
 ): "default" | "destructive" | "secondary" | "outline" {
@@ -104,20 +95,6 @@ function getLifecycleVariant(
   }
 
   return "outline";
-}
-
-function getOperationalLabel(state: KioskOperationalState): string {
-  const labels: Record<KioskOperationalState, string> = {
-    Operational: "Đang vận hành",
-    PausedByOperator: "Tạm dừng bởi nhân viên",
-    Maintenance: "Đang bảo trì",
-    Cleaning: "Đang vệ sinh",
-    Restocking: "Đang bổ sung hàng",
-    EmergencyStopRequested: "Đã yêu cầu dừng khẩn cấp",
-    OutOfService: "Ngừng phục vụ",
-  };
-
-  return labels[state];
 }
 
 function getOperationalVariant(
@@ -296,10 +273,10 @@ function DetailHeader({
               {kiosk.name}
             </h1>
             <Badge variant={getLifecycleVariant(kiosk.lifecycleStatus)}>
-              {getLifecycleLabel(kiosk.lifecycleStatus)}
+              {getKioskLifecycleLabel(kiosk.lifecycleStatus)}
             </Badge>
             <Badge variant={getOperationalVariant(kiosk.operationalState)}>
-              {getOperationalLabel(kiosk.operationalState)}
+              {getKioskOperationalLabel(kiosk.operationalState)}
             </Badge>
           </div>
           <p className="tabular-nums text-sm font-medium text-muted-foreground">
@@ -356,11 +333,11 @@ function MetadataPanel({ kiosk }: { kiosk: KioskManagementDetail }) {
       <CardContent className="p-5">
         <DetailValue
           label="Trạng thái vòng đời"
-          value={getLifecycleLabel(kiosk.lifecycleStatus)}
+          value={getKioskLifecycleLabel(kiosk.lifecycleStatus)}
         />
         <DetailValue
           label="Trạng thái vận hành"
-          value={getOperationalLabel(kiosk.operationalState)}
+          value={getKioskOperationalLabel(kiosk.operationalState)}
         />
         <DetailValue
           label="Lý do trạng thái vận hành"
@@ -377,7 +354,7 @@ function MetadataPanel({ kiosk }: { kiosk: KioskManagementDetail }) {
         <DetailValue label="Múi giờ" value={kiosk.timeZone} />
         <DetailValue label="Địa chỉ" value={kiosk.address || "Chưa cập nhật"} />
         <DetailValue
-          label="Online gần nhất (metadata)"
+          label="Kết nối gần nhất theo thông tin quản lý"
           value={<span className="tabular-nums">{formatTimestamp(kiosk.lastOnlineAt)}</span>}
         />
       </CardContent>
@@ -644,12 +621,6 @@ export function KioskDetailView({ kioskId }: KioskDetailViewProps) {
     clearOperationalStateError,
     refresh,
   } = useKioskDetail(kioskId);
-  const canManageOperationalState = hasPermission(
-    effectiveAccess,
-    "kiosks.manage",
-  );
-  const canManageDevices = hasPermission(effectiveAccess, "devices.manage");
-
   if (state === "LOADING") {
     return <DetailSkeleton />;
   }
@@ -689,6 +660,16 @@ export function KioskDetailView({ kioskId }: KioskDetailViewProps) {
     storeId: kiosk.locationId,
     kioskId: kiosk.managementId,
   };
+  const canManageOperationalState = hasScopedRole(
+    effectiveAccess,
+    ["SystemAdmin", "OrgAdmin", "Manager", "Technician"],
+    scope,
+  );
+  const canManageDevices = hasScopedRole(
+    effectiveAccess,
+    ["SystemAdmin", "OrgAdmin", "Manager", "Technician"],
+    scope,
+  );
   const canManagePrograms = hasScopedRole(
     effectiveAccess,
     ["SystemAdmin", "OrgAdmin", "Manager"],
@@ -730,9 +711,9 @@ export function KioskDetailView({ kioskId }: KioskDetailViewProps) {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full space-y-6">
         <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 lg:w-auto lg:inline-flex">
           <TabsTrigger value="overview">Tổng quan</TabsTrigger>
-          <TabsTrigger value="heartbeats">Heartbeats</TabsTrigger>
+          <TabsTrigger value="heartbeats">Kết nối</TabsTrigger>
           <TabsTrigger value="events">Sự kiện</TabsTrigger>
-          <TabsTrigger value="devices">Vận hành nâng cao</TabsTrigger>
+          <TabsTrigger value="devices">Vận hành kỹ thuật</TabsTrigger>
         </TabsList>
         <TabsContent value="overview" className="space-y-6">
           <div className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
@@ -752,7 +733,7 @@ export function KioskDetailView({ kioskId }: KioskDetailViewProps) {
         <TabsContent value="devices">
           <div className="space-y-4">
             <div className="rounded-lg border border-warning/30 bg-warning/5 px-4 py-3 text-sm text-warning">
-              Khu vực này hiển thị metadata thiết bị và bằng chứng endpoint. Thông tin xác thực, MQTT và lệnh trực tiếp không được hiển thị.
+              Khu vực này chỉ hiển thị thông tin kỹ thuật đã giới hạn và bằng chứng từ điểm thực thi. Thông tin kết nối bí mật và lệnh trực tiếp không được hiển thị.
             </div>
             <DevicesTable kioskId={kioskId} canManage={canManageDevices} />
             <ExecutionEndpointsTable kioskId={kioskId} canManage={canManageDevices} />

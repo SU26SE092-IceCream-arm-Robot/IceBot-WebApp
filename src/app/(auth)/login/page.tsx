@@ -18,10 +18,10 @@ export default function LoginPage() {
             <IceCream className="size-6" />
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-            ICEBOT Admin Console
+            Trung tâm vận hành ICEBOT
           </h1>
           <p className="mt-2 text-sm font-medium text-muted-foreground">
-            Quản trị vận hành kiosk thông minh.
+            Theo dõi và điều phối hoạt động trong phạm vi được giao.
           </p>
         </div>
 

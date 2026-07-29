@@ -13,7 +13,7 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "IceBot Admin Dashboard",
+  title: "Trung tâm vận hành IceBot",
   description:
     "Trung tâm giám sát và quản lý hệ thống trạm bán kem tự động IceBot.",
 };

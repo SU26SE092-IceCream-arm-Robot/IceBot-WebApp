@@ -26,6 +26,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
+import { getKioskLifecycleLabel } from "@/lib/presenters/kiosk-state-labels";
 import type {
   DashboardMetrics,
   DashboardRecentOrder,
@@ -52,17 +53,6 @@ function formatTimestamp(value?: string | null): string {
     month: "2-digit",
     year: "numeric",
   }).format(date);
-}
-
-function getKioskStatusLabel(status: string): string {
-  const labels: Record<string, string> = {
-    Provisioning: "Đang cấu hình",
-    Active: "Đang hoạt động",
-    Disabled: "Đã vô hiệu hóa",
-    Retired: "Ngừng sử dụng",
-  };
-
-  return labels[status] ?? status;
 }
 
 function getKioskStatusBar(status: string): string {
@@ -348,7 +338,7 @@ export function KioskLifecycleSummaryPanel({
                 <div key={item.status} className="space-y-1.5">
                   <div className="flex items-center justify-between gap-4 text-sm">
                     <span className="text-foreground">
-                      {getKioskStatusLabel(item.status)}
+                    {getKioskLifecycleLabel(item.status)}
                     </span>
                     <span className="tabular-nums text-muted-foreground">
                       {item.count.toLocaleString("vi-VN")}

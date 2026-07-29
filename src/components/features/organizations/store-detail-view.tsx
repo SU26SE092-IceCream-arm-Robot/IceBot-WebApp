@@ -46,6 +46,10 @@ import { useTenantMutationRefresh } from "@/hooks/use-tenant-mutation-refresh";
 import { hasPermission } from "@/lib/rbac";
 import { getStoreOpeningState } from "@/lib/presenters/sales-admission";
 import {
+  getKioskLifecycleLabel,
+  getKioskOperationalLabel,
+} from "@/lib/presenters/kiosk-state-labels";
+import {
   getKioskManagementErrorMessage,
   getManagementKiosks,
 } from "@/lib/services/kiosk-management";
@@ -81,26 +85,6 @@ function DetailField({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
-
-const KIOSK_STATUS_LABELS: Record<KioskResult["status"], string> = {
-  Provisioning: "Đang cấu hình",
-  Active: "Đang hoạt động",
-  Disabled: "Đã vô hiệu hóa",
-  Retired: "Ngừng sử dụng",
-};
-
-const KIOSK_OPERATIONAL_STATE_LABELS: Record<
-  KioskResult["operationalState"],
-  string
-> = {
-  Operational: "Đang vận hành",
-  PausedByOperator: "Tạm dừng bởi nhân viên",
-  Maintenance: "Đang bảo trì",
-  Cleaning: "Đang vệ sinh",
-  Restocking: "Đang bổ sung hàng",
-  EmergencyStopRequested: "Đã yêu cầu dừng khẩn cấp",
-  OutOfService: "Ngừng phục vụ",
-};
 
 const STORE_DAY_LABELS: Record<StoreDayOfWeek, string> = {
   Monday: "Thứ 2",
@@ -140,7 +124,7 @@ function KioskStatusBadge({ status }: { status: KioskResult["status"] }) {
         : "border-border bg-muted/30 text-muted-foreground";
   return (
     <Badge variant="outline" className={`h-6 rounded-full px-2.5 ${className}`}>
-      {KIOSK_STATUS_LABELS[status]}
+      {getKioskLifecycleLabel(status)}
     </Badge>
   );
 }
@@ -159,7 +143,7 @@ function KioskOperationalStateBadge({
 
   return (
     <Badge variant="outline" className={`h-6 rounded-full px-2.5 ${className}`}>
-      {KIOSK_OPERATIONAL_STATE_LABELS[state]}
+      {getKioskOperationalLabel(state)}
     </Badge>
   );
 }

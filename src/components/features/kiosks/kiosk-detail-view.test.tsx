@@ -3,21 +3,23 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { KioskDetailView } from "@/components/features/kiosks/kiosk-detail-view";
 import type { UseKioskDetailResult } from "@/hooks/use-kiosk-detail";
+import type { EffectiveAccessResult } from "@/types/accounts";
 import type { KioskManagementDetail } from "@/types/kiosk-detail";
 
 const mocks = vi.hoisted(() => ({
   detail: null as UseKioskDetailResult | null,
+  access: {
+    accountId: "account-1",
+    isSystemAdmin: true,
+    roles: ["SystemAdmin"],
+    roleScopes: [],
+    effectiveScope: { organizationIds: [], storeIds: [], kioskIds: [] },
+  } as EffectiveAccessResult,
 }));
 
 vi.mock("@/hooks/use-auth", () => ({
   useAuth: () => ({
-    effectiveAccess: {
-      accountId: "account-1",
-      isSystemAdmin: true,
-      roles: ["SystemAdmin"],
-      roleScopes: [],
-      effectiveScope: { organizationIds: [], storeIds: [], kioskIds: [] },
-    },
+    effectiveAccess: mocks.access,
   }),
 }));
 
@@ -26,7 +28,11 @@ vi.mock("@/hooks/use-kiosk-detail", () => ({
 }));
 
 vi.mock("@/components/features/kiosks/devices-table", () => ({
-  DevicesTable: () => <div>Danh sách thiết bị thử nghiệm</div>,
+  DevicesTable: ({ canManage }: { canManage: boolean }) => (
+    <div data-testid="devices" data-can-manage={String(canManage)}>
+      Danh sách thiết bị thử nghiệm
+    </div>
+  ),
 }));
 
 vi.mock("@/components/features/kiosks/execution-endpoints-table", () => ({
@@ -76,13 +82,20 @@ function readyDetail(): UseKioskDetailResult {
 describe("KioskDetailView tab persistence", () => {
   beforeEach(() => {
     mocks.detail = readyDetail();
+    mocks.access = {
+      accountId: "account-1",
+      isSystemAdmin: true,
+      roles: ["SystemAdmin"],
+      roleScopes: [],
+      effectiveScope: { organizationIds: [], storeIds: [], kioskIds: [] },
+    };
   });
 
   it("keeps the advanced operations tab after focus revalidation reloads detail", () => {
     const { rerender } = render(<KioskDetailView kioskId="kiosk-1" />);
 
-    fireEvent.click(screen.getByRole("tab", { name: "Vận hành nâng cao" }));
-    expect(screen.getByRole("tab", { name: "Vận hành nâng cao" })).toHaveAttribute(
+    fireEvent.click(screen.getByRole("tab", { name: "Vận hành kỹ thuật" }));
+    expect(screen.getByRole("tab", { name: "Vận hành kỹ thuật" })).toHaveAttribute(
       "aria-selected",
       "true",
     );
@@ -94,10 +107,39 @@ describe("KioskDetailView tab persistence", () => {
     mocks.detail = readyDetail();
     rerender(<KioskDetailView kioskId="kiosk-1" />);
 
-    expect(screen.getByRole("tab", { name: "Vận hành nâng cao" })).toHaveAttribute(
+    expect(screen.getByRole("tab", { name: "Vận hành kỹ thuật" })).toHaveAttribute(
       "aria-selected",
       "true",
     );
     expect(screen.getByText("Cấu hình sản xuất thử nghiệm")).toBeInTheDocument();
+  });
+
+  it("does not expose device management from a Manager assignment outside the kiosk scope", () => {
+    mocks.access = {
+      accountId: "manager-1",
+      isSystemAdmin: false,
+      roles: ["Manager"],
+      roleScopes: [
+        {
+          roleCode: "Manager",
+          organizationId: "org-2",
+          storeId: null,
+          kioskId: null,
+        },
+      ],
+      effectiveScope: {
+        organizationIds: ["org-2"],
+        storeIds: [],
+        kioskIds: [],
+      },
+    };
+
+    render(<KioskDetailView kioskId="kiosk-1" />);
+    fireEvent.click(screen.getByRole("tab", { name: "Vận hành kỹ thuật" }));
+
+    expect(screen.getByTestId("devices")).toHaveAttribute(
+      "data-can-manage",
+      "false",
+    );
   });
 });

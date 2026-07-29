@@ -25,7 +25,7 @@ export function DashboardScopeSummary({ metrics }: DashboardScopeSummaryProps) {
       icon: Monitor,
     },
     {
-      label: "Kiosk active",
+      label: "Kiosk đã kích hoạt",
       value: metrics.activeKioskCount,
       icon: CircleCheck,
     },

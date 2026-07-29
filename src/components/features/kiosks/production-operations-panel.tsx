@@ -61,13 +61,13 @@ const statusLabels: Record<string, string> = {
   Abandoned: "Đã hủy",
   ReadyForReview: "Chờ duyệt chuyển đổi",
   Completed: "Đã hoàn tất",
-  RollbackPending: "Đang rollback",
-  RolledBack: "Đã rollback",
-  Active: "Đang hoạt động",
+  RollbackPending: "Đang khôi phục phiên bản trước",
+  RolledBack: "Đã khôi phục phiên bản trước",
+  Active: "Đã kích hoạt",
 };
 
 const profileLabels: Record<string, string> = {
-  FullEdge: "Edge đầy đủ",
+  FullEdge: "Bộ điều khiển đầy đủ",
   LowCostController: "Bộ điều khiển giới hạn",
 };
 

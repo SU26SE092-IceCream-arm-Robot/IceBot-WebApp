@@ -258,7 +258,7 @@ export async function deployConfiguration(
   acknowledgeRemainingRisk: boolean,
 ) {
   const endpoint = preview.endpoints.find((item) => item.kioskExecutionEndpointId === endpointId);
-  if (!endpoint) throw new Error("Execution endpoint đã chọn không còn trong bản xem trước.");
+  if (!endpoint) throw new Error("Điểm thực thi đã chọn không còn trong bản xem trước.");
   const profilePath = endpoint.executionProfile === "FullEdge" ? "full-edge" : "low-cost";
   const response = await axiosClient.post<ApiResult<ConfigurationDeploymentRollbackResult>>(
     `/api/v1/management/kiosks/${encodeURIComponent(kioskId)}/configuration-deployments/${profilePath}`,

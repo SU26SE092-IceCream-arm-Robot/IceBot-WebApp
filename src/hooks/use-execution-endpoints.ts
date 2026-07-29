@@ -71,7 +71,7 @@ export function useExecutionEndpoints(kioskId: string) {
       } catch (error) {
         const message = getExecutionEndpointsErrorMessage(
           error,
-          "Không thể cập nhật execution endpoint.",
+          "Không thể cập nhật điểm thực thi.",
         );
         setMutationErrorMessage(message);
         toast.error(message);
@@ -88,7 +88,7 @@ export function useExecutionEndpoints(kioskId: string) {
     (request: CreateExecutionEndpointRequest) =>
       runMutation(
         () => createExecutionEndpoint(kioskId, request),
-        "Đã tạo execution endpoint ở trạng thái chờ cấu hình.",
+        "Đã tạo điểm thực thi ở trạng thái chờ cấu hình.",
       ),
     [kioskId, runMutation],
   );
@@ -98,10 +98,10 @@ export function useExecutionEndpoints(kioskId: string) {
       runMutation(
         () => setExecutionEndpointLifecycle(kioskId, endpointId, action),
         action === "disable"
-          ? "Đã vô hiệu hóa execution endpoint."
+          ? "Đã vô hiệu hóa điểm thực thi."
           : action === "reactivate"
-            ? "Đã kích hoạt lại execution endpoint."
-            : "Đã ngừng sử dụng execution endpoint.",
+            ? "Đã kích hoạt lại điểm thực thi."
+            : "Đã ngừng sử dụng điểm thực thi.",
       ),
     [kioskId, runMutation],
   );

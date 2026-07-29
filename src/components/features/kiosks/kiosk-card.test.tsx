@@ -17,12 +17,12 @@ const baseKiosk: KioskFleetItem = {
 };
 
 const operationalLabels: Array<[KioskOperationalState, string]> = [
-  ["Operational", "Đang vận hành"],
-  ["PausedByOperator", "Tạm dừng bởi nhân viên"],
-  ["Maintenance", "Đang bảo trì"],
-  ["Cleaning", "Đang vệ sinh"],
-  ["Restocking", "Đang bổ sung hàng"],
-  ["EmergencyStopRequested", "Đã yêu cầu dừng khẩn cấp"],
+  ["Operational", "Sẵn sàng nhận đơn"],
+  ["PausedByOperator", "Đã tạm dừng nhận đơn"],
+  ["Maintenance", "Tạm dừng để bảo trì"],
+  ["Cleaning", "Tạm dừng để vệ sinh"],
+  ["Restocking", "Tạm dừng để bổ sung hàng"],
+  ["EmergencyStopRequested", "Đang yêu cầu dừng khẩn cấp"],
   ["OutOfService", "Ngừng phục vụ"],
 ];
 
@@ -31,6 +31,6 @@ describe("KioskCard operational-state labels", () => {
     render(<KioskCard kiosk={{ ...baseKiosk, operationalState }} />);
 
     expect(screen.getByText(label)).toBeInTheDocument();
-    expect(screen.getByText("Đang hoạt động")).toBeInTheDocument();
+    expect(screen.getByText("Đã kích hoạt")).toBeInTheDocument();
   });
 });

@@ -25,19 +25,23 @@ import type {
   KioskOperationalState,
   SetKioskOperationalStateRequest,
 } from "@/types/kiosk-management";
+import { getKioskOperationalLabel } from "@/lib/presenters/kiosk-state-labels";
 
 const OPERATIONAL_STATE_OPTIONS: Array<{
   value: KioskOperationalState;
   label: string;
 }> = [
-  { value: "Operational", label: "Đang vận hành" },
-  { value: "PausedByOperator", label: "Tạm dừng bởi người vận hành" },
-  { value: "Maintenance", label: "Đang bảo trì" },
-  { value: "Cleaning", label: "Đang vệ sinh" },
-  { value: "Restocking", label: "Đang bổ sung hàng" },
-  { value: "EmergencyStopRequested", label: "Yêu cầu dừng khẩn cấp" },
-  { value: "OutOfService", label: "Ngừng phục vụ" },
-];
+  "Operational",
+  "PausedByOperator",
+  "Maintenance",
+  "Cleaning",
+  "Restocking",
+  "EmergencyStopRequested",
+  "OutOfService",
+].map((value) => ({
+  value: value as KioskOperationalState,
+  label: getKioskOperationalLabel(value),
+}));
 
 function ErrorMessage({ message }: { message: string | null }) {
   return message ? (
@@ -264,7 +268,7 @@ export function KioskOperationalStateDialog({
 
           {state === "EmergencyStopRequested" ? (
             <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-              Đây chỉ là yêu cầu dừng khẩn cấp trên Cloud, không phải bằng chứng thiết bị hoặc robot đã dừng vật lý.
+              Hệ thống chỉ ghi nhận yêu cầu dừng khẩn cấp; đây chưa phải bằng chứng thiết bị hoặc robot đã dừng vật lý.
             </div>
           ) : null}
 

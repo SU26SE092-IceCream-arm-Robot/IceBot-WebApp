@@ -60,14 +60,14 @@ export function ExecutionEndpointsTable({ kioskId, canManage }: { kioskId: strin
           <div className="space-y-1">
             <CardTitle className="flex items-center gap-2 text-base">
               <Network className="size-4 text-primary" />
-              Execution endpoint
+              Điểm thực thi
             </CardTitle>
             <p className="text-xs text-muted-foreground">
               Chỉ hiển thị trạng thái và bằng chứng sẵn sàng; không hiển thị thông tin xác thực.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            {canManage ? <Button size="sm" onClick={() => { management.clearMutationError(); setCreateOpen(true); }}><Plus className="size-4" />Tạo endpoint</Button> : null}
+            {canManage ? <Button size="sm" onClick={() => { management.clearMutationError(); setCreateOpen(true); }}><Plus className="size-4" />Tạo điểm thực thi</Button> : null}
             <Button variant="outline" size="sm" onClick={() => void refresh()} disabled={isLoading}>
               <RefreshCw className={isLoading ? "size-4 animate-spin" : "size-4"} />
               Làm mới
@@ -78,7 +78,7 @@ export function ExecutionEndpointsTable({ kioskId, canManage }: { kioskId: strin
       <CardContent className="p-0">
         {isLoading ? (
           <p className="px-6 py-12 text-center text-sm text-muted-foreground">
-            Đang tải execution endpoint...
+            Đang tải điểm thực thi...
           </p>
         ) : errorMessage ? (
           <div className="flex flex-col items-center gap-3 px-6 py-12 text-center">
@@ -90,7 +90,7 @@ export function ExecutionEndpointsTable({ kioskId, canManage }: { kioskId: strin
           </div>
         ) : items.length === 0 ? (
           <p className="px-6 py-12 text-center text-sm text-muted-foreground">
-            Kiosk chưa có execution endpoint.
+            Kiosk chưa có điểm thực thi.
           </p>
         ) : (
           <div className="overflow-x-auto">

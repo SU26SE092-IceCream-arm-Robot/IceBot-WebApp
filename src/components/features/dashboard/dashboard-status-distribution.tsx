@@ -3,6 +3,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { DashboardStatusCount } from "@/types/dashboard-overview";
 import {
+  getKioskConnectivityLabel,
+  getKioskLifecycleLabel,
+} from "@/lib/presenters/kiosk-state-labels";
+import {
   Bar,
   BarChart,
   Cell,
@@ -33,28 +37,6 @@ const LEGEND_TONES = [
   "bg-muted-foreground",
   "bg-accent-foreground",
 ];
-
-function getKioskLifecycleLabel(status: string) {
-  const labels: Record<string, string> = {
-    Provisioning: "Đang cấu hình",
-    Active: "Đang hoạt động",
-    Disabled: "Đã vô hiệu hóa",
-    Retired: "Đã ngừng sử dụng",
-  };
-
-  return labels[status] ?? status;
-}
-
-function getKioskConnectivityLabel(status: string) {
-  const labels: Record<string, string> = {
-    Online: "Trực tuyến",
-    Degraded: "Kết nối không ổn định",
-    Unreachable: "Mất kết nối",
-    Unknown: "Chưa xác định",
-  };
-
-  return labels[status] ?? status;
-}
 
 function getOrderStatusLabel(status: string) {
   const labels: Record<string, string> = {

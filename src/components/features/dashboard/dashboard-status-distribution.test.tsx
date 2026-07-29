@@ -22,7 +22,7 @@ describe("DashboardStatusDistribution kiosk status labels", () => {
     );
 
     expect(screen.getByText("Đang cấu hình")).toBeInTheDocument();
-    expect(screen.getByText("Đang hoạt động")).toBeInTheDocument();
+    expect(screen.getByText("Đã kích hoạt")).toBeInTheDocument();
     expect(screen.getByText("Đã vô hiệu hóa")).toBeInTheDocument();
     expect(screen.getByText("Đã ngừng sử dụng")).toBeInTheDocument();
     expect(screen.queryByText("Trực tuyến")).not.toBeInTheDocument();
@@ -49,6 +49,6 @@ describe("DashboardStatusDistribution kiosk status labels", () => {
     expect(screen.getByText("Kết nối không ổn định")).toBeInTheDocument();
     expect(screen.getByText("Mất kết nối")).toBeInTheDocument();
     expect(screen.getByText("Chưa xác định")).toBeInTheDocument();
-    expect(screen.queryByText("Đang hoạt động")).not.toBeInTheDocument();
+    expect(screen.queryByText("Đã kích hoạt")).not.toBeInTheDocument();
   });
 });

@@ -5,6 +5,10 @@ import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  getKioskLifecycleLabel,
+  getKioskOperationalLabel,
+} from "@/lib/presenters/kiosk-state-labels";
 import { cn } from "@/lib/utils";
 import type { ReportKioskAttentionRow } from "@/types/reports";
 
@@ -19,16 +23,6 @@ function formatDate(value?: string | null) {
   }).format(new Date(value));
 }
 
-const LIFECYCLE_LABELS: Record<
-  ReportKioskAttentionRow["lifecycleStatus"],
-  string
-> = {
-  Provisioning: "Đang thiết lập",
-  Active: "Đang hoạt động",
-  Disabled: "Đã vô hiệu hóa",
-  Retired: "Ngừng sử dụng",
-};
-
 const LIFECYCLE_CLASS_NAMES: Record<
   ReportKioskAttentionRow["lifecycleStatus"],
   string
@@ -37,19 +31,6 @@ const LIFECYCLE_CLASS_NAMES: Record<
   Active: "border-success/20 bg-success/10 text-success",
   Disabled: "border-destructive/20 bg-destructive/10 text-destructive",
   Retired: "border-border bg-muted/20 text-muted-foreground",
-};
-
-const OPERATIONAL_LABELS: Record<
-  ReportKioskAttentionRow["operationalState"],
-  string
-> = {
-  Operational: "Đang vận hành",
-  PausedByOperator: "Tạm dừng bởi nhân viên",
-  Maintenance: "Đang bảo trì",
-  Cleaning: "Đang vệ sinh",
-  Restocking: "Đang bổ sung hàng",
-  EmergencyStopRequested: "Đã yêu cầu dừng khẩn cấp",
-  OutOfService: "Ngừng phục vụ",
 };
 
 export function KioskAttentionTable({ rows }: { rows: ReportKioskAttentionRow[] }) {
@@ -100,12 +81,12 @@ export function KioskAttentionTable({ rows }: { rows: ReportKioskAttentionRow[] 
                     variant="outline"
                     className={`h-6 rounded-full px-2.5 ${LIFECYCLE_CLASS_NAMES[row.lifecycleStatus]}`}
                   >
-                    {LIFECYCLE_LABELS[row.lifecycleStatus]}
+                    {getKioskLifecycleLabel(row.lifecycleStatus)}
                   </Badge>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    Vận hành: {OPERATIONAL_LABELS[row.operationalState]}
+                    Nhận đơn: {getKioskOperationalLabel(row.operationalState)}
                   </p>
-                  <p className="mt-1 text-xs text-muted-foreground">Trực tuyến: {formatDate(row.lastOnlineAt)}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">Kết nối gần nhất: {formatDate(row.lastOnlineAt)}</p>
                 </TableCell>
                 <TableCell className="text-center tabular-nums">{row.inventoryIssueCount}</TableCell>
                 <TableCell className="text-center tabular-nums">

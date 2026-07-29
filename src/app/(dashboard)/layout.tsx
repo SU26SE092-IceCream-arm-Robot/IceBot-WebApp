@@ -105,7 +105,7 @@ export default function DashboardLayout({
             </div>
             <CardTitle className="text-xl font-bold tracking-tight">Không có quyền truy cập</CardTitle>
             <CardDescription>
-              Tài khoản đã đăng nhập nhưng không thuộc nhóm người dùng Admin Dashboard.
+              Tài khoản đã đăng nhập nhưng chưa được cấp quyền vào Trung tâm vận hành.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">

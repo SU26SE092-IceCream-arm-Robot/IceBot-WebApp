@@ -156,7 +156,7 @@ export function AppSidebar({
           >
             <span className="text-sm font-bold tracking-tight text-foreground">ICEBOT</span>
             <span className="block text-[10px] font-medium leading-tight text-muted-foreground">
-              Admin Dashboard
+              Trung tâm vận hành
             </span>
           </div>
         </div>

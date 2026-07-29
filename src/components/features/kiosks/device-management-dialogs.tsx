@@ -274,7 +274,7 @@ export function ExecutionEndpointCreateDialog({
   const submit = async () => {
     const normalized = endpointCode.trim();
     if (normalized.length < 1 || normalized.length > 100) {
-      setValidationMessage("Mã endpoint phải có từ 1 đến 100 ký tự.");
+      setValidationMessage("Mã điểm thực thi phải có từ 1 đến 100 ký tự.");
       return;
     }
     if (await onSubmit({ endpointCode: normalized, executionProfile })) onOpenChange(false);
@@ -282,11 +282,11 @@ export function ExecutionEndpointCreateDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
-        <DialogHeader><DialogTitle>Tạo execution endpoint</DialogTitle><DialogDescription>Endpoint chỉ được tạo ở trạng thái chờ cấu hình. Việc provision và credential không nằm trong màn hình Manager này.</DialogDescription></DialogHeader>
-        <div className="space-y-1.5"><Label htmlFor="endpoint-code">Mã endpoint</Label><Input id="endpoint-code" maxLength={100} value={endpointCode} onChange={(event) => setEndpointCode(event.target.value)} disabled={isSubmitting} /></div>
+        <DialogHeader><DialogTitle>Tạo điểm thực thi</DialogTitle><DialogDescription>Điểm thực thi được tạo ở trạng thái chờ cấu hình. Việc cấp thông tin kết nối thuộc quy trình kỹ thuật riêng.</DialogDescription></DialogHeader>
+        <div className="space-y-1.5"><Label htmlFor="endpoint-code">Mã điểm thực thi</Label><Input id="endpoint-code" maxLength={100} value={endpointCode} onChange={(event) => setEndpointCode(event.target.value)} disabled={isSubmitting} /></div>
         <div className="space-y-1.5"><Label>Hồ sơ thực thi</Label><Select value={executionProfile} disabled={isSubmitting} onValueChange={(value) => setExecutionProfile(value as ExecutionProfile)}><SelectTrigger className="w-full"><SelectValue>{executionProfile === "FullEdge" ? "Full Edge" : "Bộ điều khiển chi phí thấp"}</SelectValue></SelectTrigger><SelectContent><SelectItem value="FullEdge">Full Edge</SelectItem><SelectItem value="LowCostController">Bộ điều khiển chi phí thấp</SelectItem></SelectContent></Select></div>
         {validationMessage || errorMessage ? <p className="text-sm text-destructive" role="alert">{validationMessage || errorMessage}</p> : null}
-        <DialogFooter><Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>Hủy</Button><Button onClick={() => void submit()} disabled={isSubmitting}>{isSubmitting ? "Đang tạo..." : "Tạo endpoint"}</Button></DialogFooter>
+        <DialogFooter><Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>Hủy</Button><Button onClick={() => void submit()} disabled={isSubmitting}>{isSubmitting ? "Đang tạo..." : "Tạo điểm thực thi"}</Button></DialogFooter>
       </DialogContent>
     </Dialog>
   );
@@ -307,12 +307,12 @@ export function EndpointLifecycleDialog({
   onOpenChange: (open: boolean) => void;
   onSubmit: () => Promise<unknown>;
 }) {
-  const labels = action === "disable" ? ["Vô hiệu hóa endpoint", "Vô hiệu hóa"] : action === "reactivate" ? ["Kích hoạt lại endpoint", "Kích hoạt lại"] : ["Ngừng sử dụng endpoint", "Ngừng sử dụng"];
+  const labels = action === "disable" ? ["Vô hiệu hóa điểm thực thi", "Vô hiệu hóa"] : action === "reactivate" ? ["Kích hoạt lại điểm thực thi", "Kích hoạt lại"] : ["Ngừng sử dụng điểm thực thi", "Ngừng sử dụng"];
   return (
     <Dialog open onOpenChange={onOpenChange}>
       <DialogContent>
-        <DialogHeader><DialogTitle>{labels[0]}</DialogTitle><DialogDescription>{endpoint.endpointCode}. Thao tác chỉ thay đổi vòng đời Cloud; không gửi lệnh trực tiếp tới Edge hoặc robot.</DialogDescription></DialogHeader>
-        {action === "retire" ? <p className="rounded-lg border border-warning/30 bg-warning/5 p-3 text-sm text-warning">Endpoint đang hoạt động phải được vô hiệu hóa trước. Backend cũng sẽ chặn retire nếu MQTT credential chưa được thu hồi bởi quy trình kỹ thuật.</p> : null}
+        <DialogHeader><DialogTitle>{labels[0]}</DialogTitle><DialogDescription>{endpoint.endpointCode}. Thao tác chỉ thay đổi trạng thái quản lý trên hệ thống; không gửi lệnh trực tiếp tới thiết bị hoặc robot.</DialogDescription></DialogHeader>
+        {action === "retire" ? <p className="rounded-lg border border-warning/30 bg-warning/5 p-3 text-sm text-warning">Điểm thực thi đang hoạt động phải được vô hiệu hóa trước. Hệ thống cũng sẽ chặn thao tác nếu thông tin kết nối chưa được thu hồi theo quy trình kỹ thuật.</p> : null}
         {errorMessage ? <p className="text-sm text-destructive" role="alert">{errorMessage}</p> : null}
         <DialogFooter><Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>Hủy</Button><Button variant={action === "retire" ? "destructive" : "default"} onClick={async () => { if (await onSubmit()) onOpenChange(false); }} disabled={isSubmitting}>{labels[1]}</Button></DialogFooter>
       </DialogContent>

@@ -61,7 +61,7 @@ export async function listKioskEvents(
   signal?: AbortSignal,
 ): Promise<KioskTelemetryPage<KioskDeviceEventResult>> {
   const response = await axiosClient.get<PagedApiResult<KioskDeviceEventResult>>(
-    `/api/v1/management/kiosks/${encodeURIComponent(kioskId)}/events`,
+    `/api/v1/management/kiosks/${encodeURIComponent(kioskId)}/device-events`,
     {
       params: {
         pageNumber: query.pageNumber ?? 1,

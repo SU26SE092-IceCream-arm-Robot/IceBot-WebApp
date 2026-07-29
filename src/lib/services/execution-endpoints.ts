@@ -22,7 +22,7 @@ export async function listExecutionEndpointsByKiosk(
     "/api/v1/management/execution-endpoints",
     { params: { kioskId }, signal },
   );
-  return requireData(response.data, "Không thể tải execution endpoint.");
+  return requireData(response.data, "Không thể tải điểm thực thi.");
 }
 
 export async function createExecutionEndpoint(
@@ -33,7 +33,7 @@ export async function createExecutionEndpoint(
     `/api/v1/management/kiosks/${encodeURIComponent(kioskId)}/execution-endpoints`,
     request,
   );
-  return requireData(response.data, "Không thể tạo execution endpoint.");
+  return requireData(response.data, "Không thể tạo điểm thực thi.");
 }
 
 export async function setExecutionEndpointLifecycle(
@@ -44,17 +44,17 @@ export async function setExecutionEndpointLifecycle(
   const response = await axiosClient.patch<ApiResult<ExecutionEndpointResult>>(
     `/api/v1/management/kiosks/${encodeURIComponent(kioskId)}/execution-endpoints/${encodeURIComponent(endpointId)}/${action}`,
   );
-  return requireData(response.data, "Không thể cập nhật execution endpoint.");
+  return requireData(response.data, "Không thể cập nhật điểm thực thi.");
 }
 
 export function getExecutionEndpointsErrorMessage(
   error: unknown,
-  fallbackMessage = "Không thể tải execution endpoint.",
+  fallbackMessage = "Không thể tải điểm thực thi.",
 ): string {
   if (axios.isCancel(error)) return "";
   if (axios.isAxiosError<ApiResult<unknown>>(error)) {
     if (error.response?.status === 403) {
-      return "Tài khoản hiện tại không có quyền truy cập hoặc thực hiện thao tác này với execution endpoint.";
+      return "Tài khoản hiện tại không có quyền truy cập hoặc thực hiện thao tác này với điểm thực thi.";
     }
     return (
       error.response?.data?.message ||

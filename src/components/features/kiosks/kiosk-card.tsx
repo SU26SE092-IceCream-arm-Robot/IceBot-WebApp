@@ -10,6 +10,10 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  getKioskLifecycleLabel,
+  getKioskOperationalLabel,
+} from "@/lib/presenters/kiosk-state-labels";
 import { cn } from "@/lib/utils";
 import type {
   KioskFleetItem,
@@ -38,19 +42,6 @@ function formatTimestamp(value?: string | null): string {
     month: "2-digit",
     year: "numeric",
   }).format(parsed);
-}
-
-function getLifecycleLabel(status: KioskLifecycleStatus): string {
-  switch (status) {
-    case "Provisioning":
-      return "Đang cấu hình";
-    case "Active":
-      return "Đang hoạt động";
-    case "Disabled":
-      return "Đã vô hiệu hóa";
-    case "Retired":
-      return "Ngừng sử dụng";
-  }
 }
 
 function getLifecycleVariant(
@@ -83,20 +74,6 @@ function getAccentClass(status: KioskLifecycleStatus): string {
   return "bg-muted-foreground";
 }
 
-function getOperationalLabel(state: KioskOperationalState): string {
-  const labels: Record<KioskOperationalState, string> = {
-    Operational: "Đang vận hành",
-    PausedByOperator: "Tạm dừng bởi nhân viên",
-    Maintenance: "Đang bảo trì",
-    Cleaning: "Đang vệ sinh",
-    Restocking: "Đang bổ sung hàng",
-    EmergencyStopRequested: "Đã yêu cầu dừng khẩn cấp",
-    OutOfService: "Ngừng phục vụ",
-  };
-
-  return labels[state];
-}
-
 function getOperationalVariant(
   state: KioskOperationalState,
 ): "default" | "destructive" | "secondary" | "outline" {
@@ -126,10 +103,10 @@ export function KioskCard({ kiosk }: KioskCardProps) {
           </div>
           <div className="flex flex-wrap justify-end gap-1.5">
             <Badge variant={getLifecycleVariant(kiosk.lifecycleStatus)}>
-              {getLifecycleLabel(kiosk.lifecycleStatus)}
+              {getKioskLifecycleLabel(kiosk.lifecycleStatus)}
             </Badge>
             <Badge variant={getOperationalVariant(kiosk.operationalState)}>
-              {getOperationalLabel(kiosk.operationalState)}
+              {getKioskOperationalLabel(kiosk.operationalState)}
             </Badge>
           </div>
         </div>
@@ -163,7 +140,7 @@ export function KioskCard({ kiosk }: KioskCardProps) {
           <div className="flex items-start justify-between gap-4">
             <span className="flex items-center gap-2 text-muted-foreground">
               <CalendarClock className="size-4 shrink-0" />
-              Online gần nhất
+              Kết nối gần nhất
             </span>
             <span className="tabular-nums text-right font-medium text-foreground">
               {formatTimestamp(kiosk.lastOnlineAt)}

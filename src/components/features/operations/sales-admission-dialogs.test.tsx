@@ -28,7 +28,7 @@ describe("sales admission safety copy", () => {
     ).toBeInTheDocument();
   });
 
-  it("describes EmergencyStopRequested as a Cloud request, not physical proof", () => {
+  it("describes EmergencyStopRequested as a system request, not physical proof", () => {
     render(
       <KioskOperationalStateDialog
         kioskName="Kiosk Demo"
@@ -43,7 +43,7 @@ describe("sales admission safety copy", () => {
 
     expect(
       screen.getByText(
-        "Đây chỉ là yêu cầu dừng khẩn cấp trên Cloud, không phải bằng chứng thiết bị hoặc robot đã dừng vật lý.",
+        "Hệ thống chỉ ghi nhận yêu cầu dừng khẩn cấp; đây chưa phải bằng chứng thiết bị hoặc robot đã dừng vật lý.",
       ),
     ).toBeInTheDocument();
   });

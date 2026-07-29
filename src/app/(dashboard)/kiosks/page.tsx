@@ -36,7 +36,7 @@ import type { KioskStatusFilter } from "@/types";
 const STATUS_OPTIONS: { value: KioskStatusFilter; label: string }[] = [
   { value: "ALL", label: "Tất cả vòng đời" },
   { value: "Provisioning", label: "Đang cấu hình" },
-  { value: "Active", label: "Đang hoạt động" },
+  { value: "Active", label: "Đã kích hoạt" },
   { value: "Disabled", label: "Đã vô hiệu hóa" },
   { value: "Retired", label: "Ngừng sử dụng" },
 ];
@@ -171,7 +171,7 @@ export default function KiosksPage() {
         />
         <SummaryCard
           icon={Power}
-          label="Đang hoạt động"
+          label="Đã kích hoạt"
           value={summary.active}
           tone="primary"
         />
