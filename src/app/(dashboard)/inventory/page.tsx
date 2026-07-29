@@ -247,6 +247,10 @@ export default function InventoryPage() {
     effectiveAccess,
     "inventory.configure",
   );
+  const canReadIngredientCatalog = hasPermission(
+    effectiveAccess,
+    "ingredients.read",
+  );
   const {
     dispensers,
     visibleDispensers,
@@ -315,14 +319,16 @@ export default function InventoryPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button
-            variant="outline"
-            className="h-10"
-            onClick={() => setIsIngredientCatalogOpen(true)}
-          >
-            <FlaskConical className="size-4" />
-            Danh mục nguyên liệu
-          </Button>
+          {canReadIngredientCatalog ? (
+            <Button
+              variant="outline"
+              className="h-10"
+              onClick={() => setIsIngredientCatalogOpen(true)}
+            >
+              <FlaskConical className="size-4" />
+              Danh mục nguyên liệu
+            </Button>
+          ) : null}
           <Button
             variant="outline"
             className="h-10"
@@ -629,10 +635,12 @@ export default function InventoryPage() {
         onOpenChange={setDetailOpen}
       />
 
-      <IngredientCatalogDialog
-        open={isIngredientCatalogOpen}
-        onOpenChange={setIsIngredientCatalogOpen}
-      />
+      {canReadIngredientCatalog ? (
+        <IngredientCatalogDialog
+          open={isIngredientCatalogOpen}
+          onOpenChange={setIsIngredientCatalogOpen}
+        />
+      ) : null}
 
       <InventoryHistoryDialog
         key={historyDispenser?.id ?? "inventory-history"}

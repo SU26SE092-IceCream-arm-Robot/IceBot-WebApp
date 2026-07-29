@@ -108,6 +108,16 @@ describe("useTransactions mutation refresh outcomes", () => {
     );
   });
 
+  it("loads orders without requesting refunds when refund management is unavailable", async () => {
+    renderHook(() => useTransactions({ canManageRefunds: false }));
+
+    await waitFor(() => {
+      expect(listManagementOrders).toHaveBeenCalledOnce();
+    });
+
+    expect(listManagementRefunds).not.toHaveBeenCalled();
+  });
+
   it("keeps mutation errors separate and does not report refresh success", async () => {
     vi.mocked(markManagementRefundProcessed).mockRejectedValueOnce(
       new Error("mutation failed"),

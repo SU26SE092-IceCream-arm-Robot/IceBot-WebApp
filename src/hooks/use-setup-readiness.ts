@@ -4,6 +4,7 @@ import axios from "axios";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useAuth } from "@/hooks/use-auth";
+import { hasPermission } from "@/lib/rbac";
 import {
   getSetupReadiness,
   getSetupReadinessScopeOptions,
@@ -42,7 +43,14 @@ function getUnknownErrorMessage(error: unknown, fallback: string) {
 }
 
 export function useSetupReadiness(): UseSetupReadinessResult {
-  const { status } = useAuth();
+  const { status, effectiveAccess } = useAuth();
+  const canReadCatalog =
+    hasPermission(effectiveAccess, "products.manage") &&
+    hasPermission(effectiveAccess, "menus.manage");
+  const canReadPaymentMethods = hasPermission(
+    effectiveAccess,
+    "payments.manage",
+  );
   const [organizations, setOrganizations] = useState<
     SetupReadinessOrganizationOption[]
   >([]);
@@ -137,6 +145,8 @@ export function useSetupReadiness(): UseSetupReadinessResult {
           {
             organizationId: selectedOrganizationId,
             storeId: selectedStoreId,
+            canReadCatalog,
+            canReadPaymentMethods,
           },
           signal,
         );
@@ -162,7 +172,7 @@ export function useSetupReadiness(): UseSetupReadinessResult {
         }
       }
     },
-    [selectedOrganizationId, selectedStoreId],
+    [canReadCatalog, canReadPaymentMethods, selectedOrganizationId, selectedStoreId],
   );
 
   useEffect(() => {

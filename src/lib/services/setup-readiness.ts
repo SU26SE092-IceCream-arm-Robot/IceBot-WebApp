@@ -31,6 +31,8 @@ const READINESS_PAGE_SIZE = 100;
 interface GetSetupReadinessInput {
   organizationId: string;
   storeId: string;
+  canReadCatalog: boolean;
+  canReadPaymentMethods: boolean;
 }
 
 function toFailure(source: ReadinessSource, error: unknown): ReadinessSourceFailure {
@@ -203,7 +205,12 @@ export async function getSetupReadiness(
   input: GetSetupReadinessInput,
   signal?: AbortSignal,
 ): Promise<SetupReadinessResult> {
-  const { organizationId, storeId } = input;
+  const {
+    organizationId,
+    storeId,
+    canReadCatalog,
+    canReadPaymentMethods,
+  } = input;
 
   const [
     organizationResult,
@@ -216,9 +223,9 @@ export async function getSetupReadiness(
     getManagementOrganizationById(organizationId, signal),
     getManagementStoreById(storeId, signal),
     getManagementKiosks({ organizationId, storeId }, signal),
-    loadAllProducts(organizationId, signal),
-    loadAllMenus(organizationId, signal),
-    getPaymentMethods(signal),
+    canReadCatalog ? loadAllProducts(organizationId, signal) : Promise.resolve(null),
+    canReadCatalog ? loadAllMenus(organizationId, signal) : Promise.resolve(null),
+    canReadPaymentMethods ? getPaymentMethods(signal) : Promise.resolve(null),
   ]);
 
   const failures: ReadinessSourceFailure[] = [];
@@ -248,10 +255,14 @@ export async function getSetupReadiness(
       organizationResult.status === "fulfilled" ? organizationResult.value : null,
     store: storeResult.status === "fulfilled" ? storeResult.value : null,
     kiosks: kiosksResult.status === "fulfilled" ? kiosksResult.value : [],
-    products: productsResult.status === "fulfilled" ? productsResult.value : [],
-    menus: menusResult.status === "fulfilled" ? menusResult.value : [],
+    products: productsResult.status === "fulfilled" ? productsResult.value ?? [] : [],
+    menus: menusResult.status === "fulfilled" ? menusResult.value ?? [] : [],
     paymentMethods:
-      paymentMethodsResult.status === "fulfilled" ? paymentMethodsResult.value : [],
+      paymentMethodsResult.status === "fulfilled" ? paymentMethodsResult.value ?? [] : [],
+    excludedSources: [
+      ...(canReadCatalog ? [] : ["products", "menus"] as const),
+      ...(canReadPaymentMethods ? [] : ["paymentMethods"] as const),
+    ],
     failures,
   });
 }

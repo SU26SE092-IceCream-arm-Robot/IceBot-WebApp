@@ -5,13 +5,16 @@ import axiosClient from "@/lib/axios-client";
 import {
   createExecutionEndpoint,
   listExecutionEndpointsByKiosk,
+  provisionExecutionEndpoint,
+  rotateExecutionEndpointCredential,
+  replaceExecutionEndpointRobotTargets,
   setExecutionEndpointLifecycle,
 } from "@/lib/services/execution-endpoints";
 import type { ApiResult } from "@/types";
 import type { ExecutionEndpointResult } from "@/types/execution-endpoints";
 
 vi.mock("@/lib/axios-client", () => ({
-  default: { get: vi.fn(), post: vi.fn(), patch: vi.fn() },
+  default: { get: vi.fn(), post: vi.fn(), put: vi.fn(), patch: vi.fn() },
 }));
 
 function response<T>(result: ApiResult<T>): AxiosResponse<ApiResult<T>> {
@@ -28,6 +31,7 @@ describe("execution endpoint read contract", () => {
   beforeEach(() => {
     vi.mocked(axiosClient.get).mockReset();
     vi.mocked(axiosClient.post).mockReset();
+    vi.mocked(axiosClient.put).mockReset();
     vi.mocked(axiosClient.patch).mockReset();
   });
 
@@ -74,4 +78,39 @@ describe("execution endpoint read contract", () => {
       );
     },
   );
+
+  it("sets explicit robot targets before endpoint provisioning", async () => {
+    const endpoint = { id: "endpoint-1" } as ExecutionEndpointResult;
+    vi.mocked(axiosClient.put).mockResolvedValue(response({ succeeded: true, statusCode: 200, data: endpoint }));
+    await replaceExecutionEndpointRobotTargets("kiosk-1", "endpoint-1", {
+      targets: [{ runtimeTargetCode: "FAIRINO", machineModelCode: "FR5", deviceId: "device-1" }],
+    });
+    expect(axiosClient.put).toHaveBeenCalledWith(
+      "/api/v1/management/kiosks/kiosk-1/execution-endpoints/endpoint-1/supported-robot-targets",
+      { targets: [{ runtimeTargetCode: "FAIRINO", machineModelCode: "FR5", deviceId: "device-1" }] },
+    );
+  });
+
+  it("provisions with a public credential reference, never an MQTT secret", async () => {
+    const endpoint = { id: "endpoint-1" } as ExecutionEndpointResult;
+    vi.mocked(axiosClient.post).mockResolvedValue(response({ succeeded: true, statusCode: 200, data: endpoint }));
+    const request = { profileIdentity: "profile-1", clientCertificateSha256Fingerprint: "fingerprint" };
+    await provisionExecutionEndpoint("kiosk-1", "endpoint-1", request);
+    expect(axiosClient.post).toHaveBeenCalledWith(
+      "/api/v1/management/kiosks/kiosk-1/execution-endpoints/endpoint-1/provision",
+      request,
+    );
+  });
+
+  it("rotates only the endpoint public credential material", async () => {
+    const result = { endpointId: "endpoint-1" } as ExecutionEndpointResult;
+    vi.mocked(axiosClient.patch).mockResolvedValue(response({ succeeded: true, statusCode: 200, data: result }));
+    await rotateExecutionEndpointCredential("kiosk-1", "endpoint-1", {
+      ecdsaPublicKeyPem: "-----BEGIN PUBLIC KEY-----\nkey\n-----END PUBLIC KEY-----",
+    });
+    expect(axiosClient.patch).toHaveBeenCalledWith(
+      "/api/v1/management/kiosks/kiosk-1/execution-endpoints/endpoint-1/credential",
+      { ecdsaPublicKeyPem: "-----BEGIN PUBLIC KEY-----\nkey\n-----END PUBLIC KEY-----" },
+    );
+  });
 });

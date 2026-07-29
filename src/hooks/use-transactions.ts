@@ -135,7 +135,13 @@ export interface UseTransactionsResult {
   refresh: () => Promise<void>;
 }
 
-export function useTransactions(): UseTransactionsResult {
+interface UseTransactionsOptions {
+  canManageRefunds: boolean;
+}
+
+export function useTransactions(
+  { canManageRefunds }: UseTransactionsOptions = { canManageRefunds: true },
+): UseTransactionsResult {
   const orderDetailAbortRef = useRef<AbortController | null>(null);
   const orderDetailRequestIdRef = useRef(0);
   const selectedOrderIdRef = useRef<string | null>(null);
@@ -317,6 +323,16 @@ export function useTransactions(): UseTransactionsResult {
 
   const fetchRefunds = useCallback(
     async (signal?: AbortSignal, propagateError = false) => {
+      if (!canManageRefunds) {
+        setRefunds({
+          data: [],
+          pagination: emptyPagination(1, REFUNDS_PAGE_SIZE),
+          isLoading: false,
+          errorMessage: null,
+        });
+        return;
+      }
+
       setRefunds((current) => ({
         ...current,
         isLoading: true,
@@ -364,7 +380,7 @@ export function useTransactions(): UseTransactionsResult {
         }
       }
     },
-    [refundFilters.searchTerm, refundFilters.status, refundPage],
+    [canManageRefunds, refundFilters.searchTerm, refundFilters.status, refundPage],
   );
 
   useEffect(() => {
@@ -389,7 +405,7 @@ export function useTransactions(): UseTransactionsResult {
       window.clearTimeout(timeoutId);
       controller.abort();
     };
-  }, [fetchRefunds]);
+  }, [canManageRefunds, fetchRefunds]);
 
   useEffect(() => {
     if (!selectedOrderId || !isDetailOpen) {
@@ -975,7 +991,10 @@ export function useTransactions(): UseTransactionsResult {
     retryPostMutationRefresh,
     clearActionSuccessMessage: () => setActionSuccessMessage(null),
     refresh: async () => {
-      await Promise.all([fetchOrders(), fetchRefunds()]);
+      await Promise.all([
+        fetchOrders(),
+        ...(canManageRefunds ? [fetchRefunds()] : []),
+      ]);
       if (selectedOrderId && isDetailOpen) {
         await fetchStatusHistory(selectedOrderId);
       }

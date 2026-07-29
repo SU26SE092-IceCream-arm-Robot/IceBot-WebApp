@@ -4,7 +4,10 @@ import axiosClient from "@/lib/axios-client";
 import type { ApiResult } from "@/types";
 import type {
   CreateExecutionEndpointRequest,
+  ExecutionEndpointCredentialRotationResult,
   ExecutionEndpointResult,
+  ProvisionExecutionEndpointRequest,
+  ReplaceExecutionEndpointRobotTargetsRequest,
 } from "@/types/execution-endpoints";
 
 function requireData<T>(result: ApiResult<T>, fallbackMessage: string): T {
@@ -45,6 +48,42 @@ export async function setExecutionEndpointLifecycle(
     `/api/v1/management/kiosks/${encodeURIComponent(kioskId)}/execution-endpoints/${encodeURIComponent(endpointId)}/${action}`,
   );
   return requireData(response.data, "Không thể cập nhật điểm thực thi.");
+}
+
+export async function replaceExecutionEndpointRobotTargets(
+  kioskId: string,
+  endpointId: string,
+  request: ReplaceExecutionEndpointRobotTargetsRequest,
+): Promise<ExecutionEndpointResult> {
+  const response = await axiosClient.put<ApiResult<ExecutionEndpointResult>>(
+    `/api/v1/management/kiosks/${encodeURIComponent(kioskId)}/execution-endpoints/${encodeURIComponent(endpointId)}/supported-robot-targets`,
+    request,
+  );
+  return requireData(response.data, "Khong the cap nhat robot target ho tro.");
+}
+
+export async function provisionExecutionEndpoint(
+  kioskId: string,
+  endpointId: string,
+  request: ProvisionExecutionEndpointRequest,
+): Promise<ExecutionEndpointResult> {
+  const response = await axiosClient.post<ApiResult<ExecutionEndpointResult>>(
+    `/api/v1/management/kiosks/${encodeURIComponent(kioskId)}/execution-endpoints/${encodeURIComponent(endpointId)}/provision`,
+    request,
+  );
+  return requireData(response.data, "Khong the provision diem thuc thi.");
+}
+
+export async function rotateExecutionEndpointCredential(
+  kioskId: string,
+  endpointId: string,
+  request: Omit<ProvisionExecutionEndpointRequest, "profileIdentity">,
+): Promise<ExecutionEndpointCredentialRotationResult> {
+  const response = await axiosClient.patch<ApiResult<ExecutionEndpointCredentialRotationResult>>(
+    `/api/v1/management/kiosks/${encodeURIComponent(kioskId)}/execution-endpoints/${encodeURIComponent(endpointId)}/credential`,
+    request,
+  );
+  return requireData(response.data, "Khong the xoay credential diem thuc thi.");
 }
 
 export function getExecutionEndpointsErrorMessage(

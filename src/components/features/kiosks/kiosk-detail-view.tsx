@@ -40,7 +40,7 @@ import { ProductionOperationsPanel } from "./production-operations-panel";
 import { useAuth } from "@/hooks/use-auth";
 import type { KioskEvidenceState } from "@/hooks/use-kiosk-detail";
 import { useKioskDetail } from "@/hooks/use-kiosk-detail";
-import { hasScopedRole } from "@/lib/rbac";
+import { hasScopedPermission } from "@/lib/rbac";
 import {
   getKioskLifecycleLabel,
   getKioskOperationalLabel,
@@ -660,32 +660,17 @@ export function KioskDetailView({ kioskId }: KioskDetailViewProps) {
     storeId: kiosk.locationId,
     kioskId: kiosk.managementId,
   };
-  const canManageOperationalState = hasScopedRole(
-    effectiveAccess,
-    ["SystemAdmin", "OrgAdmin", "Manager", "Technician"],
-    scope,
-  );
-  const canManageDevices = hasScopedRole(
-    effectiveAccess,
-    ["SystemAdmin", "OrgAdmin", "Manager", "Technician"],
-    scope,
-  );
-  const canManagePrograms = hasScopedRole(
-    effectiveAccess,
-    ["SystemAdmin", "OrgAdmin", "Manager"],
-    scope,
-  );
-  const canInstallPackages = hasScopedRole(
-    effectiveAccess,
-    ["SystemAdmin", "OrgAdmin", "Manager"],
-    scope,
-  );
-  const canDeploy = hasScopedRole(
-    effectiveAccess,
-    ["SystemAdmin", "OrgAdmin", "Manager"],
-    scope,
-  );
-  const canViewProductionOperations = canManagePrograms;
+  const canManageOperationalState = hasScopedPermission(effectiveAccess, "kiosks.update", scope);
+  const canManageDevices = hasScopedPermission(effectiveAccess, "devices.manage", scope);
+  const canManagePrograms = hasScopedPermission(effectiveAccess, "program.manage", scope);
+  const canInstallPackages = hasScopedPermission(effectiveAccess, "package.install", scope);
+  const canManageReleases = hasScopedPermission(effectiveAccess, "release.publish", scope);
+  const canForkPackages = hasScopedPermission(effectiveAccess, "package.fork", scope);
+  const canDeploy = hasScopedPermission(effectiveAccess, "release.deploy", scope);
+  const canRollbackDeployments = hasScopedPermission(effectiveAccess, "release.rollback", scope);
+  const canViewProductionOperations = hasScopedPermission(effectiveAccess, "release.read", scope)
+    || hasScopedPermission(effectiveAccess, "package.read", scope)
+    || hasScopedPermission(effectiveAccess, "program.read", scope);
 
   return (
     <div className="space-y-6">
@@ -744,8 +729,10 @@ export function KioskDetailView({ kioskId }: KioskDetailViewProps) {
                 kioskId={kiosk.managementId}
                 canManagePrograms={canManagePrograms}
                 canInstallPackages={canInstallPackages}
+                canManageReleases={canManageReleases}
+                canForkPackages={canForkPackages}
                 canDeploy={canDeploy}
-                canRollback={canDeploy}
+                canRollback={canRollbackDeployments}
               />
             ) : null}
             <OperationLogsPanel kioskId={kioskId} />

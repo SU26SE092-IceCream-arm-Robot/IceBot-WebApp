@@ -18,8 +18,10 @@ const PERMISSION_ROLES: Record<
   "stores.update": ["SystemAdmin", "OrgAdmin", "Manager"],
   "kiosks.view": ["SystemAdmin", "OrgAdmin", "Manager", "Technician"],
   "kiosks.manage": ["SystemAdmin", "OrgAdmin", "Manager", "Technician"],
+  "kiosks.update": ["SystemAdmin", "OrgAdmin", "Manager", "Technician"],
   "devices.view": ["SystemAdmin", "OrgAdmin", "Manager", "Staff", "Technician"],
   "devices.manage": ["SystemAdmin", "OrgAdmin", "Manager", "Technician"],
+  "device-catalog.read": ["SystemAdmin", "OrgAdmin", "Manager", "Staff", "Technician"],
   "inventory.view": ["SystemAdmin", "OrgAdmin", "Manager", "Staff", "Technician"],
   "inventory.manage": ["SystemAdmin", "Manager", "Staff", "Technician"],
   "inventory.configure": ["SystemAdmin", "Manager", "Technician"],
@@ -28,10 +30,13 @@ const PERMISSION_ROLES: Record<
   "refunds.manage": ["SystemAdmin", "Manager", "Staff"],
   "products.manage": ["SystemAdmin", "Manager"],
   "menus.manage": ["SystemAdmin", "Manager"],
+  "ingredients.read": ["SystemAdmin", "Manager"],
   "reports.view": ["SystemAdmin", "OrgAdmin", "Manager"],
   "accounts.read": ["SystemAdmin", "OrgAdmin", "Manager"],
   "accounts.manage": ["SystemAdmin"],
   "roles.view": ["SystemAdmin", "OrgAdmin", "Manager"],
+  "role-scope-options.view": ["SystemAdmin", "OrgAdmin", "Manager"],
+  "tenant-tree.view": ["SystemAdmin", "OrgAdmin", "Manager", "Technician"],
   "maintenance.view": ["SystemAdmin", "OrgAdmin", "Manager", "Staff", "Technician"],
   "maintenance.create": ["SystemAdmin", "OrgAdmin", "Manager", "Staff", "Technician"],
   "maintenance.manage": ["SystemAdmin", "OrgAdmin", "Manager", "Technician"],
@@ -39,7 +44,23 @@ const PERMISSION_ROLES: Record<
   "alerts.manage": ["SystemAdmin", "OrgAdmin", "Manager", "Technician"],
   "payments.manage": ["SystemAdmin", "Manager"],
   "payment-methods.manage": ["SystemAdmin"],
+  "operations.view": ["SystemAdmin", "OrgAdmin", "Manager", "Staff", "Technician"],
   "operations.diagnostics": ["SystemAdmin", "Technician"],
+  "notifications.view": ["SystemAdmin", "OrgAdmin", "Manager", "Technician"],
+  "notifications.manage": ["SystemAdmin", "OrgAdmin", "Manager", "Technician"],
+  "artifact.read": ["SystemAdmin", "OrgAdmin"],
+  "artifact.upload": ["SystemAdmin", "OrgAdmin"],
+  "artifact-template.read": ["SystemAdmin", "OrgAdmin"],
+  "program.read": ["SystemAdmin", "OrgAdmin", "Manager"],
+  "program.manage": ["SystemAdmin", "OrgAdmin", "Manager"],
+  "release.read": ["SystemAdmin", "OrgAdmin", "Manager"],
+  "release.publish": ["SystemAdmin", "OrgAdmin"],
+  "release.deploy": ["SystemAdmin", "OrgAdmin", "Manager"],
+  "release.rollback": ["SystemAdmin", "OrgAdmin", "Manager"],
+  "deployment.read": ["SystemAdmin", "OrgAdmin", "Manager", "Technician"],
+  "package.read": ["SystemAdmin", "OrgAdmin", "Manager"],
+  "package.install": ["SystemAdmin", "OrgAdmin", "Manager"],
+  "package.fork": ["SystemAdmin", "OrgAdmin"],
 };
 
 export const ROUTE_PERMISSIONS: Record<
@@ -89,7 +110,7 @@ export function hasAnyRole(
 export function hasScopedRole(
   access: EffectiveAccessResult | null,
   roles: readonly BackendRoleCode[],
-  scope: { organizationId: string; storeId: string; kioskId: string },
+  scope: { organizationId: string; storeId?: string | null; kioskId?: string | null },
 ): boolean {
   if (!access) return false;
   if (access.isSystemAdmin && roles.includes("SystemAdmin")) return true;
@@ -104,6 +125,14 @@ export function hasScopedRole(
     }
     return true;
   });
+}
+
+export function hasScopedPermission(
+  access: EffectiveAccessResult | null,
+  permission: DashboardPermission,
+  scope: { organizationId: string; storeId?: string | null; kioskId?: string | null },
+): boolean {
+  return hasScopedRole(access, PERMISSION_ROLES[permission], scope);
 }
 
 export function hasPermission(

@@ -87,6 +87,7 @@ export interface SetupReadinessRawData {
   products?: ProductResult[];
   menus?: MenuResult[];
   paymentMethods?: PaymentMethodResult[];
+  excludedSources?: ReadinessSource[];
   failures?: ReadinessSourceFailure[];
   evaluatedAt?: string;
 }

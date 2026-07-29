@@ -50,3 +50,25 @@ export interface CreateExecutionEndpointRequest {
   endpointCode: string;
   executionProfile: ExecutionProfile;
 }
+
+export interface ReplaceExecutionEndpointRobotTargetsRequest {
+  targets: Array<{
+    runtimeTargetCode: string;
+    machineModelCode: string;
+    deviceId?: string | null;
+  }>;
+}
+
+export interface ProvisionExecutionEndpointRequest {
+  profileIdentity: string;
+  clientCertificateSha256Fingerprint?: string | null;
+  ecdsaPublicKeyPem?: string | null;
+}
+
+export interface ExecutionEndpointCredentialRotationResult {
+  endpointId: string;
+  kioskId: string;
+  executionProfile: ExecutionProfile;
+  authenticationMode: "MutualTls" | "SignedCommandTls";
+  status: ExecutionEndpointStatus;
+}

@@ -19,6 +19,8 @@ import {
   OrganizationFormDialog,
   StoreFormDialog,
 } from "@/components/features/organizations/tenant-management-dialogs";
+import { FranchiseOnboardingPanel } from "@/components/features/organizations/franchise-onboarding-panel";
+import { NotificationDeliveriesPanel } from "@/components/features/organizations/notification-deliveries-panel";
 import { TenantRefreshWarning } from "@/components/features/organizations/tenant-refresh-warning";
 import {
   TenantEmptyState,
@@ -39,7 +41,7 @@ import {
 } from "@/components/ui/table";
 import { useAuth } from "@/hooks/use-auth";
 import { useTenantMutationRefresh } from "@/hooks/use-tenant-mutation-refresh";
-import { hasPermission } from "@/lib/rbac";
+import { hasScopedPermission } from "@/lib/rbac";
 import {
   getManagementOrganizationById,
   getOrganizationsErrorMessage,
@@ -91,9 +93,12 @@ export function OrganizationDetailView({ organizationId }: OrganizationDetailVie
   const [storeFormOpen, setStoreFormOpen] = useState(false);
   const [lifecycleTarget, setLifecycleTarget] = useState<LifecycleTarget | null>(null);
 
-  const canManageOrganization = hasPermission(effectiveAccess, "organizations.manage");
-  const canEditOrganization = hasPermission(effectiveAccess, "organizations.update");
-  const canManageStores = hasPermission(effectiveAccess, "stores.manage");
+  const organizationScope = { organizationId, storeId: null, kioskId: null };
+  const canManageOrganization = hasScopedPermission(effectiveAccess, "organizations.manage", organizationScope);
+  const canEditOrganization = hasScopedPermission(effectiveAccess, "organizations.update", organizationScope);
+  const canManageStores = hasScopedPermission(effectiveAccess, "stores.manage", organizationScope);
+  const canViewNotifications = hasScopedPermission(effectiveAccess, "notifications.view", organizationScope);
+  const canManageNotifications = hasScopedPermission(effectiveAccess, "notifications.manage", organizationScope);
 
   const loadData = useCallback(async (
     signal?: AbortSignal,
@@ -229,6 +234,9 @@ export function OrganizationDetailView({ organizationId }: OrganizationDetailVie
       <Card className="gap-0 rounded-xl border border-border/80 bg-card py-0 shadow-none"><CardHeader className="border-b border-border px-5 py-4"><div className="flex items-center justify-between gap-3"><div className="flex items-center gap-3"><span className="flex size-10 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary"><StoreIcon className="size-5" /></span><div><CardTitle className="text-base font-semibold">Cửa hàng trực thuộc</CardTitle><p className="mt-0.5 text-xs text-muted-foreground">{stores.length} cửa hàng</p></div></div>{canManageStores && organization.status === "Active" ? <Button size="sm" onClick={() => { mutationState.clearError(); setStoreFormOpen(true); }}><Plus className="size-4" />Tạo cửa hàng</Button> : null}</div></CardHeader>
         {stores.length === 0 ? <TenantEmptyState title="Chưa có cửa hàng" description="Tổ chức này chưa có cửa hàng trực thuộc." /> : <Table className="min-w-[850px] table-fixed"><TableHeader><TableRow className="hover:bg-transparent"><TableHead className="w-[28%] px-5 text-xs">Cửa hàng</TableHead><TableHead className="w-[24%] text-xs">Địa điểm</TableHead><TableHead className="w-[18%] text-center text-xs">Trạng thái</TableHead><TableHead className="w-[16%] text-center text-xs">Múi giờ</TableHead><TableHead className="w-[14%] px-5 text-center text-xs">Thao tác</TableHead></TableRow></TableHeader><TableBody>{stores.map((store) => <TableRow key={store.id} className="hover:bg-muted/40"><TableCell className="px-5 py-3"><p className="font-medium text-foreground">{store.name}</p><p className="font-mono text-xs text-muted-foreground">{store.code}</p></TableCell><TableCell><p className="truncate text-sm">{store.address || "Chưa có địa chỉ"}</p><p className="text-xs text-muted-foreground">{[store.city, store.province].filter(Boolean).join(", ") || "Chưa có địa phương"}</p></TableCell><TableCell><div className="flex justify-center"><TenantStatusBadge status={store.status} /></div></TableCell><TableCell className="text-center font-mono text-xs text-muted-foreground">{store.timeZone}</TableCell><TableCell className="px-5"><div className="flex justify-center gap-1.5"><Link href={`/stores/${store.id}`} className={cn(buttonVariants({ variant: "ghost", size: "icon-sm" }), "rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground")} title="Xem cửa hàng" aria-label={`Xem cửa hàng ${store.name}`}><Eye className="size-4" /></Link>{canManageStores ? <Button variant="ghost" size="icon-sm" className={cn("rounded-lg", store.status === "Active" ? "text-destructive hover:bg-destructive/10 hover:text-destructive" : "text-success hover:bg-success/10 hover:text-success")} title={store.status === "Active" ? "Vô hiệu hóa" : "Kích hoạt"} aria-label={`${store.status === "Active" ? "Vô hiệu hóa" : "Kích hoạt"} ${store.name}`} onClick={() => { mutationState.clearError(); setLifecycleTarget({ kind: "store", store, activate: store.status !== "Active" }); }}>{store.status === "Active" ? <PowerOff className="size-4" /> : <Power className="size-4" />}</Button> : null}</div></TableCell></TableRow>)}</TableBody></Table>}
       </Card>
+
+      <FranchiseOnboardingPanel organizationId={organization.id} canManage={canManageStores && organization.status === "Active"} />
+      <NotificationDeliveriesPanel organizationId={organization.id} canView={canViewNotifications} canManage={canManageNotifications} />
 
       {organizationFormOpen ? <OrganizationFormDialog organization={organization} open isSubmitting={mutationState.isSubmitting} errorMessage={mutationState.errorMessage} onOpenChange={(open) => { if (!mutationState.mutationRef.current) setOrganizationFormOpen(open); }} onCreate={async () => false} onUpdate={submitOrganizationUpdate} /> : null}
       {storeFormOpen ? <StoreFormDialog organizationName={organization.name} store={null} open isSubmitting={mutationState.isSubmitting} errorMessage={mutationState.errorMessage} onOpenChange={(open) => { if (!mutationState.mutationRef.current) setStoreFormOpen(open); }} onCreate={submitStoreCreate} onUpdate={async () => false} /> : null}

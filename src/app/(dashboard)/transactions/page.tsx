@@ -179,6 +179,8 @@ export default function TransactionsPage() {
   const [isRejectRefundOpen, setIsRejectRefundOpen] = useState(false);
   const [isCancelRefundOpen, setIsCancelRefundOpen] = useState(false);
   const { effectiveAccess } = useAuth();
+  const canManageRefunds = hasPermission(effectiveAccess, "refunds.manage");
+
   const {
     orders,
     refunds,
@@ -236,10 +238,9 @@ export default function TransactionsPage() {
     clearActionSuccessMessage,
     applyOrderUpdate,
     refresh,
-  } = useTransactions();
+  } = useTransactions({ canManageRefunds });
   const fulfillment = useOrderItemFulfillment(applyOrderUpdate);
   const canManageOrders = hasPermission(effectiveAccess, "orders.manage");
-  const canManageRefunds = hasPermission(effectiveAccess, "refunds.manage");
   return (
     <div className="space-y-7">
       {actionSuccessMessage ? (
@@ -354,17 +355,19 @@ export default function TransactionsPage() {
         >
           Đơn hàng
         </button>
-        <button
-          type="button"
-          className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-            activeTab === "refunds"
-              ? "bg-primary text-primary-foreground"
-              : "text-muted-foreground hover:bg-muted/40 hover:text-foreground"
-          }`}
-          onClick={() => setActiveTab("refunds")}
-        >
-          Hoàn tiền
-        </button>
+        {canManageRefunds ? (
+          <button
+            type="button"
+            className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+              activeTab === "refunds"
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:bg-muted/40 hover:text-foreground"
+            }`}
+            onClick={() => setActiveTab("refunds")}
+          >
+            Hoàn tiền
+          </button>
+        ) : null}
         <button
           type="button"
           className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${

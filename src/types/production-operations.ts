@@ -238,6 +238,54 @@ export interface ConfigurationReleaseResult {
   }>;
 }
 
+export interface ConfigurationReleaseAuthoringOptions {
+  productVariants: Array<{
+    id: string;
+    productId: string;
+    productCode: string;
+    productName: string;
+    code: string;
+    name: string;
+    fulfillmentType: string;
+    isAvailable: boolean;
+    organizationId?: string | null;
+    storeId?: string | null;
+    kioskId?: string | null;
+  }>;
+  recipes: Array<{
+    id: string;
+    productVariantId: string;
+    productVariantCode: string;
+    productVariantName: string;
+    code: string;
+    name: string;
+    version: number;
+    status: string;
+    isDefault: boolean;
+  }>;
+  robotPrograms: Array<{
+    id: string;
+    code: string;
+    name: string;
+    scopeType: string;
+    programManifestChecksum: string;
+    artifactCount: number;
+  }>;
+}
+
+export interface ConfigurationReleaseRouteRequest {
+  recipeId: string;
+  routeCode: string;
+  priority: number;
+  requiredCapabilitiesJson?: string | null;
+  supportedOptionCodes: string[];
+  robotBindings: Array<{
+    robotProgramId: string;
+    bindingOrder: number;
+    requiredWorkcellCapabilityCode: string;
+  }>;
+}
+
 export interface ConfigurationDeploymentResult {
   id: string;
   profile: ConfigurationDeploymentProfile;

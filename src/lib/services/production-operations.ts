@@ -6,7 +6,9 @@ import type {
   ConfigurationDeploymentsPage,
   ConfigurationDeploymentRollbackResult,
   ConfigurationDeploymentResult,
+  ConfigurationReleaseAuthoringOptions,
   ConfigurationReleaseResult,
+  ConfigurationReleaseRouteRequest,
   ConfigurationReleasesPage,
   CreateRobotProgramRequest,
   DeploymentPreview,
@@ -223,6 +225,66 @@ export async function listConfigurationReleases(organizationId: string, signal?:
     if (!response.data.succeeded) throw new Error(response.data.message || "Không thể tải bản phát hành cấu hình.");
     return response.data;
   });
+}
+
+export async function forkProductionPackageInstallation(organizationId: string, installationId: string) {
+  const response = await axiosClient.post<ApiResult<PackageInstallationResult>>(
+    `${installationsPath(organizationId)}/${encodeURIComponent(installationId)}/fork`,
+  );
+  return requireData(response.data, "Khong the tach nhanh cau hinh goi san xuat.");
+}
+
+export async function getConfigurationReleaseAuthoringOptions(
+  organizationId: string,
+  signal?: AbortSignal,
+) {
+  const response = await axiosClient.get<ApiResult<ConfigurationReleaseAuthoringOptions>>(
+    `/api/v1/management/organizations/${encodeURIComponent(organizationId)}/configuration-releases/authoring-options`,
+    { signal },
+  );
+  return requireData(response.data, "KhÃ´ng thá»ƒ táº£i dá»¯ liá»‡u soáº¡n pháº£n phÃ¡t hÃ nh.");
+}
+
+export async function createConfigurationRelease(organizationId: string) {
+  const response = await axiosClient.post<ApiResult<ConfigurationReleaseResult>>(
+    `/api/v1/management/organizations/${encodeURIComponent(organizationId)}/configuration-releases`,
+  );
+  return requireData(response.data, "KhÃ´ng thá»ƒ táº¡o báº£n nhÃ¡p cáº¥u hÃ¬nh.");
+}
+
+export async function replaceConfigurationReleaseRoutes(
+  organizationId: string,
+  releaseId: string,
+  routes: ConfigurationReleaseRouteRequest[],
+) {
+  const response = await axiosClient.put<ApiResult<ConfigurationReleaseResult>>(
+    `/api/v1/management/organizations/${encodeURIComponent(organizationId)}/configuration-releases/${encodeURIComponent(releaseId)}/routes`,
+    { routes },
+  );
+  return requireData(response.data, "KhÃ´ng thá»ƒ cáº­p nháº­t tuyáº¿n sáº£n xuáº¥t.");
+}
+
+export async function publishConfigurationRelease(organizationId: string, releaseId: string) {
+  const response = await axiosClient.patch<ApiResult<ConfigurationReleaseResult>>(
+    `/api/v1/management/organizations/${encodeURIComponent(organizationId)}/configuration-releases/${encodeURIComponent(releaseId)}/publish`,
+  );
+  return requireData(response.data, "KhÃ´ng thá»ƒ phÃ¡t hÃ nh cáº¥u hÃ¬nh.");
+}
+
+export async function retireConfigurationRelease(organizationId: string, releaseId: string) {
+  const response = await axiosClient.patch<ApiResult<ConfigurationReleaseResult>>(
+    `/api/v1/management/organizations/${encodeURIComponent(organizationId)}/configuration-releases/${encodeURIComponent(releaseId)}/retire`,
+  );
+  return requireData(response.data, "KhÃ´ng thá»ƒ ngá»«ng sá»­ dá»¥ng báº£n phÃ¡t hÃ nh.");
+}
+
+export async function discardConfigurationRelease(organizationId: string, releaseId: string) {
+  const response = await axiosClient.delete<ApiResult<object>>(
+    `/api/v1/management/organizations/${encodeURIComponent(organizationId)}/configuration-releases/${encodeURIComponent(releaseId)}`,
+  );
+  if (!response.data.succeeded) {
+    throw new Error(response.data.message || response.data.businessError || "KhÃ´ng thá»ƒ xÃ³a báº£n nhÃ¡p cáº¥u hÃ¬nh.");
+  }
 }
 
 export async function listConfigurationDeployments(kioskId: string, signal?: AbortSignal) {

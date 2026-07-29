@@ -7,12 +7,16 @@ import { toast } from "sonner";
 import {
   changePackageUpgradeLifecycle,
   changeRobotProgramLifecycle,
+  createConfigurationRelease,
   createRobotProgram,
   deployConfiguration,
   getConfigurationInventoryReadiness,
+  getConfigurationReleaseAuthoringOptions,
+  forkProductionPackageInstallation,
   getPackageWorkspace,
   getProductionOperationsErrorMessage,
   installProductionPackage,
+  discardConfigurationRelease,
   listConfigurationDeployments,
   listConfigurationReleases,
   listPackageInstallations,
@@ -20,16 +24,21 @@ import {
   listProductionPackageCatalog,
   listRobotPrograms,
   previewConfigurationDeployment,
+  publishConfigurationRelease,
   previewPackageInstallation,
   previewPackageUpgrade,
   recoverPackageInstallation,
   rollbackConfigurationDeployment,
+  replaceConfigurationReleaseRoutes,
+  retireConfigurationRelease,
   startPackageUpgrade,
   updateRobotProgram,
 } from "@/lib/services/production-operations";
 import type {
   ConfigurationDeploymentResult,
   ConfigurationReleaseResult,
+  ConfigurationReleaseAuthoringOptions,
+  ConfigurationReleaseRouteRequest,
   CreateRobotProgramRequest,
   DeploymentPreview,
   InventoryReadinessResult,
@@ -55,6 +64,7 @@ export function useProductionOperations(scope: ProductionOperationsScope) {
   const [packages, setPackages] = useState<ProductionPackageResult[]>([]);
   const [installations, setInstallations] = useState<PackageInstallationResult[]>([]);
   const [releases, setReleases] = useState<ConfigurationReleaseResult[]>([]);
+  const [releaseAuthoringOptions, setReleaseAuthoringOptions] = useState<ConfigurationReleaseAuthoringOptions | null>(null);
   const [deployments, setDeployments] = useState<ConfigurationDeploymentResult[]>([]);
   const [workspaces, setWorkspaces] = useState<Record<string, PackageWorkspaceResult>>({});
   const [upgrades, setUpgrades] = useState<Record<string, PackageUpgradeResult[]>>({});
@@ -207,11 +217,24 @@ export function useProductionOperations(scope: ProductionOperationsScope) {
     }
   }, [scope.kioskId]);
 
+  const loadReleaseAuthoringOptions = useCallback(async () => {
+    setMutationError(null);
+    try {
+      const options = await getConfigurationReleaseAuthoringOptions(scope.organizationId);
+      setReleaseAuthoringOptions(options);
+      return options;
+    } catch (error) {
+      setMutationError(getProductionOperationsErrorMessage(error, "Khong the tai du lieu soan ban phat hanh."));
+      return null;
+    }
+  }, [scope.organizationId]);
+
   return {
     programs,
     packages,
     installations,
     releases,
+    releaseAuthoringOptions,
     deployments,
     workspaces,
     upgrades,
@@ -232,6 +255,7 @@ export function useProductionOperations(scope: ProductionOperationsScope) {
       setInventoryReadiness(null);
     },
     loadWorkspace,
+    loadReleaseAuthoringOptions,
     createProgram: (request: CreateRobotProgramRequest) => runMutation(
       () => createRobotProgram(scope.organizationId, { ...request, storeId: scope.storeId, kioskId: scope.kioskId }),
       "Đã tạo bản nháp chương trình robot.",
@@ -244,6 +268,23 @@ export function useProductionOperations(scope: ProductionOperationsScope) {
       () => changeRobotProgramLifecycle(scope.organizationId, programId, action),
       action === "publish" ? "Đã phát hành chương trình robot." : action === "retire" ? "Đã ngừng sử dụng chương trình robot." : "Đã xóa bản nháp chương trình robot.",
     ),
+    createRelease: () => runMutation(
+      () => createConfigurationRelease(scope.organizationId),
+      "Da tao ban nhap cau hinh.",
+    ),
+    replaceReleaseRoutes: (releaseId: string, routes: ConfigurationReleaseRouteRequest[]) => runMutation(
+      () => replaceConfigurationReleaseRoutes(scope.organizationId, releaseId, routes),
+      "Da cap nhat tuyen san xuat cho ban nhap.",
+    ),
+    changeReleaseLifecycle: (releaseId: string, action: "publish" | "retire" | "discard") => runMutation(
+      async () => {
+        if (action === "publish") return publishConfigurationRelease(scope.organizationId, releaseId);
+        if (action === "retire") return retireConfigurationRelease(scope.organizationId, releaseId);
+        await discardConfigurationRelease(scope.organizationId, releaseId);
+        return null;
+      },
+      action === "publish" ? "Da phat hanh cau hinh." : action === "retire" ? "Da ngung su dung ban phat hanh." : "Da xoa ban nhap cau hinh.",
+    ),
     previewInstall,
     installPackage: (request: PackageInstallRequest) => runMutation(
       () => installProductionPackage(scope.organizationId, request),
@@ -252,6 +293,10 @@ export function useProductionOperations(scope: ProductionOperationsScope) {
     recoverInstallation: (installationId: string, action: "retry" | "repair") => runMutation(
       () => recoverPackageInstallation(scope.organizationId, installationId, action),
       action === "retry" ? "Đã yêu cầu thử lại cài đặt gói." : "Đã yêu cầu sửa dữ liệu cài đặt gói.",
+    ),
+    forkInstallation: (installationId: string) => runMutation(
+      () => forkProductionPackageInstallation(scope.organizationId, installationId),
+      "Da tach nhanh cau hinh ky thuat thanh ban sao cua to chuc.",
     ),
     previewUpgrade,
     startUpgrade: (installationId: string, preview: PackageUpgradePreviewResult) => runMutation(

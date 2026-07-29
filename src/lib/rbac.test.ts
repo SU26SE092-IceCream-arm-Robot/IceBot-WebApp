@@ -6,6 +6,7 @@ import {
   getVisibleRoutes,
   hasAnyRole,
   hasScopedRole,
+  hasScopedPermission,
   hasEffectivePermission,
   hasPermission,
 } from "@/lib/rbac";
@@ -53,6 +54,14 @@ describe("payment method permissions", () => {
     expect(
       hasEffectivePermission(null, "operations.diagnostics"),
     ).toBe(false);
+  });
+});
+
+describe("catalog read permissions", () => {
+  it("does not expose ingredient catalog reads to OrgAdmin", () => {
+    expect(hasPermission(accessFor("SystemAdmin"), "ingredients.read")).toBe(true);
+    expect(hasPermission(accessFor("Manager"), "ingredients.read")).toBe(true);
+    expect(hasPermission(accessFor("OrgAdmin"), "ingredients.read")).toBe(false);
   });
 });
 
@@ -229,6 +238,65 @@ describe("Phase 8 guided production operations scope", () => {
         ["SystemAdmin", "OrgAdmin", "Manager"],
         scope,
       ),
+    ).toBe(false);
+  });
+});
+
+describe("OrgAdmin governance permission matrix", () => {
+  const organizationScope = {
+    organizationId: "org-1",
+    storeId: "store-1",
+    kioskId: "kiosk-1",
+  };
+
+  function orgAdminAccess(organizationId = "org-1"): EffectiveAccessResult {
+    const access = accessFor("OrgAdmin");
+    access.roleScopes = [{ roleCode: "OrgAdmin", organizationId }];
+    return access;
+  }
+
+  it.each([
+    "kiosks.update",
+    "device-catalog.read",
+    "tenant-tree.view",
+    "operations.view",
+    "notifications.view",
+    "notifications.manage",
+    "artifact.read",
+    "artifact.upload",
+    "artifact-template.read",
+    "program.read",
+    "program.manage",
+    "release.read",
+    "release.publish",
+    "release.deploy",
+    "release.rollback",
+    "deployment.read",
+    "package.read",
+    "package.install",
+    "package.fork",
+  ] as const)("allows OrgAdmin %s in its assigned organization", (permission) => {
+    expect(hasPermission(orgAdminAccess(), permission)).toBe(true);
+    expect(
+      hasScopedPermission(orgAdminAccess(), permission, organizationScope),
+    ).toBe(true);
+  });
+
+  it.each([
+    "products.manage",
+    "menus.manage",
+    "payments.manage",
+    "refunds.manage",
+    "inventory.manage",
+    "inventory.configure",
+    "operations.diagnostics",
+  ] as const)("keeps non-OrgAdmin policy %s unavailable", (permission) => {
+    expect(hasPermission(orgAdminAccess(), permission)).toBe(false);
+  });
+
+  it("does not authorize an OrgAdmin outside its assigned organization", () => {
+    expect(
+      hasScopedPermission(orgAdminAccess("org-2"), "release.publish", organizationScope),
     ).toBe(false);
   });
 });

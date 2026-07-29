@@ -73,6 +73,11 @@ function hasFailure(raw: SetupReadinessRawData, id: ReadinessCheckId) {
   return raw.failures?.some((item) => item.source === source) ?? false;
 }
 
+function isExcluded(raw: SetupReadinessRawData, id: ReadinessCheckId) {
+  const source = SOURCE_BY_CHECK[id];
+  return raw.excludedSources?.includes(source) ?? false;
+}
+
 function isActiveStatus(status: string | undefined | null) {
   return status === "Active";
 }
@@ -292,9 +297,9 @@ export function evaluateReadiness(raw: SetupReadinessRawData): SetupReadinessRes
     PAYMENT_ACTIVE: () => evaluatePayment(raw.paymentMethods),
   };
 
-  const checks = CHECK_ORDER.map((id) =>
-    hasFailure(raw, id) ? unknownCheck(raw, id) : evaluators[id](),
-  );
+  const checks = CHECK_ORDER
+    .filter((id) => !isExcluded(raw, id))
+    .map((id) => (hasFailure(raw, id) ? unknownCheck(raw, id) : evaluators[id]()));
   const summary = summarize(checks);
 
   return {
