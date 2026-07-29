@@ -459,6 +459,10 @@ export default function MenuPage() {
   } = useProductCrud({ organizationId: selectedOrganizationId, onChanged: handleProductChanged });
 
   const canManage = hasPermission(effectiveAccess, "products.manage");
+  const canManageProductCategories = hasPermission(
+    effectiveAccess,
+    "product-categories.manage",
+  );
   const productTemplates = useProductTemplates({
     organizationId: selectedOrganizationId,
     onCloned: async () => {
@@ -719,6 +723,14 @@ export default function MenuPage() {
         errorMessage={productCategories.errorMessage}
         onOpenChange={setProductCategoriesOpen}
         onRetry={productCategories.retry}
+        canManage={canManageProductCategories}
+        mutationError={productCategories.mutationError}
+        mutatingCategoryId={productCategories.mutatingCategoryId}
+        onClearMutationError={productCategories.clearMutationError}
+        onCreate={productCategories.create}
+        onUpdate={productCategories.update}
+        onSetStatus={productCategories.setStatus}
+        onDelete={productCategories.remove}
       />
 
       <ProductOptionsCatalogDialog

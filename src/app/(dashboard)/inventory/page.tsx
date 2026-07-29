@@ -247,6 +247,10 @@ export default function InventoryPage() {
     effectiveAccess,
     "inventory.configure",
   );
+  const canManageIngredients = hasPermission(
+    effectiveAccess,
+    "ingredients.manage",
+  );
   const {
     dispensers,
     visibleDispensers,
@@ -632,6 +636,7 @@ export default function InventoryPage() {
       <IngredientCatalogDialog
         open={isIngredientCatalogOpen}
         onOpenChange={setIsIngredientCatalogOpen}
+        canManage={canManageIngredients}
       />
 
       <InventoryHistoryDialog

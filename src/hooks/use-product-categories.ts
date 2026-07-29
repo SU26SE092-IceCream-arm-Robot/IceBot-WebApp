@@ -1,18 +1,32 @@
 "use client";
 
 import axios from "axios";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 
 import {
+  createProductCategory,
+  deleteProductCategory,
   getMenuManagementErrorMessage,
   listProductCategories,
+  setProductCategoryStatus,
+  updateProductCategory,
 } from "@/lib/services/menu-management";
-import type { ProductCategoryResult } from "@/types/menu-management";
+import type {
+  CreateProductCategoryRequest,
+  ProductCategoryResult,
+  UpdateProductCategoryRequest,
+} from "@/types/menu-management";
 
 export function useProductCategories(enabled: boolean) {
   const [categories, setCategories] = useState<ProductCategoryResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [mutationError, setMutationError] = useState<string | null>(null);
+  const [mutatingCategoryId, setMutatingCategoryId] = useState<
+    number | "new" | null
+  >(null);
+  const mutationInFlightRef = useRef(false);
 
   const load = useCallback(
     async (signal?: AbortSignal) => {
@@ -62,11 +76,69 @@ export function useProductCategories(enabled: boolean) {
     [categories],
   );
 
+  const runMutation = useCallback(
+    async (
+      target: number | "new",
+      action: () => Promise<unknown>,
+      successMessage: string,
+    ) => {
+      if (mutationInFlightRef.current) return false;
+      mutationInFlightRef.current = true;
+      setMutatingCategoryId(target);
+      setMutationError(null);
+      try {
+        await action();
+        toast.success(successMessage);
+        await load();
+        return true;
+      } catch (error) {
+        setMutationError(
+          getMenuManagementErrorMessage(error, "danh mục sản phẩm"),
+        );
+        return false;
+      } finally {
+        mutationInFlightRef.current = false;
+        setMutatingCategoryId(null);
+      }
+    },
+    [load],
+  );
+  const clearMutationError = useCallback(() => setMutationError(null), []);
+
   return {
     categories,
     activeCategories,
     isLoading,
     errorMessage,
+    mutationError,
+    clearMutationError,
+    mutatingCategoryId,
     retry: () => void load(),
+    create: (request: CreateProductCategoryRequest) =>
+      runMutation(
+        "new",
+        () => createProductCategory(request),
+        "Đã tạo danh mục sản phẩm.",
+      ),
+    update: (categoryId: number, request: UpdateProductCategoryRequest) =>
+      runMutation(
+        categoryId,
+        () => updateProductCategory(categoryId, request),
+        "Đã cập nhật danh mục sản phẩm.",
+      ),
+    setStatus: (category: ProductCategoryResult) =>
+      runMutation(
+        category.id,
+        () => setProductCategoryStatus(category.id, !category.isActive),
+        category.isActive
+          ? "Đã tắt danh mục sản phẩm."
+          : "Đã kích hoạt danh mục sản phẩm.",
+      ),
+    remove: (category: ProductCategoryResult) =>
+      runMutation(
+        category.id,
+        () => deleteProductCategory(category.id),
+        "Đã xóa danh mục sản phẩm.",
+      ),
   };
 }

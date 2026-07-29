@@ -17,6 +17,7 @@ import {
   ClipboardCheck,
   ShoppingCart,
   ShieldCheck,
+  ShieldAlert,
   Users,
   Wrench,
 } from "lucide-react";
@@ -48,6 +49,7 @@ const SIDEBAR_ITEMS: readonly SidebarItem[] = [
   { href: "/roles", label: "Vai trò & quyền", icon: ShieldCheck },
   { href: "/alerts", label: "Cảnh báo", icon: Bell },
   { href: "/maintenance", label: "Bảo trì", icon: Wrench },
+  { href: "/platform/exceptions", label: "Sự cố đồng bộ", icon: ShieldAlert },
   { href: "/settings/payment-methods", label: "Cấu hình thanh toán", icon: CreditCard },
 ];
 
@@ -60,7 +62,7 @@ const SIDEBAR_GROUPS: readonly {
     routes: ["/dashboard", "/readiness", "/alerts", "/kiosks", "/inventory", "/maintenance"],
   },
   { label: "Kinh doanh", routes: ["/transactions", "/menu", "/reports"] },
-  { label: "Quản trị", routes: ["/organizations", "/users", "/roles", "/settings/payment-methods"] },
+  { label: "Quản trị", routes: ["/organizations", "/users", "/roles", "/settings/payment-methods", "/platform/exceptions"] },
 ];
 
 interface AppSidebarProps {

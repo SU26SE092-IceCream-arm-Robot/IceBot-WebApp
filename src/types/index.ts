@@ -37,6 +37,7 @@ export type DashboardRoutePath =
   | "/roles"
   | "/maintenance"
   | "/alerts"
+  | "/platform/exceptions"
   | "/settings/payment-methods";
 
 export type DashboardPermission =
@@ -58,6 +59,12 @@ export type DashboardPermission =
   | "orders.manage"
   | "refunds.manage"
   | "products.manage"
+  | "product-categories.manage"
+  | "ingredients.manage"
+  | "device-catalog.manage"
+  | "product-templates.manage"
+  | "package.manage"
+  | "sync-dead-letters.manage"
   | "menus.manage"
   | "reports.view"
   | "accounts.read"

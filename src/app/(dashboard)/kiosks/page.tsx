@@ -132,6 +132,10 @@ export default function KiosksPage() {
   } = useKiosks();
   const createKiosk = useCreateKiosk({ onCreated: refresh });
   const canCreateKiosk = hasPermission(effectiveAccess, "kiosks.manage");
+  const canManageDeviceCatalog = hasPermission(
+    effectiveAccess,
+    "device-catalog.manage",
+  );
 
   return (
     <div className="space-y-7">
@@ -360,6 +364,7 @@ export default function KiosksPage() {
       <DeviceCatalogDialog
         open={isDeviceCatalogOpen}
         onOpenChange={setIsDeviceCatalogOpen}
+        canManage={canManageDeviceCatalog}
       />
       <KioskCreateDialog createKiosk={createKiosk} />
     </div>

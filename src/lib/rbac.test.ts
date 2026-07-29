@@ -56,6 +56,22 @@ describe("payment method permissions", () => {
   });
 });
 
+describe("SystemAdmin platform catalog permissions", () => {
+  it.each([
+    "product-categories.manage",
+    "ingredients.manage",
+    "device-catalog.manage",
+    "product-templates.manage",
+    "package.manage",
+    "sync-dead-letters.manage",
+  ] as const)("keeps %s exclusive to SystemAdmin", (permission) => {
+    expect(hasPermission(accessFor("SystemAdmin"), permission)).toBe(true);
+    expect(hasPermission(accessFor("OrgAdmin"), permission)).toBe(false);
+    expect(hasPermission(accessFor("Manager"), permission)).toBe(false);
+    expect(hasPermission(accessFor("Technician"), permission)).toBe(false);
+  });
+});
+
 describe("Phase 3 tenant and kiosk operation permissions", () => {
   it("keeps Store lifecycle and sales management out of the Manager role", () => {
     expect(hasPermission(accessFor("Manager"), "stores.update")).toBe(true);
@@ -110,6 +126,11 @@ describe("exact backend roles and route visibility", () => {
     expect(routes).toContain("/inventory");
     expect(routes).toContain("/transactions");
     expect(routes).not.toContain("/dashboard");
+  });
+
+  it("exposes the platform exception queue only to SystemAdmin", () => {
+    expect(canAccessRoute(accessFor("SystemAdmin"), "/platform/exceptions")).toBe(true);
+    expect(canAccessRoute(accessFor("OrgAdmin"), "/platform/exceptions")).toBe(false);
   });
 
   it("separates maintenance creation from maintenance management", () => {

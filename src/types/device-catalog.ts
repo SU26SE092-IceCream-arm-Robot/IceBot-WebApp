@@ -28,3 +28,25 @@ export interface DeviceTypesQuery {
 export interface DeviceModelsQuery {
   search?: string;
 }
+
+export interface CreateDeviceTypeRequest {
+  code: string;
+  name: string;
+  description?: string | null;
+  category: string;
+  requiresKioskAssignment: boolean;
+  displayOrder: number;
+}
+
+export type UpdateDeviceTypeRequest = Omit<CreateDeviceTypeRequest, "code">;
+
+export interface CreateDeviceModelRequest {
+  code: string;
+  name: string;
+  manufacturer?: string | null;
+  modelNumber?: string | null;
+  firmwareFamily?: string | null;
+  capabilities: string[];
+}
+
+export type UpdateDeviceModelRequest = Omit<CreateDeviceModelRequest, "code">;

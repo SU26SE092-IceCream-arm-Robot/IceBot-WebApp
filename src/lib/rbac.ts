@@ -27,6 +27,12 @@ const PERMISSION_ROLES: Record<
   "orders.manage": ["SystemAdmin", "OrgAdmin", "Manager", "Staff"],
   "refunds.manage": ["SystemAdmin", "Manager", "Staff"],
   "products.manage": ["SystemAdmin", "Manager"],
+  "product-categories.manage": ["SystemAdmin"],
+  "ingredients.manage": ["SystemAdmin"],
+  "device-catalog.manage": ["SystemAdmin"],
+  "product-templates.manage": ["SystemAdmin"],
+  "package.manage": ["SystemAdmin"],
+  "sync-dead-letters.manage": ["SystemAdmin"],
   "menus.manage": ["SystemAdmin", "Manager"],
   "reports.view": ["SystemAdmin", "OrgAdmin", "Manager"],
   "accounts.read": ["SystemAdmin", "OrgAdmin", "Manager"],
@@ -58,6 +64,7 @@ export const ROUTE_PERMISSIONS: Record<
   "/roles": "roles.view",
   "/maintenance": "maintenance.view",
   "/alerts": "alerts.view",
+  "/platform/exceptions": "sync-dead-letters.manage",
   "/settings/payment-methods": "payments.manage",
 };
 

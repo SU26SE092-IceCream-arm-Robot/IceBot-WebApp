@@ -3,10 +3,14 @@ import axios from "axios";
 import axiosClient from "@/lib/axios-client";
 import type { ApiResult } from "@/types";
 import type {
+  CreateDeviceModelRequest,
+  CreateDeviceTypeRequest,
   DeviceModelResult,
   DeviceModelsQuery,
   DeviceTypeResult,
   DeviceTypesQuery,
+  UpdateDeviceModelRequest,
+  UpdateDeviceTypeRequest,
 } from "@/types/device-catalog";
 
 function requireData<T>(result: ApiResult<T>, fallbackMessage: string): T {
@@ -48,6 +52,73 @@ export async function listDeviceModels(
   );
 
   return requireData(response.data, "Không thể tải danh mục model thiết bị.");
+}
+
+export async function createDeviceType(
+  request: CreateDeviceTypeRequest,
+): Promise<DeviceTypeResult> {
+  const response = await axiosClient.post<ApiResult<DeviceTypeResult>>(
+    "/api/v1/management/device-types",
+    request,
+  );
+  return requireData(response.data, "Không thể tạo loại thiết bị.");
+}
+
+export async function updateDeviceType(
+  deviceTypeId: number,
+  request: UpdateDeviceTypeRequest,
+): Promise<DeviceTypeResult> {
+  const response = await axiosClient.put<ApiResult<DeviceTypeResult>>(
+    `/api/v1/management/device-types/${deviceTypeId}`,
+    request,
+  );
+  return requireData(response.data, "Không thể cập nhật loại thiết bị.");
+}
+
+export async function setDeviceTypeStatus(
+  deviceTypeId: number,
+  isActive: boolean,
+): Promise<DeviceTypeResult> {
+  const response = await axiosClient.patch<ApiResult<DeviceTypeResult>>(
+    `/api/v1/management/device-types/${deviceTypeId}/status`,
+    { isActive },
+  );
+  return requireData(response.data, "Không thể đổi trạng thái loại thiết bị.");
+}
+
+export async function createDeviceModel(
+  deviceTypeId: number,
+  request: CreateDeviceModelRequest,
+): Promise<DeviceModelResult> {
+  const response = await axiosClient.post<ApiResult<DeviceModelResult>>(
+    `/api/v1/management/device-types/${deviceTypeId}/models`,
+    request,
+  );
+  return requireData(response.data, "Không thể tạo model thiết bị.");
+}
+
+export async function updateDeviceModel(
+  deviceModelId: string,
+  request: UpdateDeviceModelRequest,
+): Promise<DeviceModelResult> {
+  const response = await axiosClient.put<ApiResult<DeviceModelResult>>(
+    `/api/v1/management/device-models/${encodeURIComponent(deviceModelId)}`,
+    request,
+  );
+  return requireData(response.data, "Không thể cập nhật model thiết bị.");
+}
+
+export async function retireDeviceModel(deviceModelId: string): Promise<void> {
+  const response = await axiosClient.delete<ApiResult<unknown>>(
+    `/api/v1/management/device-models/${encodeURIComponent(deviceModelId)}`,
+  );
+  if (!response.data.succeeded) {
+    throw new Error(
+      response.data.message ||
+        response.data.businessError ||
+        "Không thể ngừng sử dụng model thiết bị.",
+    );
+  }
 }
 
 export function getDeviceCatalogErrorMessage(

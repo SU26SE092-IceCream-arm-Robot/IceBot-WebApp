@@ -1,16 +1,27 @@
 "use client";
 
 import axios from "axios";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 
 import {
+  createDeviceModel,
+  createDeviceType,
   getDeviceCatalogErrorMessage,
   listDeviceModels,
   listDeviceTypes,
+  retireDeviceModel,
+  setDeviceTypeStatus,
+  updateDeviceModel,
+  updateDeviceType,
 } from "@/lib/services/device-catalog";
 import type {
+  CreateDeviceModelRequest,
+  CreateDeviceTypeRequest,
   DeviceModelResult,
   DeviceTypeResult,
+  UpdateDeviceModelRequest,
+  UpdateDeviceTypeRequest,
 } from "@/types/device-catalog";
 
 export type DeviceTypeStatusFilter = "ALL" | "ACTIVE" | "INACTIVE";
@@ -26,6 +37,9 @@ export function useDeviceCatalog(open: boolean, initialTypeId?: number | null) {
   const [modelsLoading, setModelsLoading] = useState(false);
   const [typesError, setTypesError] = useState<string | null>(null);
   const [modelsError, setModelsError] = useState<string | null>(null);
+  const [mutationError, setMutationError] = useState<string | null>(null);
+  const [mutationTarget, setMutationTarget] = useState<string | null>(null);
+  const mutationInFlightRef = useRef(false);
 
   const loadTypes = useCallback(
     async (signal?: AbortSignal) => {
@@ -131,6 +145,36 @@ export function useDeviceCatalog(open: boolean, initialTypeId?: number | null) {
     };
   }, [loadModels, open]);
 
+  const runMutation = useCallback(
+    async (
+      target: string,
+      action: () => Promise<unknown>,
+      refresh: () => Promise<void>,
+      successMessage: string,
+    ) => {
+      if (mutationInFlightRef.current) return false;
+      mutationInFlightRef.current = true;
+      setMutationTarget(target);
+      setMutationError(null);
+      try {
+        await action();
+        toast.success(successMessage);
+        await refresh();
+        return true;
+      } catch (error) {
+        setMutationError(
+          getDeviceCatalogErrorMessage(error, "Không thể xử lý danh mục thiết bị."),
+        );
+        return false;
+      } finally {
+        mutationInFlightRef.current = false;
+        setMutationTarget(null);
+      }
+    },
+    [],
+  );
+  const clearMutationError = useCallback(() => setMutationError(null), []);
+
   return {
     types,
     models,
@@ -143,6 +187,8 @@ export function useDeviceCatalog(open: boolean, initialTypeId?: number | null) {
     modelsLoading,
     typesError,
     modelsError,
+    mutationError,
+    mutationTarget,
     setTypeSearch,
     setModelSearch,
     setStatus,
@@ -152,5 +198,50 @@ export function useDeviceCatalog(open: boolean, initialTypeId?: number | null) {
     },
     retryTypes: () => void loadTypes(),
     retryModels: () => void loadModels(),
+    clearMutationError,
+    createType: (request: CreateDeviceTypeRequest) =>
+      runMutation(
+        "new-type",
+        () => createDeviceType(request),
+        () => loadTypes(),
+        "Đã tạo loại thiết bị.",
+      ),
+    updateType: (deviceTypeId: number, request: UpdateDeviceTypeRequest) =>
+      runMutation(
+        `type:${deviceTypeId}`,
+        () => updateDeviceType(deviceTypeId, request),
+        () => loadTypes(),
+        "Đã cập nhật loại thiết bị.",
+      ),
+    setTypeStatus: (deviceType: DeviceTypeResult) =>
+      runMutation(
+        `type:${deviceType.id}`,
+        () => setDeviceTypeStatus(deviceType.id, !deviceType.isActive),
+        () => loadTypes(),
+        deviceType.isActive
+          ? "Đã tắt loại thiết bị."
+          : "Đã kích hoạt loại thiết bị.",
+      ),
+    createModel: (deviceTypeId: number, request: CreateDeviceModelRequest) =>
+      runMutation(
+        "new-model",
+        () => createDeviceModel(deviceTypeId, request),
+        () => loadModels(),
+        "Đã tạo model thiết bị.",
+      ),
+    updateModel: (deviceModelId: string, request: UpdateDeviceModelRequest) =>
+      runMutation(
+        `model:${deviceModelId}`,
+        () => updateDeviceModel(deviceModelId, request),
+        () => loadModels(),
+        "Đã cập nhật model thiết bị.",
+      ),
+    retireModel: (deviceModel: DeviceModelResult) =>
+      runMutation(
+        `model:${deviceModel.id}`,
+        () => retireDeviceModel(deviceModel.id),
+        () => loadModels(),
+        "Đã ngừng sử dụng model thiết bị.",
+      ),
   };
 }

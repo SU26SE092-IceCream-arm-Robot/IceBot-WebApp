@@ -23,5 +23,19 @@ export interface IngredientsQuery {
   pageSize: number;
 }
 
+export interface CreateIngredientRequest {
+  code: string;
+  name: string;
+  ingredientType: string;
+  unit: string;
+  description?: string | null;
+  storageRequirement?: string | null;
+  isPerishable: boolean;
+  isAllergen: boolean;
+  shelfLifeDays?: number | null;
+}
+
+export type UpdateIngredientRequest = Omit<CreateIngredientRequest, "code">;
+
 export type IngredientsPagination = PaginationMeta;
 export type IngredientsPagedResult = PagedResult<IngredientResult>;

@@ -15,6 +15,9 @@ import { DashboardRecentOrders } from "@/components/features/dashboard/dashboard
 import { DashboardScopeSummary } from "@/components/features/dashboard/dashboard-scope-summary";
 import { DashboardStatusDistribution } from "@/components/features/dashboard/dashboard-status-distribution";
 import { OperationalShortcuts } from "@/components/features/dashboard/operational-shortcuts";
+import { PlatformControlKpiGrid } from "@/components/features/dashboard/platform-control-kpi-grid";
+import { PlatformControlShortcuts } from "@/components/features/dashboard/platform-control-shortcuts";
+import { PlatformInterventionList } from "@/components/features/dashboard/platform-intervention-list";
 import { useDashboardOverview } from "@/hooks/use-dashboard-overview";
 import { useAuth } from "@/hooks/use-auth";
 import { getVisibleRoutes } from "@/lib/rbac";
@@ -31,6 +34,7 @@ export default function DashboardPage() {
     refresh,
   } = useDashboardOverview();
   const visibleRoutes = new Set(getVisibleRoutes(effectiveAccess));
+  const isSystemAdmin = effectiveAccess?.isSystemAdmin ?? false;
   const hasAllRoots = Boolean(
     data?.dashboard &&
       data.kioskStatusOverview &&
@@ -38,13 +42,16 @@ export default function DashboardPage() {
       data.orderOverview,
   );
 
-  const isEmpty =
-    hasAllRoots &&
-    data?.dashboard?.organizationCount === 0 &&
-    data?.dashboard?.storeCount === 0 &&
-    data?.dashboard?.kioskCount === 0 &&
-    data.orderOverview?.totalCount === 0 &&
-    data.inventorySummary?.totalDispenserCount === 0;
+  const isEmpty = hasAllRoots &&
+    (isSystemAdmin
+      ? data?.dashboard?.organizationCount === 0 &&
+        data?.dashboard?.storeCount === 0 &&
+        data?.dashboard?.kioskCount === 0
+      : data?.dashboard?.organizationCount === 0 &&
+        data?.dashboard?.storeCount === 0 &&
+        data?.dashboard?.kioskCount === 0 &&
+        data.orderOverview?.totalCount === 0 &&
+        data.inventorySummary?.totalDispenserCount === 0);
 
   return (
     <div className="space-y-7">
@@ -52,6 +59,15 @@ export default function DashboardPage() {
         lastUpdatedAt={lastUpdatedAt}
         isRefreshing={isRefreshing}
         onRefresh={() => void refresh()}
+        title={isSystemAdmin ? "Kiểm soát nền tảng" : undefined}
+        description={
+          isSystemAdmin
+            ? "Theo dõi phạm vi toàn hệ thống, sức khỏe đội kiosk và các điều kiện cần can thiệp."
+            : undefined
+        }
+        refreshTitle={
+          isSystemAdmin ? "Làm mới dữ liệu kiểm soát nền tảng" : undefined
+        }
       />
 
       {isLoading ? (
@@ -64,7 +80,11 @@ export default function DashboardPage() {
       ) : isEmpty ? (
         <>
           <DashboardEmptyState />
-          <OperationalShortcuts />
+          {isSystemAdmin ? (
+            <PlatformControlShortcuts visibleRoutes={visibleRoutes} />
+          ) : (
+            <OperationalShortcuts />
+          )}
         </>
       ) : (
         <>
@@ -87,19 +107,34 @@ export default function DashboardPage() {
             </div>
           ) : null}
 
-          <DashboardKpiGrid
-            metrics={data.dashboard}
-            inventory={data.inventorySummary}
-            visibleRoutes={visibleRoutes}
-          />
+          {isSystemAdmin ? (
+            <PlatformControlKpiGrid
+              metrics={data.dashboard}
+              visibleRoutes={visibleRoutes}
+            />
+          ) : (
+            <DashboardKpiGrid
+              metrics={data.dashboard}
+              inventory={data.inventorySummary}
+              visibleRoutes={visibleRoutes}
+            />
+          )}
 
           <section className="grid items-start gap-4 xl:grid-cols-12">
             <div className="xl:col-span-7">
-              <DashboardAttentionList
-                metrics={data.dashboard}
-                inventory={data.inventorySummary}
-                visibleRoutes={visibleRoutes}
-              />
+              {isSystemAdmin ? (
+                <PlatformInterventionList
+                  metrics={data.dashboard}
+                  inventory={data.inventorySummary}
+                  visibleRoutes={visibleRoutes}
+                />
+              ) : (
+                <DashboardAttentionList
+                  metrics={data.dashboard}
+                  inventory={data.inventorySummary}
+                  visibleRoutes={visibleRoutes}
+                />
+              )}
             </div>
             <div className="xl:col-span-5">
               {data.dashboard ? (
@@ -133,7 +168,7 @@ export default function DashboardPage() {
             ) : (
               <DashboardSectionUnavailable label="Trạng thái kiosk" />
             )}
-            {data.orderOverview ? (
+            {!isSystemAdmin && data.orderOverview ? (
               <DashboardStatusDistribution
                 title="Phân bố trạng thái đơn hàng"
                 description="Tỷ lệ được tính từ tổng số đơn hàng hiện có."
@@ -142,18 +177,24 @@ export default function DashboardPage() {
                 total={data.orderOverview.totalCount}
                 emptyMessage="Chưa có đơn hàng để phân bố trạng thái."
               />
-            ) : (
+            ) : !isSystemAdmin ? (
               <DashboardSectionUnavailable label="Trạng thái đơn hàng" />
-            )}
+            ) : null}
           </section>
 
-          {data.orderOverview ? (
-            <DashboardRecentOrders orders={data.orderOverview.recentOrders} />
-          ) : (
-            <DashboardSectionUnavailable label="Đơn hàng gần đây" />
-          )}
+          {!isSystemAdmin ? (
+            data.orderOverview ? (
+              <DashboardRecentOrders orders={data.orderOverview.recentOrders} />
+            ) : (
+              <DashboardSectionUnavailable label="Đơn hàng gần đây" />
+            )
+          ) : null}
 
-          <OperationalShortcuts />
+          {isSystemAdmin ? (
+            <PlatformControlShortcuts visibleRoutes={visibleRoutes} />
+          ) : (
+            <OperationalShortcuts />
+          )}
         </>
       )}
     </div>
