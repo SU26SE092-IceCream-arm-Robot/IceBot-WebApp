@@ -49,6 +49,7 @@ export interface UseKioskDetailResult {
 
 export function useKioskDetail(kioskId: string): UseKioskDetailResult {
   const { currentUser } = useAuth();
+  const currentUserId = currentUser?.id;
   const [kiosk, setKiosk] = useState<KioskManagementDetail | null>(null);
   const [state, setState] = useState<KioskDetailViewState>("LOADING");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -72,7 +73,7 @@ export function useKioskDetail(kioskId: string): UseKioskDetailResult {
     setHeartbeats({ data: [], pagination: null, isLoading: false, errorMessage: null });
     setEvents({ data: [], pagination: null, isLoading: false, errorMessage: null });
 
-    if (!currentUser) {
+    if (!currentUserId) {
       setKiosk(null);
       setState("FORBIDDEN");
       return;
@@ -159,7 +160,7 @@ export function useKioskDetail(kioskId: string): UseKioskDetailResult {
       setState("ERROR");
       setErrorMessage("Không thể tải chi tiết kiosk. Vui lòng thử lại.");
     }
-  }, [currentUser, kioskId]);
+  }, [currentUserId, kioskId]);
 
   useEffect(() => {
     const controller = new AbortController();

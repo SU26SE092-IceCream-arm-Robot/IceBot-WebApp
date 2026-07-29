@@ -90,6 +90,17 @@ describe("useKioskDetail operational-state mutation", () => {
     vi.mocked(listKioskHeartbeats).mockResolvedValue(emptyPage);
   });
 
+  it("does not reload kiosk detail when auth focus refresh keeps the same account", async () => {
+    const { result, rerender } = renderHook(() => useKioskDetail(kiosk.managementId));
+    await waitFor(() => expect(result.current.state).toBe("READY"));
+
+    rerender();
+
+    expect(getKioskDetail).toHaveBeenCalledOnce();
+    expect(listKioskHeartbeats).toHaveBeenCalledOnce();
+    expect(listKioskEvents).toHaveBeenCalledOnce();
+  });
+
   it("guards duplicate submissions and applies the authoritative mutation result", async () => {
     const pending = deferred<KioskResult>();
     vi.mocked(setManagementKioskOperationalState).mockReturnValue(pending.promise);

@@ -36,10 +36,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DevicesTable } from "./devices-table";
 import { ExecutionEndpointsTable } from "./execution-endpoints-table";
 import { OperationLogsPanel } from "./operation-logs-panel";
+import { ProductionOperationsPanel } from "./production-operations-panel";
 import { useAuth } from "@/hooks/use-auth";
 import type { KioskEvidenceState } from "@/hooks/use-kiosk-detail";
 import { useKioskDetail } from "@/hooks/use-kiosk-detail";
-import { hasPermission } from "@/lib/rbac";
+import { hasPermission, hasScopedRole } from "@/lib/rbac";
 import { cn } from "@/lib/utils";
 import type { KioskLifecycleStatus, KioskOperationalState } from "@/types";
 import type {
@@ -629,6 +630,7 @@ function EventsTable({
 export function KioskDetailView({ kioskId }: KioskDetailViewProps) {
   const { effectiveAccess } = useAuth();
   const [operationalStateOpen, setOperationalStateOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("overview");
   const {
     kiosk,
     state,
@@ -682,6 +684,28 @@ export function KioskDetailView({ kioskId }: KioskDetailViewProps) {
     );
   }
 
+  const scope = {
+    organizationId: kiosk.organizationId,
+    storeId: kiosk.locationId,
+    kioskId: kiosk.managementId,
+  };
+  const canManagePrograms = hasScopedRole(
+    effectiveAccess,
+    ["SystemAdmin", "OrgAdmin", "Manager"],
+    scope,
+  );
+  const canInstallPackages = hasScopedRole(
+    effectiveAccess,
+    ["SystemAdmin", "OrgAdmin", "Manager"],
+    scope,
+  );
+  const canDeploy = hasScopedRole(
+    effectiveAccess,
+    ["SystemAdmin", "OrgAdmin", "Manager"],
+    scope,
+  );
+  const canViewProductionOperations = canManagePrograms;
+
   return (
     <div className="space-y-6">
       <DetailHeader
@@ -703,7 +727,7 @@ export function KioskDetailView({ kioskId }: KioskDetailViewProps) {
         </div>
       ) : null}
 
-      <Tabs defaultValue="overview" className="w-full space-y-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full space-y-6">
         <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 lg:w-auto lg:inline-flex">
           <TabsTrigger value="overview">Tổng quan</TabsTrigger>
           <TabsTrigger value="heartbeats">Heartbeats</TabsTrigger>
@@ -732,6 +756,17 @@ export function KioskDetailView({ kioskId }: KioskDetailViewProps) {
             </div>
             <DevicesTable kioskId={kioskId} canManage={canManageDevices} />
             <ExecutionEndpointsTable kioskId={kioskId} canManage={canManageDevices} />
+            {canViewProductionOperations ? (
+              <ProductionOperationsPanel
+                organizationId={kiosk.organizationId}
+                storeId={kiosk.locationId}
+                kioskId={kiosk.managementId}
+                canManagePrograms={canManagePrograms}
+                canInstallPackages={canInstallPackages}
+                canDeploy={canDeploy}
+                canRollback={canDeploy}
+              />
+            ) : null}
             <OperationLogsPanel kioskId={kioskId} />
           </div>
         </TabsContent>

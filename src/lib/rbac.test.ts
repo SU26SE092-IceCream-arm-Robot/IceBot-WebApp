@@ -190,3 +190,45 @@ describe("maintenance lifecycle role checks", () => {
     ).toBe(false);
   });
 });
+
+describe("Phase 8 guided production operations scope", () => {
+  const scope = {
+    organizationId: "org-1",
+    storeId: "store-1",
+    kioskId: "kiosk-1",
+  };
+
+  it.each(["SystemAdmin", "OrgAdmin", "Manager"])(
+    "allows %s into the guided production workspace",
+    (role) => {
+      const access = accessFor(role);
+      if (role !== "SystemAdmin") {
+        access.roleScopes = [{ roleCode: role, organizationId: "org-1" }];
+      }
+      expect(
+        hasScopedRole(
+          access,
+          ["SystemAdmin", "OrgAdmin", "Manager"],
+          scope,
+        ),
+      ).toBe(true);
+    },
+  );
+
+  it("keeps Technician and Staff out of Manager package/program authoring", () => {
+    expect(
+      hasScopedRole(
+        accessFor("Technician"),
+        ["SystemAdmin", "OrgAdmin", "Manager"],
+        scope,
+      ),
+    ).toBe(false);
+    expect(
+      hasScopedRole(
+        accessFor("Staff"),
+        ["SystemAdmin", "OrgAdmin", "Manager"],
+        scope,
+      ),
+    ).toBe(false);
+  });
+});
