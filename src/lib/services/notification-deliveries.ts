@@ -27,7 +27,7 @@ export async function listNotificationDeliveries(
     params: { status, pageNumber: 1, pageSize: 20 },
     signal,
   });
-  if (!response.data.succeeded) throw new Error(response.data.message || "Unable to load notification delivery status.");
+  if (!response.data.succeeded) throw new Error(response.data.message || "Không thể tải trạng thái gửi thông báo.");
   return response.data;
 }
 
@@ -35,14 +35,14 @@ export async function requeueNotificationDelivery(organizationId: string, delive
   const response = await axiosClient.post<ApiResult<NotificationDeliveryResult>>(
     `${collectionPath(organizationId)}/${encodeURIComponent(deliveryId)}/requeue`, { reason },
   );
-  return requireData(response.data, "Unable to requeue notification delivery.");
+  return requireData(response.data, "Không thể đưa thông báo vào hàng đợi lại.");
 }
 
-export function getNotificationDeliveryErrorMessage(error: unknown, fallbackMessage = "Unable to complete notification delivery operation.") {
+export function getNotificationDeliveryErrorMessage(error: unknown, fallbackMessage = "Không thể hoàn tất thao tác gửi thông báo.") {
   if (axios.isCancel(error)) return "";
   if (axios.isAxiosError<ApiResult<unknown>>(error)) {
-    if (error.response?.status === 403) return "The current account cannot perform this notification delivery action.";
-    if (error.response?.status === 409) return error.response.data?.message || "The notification delivery state changed. Refresh before trying again.";
+    if (error.response?.status === 403) return "Tài khoản hiện tại không được thực hiện thao tác gửi thông báo này.";
+    if (error.response?.status === 409) return error.response.data?.message || "Trạng thái gửi thông báo đã thay đổi. Hãy tải lại trước khi thử lại.";
     return error.response?.data?.message || error.response?.data?.businessError || fallbackMessage;
   }
   return error instanceof Error ? error.message : fallbackMessage;

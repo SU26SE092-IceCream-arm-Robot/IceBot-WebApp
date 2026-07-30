@@ -173,6 +173,13 @@ describe("operations diagnostics permission", () => {
       hasEffectivePermission(accessFor("Manager"), "operations.diagnostics"),
     ).toBe(false);
   });
+
+  it("does not treat notification governance as diagnostics access", () => {
+    const orgAdmin = accessFor("OrgAdmin");
+
+    expect(hasPermission(orgAdmin, "notifications.manage")).toBe(true);
+    expect(hasPermission(orgAdmin, "operations.diagnostics")).toBe(false);
+  });
 });
 
 describe("maintenance lifecycle role checks", () => {

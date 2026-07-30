@@ -97,8 +97,14 @@ export function OrganizationDetailView({ organizationId }: OrganizationDetailVie
   const canManageOrganization = hasScopedPermission(effectiveAccess, "organizations.manage", organizationScope);
   const canEditOrganization = hasScopedPermission(effectiveAccess, "organizations.update", organizationScope);
   const canManageStores = hasScopedPermission(effectiveAccess, "stores.manage", organizationScope);
-  const canViewNotifications = hasScopedPermission(effectiveAccess, "notifications.view", organizationScope);
-  const canManageNotifications = hasScopedPermission(effectiveAccess, "notifications.manage", organizationScope);
+  const canViewNotificationDiagnostics = hasScopedPermission(
+    effectiveAccess,
+    "operations.diagnostics",
+    organizationScope,
+  );
+  const canManageNotifications =
+    canViewNotificationDiagnostics &&
+    hasScopedPermission(effectiveAccess, "notifications.manage", organizationScope);
 
   const loadData = useCallback(async (
     signal?: AbortSignal,
@@ -235,8 +241,16 @@ export function OrganizationDetailView({ organizationId }: OrganizationDetailVie
         {stores.length === 0 ? <TenantEmptyState title="Chưa có cửa hàng" description="Tổ chức này chưa có cửa hàng trực thuộc." /> : <Table className="min-w-[850px] table-fixed"><TableHeader><TableRow className="hover:bg-transparent"><TableHead className="w-[28%] px-5 text-xs">Cửa hàng</TableHead><TableHead className="w-[24%] text-xs">Địa điểm</TableHead><TableHead className="w-[18%] text-center text-xs">Trạng thái</TableHead><TableHead className="w-[16%] text-center text-xs">Múi giờ</TableHead><TableHead className="w-[14%] px-5 text-center text-xs">Thao tác</TableHead></TableRow></TableHeader><TableBody>{stores.map((store) => <TableRow key={store.id} className="hover:bg-muted/40"><TableCell className="px-5 py-3"><p className="font-medium text-foreground">{store.name}</p><p className="font-mono text-xs text-muted-foreground">{store.code}</p></TableCell><TableCell><p className="truncate text-sm">{store.address || "Chưa có địa chỉ"}</p><p className="text-xs text-muted-foreground">{[store.city, store.province].filter(Boolean).join(", ") || "Chưa có địa phương"}</p></TableCell><TableCell><div className="flex justify-center"><TenantStatusBadge status={store.status} /></div></TableCell><TableCell className="text-center font-mono text-xs text-muted-foreground">{store.timeZone}</TableCell><TableCell className="px-5"><div className="flex justify-center gap-1.5"><Link href={`/stores/${store.id}`} className={cn(buttonVariants({ variant: "ghost", size: "icon-sm" }), "rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground")} title="Xem cửa hàng" aria-label={`Xem cửa hàng ${store.name}`}><Eye className="size-4" /></Link>{canManageStores ? <Button variant="ghost" size="icon-sm" className={cn("rounded-lg", store.status === "Active" ? "text-destructive hover:bg-destructive/10 hover:text-destructive" : "text-success hover:bg-success/10 hover:text-success")} title={store.status === "Active" ? "Vô hiệu hóa" : "Kích hoạt"} aria-label={`${store.status === "Active" ? "Vô hiệu hóa" : "Kích hoạt"} ${store.name}`} onClick={() => { mutationState.clearError(); setLifecycleTarget({ kind: "store", store, activate: store.status !== "Active" }); }}>{store.status === "Active" ? <PowerOff className="size-4" /> : <Power className="size-4" />}</Button> : null}</div></TableCell></TableRow>)}</TableBody></Table>}
       </Card>
 
-      <FranchiseOnboardingPanel organizationId={organization.id} canManage={canManageStores && organization.status === "Active"} />
-      <NotificationDeliveriesPanel organizationId={organization.id} canView={canViewNotifications} canManage={canManageNotifications} />
+      <FranchiseOnboardingPanel
+        organizationId={organization.id}
+        canManage={canManageStores}
+        canStart={canManageStores && organization.status === "Active"}
+      />
+      <NotificationDeliveriesPanel
+        organizationId={organization.id}
+        canView={canViewNotificationDiagnostics}
+        canManage={canManageNotifications}
+      />
 
       {organizationFormOpen ? <OrganizationFormDialog organization={organization} open isSubmitting={mutationState.isSubmitting} errorMessage={mutationState.errorMessage} onOpenChange={(open) => { if (!mutationState.mutationRef.current) setOrganizationFormOpen(open); }} onCreate={async () => false} onUpdate={submitOrganizationUpdate} /> : null}
       {storeFormOpen ? <StoreFormDialog organizationName={organization.name} store={null} open isSubmitting={mutationState.isSubmitting} errorMessage={mutationState.errorMessage} onOpenChange={(open) => { if (!mutationState.mutationRef.current) setStoreFormOpen(open); }} onCreate={submitStoreCreate} onUpdate={async () => false} /> : null}

@@ -224,7 +224,7 @@ export function useProductionOperations(scope: ProductionOperationsScope) {
       setReleaseAuthoringOptions(options);
       return options;
     } catch (error) {
-      setMutationError(getProductionOperationsErrorMessage(error, "Khong the tai du lieu soan ban phat hanh."));
+      setMutationError(getProductionOperationsErrorMessage(error, "Không thể tải dữ liệu soạn bản phát hành."));
       return null;
     }
   }, [scope.organizationId]);
@@ -270,11 +270,11 @@ export function useProductionOperations(scope: ProductionOperationsScope) {
     ),
     createRelease: () => runMutation(
       () => createConfigurationRelease(scope.organizationId),
-      "Da tao ban nhap cau hinh.",
+      "Đã tạo bản nháp cấu hình.",
     ),
     replaceReleaseRoutes: (releaseId: string, routes: ConfigurationReleaseRouteRequest[]) => runMutation(
       () => replaceConfigurationReleaseRoutes(scope.organizationId, releaseId, routes),
-      "Da cap nhat tuyen san xuat cho ban nhap.",
+      "Đã cập nhật tuyến sản xuất cho bản nháp.",
     ),
     changeReleaseLifecycle: (releaseId: string, action: "publish" | "retire" | "discard") => runMutation(
       async () => {
@@ -283,7 +283,11 @@ export function useProductionOperations(scope: ProductionOperationsScope) {
         await discardConfigurationRelease(scope.organizationId, releaseId);
         return null;
       },
-      action === "publish" ? "Da phat hanh cau hinh." : action === "retire" ? "Da ngung su dung ban phat hanh." : "Da xoa ban nhap cau hinh.",
+      action === "publish"
+        ? "Đã phát hành cấu hình."
+        : action === "retire"
+          ? "Đã ngừng sử dụng bản phát hành."
+          : "Đã xóa bản nháp cấu hình.",
     ),
     previewInstall,
     installPackage: (request: PackageInstallRequest) => runMutation(
@@ -296,7 +300,7 @@ export function useProductionOperations(scope: ProductionOperationsScope) {
     ),
     forkInstallation: (installationId: string) => runMutation(
       () => forkProductionPackageInstallation(scope.organizationId, installationId),
-      "Da tach nhanh cau hinh ky thuat thanh ban sao cua to chuc.",
+      "Đã tách cấu hình kỹ thuật thành bản sao do tổ chức quản lý.",
     ),
     previewUpgrade,
     startUpgrade: (installationId: string, preview: PackageUpgradePreviewResult) => runMutation(

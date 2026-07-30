@@ -115,7 +115,7 @@ export function useExecutionEndpoints(kioskId: string) {
     (endpointId: string, request: ReplaceExecutionEndpointRobotTargetsRequest) =>
       runMutation(
         () => replaceExecutionEndpointRobotTargets(kioskId, endpointId, request),
-        "Da cap nhat robot target ho tro.",
+        "Đã cập nhật đích robot được hỗ trợ.",
       ),
     [kioskId, runMutation],
   );
@@ -124,7 +124,7 @@ export function useExecutionEndpoints(kioskId: string) {
     (endpointId: string, request: ProvisionExecutionEndpointRequest) =>
       runMutation(
         () => provisionExecutionEndpoint(kioskId, endpointId, request),
-        "Da provision va kich hoat diem thuc thi.",
+        "Đã cấu hình và kích hoạt điểm thực thi.",
       ),
     [kioskId, runMutation],
   );
@@ -140,10 +140,13 @@ export function useExecutionEndpoints(kioskId: string) {
     try {
       const result = await rotateExecutionEndpointCredential(kioskId, endpointId, request);
       await load();
-      toast.success("Da xoay credential diem thuc thi.");
+      toast.success("Đã thay thông tin xác thực công khai của điểm thực thi.");
       return result;
     } catch (error) {
-      const message = getExecutionEndpointsErrorMessage(error, "Khong the xoay credential diem thuc thi.");
+      const message = getExecutionEndpointsErrorMessage(
+        error,
+        "Không thể thay thông tin xác thực công khai của điểm thực thi.",
+      );
       setMutationErrorMessage(message);
       toast.error(message);
       return null;

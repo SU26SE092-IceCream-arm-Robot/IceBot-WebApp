@@ -231,7 +231,7 @@ export async function forkProductionPackageInstallation(organizationId: string, 
   const response = await axiosClient.post<ApiResult<PackageInstallationResult>>(
     `${installationsPath(organizationId)}/${encodeURIComponent(installationId)}/fork`,
   );
-  return requireData(response.data, "Khong the tach nhanh cau hinh goi san xuat.");
+  return requireData(response.data, "Không thể tách cấu hình khỏi gói sản xuất.");
 }
 
 export async function getConfigurationReleaseAuthoringOptions(
@@ -242,14 +242,14 @@ export async function getConfigurationReleaseAuthoringOptions(
     `/api/v1/management/organizations/${encodeURIComponent(organizationId)}/configuration-releases/authoring-options`,
     { signal },
   );
-  return requireData(response.data, "KhÃ´ng thá»ƒ táº£i dá»¯ liá»‡u soáº¡n pháº£n phÃ¡t hÃ nh.");
+  return requireData(response.data, "Không thể tải dữ liệu soạn bản phát hành.");
 }
 
 export async function createConfigurationRelease(organizationId: string) {
   const response = await axiosClient.post<ApiResult<ConfigurationReleaseResult>>(
     `/api/v1/management/organizations/${encodeURIComponent(organizationId)}/configuration-releases`,
   );
-  return requireData(response.data, "KhÃ´ng thá»ƒ táº¡o báº£n nhÃ¡p cáº¥u hÃ¬nh.");
+  return requireData(response.data, "Không thể tạo bản nháp cấu hình.");
 }
 
 export async function replaceConfigurationReleaseRoutes(
@@ -261,21 +261,21 @@ export async function replaceConfigurationReleaseRoutes(
     `/api/v1/management/organizations/${encodeURIComponent(organizationId)}/configuration-releases/${encodeURIComponent(releaseId)}/routes`,
     { routes },
   );
-  return requireData(response.data, "KhÃ´ng thá»ƒ cáº­p nháº­t tuyáº¿n sáº£n xuáº¥t.");
+  return requireData(response.data, "Không thể cập nhật tuyến sản xuất.");
 }
 
 export async function publishConfigurationRelease(organizationId: string, releaseId: string) {
   const response = await axiosClient.patch<ApiResult<ConfigurationReleaseResult>>(
     `/api/v1/management/organizations/${encodeURIComponent(organizationId)}/configuration-releases/${encodeURIComponent(releaseId)}/publish`,
   );
-  return requireData(response.data, "KhÃ´ng thá»ƒ phÃ¡t hÃ nh cáº¥u hÃ¬nh.");
+  return requireData(response.data, "Không thể phát hành cấu hình.");
 }
 
 export async function retireConfigurationRelease(organizationId: string, releaseId: string) {
   const response = await axiosClient.patch<ApiResult<ConfigurationReleaseResult>>(
     `/api/v1/management/organizations/${encodeURIComponent(organizationId)}/configuration-releases/${encodeURIComponent(releaseId)}/retire`,
   );
-  return requireData(response.data, "KhÃ´ng thá»ƒ ngá»«ng sá»­ dá»¥ng báº£n phÃ¡t hÃ nh.");
+  return requireData(response.data, "Không thể ngừng sử dụng bản phát hành.");
 }
 
 export async function discardConfigurationRelease(organizationId: string, releaseId: string) {
@@ -283,7 +283,7 @@ export async function discardConfigurationRelease(organizationId: string, releas
     `/api/v1/management/organizations/${encodeURIComponent(organizationId)}/configuration-releases/${encodeURIComponent(releaseId)}`,
   );
   if (!response.data.succeeded) {
-    throw new Error(response.data.message || response.data.businessError || "KhÃ´ng thá»ƒ xÃ³a báº£n nhÃ¡p cáº¥u hÃ¬nh.");
+    throw new Error(response.data.message || response.data.businessError || "Không thể xóa bản nháp cấu hình.");
   }
 }
 

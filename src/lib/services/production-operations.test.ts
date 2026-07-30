@@ -3,20 +3,30 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import axiosClient from "@/lib/axios-client";
 import {
+  createConfigurationRelease,
+  discardConfigurationRelease,
   changePackageUpgradeLifecycle,
   deployConfiguration,
+  forkProductionPackageInstallation,
+  getConfigurationReleaseAuthoringOptions,
   getConfigurationInventoryReadiness,
   installProductionPackage,
   listPackageInstallations,
   previewConfigurationDeployment,
   previewPackageUpgrade,
+  publishConfigurationRelease,
   recoverPackageInstallation,
+  replaceConfigurationReleaseRoutes,
+  retireConfigurationRelease,
   rollbackConfigurationDeployment,
   startPackageUpgrade,
 } from "@/lib/services/production-operations";
 import type { ApiResult } from "@/types";
 import type {
   ConfigurationDeploymentResult,
+  ConfigurationReleaseAuthoringOptions,
+  ConfigurationReleaseResult,
+  ConfigurationReleaseRouteRequest,
   DeploymentPreview,
   PackageInstallationResult,
   PackageInstallationsPage,
@@ -35,6 +45,7 @@ function response<T>(result: ApiResult<T>): AxiosResponse<ApiResult<T>> {
 const installation = { id: "installation-1" } as PackageInstallationResult;
 const upgrade = { id: "upgrade-1" } as PackageUpgradeResult;
 const deployment = { id: "deployment-1" } as ConfigurationDeploymentResult;
+const release = { id: "release-1" } as ConfigurationReleaseResult;
 
 describe("production operations management contracts", () => {
   beforeEach(() => {
@@ -220,6 +231,95 @@ describe("production operations management contracts", () => {
       "/api/v1/management/kiosks/kiosk-1/configuration-deployments/deployment-1/rollback",
       undefined,
       { headers: { "Idempotency-Key": "configuration-rollback-request-id" } },
+    );
+  });
+
+  it("loads release authoring options from the selected organization scope", async () => {
+    const options = { recipes: [], programs: [] } as unknown as ConfigurationReleaseAuthoringOptions;
+    vi.mocked(axiosClient.get).mockResolvedValue(
+      response({ succeeded: true, statusCode: 200, data: options }),
+    );
+
+    await getConfigurationReleaseAuthoringOptions("org-1");
+
+    expect(axiosClient.get).toHaveBeenCalledWith(
+      "/api/v1/management/organizations/org-1/configuration-releases/authoring-options",
+      { signal: undefined },
+    );
+  });
+
+  it("uses the exact release draft and route-authoring management contracts", async () => {
+    const routes = [{
+      recipeId: "recipe-1",
+      routeCode: "ROUTE-1",
+      priority: 1,
+      requiredCapabilitiesJson: null,
+      supportedOptionCodes: [],
+      robotBindings: [{
+        robotProgramId: "program-1",
+        bindingOrder: 1,
+        requiredWorkcellCapabilityCode: "DISPENSE",
+      }],
+    }] as ConfigurationReleaseRouteRequest[];
+    vi.mocked(axiosClient.post).mockResolvedValue(
+      response({ succeeded: true, statusCode: 201, data: release }),
+    );
+    vi.mocked(axiosClient.put).mockResolvedValue(
+      response({ succeeded: true, statusCode: 200, data: release }),
+    );
+
+    await createConfigurationRelease("org-1");
+    await replaceConfigurationReleaseRoutes("org-1", "release-1", routes);
+
+    expect(axiosClient.post).toHaveBeenCalledWith(
+      "/api/v1/management/organizations/org-1/configuration-releases",
+    );
+    expect(axiosClient.put).toHaveBeenCalledWith(
+      "/api/v1/management/organizations/org-1/configuration-releases/release-1/routes",
+      { routes },
+    );
+  });
+
+  it.each(["publish", "retire"] as const)(
+    "uses the exact release %s lifecycle route",
+    async (action) => {
+      vi.mocked(axiosClient.patch).mockResolvedValue(
+        response({ succeeded: true, statusCode: 200, data: release }),
+      );
+
+      if (action === "publish") {
+        await publishConfigurationRelease("org-1", "release-1");
+      } else {
+        await retireConfigurationRelease("org-1", "release-1");
+      }
+
+      expect(axiosClient.patch).toHaveBeenCalledWith(
+        `/api/v1/management/organizations/org-1/configuration-releases/release-1/${action}`,
+      );
+    },
+  );
+
+  it("discards only the selected release draft", async () => {
+    vi.mocked(axiosClient.delete).mockResolvedValue(
+      response({ succeeded: true, statusCode: 200, data: {} }),
+    );
+
+    await discardConfigurationRelease("org-1", "release-1");
+
+    expect(axiosClient.delete).toHaveBeenCalledWith(
+      "/api/v1/management/organizations/org-1/configuration-releases/release-1",
+    );
+  });
+
+  it("forks a package installation only through its organization-scoped route", async () => {
+    vi.mocked(axiosClient.post).mockResolvedValue(
+      response({ succeeded: true, statusCode: 200, data: installation }),
+    );
+
+    await forkProductionPackageInstallation("org-1", "installation-1");
+
+    expect(axiosClient.post).toHaveBeenCalledWith(
+      "/api/v1/management/organizations/org-1/production-package-installations/installation-1/fork",
     );
   });
 });

@@ -59,7 +59,7 @@ export async function replaceExecutionEndpointRobotTargets(
     `/api/v1/management/kiosks/${encodeURIComponent(kioskId)}/execution-endpoints/${encodeURIComponent(endpointId)}/supported-robot-targets`,
     request,
   );
-  return requireData(response.data, "Khong the cap nhat robot target ho tro.");
+  return requireData(response.data, "Không thể cập nhật đích robot được hỗ trợ.");
 }
 
 export async function provisionExecutionEndpoint(
@@ -71,7 +71,7 @@ export async function provisionExecutionEndpoint(
     `/api/v1/management/kiosks/${encodeURIComponent(kioskId)}/execution-endpoints/${encodeURIComponent(endpointId)}/provision`,
     request,
   );
-  return requireData(response.data, "Khong the provision diem thuc thi.");
+  return requireData(response.data, "Không thể cấu hình điểm thực thi.");
 }
 
 export async function rotateExecutionEndpointCredential(
@@ -83,7 +83,7 @@ export async function rotateExecutionEndpointCredential(
     `/api/v1/management/kiosks/${encodeURIComponent(kioskId)}/execution-endpoints/${encodeURIComponent(endpointId)}/credential`,
     request,
   );
-  return requireData(response.data, "Khong the xoay credential diem thuc thi.");
+  return requireData(response.data, "Không thể thay thông tin xác thực công khai của điểm thực thi.");
 }
 
 export function getExecutionEndpointsErrorMessage(

@@ -46,11 +46,13 @@ function EndpointProvisionDialog({
   const [profileIdentity, setProfileIdentity] = useState("");
   const [credential, setCredential] = useState("");
   const [validation, setValidation] = useState<string | null>(null);
-  const credentialLabel = endpoint.authenticationMode === "MutualTls" ? "SHA-256 certificate fingerprint" : "ECDSA public key (PEM)";
+  const credentialLabel = endpoint.authenticationMode === "MutualTls"
+    ? "Dấu vân tay chứng chỉ SHA-256"
+    : "Khóa công khai ECDSA (PEM)";
 
   const provision = async () => {
     if (!runtimeTargetCode.trim() || !machineModelCode.trim() || !profileIdentity.trim() || !credential.trim()) {
-      setValidation("Runtime target, machine model, profile identity và credential reference là bắt buộc.");
+      setValidation("Đích chạy, mẫu máy, định danh hồ sơ và thông tin xác thực công khai là bắt buộc.");
       return;
     }
     const targetsUpdated = await onReplaceTargets({
@@ -70,7 +72,7 @@ function EndpointProvisionDialog({
     if (provisioned) onOpenChange(false);
   };
 
-  return <Dialog open onOpenChange={onOpenChange}><DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl"><DialogHeader><DialogTitle>Provision {endpoint.endpointCode}</DialogTitle><DialogDescription>Thiết lập robot target trước, sau đó gắn identity và credential public. Mật khẩu, MQTT secret và private key không được nhập hoặc hiển thị ở đây.</DialogDescription></DialogHeader><div className="space-y-4"><div className="grid gap-4 sm:grid-cols-2"><div className="space-y-1.5"><Label htmlFor="endpoint-runtime-target">Runtime target</Label><Input id="endpoint-runtime-target" maxLength={100} value={runtimeTargetCode} onChange={(event) => setRuntimeTargetCode(event.target.value)} disabled={isSubmitting} /></div><div className="space-y-1.5"><Label htmlFor="endpoint-machine-model">Machine model</Label><Input id="endpoint-machine-model" maxLength={100} value={machineModelCode} onChange={(event) => setMachineModelCode(event.target.value)} disabled={isSubmitting} /></div></div><div className="space-y-1.5"><Label htmlFor="endpoint-device-id">Device ID (tùy chọn)</Label><Input id="endpoint-device-id" value={deviceId} onChange={(event) => setDeviceId(event.target.value)} disabled={isSubmitting} /></div><div className="space-y-1.5"><Label htmlFor="endpoint-profile-identity">Profile identity</Label><Input id="endpoint-profile-identity" value={profileIdentity} onChange={(event) => setProfileIdentity(event.target.value)} disabled={isSubmitting} /></div><div className="space-y-1.5"><Label htmlFor="endpoint-credential">{credentialLabel}</Label>{endpoint.authenticationMode === "MutualTls" ? <Input id="endpoint-credential" value={credential} onChange={(event) => setCredential(event.target.value)} disabled={isSubmitting} /> : <textarea id="endpoint-credential" className="min-h-28 w-full rounded-md border border-input bg-transparent px-3 py-2 font-mono text-xs shadow-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50" value={credential} onChange={(event) => setCredential(event.target.value)} disabled={isSubmitting} />}</div></div>{validation || errorMessage ? <p className="text-sm text-destructive" role="alert">{validation || errorMessage}</p> : null}<DialogFooter><Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>Hủy</Button><Button onClick={() => void provision()} disabled={isSubmitting}>Provision và kích hoạt</Button></DialogFooter></DialogContent></Dialog>;
+  return <Dialog open onOpenChange={onOpenChange}><DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl"><DialogHeader><DialogTitle>Cấu hình {endpoint.endpointCode}</DialogTitle><DialogDescription>Thiết lập đích robot trước, sau đó gắn định danh và thông tin xác thực công khai. Mật khẩu, thông tin MQTT và khóa bí mật không được nhập hoặc hiển thị ở đây.</DialogDescription></DialogHeader><div className="space-y-4"><div className="grid gap-4 sm:grid-cols-2"><div className="space-y-1.5"><Label htmlFor="endpoint-runtime-target">Đích chạy</Label><Input id="endpoint-runtime-target" maxLength={100} value={runtimeTargetCode} onChange={(event) => setRuntimeTargetCode(event.target.value)} disabled={isSubmitting} /></div><div className="space-y-1.5"><Label htmlFor="endpoint-machine-model">Mẫu máy</Label><Input id="endpoint-machine-model" maxLength={100} value={machineModelCode} onChange={(event) => setMachineModelCode(event.target.value)} disabled={isSubmitting} /></div></div><div className="space-y-1.5"><Label htmlFor="endpoint-device-id">Thiết bị (tùy chọn)</Label><Input id="endpoint-device-id" value={deviceId} onChange={(event) => setDeviceId(event.target.value)} disabled={isSubmitting} /></div><div className="space-y-1.5"><Label htmlFor="endpoint-profile-identity">Định danh hồ sơ</Label><Input id="endpoint-profile-identity" value={profileIdentity} onChange={(event) => setProfileIdentity(event.target.value)} disabled={isSubmitting} /></div><div className="space-y-1.5"><Label htmlFor="endpoint-credential">{credentialLabel}</Label>{endpoint.authenticationMode === "MutualTls" ? <Input id="endpoint-credential" value={credential} onChange={(event) => setCredential(event.target.value)} disabled={isSubmitting} /> : <textarea id="endpoint-credential" className="min-h-28 w-full rounded-md border border-input bg-transparent px-3 py-2 font-mono text-xs shadow-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50" value={credential} onChange={(event) => setCredential(event.target.value)} disabled={isSubmitting} />}</div></div>{validation || errorMessage ? <p className="text-sm text-destructive" role="alert">{validation || errorMessage}</p> : null}<DialogFooter><Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>Hủy</Button><Button onClick={() => void provision()} disabled={isSubmitting}>Cấu hình và kích hoạt</Button></DialogFooter></DialogContent></Dialog>;
 }
 
 function EndpointCredentialRotationDialog({
@@ -88,10 +90,12 @@ function EndpointCredentialRotationDialog({
 }) {
   const [credential, setCredential] = useState("");
   const [validation, setValidation] = useState<string | null>(null);
-  const label = endpoint.authenticationMode === "MutualTls" ? "SHA-256 certificate fingerprint" : "ECDSA public key (PEM)";
+  const label = endpoint.authenticationMode === "MutualTls"
+    ? "Dấu vân tay chứng chỉ SHA-256"
+    : "Khóa công khai ECDSA (PEM)";
   const submit = async () => {
     if (!credential.trim()) {
-      setValidation("Credential public mới là bắt buộc.");
+      setValidation("Thông tin xác thực công khai mới là bắt buộc.");
       return;
     }
     const result = await onSubmit(endpoint.authenticationMode === "MutualTls"
@@ -99,7 +103,7 @@ function EndpointCredentialRotationDialog({
       : { ecdsaPublicKeyPem: credential.trim() });
     if (result) onOpenChange(false);
   };
-  return <Dialog open onOpenChange={onOpenChange}><DialogContent className="sm:max-w-xl"><DialogHeader><DialogTitle>Xoay credential {endpoint.endpointCode}</DialogTitle><DialogDescription>Chỉ gửi fingerprint certificate hoặc public key mới. Private key, password và MQTT credential không đi qua thao tác này.</DialogDescription></DialogHeader><div className="space-y-1.5"><Label htmlFor="endpoint-rotated-credential">{label}</Label>{endpoint.authenticationMode === "MutualTls" ? <Input id="endpoint-rotated-credential" value={credential} onChange={(event) => setCredential(event.target.value)} disabled={isSubmitting} /> : <textarea id="endpoint-rotated-credential" className="min-h-28 w-full rounded-md border border-input bg-transparent px-3 py-2 font-mono text-xs shadow-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50" value={credential} onChange={(event) => setCredential(event.target.value)} disabled={isSubmitting} />}</div>{validation || errorMessage ? <p className="text-sm text-destructive" role="alert">{validation || errorMessage}</p> : null}<DialogFooter><Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>Hủy</Button><Button onClick={() => void submit()} disabled={isSubmitting}>Xoay credential</Button></DialogFooter></DialogContent></Dialog>;
+  return <Dialog open onOpenChange={onOpenChange}><DialogContent className="sm:max-w-xl"><DialogHeader><DialogTitle>Thay thông tin xác thực {endpoint.endpointCode}</DialogTitle><DialogDescription>Chỉ gửi dấu vân tay chứng chỉ hoặc khóa công khai mới. Khóa bí mật, mật khẩu và thông tin MQTT không đi qua thao tác này.</DialogDescription></DialogHeader><div className="space-y-1.5"><Label htmlFor="endpoint-rotated-credential">{label}</Label>{endpoint.authenticationMode === "MutualTls" ? <Input id="endpoint-rotated-credential" value={credential} onChange={(event) => setCredential(event.target.value)} disabled={isSubmitting} /> : <textarea id="endpoint-rotated-credential" className="min-h-28 w-full rounded-md border border-input bg-transparent px-3 py-2 font-mono text-xs shadow-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50" value={credential} onChange={(event) => setCredential(event.target.value)} disabled={isSubmitting} />}</div>{validation || errorMessage ? <p className="text-sm text-destructive" role="alert">{validation || errorMessage}</p> : null}<DialogFooter><Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>Hủy</Button><Button onClick={() => void submit()} disabled={isSubmitting}>Thay thông tin xác thực</Button></DialogFooter></DialogContent></Dialog>;
 }
 
 function formatTimestamp(value?: string | null) {
@@ -218,8 +222,8 @@ export function ExecutionEndpointsTable({ kioskId, canManage }: { kioskId: strin
                           {item.status === "Active" ? <Button size="sm" variant="outline" disabled={management.isMutating} onClick={() => { management.clearMutationError(); setLifecycleAction({ endpoint: item, action: "disable" }); }}>Vô hiệu hóa</Button> : null}
                           {item.status === "Disabled" ? <Button size="sm" variant="outline" disabled={management.isMutating} onClick={() => { management.clearMutationError(); setLifecycleAction({ endpoint: item, action: "reactivate" }); }}>Kích hoạt lại</Button> : null}
                           {item.status === "Provisioning" || item.status === "Disabled" ? <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" disabled={management.isMutating} onClick={() => { management.clearMutationError(); setLifecycleAction({ endpoint: item, action: "retire" }); }}>Ngừng sử dụng</Button> : null}
-                          {item.status === "Provisioning" ? <Button size="sm" variant="outline" disabled={management.isMutating} onClick={() => { management.clearMutationError(); setProvisionEndpoint(item); }}>Provision</Button> : null}
-                          {item.status === "Active" || item.status === "Disabled" ? <Button size="sm" variant="outline" disabled={management.isMutating} onClick={() => { management.clearMutationError(); setRotateCredentialEndpoint(item); }}>Xoay credential</Button> : null}
+                          {item.status === "Provisioning" ? <Button size="sm" variant="outline" disabled={management.isMutating} onClick={() => { management.clearMutationError(); setProvisionEndpoint(item); }}>Cấu hình</Button> : null}
+                          {item.status === "Active" || item.status === "Disabled" ? <Button size="sm" variant="outline" disabled={management.isMutating} onClick={() => { management.clearMutationError(); setRotateCredentialEndpoint(item); }}>Thay thông tin xác thực</Button> : null}
                         </div>
                       </TableCell>
                     ) : null}

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { useMutationRefreshRecovery } from "@/hooks/use-mutation-refresh-recovery";
 import {
   cancelFranchiseOnboarding,
   getFranchiseOnboardingErrorMessage,
@@ -23,8 +24,18 @@ export function useFranchiseOnboarding(organizationId: string, enabled: boolean)
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const mutationRef = useRef(false);
   const startKeyRef = useRef<string | null>(null);
+  const currentOrganizationIdRef = useRef(organizationId);
 
-  const load = useCallback(async (signal?: AbortSignal) => {
+  useEffect(() => {
+    currentOrganizationIdRef.current = organizationId;
+  }, [organizationId]);
+
+  const load = useCallback(async (
+    signal?: AbortSignal,
+    propagateError = false,
+    targetOrganizationId = organizationId,
+  ) => {
+    if (targetOrganizationId !== currentOrganizationIdRef.current) return;
     if (!enabled) {
       setItems([]);
       setIsLoading(false);
@@ -32,17 +43,27 @@ export function useFranchiseOnboarding(organizationId: string, enabled: boolean)
     }
     setIsLoading(true);
     try {
-      const page = await listFranchiseOnboardings(organizationId, undefined, signal);
-      if (!signal?.aborted) {
+      const page = await listFranchiseOnboardings(targetOrganizationId, undefined, signal);
+      if (!signal?.aborted && targetOrganizationId === currentOrganizationIdRef.current) {
         setItems(page.data ?? []);
         setErrorMessage(null);
       }
     } catch (error) {
-      if (!signal?.aborted) setErrorMessage(getFranchiseOnboardingErrorMessage(error, "Unable to load franchise setup history."));
+      if (!signal?.aborted && targetOrganizationId === currentOrganizationIdRef.current) {
+        if (propagateError) throw error;
+        setErrorMessage(getFranchiseOnboardingErrorMessage(error, "Không thể tải lịch sử thiết lập điểm bán."));
+      }
     } finally {
-      if (!signal?.aborted) setIsLoading(false);
+      if (!signal?.aborted && targetOrganizationId === currentOrganizationIdRef.current) {
+        setIsLoading(false);
+      }
     }
   }, [enabled, organizationId]);
+
+  const refreshRecovery = useMutationRefreshRecovery(
+    (targetOrganizationId: string) => load(undefined, true, targetOrganizationId),
+    "Thao tác đã thành công nhưng lịch sử thiết lập chưa tải lại được.",
+  );
 
   useEffect(() => {
     const controller = new AbortController();
@@ -55,31 +76,37 @@ export function useFranchiseOnboarding(organizationId: string, enabled: boolean)
     mutationRef.current = true;
     setIsMutating(true);
     setErrorMessage(null);
+    const targetOrganizationId = organizationId;
     try {
       const result = await mutation();
       toast.success(successMessage);
-      await load();
+      await refreshRecovery.runRefresh(targetOrganizationId);
       return result;
     } catch (error) {
-      setErrorMessage(getFranchiseOnboardingErrorMessage(error));
+      if (targetOrganizationId === currentOrganizationIdRef.current) {
+        setErrorMessage(getFranchiseOnboardingErrorMessage(error));
+      }
       return null;
     } finally {
       mutationRef.current = false;
       setIsMutating(false);
     }
-  }, [load]);
+  }, [organizationId, refreshRecovery]);
 
   return {
     items, isLoading, isMutating, errorMessage,
+    refreshWarningMessage: refreshRecovery.refreshWarningMessage,
+    isRefreshRetrying: refreshRecovery.isRefreshRetrying,
+    retryRefresh: refreshRecovery.retryRefresh,
     refresh: () => load(),
     clearError: () => setErrorMessage(null),
     start: async (request: StartFranchiseOnboardingRequest) => {
       startKeyRef.current ??= createIdempotencyKey();
-      const result = await runMutation(() => startFranchiseOnboarding(organizationId, startKeyRef.current!, request), "Franchise setup has been started.");
+      const result = await runMutation(() => startFranchiseOnboarding(organizationId, startKeyRef.current!, request), "Đã bắt đầu thiết lập điểm bán.");
       if (result) startKeyRef.current = null;
       return result;
     },
-    resume: (onboardingId: string) => runMutation(() => resumeFranchiseOnboarding(organizationId, onboardingId), "Franchise setup has been resumed."),
-    cancel: (onboardingId: string, reason: string) => runMutation(() => cancelFranchiseOnboarding(organizationId, onboardingId, reason), "Franchise setup has been cancelled."),
+    resume: (onboardingId: string) => runMutation(() => resumeFranchiseOnboarding(organizationId, onboardingId), "Đã tiếp tục thiết lập điểm bán."),
+    cancel: (onboardingId: string, reason: string) => runMutation(() => cancelFranchiseOnboarding(organizationId, onboardingId, reason), "Đã hủy quy trình thiết lập điểm bán."),
   };
 }
