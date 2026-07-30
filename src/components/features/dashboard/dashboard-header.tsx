@@ -22,22 +22,27 @@ interface DashboardHeaderProps {
   lastUpdatedAt: Date | null;
   isRefreshing: boolean;
   onRefresh: () => void;
+  title?: string;
+  description?: string;
+  refreshTitle?: string;
 }
 
 export function DashboardHeader({
   lastUpdatedAt,
   isRefreshing,
   onRefresh,
+  title = "Tổng quan vận hành",
+  description = "Theo dõi nhanh trạng thái kiosk, đơn hàng, hoàn tiền và tồn kho trong phạm vi quản lý.",
+  refreshTitle = "Làm mới dữ liệu tổng quan",
 }: DashboardHeaderProps) {
   return (
     <section className="flex flex-col gap-4 border-b border-border pb-6 lg:flex-row lg:items-end lg:justify-between">
       <div className="max-w-2xl space-y-2">
         <h1 className="text-3xl font-semibold tracking-tight text-foreground">
-          Tổng quan vận hành
+          {title}
         </h1>
         <p className="text-sm leading-6 text-muted-foreground">
-          Theo dõi nhanh trạng thái kiosk, đơn hàng, hoàn tiền và tồn kho trong
-          phạm vi quản lý.
+          {description}
         </p>
       </div>
 
@@ -52,7 +57,7 @@ export function DashboardHeader({
           variant="outline"
           onClick={onRefresh}
           isLoading={isRefreshing}
-          title="Làm mới dữ liệu tổng quan"
+          title={refreshTitle}
         >
           <RefreshCw className="size-4" />
           Làm mới

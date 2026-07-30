@@ -1,14 +1,21 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import DashboardPage from "@/app/(dashboard)/dashboard/page";
+
+const { authState } = vi.hoisted(() => ({
+  authState: {
+    isSystemAdmin: false,
+    roles: ["Manager"],
+  },
+}));
 
 vi.mock("@/hooks/use-auth", () => ({
   useAuth: () => ({
     effectiveAccess: {
       accountId: "11111111-1111-1111-1111-111111111111",
-      isSystemAdmin: false,
-      roles: ["Manager"],
+      isSystemAdmin: authState.isSystemAdmin,
+      roles: authState.roles,
       roleScopes: [],
       effectiveScope: {
         organizationIds: [],
@@ -49,6 +56,11 @@ vi.mock("@/hooks/use-dashboard-overview", () => ({
 }));
 
 describe("DashboardPage partial data", () => {
+  beforeEach(() => {
+    authState.isSystemAdmin = false;
+    authState.roles = ["Manager"];
+  });
+
   it("keeps usable roots visible and marks unavailable roots independently", () => {
     render(<DashboardPage />);
 
@@ -63,5 +75,20 @@ describe("DashboardPage partial data", () => {
       screen.getByText("Một phần dữ liệu tổng quan chưa tải được"),
     ).toBeInTheDocument();
     expect(screen.queryByText("Hệ thống chưa có dữ liệu")).not.toBeInTheDocument();
+  });
+
+  it("composes a platform control workspace for SystemAdmin", () => {
+    authState.isSystemAdmin = true;
+    authState.roles = ["SystemAdmin"];
+
+    render(<DashboardPage />);
+
+    expect(screen.getByRole("heading", { name: "Kiểm soát nền tảng" })).toBeInTheDocument();
+    expect(screen.getAllByText("Tổ chức").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Kiosk đã kích hoạt").length).toBeGreaterThan(0);
+    expect(screen.getByText("Can thiệp cấp nền tảng")).toBeInTheDocument();
+    expect(screen.getByText("Quản trị nền tảng")).toBeInTheDocument();
+    expect(screen.queryByText("Đơn hàng gần đây chưa tải được")).not.toBeInTheDocument();
+    expect(screen.queryByText("Trạng thái đơn hàng chưa tải được")).not.toBeInTheDocument();
   });
 });

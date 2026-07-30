@@ -1,12 +1,17 @@
 "use client";
 
+import { useState } from "react";
 import {
   AlertTriangle,
   ChevronLeft,
   ChevronRight,
+  Edit3,
   FlaskConical,
+  Plus,
+  Power,
   RefreshCw,
   Search,
+  Trash2,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +20,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -38,6 +44,11 @@ import {
   type IngredientStatusFilter,
   useIngredients,
 } from "@/hooks/use-ingredients";
+import type {
+  CreateIngredientRequest,
+  IngredientResult,
+  UpdateIngredientRequest,
+} from "@/types/ingredients";
 
 const STATUS_OPTIONS: Array<{
   value: IngredientStatusFilter;
@@ -62,13 +73,209 @@ function formatDate(value: string | null | undefined): string {
       }).format(date);
 }
 
+interface IngredientFormState {
+  code: string;
+  name: string;
+  ingredientType: string;
+  unit: string;
+  description: string;
+  storageRequirement: string;
+  isPerishable: boolean;
+  isAllergen: boolean;
+  shelfLifeDays: string;
+}
+
+function initialIngredientForm(
+  ingredient: IngredientResult | null,
+): IngredientFormState {
+  return ingredient
+    ? {
+        code: ingredient.code,
+        name: ingredient.name,
+        ingredientType: ingredient.ingredientType,
+        unit: ingredient.unit,
+        description: ingredient.description ?? "",
+        storageRequirement: ingredient.storageRequirement ?? "",
+        isPerishable: ingredient.isPerishable,
+        isAllergen: ingredient.isAllergen,
+        shelfLifeDays: ingredient.shelfLifeDays?.toString() ?? "",
+      }
+    : {
+        code: "",
+        name: "",
+        ingredientType: "Consumable",
+        unit: "gram",
+        description: "",
+        storageRequirement: "",
+        isPerishable: false,
+        isAllergen: false,
+        shelfLifeDays: "",
+      };
+}
+
+function IngredientFormDialog({
+  open,
+  ingredient,
+  isSubmitting,
+  errorMessage,
+  onOpenChange,
+  onCreate,
+  onUpdate,
+}: {
+  open: boolean;
+  ingredient: IngredientResult | null;
+  isSubmitting: boolean;
+  errorMessage: string | null;
+  onOpenChange: (open: boolean) => void;
+  onCreate: (request: CreateIngredientRequest) => Promise<boolean>;
+  onUpdate: (
+    ingredientId: string,
+    request: UpdateIngredientRequest,
+  ) => Promise<boolean>;
+}) {
+  const [form, setForm] = useState<IngredientFormState>(() =>
+    initialIngredientForm(ingredient),
+  );
+  const [validationMessage, setValidationMessage] = useState<string | null>(null);
+  const setField = <K extends keyof IngredientFormState>(
+    field: K,
+    value: IngredientFormState[K],
+  ) => {
+    setForm((current) => ({ ...current, [field]: value }));
+    setValidationMessage(null);
+  };
+
+  const submit = async () => {
+    const code = form.code.trim();
+    const name = form.name.trim();
+    const ingredientType = form.ingredientType.trim();
+    const unit = form.unit.trim();
+    const shelfLifeDays = form.shelfLifeDays.trim()
+      ? Number(form.shelfLifeDays)
+      : null;
+
+    if (!ingredient && (code.length < 2 || code.length > 50)) {
+      setValidationMessage("Mã nguyên liệu phải có từ 2 đến 50 ký tự.");
+      return;
+    }
+    if (!name || name.length > 200) {
+      setValidationMessage("Tên nguyên liệu là bắt buộc và tối đa 200 ký tự.");
+      return;
+    }
+    if (!ingredientType || ingredientType.length > 50) {
+      setValidationMessage("Loại nguyên liệu là bắt buộc và tối đa 50 ký tự.");
+      return;
+    }
+    if (!unit || unit.length > 30) {
+      setValidationMessage("Đơn vị là bắt buộc và tối đa 30 ký tự.");
+      return;
+    }
+    if (
+      shelfLifeDays !== null &&
+      (!Number.isInteger(shelfLifeDays) || shelfLifeDays < 1 || shelfLifeDays > 36500)
+    ) {
+      setValidationMessage("Hạn dùng phải từ 1 đến 36500 ngày.");
+      return;
+    }
+    if (
+      form.description.trim().length > 1000 ||
+      form.storageRequirement.trim().length > 200
+    ) {
+      setValidationMessage("Mô tả tối đa 1000 ký tự và yêu cầu bảo quản tối đa 200 ký tự.");
+      return;
+    }
+
+    const request = {
+      name,
+      ingredientType,
+      unit,
+      description: form.description.trim() || null,
+      storageRequirement: form.storageRequirement.trim() || null,
+      isPerishable: form.isPerishable,
+      isAllergen: form.isAllergen,
+      shelfLifeDays,
+    };
+    const succeeded = ingredient
+      ? await onUpdate(ingredient.id, request)
+      : await onCreate({ code, ...request });
+    if (succeeded) onOpenChange(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(next) => !isSubmitting && onOpenChange(next)}>
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>
+            {ingredient ? "Chỉnh sửa nguyên liệu" : "Tạo nguyên liệu"}
+          </DialogTitle>
+          <DialogDescription>
+            Quản lý dữ liệu nguyên liệu dùng chung cho công thức và tồn kho.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-1.5">
+            <label htmlFor="ingredient-code" className="text-sm font-medium">Mã nguyên liệu</label>
+            <Input id="ingredient-code" value={form.code} maxLength={50} disabled={Boolean(ingredient) || isSubmitting} onChange={(event) => setField("code", event.target.value)} placeholder="VANILLA_BASE" />
+          </div>
+          <div className="space-y-1.5">
+            <label htmlFor="ingredient-name" className="text-sm font-medium">Tên nguyên liệu</label>
+            <Input id="ingredient-name" value={form.name} maxLength={200} disabled={isSubmitting} onChange={(event) => setField("name", event.target.value)} placeholder="Kem nền vani" />
+          </div>
+          <div className="space-y-1.5">
+            <label htmlFor="ingredient-type" className="text-sm font-medium">Loại nguyên liệu</label>
+            <Input id="ingredient-type" value={form.ingredientType} maxLength={50} disabled={isSubmitting} onChange={(event) => setField("ingredientType", event.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <label htmlFor="ingredient-unit" className="text-sm font-medium">Đơn vị</label>
+            <Input id="ingredient-unit" value={form.unit} maxLength={30} disabled={isSubmitting} onChange={(event) => setField("unit", event.target.value)} placeholder="gram" />
+          </div>
+          <div className="space-y-1.5 sm:col-span-2">
+            <label htmlFor="ingredient-description" className="text-sm font-medium">Mô tả</label>
+            <textarea id="ingredient-description" value={form.description} maxLength={1000} rows={3} disabled={isSubmitting} className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50" onChange={(event) => setField("description", event.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <label htmlFor="ingredient-storage" className="text-sm font-medium">Yêu cầu bảo quản</label>
+            <Input id="ingredient-storage" value={form.storageRequirement} maxLength={200} disabled={isSubmitting} onChange={(event) => setField("storageRequirement", event.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <label htmlFor="ingredient-shelf-life" className="text-sm font-medium">Hạn dùng (ngày)</label>
+            <Input id="ingredient-shelf-life" type="number" min={1} max={36500} step={1} value={form.shelfLifeDays} disabled={isSubmitting} onChange={(event) => setField("shelfLifeDays", event.target.value)} />
+          </div>
+          <label className="flex items-center gap-3 rounded-lg border border-border px-3 py-3 text-sm">
+            <input type="checkbox" checked={form.isPerishable} disabled={isSubmitting} onChange={(event) => setField("isPerishable", event.target.checked)} className="size-4 accent-primary" />
+            Dễ hỏng
+          </label>
+          <label className="flex items-center gap-3 rounded-lg border border-border px-3 py-3 text-sm">
+            <input type="checkbox" checked={form.isAllergen} disabled={isSubmitting} onChange={(event) => setField("isAllergen", event.target.checked)} className="size-4 accent-primary" />
+            Có nguy cơ dị ứng
+          </label>
+        </div>
+
+        {validationMessage || errorMessage ? (
+          <p className="text-sm text-destructive" role="alert">{validationMessage ?? errorMessage}</p>
+        ) : null}
+
+        <DialogFooter>
+          <Button type="button" variant="outline" disabled={isSubmitting} onClick={() => onOpenChange(false)}>Hủy</Button>
+          <Button type="button" isLoading={isSubmitting} onClick={() => void submit()}>{ingredient ? "Lưu thay đổi" : "Tạo nguyên liệu"}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export function IngredientCatalogDialog({
   open,
   onOpenChange,
+  canManage,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  canManage: boolean;
 }) {
+  const [formTarget, setFormTarget] = useState<IngredientResult | "new" | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<IngredientResult | null>(null);
   const {
     ingredients,
     search,
@@ -76,11 +283,18 @@ export function IngredientCatalogDialog({
     pagination,
     isLoading,
     errorMessage,
+    mutationError,
+    mutatingIngredientId,
     setSearch,
     setStatus,
     previousPage,
     nextPage,
     retry,
+    clearMutationError,
+    create,
+    update,
+    toggleStatus: setIngredientStatus,
+    remove,
   } = useIngredients(open);
 
   return (
@@ -96,7 +310,7 @@ export function IngredientCatalogDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid gap-3 border-b border-border bg-muted/10 px-5 py-3 md:grid-cols-[minmax(240px,1fr)_220px]">
+        <div className="grid gap-3 border-b border-border bg-muted/10 px-5 py-3 md:grid-cols-[minmax(240px,1fr)_220px_auto]">
           <div className="relative">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -120,6 +334,18 @@ export function IngredientCatalogDialog({
               ))}
             </SelectContent>
           </Select>
+          {canManage ? (
+            <Button
+              type="button"
+              onClick={() => {
+                clearMutationError();
+                setFormTarget("new");
+              }}
+            >
+              <Plus className="size-4" />
+              Tạo nguyên liệu
+            </Button>
+          ) : null}
         </div>
 
         <div className="min-h-72 overflow-y-auto">
@@ -159,6 +385,7 @@ export function IngredientCatalogDialog({
                   <TableHead>Bảo quản</TableHead>
                   <TableHead>Trạng thái</TableHead>
                   <TableHead className="px-5">Cập nhật</TableHead>
+                  {canManage ? <TableHead className="text-right">Thao tác</TableHead> : null}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -202,6 +429,15 @@ export function IngredientCatalogDialog({
                     <TableCell className="px-5 text-xs text-muted-foreground">
                       {formatDate(ingredient.updatedAt ?? ingredient.createdAt)}
                     </TableCell>
+                    {canManage ? (
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button type="button" variant="ghost" size="icon-sm" title="Chỉnh sửa nguyên liệu" aria-label="Chỉnh sửa nguyên liệu" disabled={mutatingIngredientId !== null} onClick={() => { clearMutationError(); setFormTarget(ingredient); }}><Edit3 className="size-4" /></Button>
+                          <Button type="button" variant="ghost" size="icon-sm" title={ingredient.isActive ? "Tắt nguyên liệu" : "Kích hoạt nguyên liệu"} aria-label={ingredient.isActive ? "Tắt nguyên liệu" : "Kích hoạt nguyên liệu"} isLoading={mutatingIngredientId === ingredient.id} onClick={() => void setIngredientStatus(ingredient)}><Power className="size-4" /></Button>
+                          <Button type="button" variant="ghost" size="icon-sm" className="text-destructive hover:bg-destructive/10 hover:text-destructive" title="Xóa nguyên liệu" aria-label="Xóa nguyên liệu" disabled={mutatingIngredientId !== null} onClick={() => { clearMutationError(); setDeleteTarget(ingredient); }}><Trash2 className="size-4" /></Button>
+                        </div>
+                      </TableCell>
+                    ) : null}
                   </TableRow>
                 ))}
               </TableBody>
@@ -227,6 +463,31 @@ export function IngredientCatalogDialog({
           </div>
         </div>
       </DialogContent>
+
+      <IngredientFormDialog
+        key={formTarget === "new" ? "new" : formTarget?.id ?? "closed"}
+        open={formTarget !== null}
+        ingredient={formTarget === "new" ? null : formTarget}
+        isSubmitting={mutatingIngredientId !== null}
+        errorMessage={mutationError}
+        onOpenChange={(next) => !next && setFormTarget(null)}
+        onCreate={create}
+        onUpdate={update}
+      />
+
+      <Dialog open={deleteTarget !== null} onOpenChange={(next) => !next && setDeleteTarget(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Xóa nguyên liệu?</DialogTitle>
+            <DialogDescription>Backend sẽ từ chối nếu nguyên liệu đang được công thức hoặc tồn kho tham chiếu.</DialogDescription>
+          </DialogHeader>
+          {mutationError ? <p className="text-sm text-destructive" role="alert">{mutationError}</p> : null}
+          <DialogFooter>
+            <Button type="button" variant="outline" disabled={mutatingIngredientId !== null} onClick={() => setDeleteTarget(null)}>Hủy</Button>
+            <Button type="button" variant="destructive" isLoading={deleteTarget ? mutatingIngredientId === deleteTarget.id : false} onClick={async () => { if (!deleteTarget) return; const succeeded = await remove(deleteTarget); if (succeeded) setDeleteTarget(null); }}><Trash2 className="size-4" />Xóa nguyên liệu</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }

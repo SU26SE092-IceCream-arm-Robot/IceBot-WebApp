@@ -5,6 +5,7 @@ import type { ApiResult } from "@/types";
 import type {
   CreateMenuItemRequest,
   CreateMenuRequest,
+  CreateProductCategoryRequest,
   CreateProductRequest,
   CreateRecipeRequest,
   CloneProductTemplateRequest,
@@ -24,6 +25,7 @@ import type {
   ProductVariantResult,
   UpdateMenuItemRequest,
   UpdateMenuRequest,
+  UpdateProductCategoryRequest,
   UpdateProductRequest,
   UpdateProductVariantRequest,
   UpdateRecipeRequest,
@@ -144,6 +146,49 @@ export async function listProductCategories(
     },
   );
   return requireData(response.data, "Không thể tải danh mục sản phẩm.");
+}
+
+export async function createProductCategory(
+  request: CreateProductCategoryRequest,
+): Promise<ProductCategoryResult> {
+  const response = await axiosClient.post<ApiResult<ProductCategoryResult>>(
+    "/api/v1/management/product-categories",
+    request,
+  );
+  return requireData(response.data, "Không thể tạo danh mục sản phẩm.");
+}
+
+export async function updateProductCategory(
+  categoryId: number,
+  request: UpdateProductCategoryRequest,
+): Promise<ProductCategoryResult> {
+  const response = await axiosClient.put<ApiResult<ProductCategoryResult>>(
+    `/api/v1/management/product-categories/${categoryId}`,
+    request,
+  );
+  return requireData(response.data, "Không thể cập nhật danh mục sản phẩm.");
+}
+
+export async function setProductCategoryStatus(
+  categoryId: number,
+  isActive: boolean,
+): Promise<ProductCategoryResult> {
+  const response = await axiosClient.patch<ApiResult<ProductCategoryResult>>(
+    `/api/v1/management/product-categories/${categoryId}/status`,
+    { isActive },
+  );
+  return requireData(response.data, "Không thể đổi trạng thái danh mục sản phẩm.");
+}
+
+export async function deleteProductCategory(categoryId: number): Promise<void> {
+  const response = await axiosClient.delete<ApiResult<unknown>>(
+    `/api/v1/management/product-categories/${categoryId}`,
+  );
+  if (!response.data.succeeded) {
+    throw new Error(
+      getApiResultMessage(response.data, "Không thể xóa danh mục sản phẩm."),
+    );
+  }
 }
 
 export async function cloneProductTemplate(

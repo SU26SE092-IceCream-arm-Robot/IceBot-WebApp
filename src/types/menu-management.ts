@@ -47,6 +47,20 @@ export interface ProductCategoryResult {
   displayOrder: number;
 }
 
+export interface CreateProductCategoryRequest {
+  code: string;
+  name: string;
+  description?: string | null;
+  productType: string;
+  imageUrl?: string | null;
+  displayOrder: number;
+}
+
+export type UpdateProductCategoryRequest = Omit<
+  CreateProductCategoryRequest,
+  "code"
+>;
+
 export interface OptionGroupResult {
   id: number;
   productId: string;

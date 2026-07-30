@@ -1,15 +1,22 @@
 "use client";
 
 import axios from "axios";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 
 import {
+  createIngredient,
+  deleteIngredient,
   getIngredientsErrorMessage,
   listIngredients,
+  setIngredientStatus,
+  updateIngredient,
 } from "@/lib/services/ingredients";
 import type {
+  CreateIngredientRequest,
   IngredientResult,
   IngredientsPagination,
+  UpdateIngredientRequest,
 } from "@/types/ingredients";
 
 const PAGE_SIZE = 10;
@@ -36,6 +43,11 @@ export function useIngredients(open: boolean) {
     useState<IngredientsPagination>(emptyPagination(1));
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [mutationError, setMutationError] = useState<string | null>(null);
+  const [mutatingIngredientId, setMutatingIngredientId] = useState<
+    string | "new" | null
+  >(null);
+  const mutationInFlightRef = useRef(false);
 
   const load = useCallback(
     async (signal?: AbortSignal) => {
@@ -79,6 +91,33 @@ export function useIngredients(open: boolean) {
     };
   }, [load, open]);
 
+  const runMutation = useCallback(
+    async (
+      target: string | "new",
+      action: () => Promise<unknown>,
+      successMessage: string,
+    ) => {
+      if (mutationInFlightRef.current) return false;
+      mutationInFlightRef.current = true;
+      setMutatingIngredientId(target);
+      setMutationError(null);
+      try {
+        await action();
+        toast.success(successMessage);
+        await load();
+        return true;
+      } catch (error) {
+        setMutationError(getIngredientsErrorMessage(error, "Không thể xử lý nguyên liệu."));
+        return false;
+      } finally {
+        mutationInFlightRef.current = false;
+        setMutatingIngredientId(null);
+      }
+    },
+    [load],
+  );
+  const clearMutationError = useCallback(() => setMutationError(null), []);
+
   return {
     ingredients,
     search,
@@ -86,6 +125,8 @@ export function useIngredients(open: boolean) {
     pagination,
     isLoading,
     errorMessage,
+    mutationError,
+    mutatingIngredientId,
     setSearch: (value: string) => {
       setSearchState(value);
       setPage(1);
@@ -97,5 +138,30 @@ export function useIngredients(open: boolean) {
     previousPage: () => setPage((current) => Math.max(1, current - 1)),
     nextPage: () => setPage((current) => current + 1),
     retry: () => void load(),
+    clearMutationError,
+    create: (request: CreateIngredientRequest) =>
+      runMutation(
+        "new",
+        () => createIngredient(request),
+        "Đã tạo nguyên liệu.",
+      ),
+    update: (ingredientId: string, request: UpdateIngredientRequest) =>
+      runMutation(
+        ingredientId,
+        () => updateIngredient(ingredientId, request),
+        "Đã cập nhật nguyên liệu.",
+      ),
+    toggleStatus: (ingredient: IngredientResult) =>
+      runMutation(
+        ingredient.id,
+        () => setIngredientStatus(ingredient.id, !ingredient.isActive),
+        ingredient.isActive ? "Đã tắt nguyên liệu." : "Đã kích hoạt nguyên liệu.",
+      ),
+    remove: (ingredient: IngredientResult) =>
+      runMutation(
+        ingredient.id,
+        () => deleteIngredient(ingredient.id),
+        "Đã xóa nguyên liệu.",
+      ),
   };
 }
