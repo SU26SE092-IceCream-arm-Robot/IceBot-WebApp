@@ -9,6 +9,7 @@ import {
   ChevronLeft,
   ChevronRight,
   CreditCard,
+  Factory,
   IceCream,
   LayoutDashboard,
   LogOut,
@@ -16,7 +17,6 @@ import {
   Package,
   ClipboardCheck,
   ShoppingCart,
-  ShieldCheck,
   ShieldAlert,
   Users,
   Wrench,
@@ -39,6 +39,7 @@ interface SidebarItem {
 const SIDEBAR_ITEMS: readonly SidebarItem[] = [
   { href: "/dashboard", label: "Tổng quan", icon: LayoutDashboard },
   { href: "/readiness", label: "Kiểm tra thiết lập", icon: ClipboardCheck },
+  { href: "/production", label: "Cấu hình sản xuất", icon: Factory },
   { href: "/kiosks", label: "Quản lý Kiosk", icon: Monitor },
   { href: "/inventory", label: "Tồn kho", icon: Package },
   { href: "/transactions", label: "Giao dịch", icon: ShoppingCart },
@@ -46,7 +47,6 @@ const SIDEBAR_ITEMS: readonly SidebarItem[] = [
   { href: "/reports", label: "Báo cáo", icon: BarChart3 },
   { href: "/organizations", label: "Tổ chức & cửa hàng", icon: Building2 },
   { href: "/users", label: "Tài khoản", icon: Users },
-  { href: "/roles", label: "Vai trò & quyền", icon: ShieldCheck },
   { href: "/alerts", label: "Cảnh báo", icon: Bell },
   { href: "/maintenance", label: "Bảo trì", icon: Wrench },
   { href: "/platform/exceptions", label: "Sự cố đồng bộ", icon: ShieldAlert },
@@ -59,10 +59,10 @@ const SIDEBAR_GROUPS: readonly {
 }[] = [
   {
     label: "Vận hành",
-    routes: ["/dashboard", "/readiness", "/alerts", "/kiosks", "/inventory", "/maintenance"],
+    routes: ["/dashboard", "/readiness", "/production", "/alerts", "/kiosks", "/inventory", "/maintenance"],
   },
   { label: "Kinh doanh", routes: ["/transactions", "/menu", "/reports"] },
-  { label: "Quản trị", routes: ["/organizations", "/users", "/roles", "/settings/payment-methods", "/platform/exceptions"] },
+  { label: "Quản trị", routes: ["/organizations", "/users", "/settings/payment-methods", "/platform/exceptions"] },
 ];
 
 interface AppSidebarProps {
