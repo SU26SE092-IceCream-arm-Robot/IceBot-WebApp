@@ -27,6 +27,7 @@ export type Role = DashboardRole;
 export type DashboardRoutePath =
   | "/dashboard"
   | "/readiness"
+  | "/production"
   | "/organizations"
   | "/kiosks"
   | "/inventory"

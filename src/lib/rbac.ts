@@ -75,6 +75,7 @@ export const ROUTE_PERMISSIONS: Record<
 > = {
   "/dashboard": "dashboard.view",
   "/readiness": "dashboard.view",
+  "/production": "program.read",
   "/organizations": "organizations.view",
   "/kiosks": "kiosks.view",
   "/inventory": "inventory.view",

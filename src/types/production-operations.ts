@@ -351,8 +351,150 @@ export interface InventoryReadinessResult {
   optionGroups: Array<{ routeCode: string; optionGroupCode: string; isRequired: boolean; minimumSelections: number; readyOptionCount: number; isReady: boolean }>;
 }
 
+export type RobotAuthoringImportStatus =
+  | "Uploaded"
+  | "Validated"
+  | "Materialized"
+  | "ResourcesPublished"
+  | "Failed"
+  | "Discarded";
+
+export interface RobotAuthoringImportValidationIssue {
+  code: string;
+  message: string;
+  artifactCode?: string | null;
+}
+
+export interface RobotAuthoringImportValidationReport {
+  canMaterialize: boolean;
+  errors: RobotAuthoringImportValidationIssue[];
+  warnings: RobotAuthoringImportValidationIssue[];
+  existingArtifactCount: number;
+  newArtifactCount: number;
+  existingContractCount: number;
+  newContractCount: number;
+}
+
+export interface RobotAuthoringImportListItem {
+  id: string;
+  organizationId: string;
+  storeId?: string | null;
+  kioskId?: string | null;
+  deviceId?: string | null;
+  status: RobotAuthoringImportStatus;
+  proposedProgramCode: string;
+  proposedProgramName: string;
+  runtimeTargetCode: string;
+  machineModelCode: string;
+  itemCount: number;
+  validation?: {
+    canMaterialize: boolean;
+    errorCount: number;
+    warningCount: number;
+  } | null;
+  materializedRobotProgramId?: string | null;
+  linkedConfigurationReleaseId?: string | null;
+  nextActions: string[];
+  createdAt: string;
+  validatedAt?: string | null;
+  materializedAt?: string | null;
+  publishedAt?: string | null;
+  failureCode?: string | null;
+  failureMessage?: string | null;
+}
+
+export interface RobotAuthoringImportResult extends Omit<RobotAuthoringImportListItem, "validation"> {
+  clientExportId: string;
+  importChecksum: string;
+  schemaVersion: number;
+  composedRecipeId?: string | null;
+  composedOptionCodes: string[];
+  compositionPreviewChecksum?: string | null;
+  validation?: RobotAuthoringImportValidationReport | null;
+  items: Array<{
+    id: string;
+    artifactCode: string;
+    fileName: string;
+    sidecarFileName: string;
+    runOrder: number;
+    status: string;
+    robotArtifactId?: string | null;
+    technicalContractId?: string | null;
+    failureCode?: string | null;
+    failureMessage?: string | null;
+  }>;
+}
+
+export interface RobotAuthoringWorkspaceResult {
+  import: RobotAuthoringImportResult;
+  configurationReleaseStatus?: string | null;
+  packageTargets: Array<{
+    installationId: string;
+    ownershipMode: string;
+    status: string;
+    requiresForkBeforeTechnicalMutation: boolean;
+  }>;
+  deploymentPreview?: DeploymentPreview | null;
+  blockers: Array<{ code: string; message: string; statusCode?: number | null }>;
+  actions: Array<{ code: string; isBlocked: boolean; blockerCode?: string | null; resourceId?: string | null }>;
+}
+
+export interface RobotAuthoringCompositionPreview {
+  importId: string;
+  robotProgramId: string;
+  recipeId: string;
+  selectedOptionCodes: string[];
+  canConfirm: boolean;
+  previewChecksum: string;
+  requirements: Array<{
+    kind: string;
+    code: string;
+    ingredientCode?: string | null;
+    optionCode?: string | null;
+    quantity?: number | null;
+    unit?: string | null;
+    requiredWorkcellCapabilityCode?: string | null;
+    status: string;
+    candidateArtifactCodes: string[];
+  }>;
+  proposedArtifacts: Array<{
+    robotArtifactId: string;
+    artifactCode: string;
+    runOrder: number;
+    requiredOptionCode?: string | null;
+    effectCodes: string[];
+  }>;
+  suggestedCapabilityCodes: string[];
+  blockers: RobotAuthoringImportValidationIssue[];
+  warnings: RobotAuthoringImportValidationIssue[];
+}
+
+export interface RobotAuthoringImportQuery {
+  status?: RobotAuthoringImportStatus | "ALL";
+  storeId?: string;
+  kioskId?: string;
+  deviceId?: string;
+  search?: string;
+  pageNumber: number;
+  pageSize: number;
+}
+
+export interface UploadRobotAuthoringImportRequest {
+  bundle: File;
+  storeId?: string | null;
+  kioskId?: string | null;
+  deviceId?: string | null;
+}
+
+export interface CreateRobotAuthoringReleaseDraftRequest {
+  recipeId: string;
+  requiredWorkcellCapabilityCode?: string | null;
+  supportedOptionCodes: string[];
+}
+
 export type RobotProgramsPage = PagedResult<RobotProgramResult>;
 export type PackageInstallationsPage = PagedResult<PackageInstallationResult>;
 export type PackageUpgradesPage = PagedResult<PackageUpgradeResult>;
 export type ConfigurationReleasesPage = PagedResult<ConfigurationReleaseResult>;
 export type ConfigurationDeploymentsPage = PagedResult<ConfigurationDeploymentResult>;
+export type RobotAuthoringImportsPage = PagedResult<RobotAuthoringImportListItem>;

@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import axiosClient from "@/lib/axios-client";
 import {
   createConfigurationRelease,
+  createRobotAuthoringReleaseDraft,
   discardConfigurationRelease,
   changePackageUpgradeLifecycle,
   deployConfiguration,
@@ -11,6 +12,7 @@ import {
   getConfigurationReleaseAuthoringOptions,
   getConfigurationInventoryReadiness,
   installProductionPackage,
+  listRobotAuthoringImports,
   listPackageInstallations,
   previewConfigurationDeployment,
   previewPackageUpgrade,
@@ -20,12 +22,15 @@ import {
   retireConfigurationRelease,
   rollbackConfigurationDeployment,
   startPackageUpgrade,
+  uploadRobotAuthoringImport,
+  validateRobotAuthoringImport,
 } from "@/lib/services/production-operations";
 import type { ApiResult } from "@/types";
 import type {
   ConfigurationDeploymentResult,
   ConfigurationReleaseAuthoringOptions,
   ConfigurationReleaseResult,
+  RobotAuthoringImportResult,
   ConfigurationReleaseRouteRequest,
   DeploymentPreview,
   PackageInstallationResult,
@@ -308,6 +313,76 @@ describe("production operations management contracts", () => {
 
     expect(axiosClient.delete).toHaveBeenCalledWith(
       "/api/v1/management/organizations/org-1/configuration-releases/release-1",
+    );
+  });
+
+  it("lists authoring imports in the selected organization with only supported filters", async () => {
+    vi.mocked(axiosClient.get).mockResolvedValue({
+      ...response({ succeeded: true, statusCode: 200, data: [] }),
+      data: {
+        succeeded: true,
+        statusCode: 200,
+        data: [],
+        pagination: { page: 2, pageSize: 10, totalCount: 0, totalPages: 0, hasNext: false, hasPrevious: true },
+      },
+    });
+
+    await listRobotAuthoringImports("org-1", {
+      status: "Failed",
+      kioskId: "kiosk-1",
+      search: "  fairino  ",
+      pageNumber: 2,
+      pageSize: 10,
+    });
+
+    expect(axiosClient.get).toHaveBeenCalledWith(
+      "/api/v1/management/organizations/org-1/robot-authoring-imports",
+      {
+        params: { status: "Failed", kioskId: "kiosk-1", search: "fairino", pageNumber: 2, pageSize: 10 },
+        signal: undefined,
+      },
+    );
+  });
+
+  it("uploads an authoring bundle through management with a fresh idempotency key", async () => {
+    const imported = { id: "import-1" } as RobotAuthoringImportResult;
+    vi.mocked(axiosClient.post).mockResolvedValue(
+      response({ succeeded: true, statusCode: 201, data: imported }),
+    );
+    const bundle = new File(["bundle"], "fairino.zip", { type: "application/zip" });
+
+    await uploadRobotAuthoringImport("org-1", { bundle, kioskId: "kiosk-1" });
+
+    expect(axiosClient.post).toHaveBeenCalledWith(
+      "/api/v1/management/organizations/org-1/robot-authoring-imports",
+      expect.any(FormData),
+      { headers: { "Idempotency-Key": "robot-authoring-import-request-id" } },
+    );
+    const formData = vi.mocked(axiosClient.post).mock.calls[0]?.[1] as FormData;
+    expect(formData.get("bundle")).toBe(bundle);
+    expect(formData.get("kioskId")).toBe("kiosk-1");
+  });
+
+  it("uses the import lifecycle and release-draft contracts without direct robot calls", async () => {
+    vi.mocked(axiosClient.post)
+      .mockResolvedValueOnce(response({ succeeded: true, statusCode: 200, data: { id: "import-1" } }))
+      .mockResolvedValueOnce(response({ succeeded: true, statusCode: 201, data: { import: { id: "import-1" }, configurationRelease: release } }));
+
+    await validateRobotAuthoringImport("org-1", "import-1");
+    await createRobotAuthoringReleaseDraft("org-1", "import-1", {
+      recipeId: "recipe-1",
+      requiredWorkcellCapabilityCode: null,
+      supportedOptionCodes: ["TOPPING"],
+    });
+
+    expect(axiosClient.post).toHaveBeenNthCalledWith(
+      1,
+      "/api/v1/management/organizations/org-1/robot-authoring-imports/import-1/validate",
+    );
+    expect(axiosClient.post).toHaveBeenNthCalledWith(
+      2,
+      "/api/v1/management/organizations/org-1/robot-authoring-imports/import-1/create-release-draft",
+      { recipeId: "recipe-1", requiredWorkcellCapabilityCode: null, supportedOptionCodes: ["TOPPING"] },
     );
   });
 
