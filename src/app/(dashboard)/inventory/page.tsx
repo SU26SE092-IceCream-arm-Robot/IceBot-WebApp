@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import {
   AlertTriangle,
   Boxes,
@@ -46,6 +46,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useInventory } from "@/hooks/use-inventory";
+import { useKioskOperationsRealtime } from "@/hooks/use-kiosk-operations-realtime";
 import { useAuth } from "@/hooks/use-auth";
 import { hasPermission } from "@/lib/rbac";
 import type {
@@ -293,6 +294,14 @@ export default function InventoryPage() {
     retryMutationRefresh,
     refresh,
   } = useInventory();
+
+  const refreshFromRealtime = useCallback(() => {
+    void refresh();
+  }, [refresh]);
+  const realtimeKioskIds = filters.kioskId !== "ALL"
+    ? [filters.kioskId]
+    : availableKiosks.map((kiosk) => kiosk.id);
+  useKioskOperationsRealtime(realtimeKioskIds, refreshFromRealtime);
 
   const openDispenserHistory = (dispenser: DispenserStateResult) => {
     setHistoryDispenser(dispenser);
