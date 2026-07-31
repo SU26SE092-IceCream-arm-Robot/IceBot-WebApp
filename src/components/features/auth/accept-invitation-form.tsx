@@ -17,6 +17,7 @@ export function AcceptInvitationForm() {
   const token = searchParams.get("token")?.trim() ?? "";
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [validationMessage, setValidationMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isAccepted, setIsAccepted] = useState(false);
@@ -35,20 +36,21 @@ export function AcceptInvitationForm() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setValidationMessage(null);
     setErrorMessage(null);
 
     if (!token) {
-      setErrorMessage("Liên kết lời mời không có token hợp lệ.");
+      setValidationMessage("Liên kết lời mời không có token hợp lệ.");
       return;
     }
 
     if (newPassword.length < MIN_PASSWORD_LENGTH) {
-      setErrorMessage(`Mật khẩu cần có ít nhất ${MIN_PASSWORD_LENGTH} ký tự.`);
+      setValidationMessage(`Mật khẩu cần có ít nhất ${MIN_PASSWORD_LENGTH} ký tự.`);
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      setErrorMessage("Mật khẩu xác nhận không khớp.");
+      setValidationMessage("Mật khẩu xác nhận không khớp.");
       return;
     }
 
@@ -129,7 +131,12 @@ export function AcceptInvitationForm() {
       </CardHeader>
 
       <CardContent className="px-6 pb-6">
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form
+          noValidate
+          onSubmit={handleSubmit}
+          onChangeCapture={() => setValidationMessage(null)}
+          className="space-y-4"
+        >
           <div className="space-y-2">
             <label htmlFor="newPassword" className="text-sm font-medium text-foreground">
               Mật khẩu mới
@@ -168,9 +175,9 @@ export function AcceptInvitationForm() {
             />
           </div>
 
-          {errorMessage ? (
+          {validationMessage || errorMessage ? (
             <p className="rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-              {errorMessage}
+              {validationMessage || errorMessage}
             </p>
           ) : null}
 

@@ -83,6 +83,10 @@ const SCOPE_TYPE_LABELS: Record<AssignableScopeType, string> = {
   Kiosk: "Kiosk",
 };
 
+function isValidEmail(value: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+}
+
 function getRoleDisplayLabel(role: ManagementRoleResult): string {
   const labelByCode: Record<string, string> = {
     SystemAdmin: "Quản trị hệ thống",
@@ -277,6 +281,10 @@ export function CreateAccountDialog({
       setValidationMessage("Vui lòng nhập họ tên, tên đăng nhập và email.");
       return;
     }
+    if (!isValidEmail(email)) {
+      setValidationMessage("Email không đúng định dạng.");
+      return;
+    }
 
     if (!localLoginEnabled && !googleLoginEnabled) {
       setValidationMessage("Cần bật ít nhất một phương thức đăng nhập.");
@@ -285,6 +293,10 @@ export function CreateAccountDialog({
 
     if (googleLoginEnabled && !googleEmail.trim()) {
       setValidationMessage("Vui lòng nhập email Google được phép đăng nhập.");
+      return;
+    }
+    if (googleLoginEnabled && !isValidEmail(googleEmail)) {
+      setValidationMessage("Email Google không đúng định dạng.");
       return;
     }
 
@@ -372,7 +384,13 @@ export function CreateAccountDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <form id="create-account-form" onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2">
+        <form
+          id="create-account-form"
+          noValidate
+          onSubmit={handleSubmit}
+          onChangeCapture={() => setValidationMessage(null)}
+          className="grid gap-4 sm:grid-cols-2"
+        >
           <FormField htmlFor="fullName" label="Họ tên">
             <Input
               id="fullName"

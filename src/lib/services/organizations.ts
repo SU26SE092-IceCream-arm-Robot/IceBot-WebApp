@@ -53,6 +53,21 @@ export async function listManagementOrganizations(
   return response.data;
 }
 
+export async function listAllManagementOrganizations(): Promise<OrganizationResult[]> {
+  const firstPage = await listManagementOrganizations({
+    pageNumber: 1,
+    pageSize: 100,
+  });
+  const organizations = [...(firstPage.data ?? [])];
+
+  for (let pageNumber = 2; pageNumber <= firstPage.pagination.totalPages; pageNumber += 1) {
+    const page = await listManagementOrganizations({ pageNumber, pageSize: 100 });
+    organizations.push(...(page.data ?? []));
+  }
+
+  return organizations;
+}
+
 export async function getManagementOrganizationById(
   organizationId: string,
   signal?: AbortSignal,

@@ -59,6 +59,7 @@ import {
 } from "@/lib/services/organizations";
 import {
   getManagementStoreById,
+  getManagementStores,
   getStoresErrorMessage,
   pauseManagementStoreSales,
   resumeManagementStoreSales,
@@ -157,6 +158,7 @@ export function StoreDetailView({ storeId }: StoreDetailViewProps) {
   const [store, setStore] = useState<StoreResult | null>(null);
   const [organization, setOrganization] = useState<OrganizationResult | null>(null);
   const [kiosks, setKiosks] = useState<KioskResult[]>([]);
+  const [siblingStores, setSiblingStores] = useState<StoreResult[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [warningMessage, setWarningMessage] = useState<string | null>(null);
@@ -187,9 +189,10 @@ export function StoreDetailView({ storeId }: StoreDetailViewProps) {
         return;
       }
       setStore(storeResult);
-      const [organizationResult, kioskResult] = await Promise.allSettled([
+      const [organizationResult, kioskResult, siblingStoresResult] = await Promise.allSettled([
         getManagementOrganizationById(storeResult.organizationId, signal),
         getManagementKiosks({ storeId: storeResult.id }, signal),
+        getManagementStores({ organizationId: storeResult.organizationId }, signal),
       ]);
       if (
         signal?.aborted ||
@@ -217,6 +220,17 @@ export function StoreDetailView({ storeId }: StoreDetailViewProps) {
           getKioskManagementErrorMessage(
             kioskResult.reason,
             "Không thể tải danh sách kiosk của cửa hàng.",
+          ),
+        );
+      }
+      if (siblingStoresResult.status === "fulfilled") {
+        setSiblingStores(siblingStoresResult.value);
+      } else {
+        setSiblingStores([]);
+        warnings.push(
+          getStoresErrorMessage(
+            siblingStoresResult.reason,
+            "Không thể kiểm tra cửa hàng trùng tên trong tổ chức.",
           ),
         );
       }
@@ -343,7 +357,7 @@ export function StoreDetailView({ storeId }: StoreDetailViewProps) {
 
       <Card className="gap-0 border border-border/80 py-0 shadow-none"><CardHeader className="border-b border-border py-4"><div className="flex items-center gap-3"><span className="flex size-10 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary"><Monitor className="size-5" /></span><div><CardTitle>Kiosk tại cửa hàng</CardTitle><p className="text-sm text-muted-foreground">{kiosks.length} kiosk</p></div></div></CardHeader>{kiosks.length === 0 ? <TenantEmptyState title="Chưa có kiosk" description="Cửa hàng này chưa có kiosk liên quan." /> : <Table className="min-w-[760px] table-fixed"><TableHeader><TableRow><TableHead className="w-[32%] px-4">Kiosk</TableHead><TableHead className="w-[22%] text-center">Trạng thái</TableHead><TableHead className="w-[28%]">Địa chỉ</TableHead><TableHead className="w-[18%] px-4 text-center">Thao tác</TableHead></TableRow></TableHeader><TableBody>{kiosks.map((kiosk) => <TableRow key={kiosk.id}><TableCell className="px-4 py-3"><p className="font-medium">{kiosk.name}</p><p className="font-mono text-xs text-muted-foreground">{kiosk.code}</p></TableCell><TableCell className="text-center"><div className="flex flex-col items-center gap-1"><KioskStatusBadge status={kiosk.status} /><KioskOperationalStateBadge state={kiosk.operationalState} /></div></TableCell><TableCell><span className="inline-flex items-center gap-2 text-muted-foreground"><MapPin className="size-4" />{kiosk.address || "Chưa có địa chỉ"}</span></TableCell><TableCell className="px-4 text-center"><Link href={`/kiosks/${kiosk.id}`} className={cn(buttonVariants({ variant: "ghost", size: "icon-sm" }), "rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground")} title={`Xem kiosk ${kiosk.name}`} aria-label={`Xem kiosk ${kiosk.name}`}><Eye className="size-4" /></Link></TableCell></TableRow>)}</TableBody></Table>}</Card>
 
-      {formOpen ? <StoreFormDialog organizationName={organization?.name ?? "Tổ chức"} store={store} open isSubmitting={mutationState.isSubmitting} errorMessage={mutationState.errorMessage} onOpenChange={(open) => { if (!mutationState.mutationRef.current) setFormOpen(open); }} onCreate={async () => false} onUpdate={submitUpdate} /> : null}
+      {formOpen ? <StoreFormDialog organizationName={organization?.name ?? "Tổ chức"} store={store} open isSubmitting={mutationState.isSubmitting} errorMessage={mutationState.errorMessage} onOpenChange={(open) => { if (!mutationState.mutationRef.current) setFormOpen(open); }} onCreate={async () => false} onUpdate={submitUpdate} existingStores={siblingStores} /> : null}
       {lifecycleOpen ? <LifecycleConfirmDialog entityLabel="cửa hàng" entityName={store.name} activate={store.status !== "Active"} open isSubmitting={mutationState.isSubmitting} errorMessage={mutationState.errorMessage} onOpenChange={(open) => { if (!mutationState.mutationRef.current) setLifecycleOpen(open); }} onConfirm={confirmLifecycle} /> : null}
       {salesActionOpen ? <StoreSalesAdmissionDialog storeName={store.name} isPaused={store.isSalesPaused} open isSubmitting={mutationState.isSubmitting} errorMessage={mutationState.errorMessage} onOpenChange={(open) => { if (!mutationState.mutationRef.current) setSalesActionOpen(open); }} onPause={pauseSales} onResume={resumeSales} /> : null}
     </div>

@@ -13,6 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { hasDuplicateStoreName } from "@/lib/tenant-identity";
 import type { StoreResult } from "@/types/kiosk-management";
 import type {
   CreateOrganizationRequest,
@@ -92,6 +93,11 @@ interface OrganizationFormDialogProps {
   onOpenChange: (open: boolean) => void;
   onCreate: (request: CreateOrganizationRequest) => Promise<boolean>;
   onUpdate: (request: UpdateOrganizationRequest) => Promise<boolean>;
+  onCheckIdentity: (candidate: {
+    name: string;
+    taxCode: string;
+    organizationId?: string;
+  }) => Promise<string | null>;
 }
 
 export function OrganizationFormDialog({
@@ -102,6 +108,7 @@ export function OrganizationFormDialog({
   onOpenChange,
   onCreate,
   onUpdate,
+  onCheckIdentity,
 }: OrganizationFormDialogProps) {
   const isCreate = !organization;
   const [code, setCode] = useState(organization?.code ?? "");
@@ -126,6 +133,15 @@ export function OrganizationFormDialog({
     }
     if (!isValidEmail(email)) {
       setValidationMessage("Email không đúng định dạng.");
+      return;
+    }
+    const identityMessage = await onCheckIdentity({
+      name,
+      taxCode,
+      organizationId: organization?.id,
+    });
+    if (identityMessage) {
+      setValidationMessage(identityMessage);
       return;
     }
     setValidationMessage(null);
@@ -161,7 +177,12 @@ export function OrganizationFormDialog({
           </div>
         </DialogHeader>
 
-        <form className="space-y-4" onSubmit={handleSubmit}>
+        <form
+          noValidate
+          className="space-y-4"
+          onSubmit={handleSubmit}
+          onChangeCapture={() => setValidationMessage(null)}
+        >
           <div className="grid gap-4 sm:grid-cols-2">
             {isCreate ? (
               <div className="space-y-1.5">
@@ -214,6 +235,7 @@ interface StoreFormDialogProps {
   onOpenChange: (open: boolean) => void;
   onCreate: (request: CreateStoreRequest) => Promise<boolean>;
   onUpdate: (request: UpdateStoreRequest) => Promise<boolean>;
+  existingStores: readonly StoreResult[];
 }
 
 export function StoreFormDialog({
@@ -225,6 +247,7 @@ export function StoreFormDialog({
   onOpenChange,
   onCreate,
   onUpdate,
+  existingStores,
 }: StoreFormDialogProps) {
   const isCreate = !store;
   const [code, setCode] = useState(store?.code ?? "");
@@ -264,6 +287,10 @@ export function StoreFormDialog({
     }
     if (!isValidEmail(email)) {
       setValidationMessage("Email không đúng định dạng.");
+      return;
+    }
+    if (hasDuplicateStoreName(existingStores, name, store?.id)) {
+      setValidationMessage("Tên cửa hàng đã tồn tại trong tổ chức này.");
       return;
     }
     const parsedLatitude = latitude.trim() ? Number(latitude) : null;
@@ -332,7 +359,12 @@ export function StoreFormDialog({
             <div className="space-y-1"><DialogTitle>{isCreate ? "Tạo cửa hàng" : "Chỉnh sửa cửa hàng"}</DialogTitle><DialogDescription>{organizationName}</DialogDescription></div>
           </div>
         </DialogHeader>
-        <form className="space-y-4" onSubmit={handleSubmit}>
+        <form
+          noValidate
+          className="space-y-4"
+          onSubmit={handleSubmit}
+          onChangeCapture={() => setValidationMessage(null)}
+        >
           <div className="grid gap-4 sm:grid-cols-2">
             {isCreate ? <div className="space-y-1.5"><label htmlFor="store-code" className="text-sm font-medium">Mã cửa hàng <span className="text-destructive">*</span></label><Input id="store-code" value={code} maxLength={50} disabled={isSubmitting} className="h-10 font-mono uppercase" onChange={(event) => setCode(event.target.value)} /></div> : null}
             <div className="space-y-1.5"><label htmlFor="store-name" className="text-sm font-medium">Tên cửa hàng <span className="text-destructive">*</span></label><Input id="store-name" value={name} maxLength={200} disabled={isSubmitting} className="h-10" onChange={(event) => setName(event.target.value)} /></div>

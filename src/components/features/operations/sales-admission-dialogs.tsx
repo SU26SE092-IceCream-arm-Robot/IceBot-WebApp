@@ -112,7 +112,7 @@ export function StoreSalesAdmissionDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
-        <form onSubmit={submit} className="space-y-5">
+        <form noValidate onSubmit={submit} onChangeCapture={() => setValidationMessage(null)} className="space-y-5">
           <DialogHeader>
             <DialogTitle>
               {isPaused ? "Tiếp tục nhận đơn mới" : "Tạm dừng nhận đơn mới"}
@@ -221,7 +221,7 @@ export function KioskOperationalStateDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
-        <form onSubmit={submit} className="space-y-5">
+        <form noValidate onSubmit={submit} onChangeCapture={() => setValidationMessage(null)} className="space-y-5">
           <DialogHeader>
             <DialogTitle>Cập nhật trạng thái vận hành</DialogTitle>
             <DialogDescription>

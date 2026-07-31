@@ -304,7 +304,7 @@ export function ProductFormDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl" showCloseButton={!isSubmitting}>
         <DialogHeader><div className="flex items-start gap-3 pr-8"><span className="flex size-10 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary"><Box className="size-5" /></span><div className="space-y-1"><DialogTitle>{isCreate ? "Tạo sản phẩm" : "Chỉnh sửa sản phẩm"}</DialogTitle><DialogDescription>{isCreate ? "Tạo sản phẩm trước, sau đó thêm phiên bản trong phần chi tiết." : product.code}</DialogDescription></div></div></DialogHeader>
-        <form className="space-y-5" onSubmit={handleSubmit}>
+        <form noValidate className="space-y-5" onSubmit={handleSubmit} onChangeCapture={() => setValidationMessage(null)}>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5"><label htmlFor="product-code" className="text-sm font-medium">Mã sản phẩm <span className="text-destructive">*</span></label><Input id="product-code" value={code} disabled={isSubmitting} className="h-10 font-mono uppercase" onChange={(event) => setCode(event.target.value)} /></div>
             <div className="space-y-1.5"><label htmlFor="product-name" className="text-sm font-medium">Tên nội bộ <span className="text-destructive">*</span></label><Input id="product-name" value={name} disabled={isSubmitting} className="h-10" onChange={(event) => setName(event.target.value)} /></div>
@@ -421,7 +421,7 @@ export function VariantFormDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl" showCloseButton={!isSubmitting}>
         <DialogHeader><div className="flex items-start gap-3 pr-8"><span className="flex size-10 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary"><PackagePlus className="size-5" /></span><div className="space-y-1"><DialogTitle>{isCreate ? "Thêm phiên bản" : "Chỉnh sửa phiên bản"}</DialogTitle><DialogDescription>{product.displayName || product.name}</DialogDescription></div></div></DialogHeader>
-        <form className="space-y-4" onSubmit={handleSubmit}>
+        <form noValidate className="space-y-4" onSubmit={handleSubmit} onChangeCapture={() => setValidationMessage(null)}>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5"><label htmlFor="variant-code" className="text-sm font-medium">Mã phiên bản <span className="text-destructive">*</span></label><Input id="variant-code" value={code} disabled={isSubmitting} className="h-10 font-mono uppercase" onChange={(event) => setCode(event.target.value)} /></div>
             <div className="space-y-1.5"><label htmlFor="variant-name" className="text-sm font-medium">Tên nội bộ <span className="text-destructive">*</span></label><Input id="variant-name" value={name} disabled={isSubmitting} className="h-10" onChange={(event) => setName(event.target.value)} /></div>
