@@ -457,7 +457,7 @@ export function MaintenanceEditorDialog({
           </div>
         </DialogHeader>
 
-        <form className="space-y-4" onSubmit={handleSubmit}>
+        <form noValidate className="space-y-4" onSubmit={handleSubmit} onChangeCapture={() => setValidationMessage(null)}>
           {isCreate ? (
             <div className="space-y-1.5">
               <label className="text-sm font-medium">Kiosk <span className="text-destructive">*</span></label>
@@ -647,7 +647,7 @@ export function MaintenanceWorkflowDialog({
           </div>
         </DialogHeader>
 
-        <form className="space-y-4" onSubmit={handleSubmit}>
+        <form noValidate className="space-y-4" onSubmit={handleSubmit} onChangeCapture={() => setValidationMessage(null)}>
           {action === "assign" ? (
             <div className="space-y-1.5">
               <label className="text-sm font-medium">Người phụ trách <span className="text-destructive">*</span></label>

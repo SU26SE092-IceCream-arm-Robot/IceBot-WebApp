@@ -51,10 +51,12 @@ import { hasPermission } from "@/lib/rbac";
 import {
   createManagementOrganization,
   getOrganizationsErrorMessage,
+  listAllManagementOrganizations,
   listManagementOrganizations,
   setManagementOrganizationActive,
   updateManagementOrganization,
 } from "@/lib/services/organizations";
+import { findOrganizationIdentityConflict } from "@/lib/tenant-identity";
 import { cn } from "@/lib/utils";
 import type {
   CreateOrganizationRequest,
@@ -216,6 +218,32 @@ export function OrganizationsView() {
     });
   };
 
+  const checkOrganizationIdentity = async ({
+    name,
+    taxCode,
+    organizationId,
+  }: {
+    name: string;
+    taxCode: string;
+    organizationId?: string;
+  }) => {
+    try {
+      const conflict = findOrganizationIdentityConflict(
+        await listAllManagementOrganizations(),
+        { name, taxCode },
+        organizationId,
+      );
+      if (conflict === "name") return "Tên tổ chức đã tồn tại.";
+      if (conflict === "taxCode") return "Mã số thuế đã được dùng cho tổ chức khác.";
+      return null;
+    } catch (error) {
+      return getOrganizationsErrorMessage(
+        error,
+        "Không thể kiểm tra dữ liệu trùng lặp. Vui lòng thử lại.",
+      );
+    }
+  };
+
   const confirmLifecycle = async () => {
     if (!lifecycleTarget) return false;
     const target = lifecycleTarget;
@@ -265,7 +293,7 @@ export function OrganizationsView() {
         <div className="flex items-center justify-between border-t border-border px-5 py-4 text-sm"><p className="text-muted-foreground">Trang <span className="font-medium tabular-nums text-foreground">{page}</span> / <span className="font-medium tabular-nums text-foreground">{Math.max(totalPages, 1)}</span> · <span className="font-medium tabular-nums text-foreground">{totalCount}</span> tổ chức</p><div className="flex gap-2"><Button variant="outline" size="sm" disabled={page <= 1 || isLoading} onClick={() => setPage((value) => Math.max(1, value - 1))}><ChevronLeft className="size-4" />Trước</Button><Button variant="outline" size="sm" disabled={page >= totalPages || isLoading} onClick={() => setPage((value) => value + 1)}>Sau<ChevronRight className="size-4" /></Button></div></div>
       </Card>
 
-      {formOpen ? <OrganizationFormDialog key={editingOrganization?.id ?? "create"} organization={editingOrganization} open={formOpen} isSubmitting={mutationState.isSubmitting} errorMessage={mutationState.errorMessage} onOpenChange={(open) => { if (mutationState.mutationRef.current) return; setFormOpen(open); if (!open) setEditingOrganization(null); }} onCreate={submitCreate} onUpdate={submitUpdate} /> : null}
+      {formOpen ? <OrganizationFormDialog key={editingOrganization?.id ?? "create"} organization={editingOrganization} open={formOpen} isSubmitting={mutationState.isSubmitting} errorMessage={mutationState.errorMessage} onOpenChange={(open) => { if (mutationState.mutationRef.current) return; setFormOpen(open); if (!open) setEditingOrganization(null); }} onCreate={submitCreate} onUpdate={submitUpdate} onCheckIdentity={checkOrganizationIdentity} /> : null}
       {lifecycleTarget ? <LifecycleConfirmDialog entityLabel="tổ chức" entityName={lifecycleTarget.organization.name} activate={lifecycleTarget.activate} open isSubmitting={mutationState.isSubmitting} errorMessage={mutationState.errorMessage} onOpenChange={(open) => { if (!open && !mutationState.mutationRef.current) setLifecycleTarget(null); }} onConfirm={confirmLifecycle} /> : null}
     </div>
   );

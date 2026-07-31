@@ -198,3 +198,29 @@
   outline: 2px solid var(--ring);
   outline-offset: 2px;
 }
+
+/*
+ * Form controls already render a semantic focus ring. Avoid stacking the
+ * global outline on top of that ring, which can visually collide with labels.
+ */
+:where(
+  input[data-slot="input"],
+  textarea,
+  [data-slot="select-trigger"]
+):focus-visible {
+  outline: none;
+}
+
+/*
+ * Keep a consistent breathing space between field labels and controls across
+ * create/edit forms, including dialogs that do not wrap their fields in form.
+ */
+:where(form, [data-slot="dialog-content"])
+  :where(label, [data-slot="label"])
+  + :where(
+    input:not([type="checkbox"]):not([type="radio"]),
+    textarea,
+    [data-slot="select-trigger"]
+  ) {
+  margin-block-start: 0.5rem;
+}

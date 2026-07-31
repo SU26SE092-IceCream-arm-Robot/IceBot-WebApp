@@ -46,9 +46,11 @@ import { hasScopedPermission } from "@/lib/rbac";
 import {
   getManagementOrganizationById,
   getOrganizationsErrorMessage,
+  listAllManagementOrganizations,
   setManagementOrganizationActive,
   updateManagementOrganization,
 } from "@/lib/services/organizations";
+import { findOrganizationIdentityConflict } from "@/lib/tenant-identity";
 import {
   createManagementStore,
   getManagementStores,
@@ -197,6 +199,32 @@ export function OrganizationDetailView({ organizationId }: OrganizationDetailVie
     });
   };
 
+  const checkOrganizationIdentity = async ({
+    name,
+    taxCode,
+    organizationId,
+  }: {
+    name: string;
+    taxCode: string;
+    organizationId?: string;
+  }) => {
+    try {
+      const conflict = findOrganizationIdentityConflict(
+        await listAllManagementOrganizations(),
+        { name, taxCode },
+        organizationId,
+      );
+      if (conflict === "name") return "Tên tổ chức đã tồn tại.";
+      if (conflict === "taxCode") return "Mã số thuế đã được dùng cho tổ chức khác.";
+      return null;
+    } catch (error) {
+      return getOrganizationsErrorMessage(
+        error,
+        "Không thể kiểm tra dữ liệu trùng lặp. Vui lòng thử lại.",
+      );
+    }
+  };
+
   const confirmLifecycle = async () => {
     if (!organization || !lifecycleTarget) return false;
     const target = lifecycleTarget;
@@ -254,8 +282,8 @@ export function OrganizationDetailView({ organizationId }: OrganizationDetailVie
         canManage={canManageNotifications}
       />
 
-      {organizationFormOpen ? <OrganizationFormDialog organization={organization} open isSubmitting={mutationState.isSubmitting} errorMessage={mutationState.errorMessage} onOpenChange={(open) => { if (!mutationState.mutationRef.current) setOrganizationFormOpen(open); }} onCreate={async () => false} onUpdate={submitOrganizationUpdate} /> : null}
-      {storeFormOpen ? <StoreFormDialog organizationName={organization.name} store={null} open isSubmitting={mutationState.isSubmitting} errorMessage={mutationState.errorMessage} onOpenChange={(open) => { if (!mutationState.mutationRef.current) setStoreFormOpen(open); }} onCreate={submitStoreCreate} onUpdate={async () => false} /> : null}
+      {organizationFormOpen ? <OrganizationFormDialog organization={organization} open isSubmitting={mutationState.isSubmitting} errorMessage={mutationState.errorMessage} onOpenChange={(open) => { if (!mutationState.mutationRef.current) setOrganizationFormOpen(open); }} onCreate={async () => false} onUpdate={submitOrganizationUpdate} onCheckIdentity={checkOrganizationIdentity} /> : null}
+      {storeFormOpen ? <StoreFormDialog organizationName={organization.name} store={null} open isSubmitting={mutationState.isSubmitting} errorMessage={mutationState.errorMessage} onOpenChange={(open) => { if (!mutationState.mutationRef.current) setStoreFormOpen(open); }} onCreate={submitStoreCreate} onUpdate={async () => false} existingStores={stores} /> : null}
       {lifecycleTarget ? <LifecycleConfirmDialog entityLabel={lifecycleTarget.kind === "organization" ? "tổ chức" : "cửa hàng"} entityName={lifecycleTarget.kind === "organization" ? organization.name : lifecycleTarget.store.name} activate={lifecycleTarget.activate} open isSubmitting={mutationState.isSubmitting} errorMessage={mutationState.errorMessage} onOpenChange={(open) => { if (!open && !mutationState.mutationRef.current) setLifecycleTarget(null); }} onConfirm={confirmLifecycle} /> : null}
     </div>
   );

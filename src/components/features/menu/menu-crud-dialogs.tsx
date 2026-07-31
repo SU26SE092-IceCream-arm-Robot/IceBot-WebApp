@@ -225,7 +225,7 @@ export function MenuFormDialog({
             </div>
           </div>
         </DialogHeader>
-        <form className="space-y-5" onSubmit={handleSubmit}>
+        <form noValidate className="space-y-5" onSubmit={handleSubmit} onChangeCapture={() => setValidationMessage(null)}>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
               <label htmlFor="menu-code" className="text-sm font-medium">Mã thực đơn <span className="text-destructive">*</span></label>
@@ -510,7 +510,7 @@ export function MenuItemFormDialog({
             </div>
           </div>
         </DialogHeader>
-        <form className="space-y-5" onSubmit={handleSubmit}>
+        <form noValidate className="space-y-5" onSubmit={handleSubmit} onChangeCapture={() => setValidationMessage(null)}>
           
           <div className="space-y-4 rounded-xl border border-border bg-muted/15 p-4">
             <div className="space-y-1.5">

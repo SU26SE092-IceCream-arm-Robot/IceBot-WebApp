@@ -3,6 +3,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { LockKeyhole, UserRound } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +15,7 @@ export function LoginForm() {
   const { status, login } = useAuth();
   const [emailOrUsername, setEmailOrUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [validationMessage, setValidationMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -25,11 +27,18 @@ export function LoginForm() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setValidationMessage(null);
     setErrorMessage(null);
+
+    if (!emailOrUsername.trim() || !password) {
+      setValidationMessage("Vui lòng nhập email hoặc tên đăng nhập và mật khẩu.");
+      return;
+    }
     setIsSubmitting(true);
 
     try {
       await login({ emailOrUsername, password });
+      toast.success("Đăng nhập thành công.");
       router.replace("/dashboard");
     } catch (error) {
       setErrorMessage(getAuthErrorMessage(error));
@@ -47,7 +56,12 @@ export function LoginForm() {
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form
+        noValidate
+        onSubmit={handleSubmit}
+        onChangeCapture={() => setValidationMessage(null)}
+        className="space-y-5"
+      >
         <div className="space-y-2">
           <label htmlFor="emailOrUsername" className="text-sm font-medium text-foreground">
             Email hoặc tên đăng nhập
@@ -87,11 +101,11 @@ export function LoginForm() {
           </div>
         </div>
 
-        {errorMessage && (
+        {validationMessage || errorMessage ? (
           <p className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-            {errorMessage}
+            {validationMessage || errorMessage}
           </p>
-        )}
+        ) : null}
 
         <Button type="submit" className="h-11 w-full text-base" isLoading={isSubmitting}>
           Đăng nhập
