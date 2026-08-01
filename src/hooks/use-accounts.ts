@@ -102,7 +102,19 @@ export interface UseAccountsResult {
   clearSuccessMessage: () => void;
 }
 
-export function useAccounts(): UseAccountsResult {
+function scopeOptionsForOrganization(
+  options: RoleScopeOptionsResult,
+  organizationId: string,
+): RoleScopeOptionsResult {
+  return {
+    ...options,
+    organizations: options.organizations.filter(
+      (organization) => organization.id === organizationId,
+    ),
+  };
+}
+
+export function useAccounts(organizationId: string | null): UseAccountsResult {
   const detailAbortRef = useRef<AbortController | null>(null);
   const detailRequestIdRef = useRef(0);
   const [query, setQuery] = useState<ManagementAccountsQuery>(INITIAL_QUERY);
@@ -147,11 +159,19 @@ export function useAccounts(): UseAccountsResult {
 
   const fetchAccounts = useCallback(
     async (signal?: AbortSignal) => {
+      if (!organizationId) {
+        setAccounts([]);
+        setPagination(EMPTY_PAGINATION);
+        setErrorMessage(null);
+        setIsLoading(false);
+        return;
+      }
+
       setIsLoading(true);
       setErrorMessage(null);
 
       try {
-        const result = await listManagementAccounts(query, signal);
+        const result = await listManagementAccounts(organizationId, query, signal);
         if (signal?.aborted) {
           return;
         }
@@ -172,7 +192,7 @@ export function useAccounts(): UseAccountsResult {
         }
       }
     },
-    [query]
+    [organizationId, query]
   );
 
   useEffect(() => {
@@ -195,6 +215,24 @@ export function useAccounts(): UseAccountsResult {
     },
     [],
   );
+
+  useEffect(() => {
+    detailRequestIdRef.current += 1;
+    detailAbortRef.current?.abort();
+    detailAbortRef.current = null;
+    roleScopeCacheRef.current.clear();
+    const timeoutId = window.setTimeout(() => {
+      setSelectedAccount(null);
+      setIsDetailOpen(false);
+      setIsDetailLoading(false);
+      setDetailErrorMessage(null);
+      setAccountPendingDisable(null);
+      setIsDisableOpen(false);
+      setAccountPendingInvitation(null);
+      setIsRegenerateOpen(false);
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
+  }, [organizationId]);
 
   const setSearchTerm = useCallback((value: string) => {
     setQuery((previous) => ({
@@ -231,6 +269,10 @@ export function useAccounts(): UseAccountsResult {
   }, []);
 
   const openAccountDetail = useCallback(async (accountId: string) => {
+    if (!organizationId) {
+      return;
+    }
+
     detailAbortRef.current?.abort();
     const controller = new AbortController();
     detailAbortRef.current = controller;
@@ -242,7 +284,11 @@ export function useAccounts(): UseAccountsResult {
     setSelectedAccount(null);
 
     try {
-      const account = await getAccountById(accountId, controller.signal);
+      const account = await getAccountById(
+        organizationId,
+        accountId,
+        controller.signal,
+      );
       if (
         controller.signal.aborted ||
         requestId !== detailRequestIdRef.current
@@ -267,7 +313,7 @@ export function useAccounts(): UseAccountsResult {
         setIsDetailLoading(false);
       }
     }
-  }, []);
+  }, [organizationId]);
 
   const setDetailOpen = useCallback((open: boolean) => {
     setIsDetailOpen(open);
@@ -307,12 +353,20 @@ export function useAccounts(): UseAccountsResult {
       return;
     }
 
+    if (!organizationId) {
+      setDisableErrorMessage("Vui lòng chọn tổ chức trước khi quản lý tài khoản.");
+      return;
+    }
+
     setIsDisabling(true);
     setDisableErrorMessage(null);
     setSuccessMessage(null);
 
     try {
-      const disabledAccount = await disableAccount(accountPendingDisable.id);
+      const disabledAccount = await disableAccount(
+        organizationId,
+        accountPendingDisable.id,
+      );
       setAccounts((current) =>
         current.map((account) =>
           account.id === disabledAccount.id ? disabledAccount : account
@@ -333,9 +387,14 @@ export function useAccounts(): UseAccountsResult {
     } finally {
       setIsDisabling(false);
     }
-  }, [accountPendingDisable, isDisabling]);
+  }, [accountPendingDisable, isDisabling, organizationId]);
 
   const loadRoleScopeOptions = useCallback(async (roleCode: string) => {
+    if (!organizationId) {
+      setRoleScopeErrorMessage("Vui lòng chọn tổ chức trước khi tải phạm vi vai trò.");
+      return;
+    }
+
     const requestId = ++roleScopeRequestIdRef.current;
     setCreateRoleCode(roleCode);
     setRoleScopeOptions(null);
@@ -350,7 +409,10 @@ export function useAccounts(): UseAccountsResult {
 
     setIsRoleScopeLoading(true);
     try {
-      const options = await getRoleScopeOptions(roleCode);
+      const options = scopeOptionsForOrganization(
+        await getRoleScopeOptions(roleCode),
+        organizationId,
+      );
       if (requestId !== roleScopeRequestIdRef.current) {
         return;
       }
@@ -370,7 +432,7 @@ export function useAccounts(): UseAccountsResult {
         setIsRoleScopeLoading(false);
       }
     }
-  }, []);
+  }, [organizationId]);
 
   const loadRoleCatalog = useCallback(async () => {
     const requestId = ++roleCatalogRequestIdRef.current;
@@ -389,7 +451,9 @@ export function useAccounts(): UseAccountsResult {
         return;
       }
 
-      const assignableRoles = roles.filter((role) => role.isAssignable);
+      const assignableRoles = roles.filter(
+        (role) => role.isAssignable && role.code !== "SystemAdmin",
+      );
       setManagementRoles(assignableRoles);
 
       const firstRole = assignableRoles[0];
@@ -458,12 +522,17 @@ export function useAccounts(): UseAccountsResult {
         return false;
       }
 
+      if (!organizationId) {
+        setCreateErrorMessage("Vui lòng chọn tổ chức trước khi tạo tài khoản.");
+        return false;
+      }
+
       setIsCreating(true);
       setCreateErrorMessage(null);
       setSuccessMessage(null);
 
       try {
-        const createdAccount = await createAccount(request);
+        const createdAccount = await createAccount(organizationId, request);
         const createdInvitation = createdAccount.invitation
           ? {
               accountId: createdAccount.id,
@@ -503,7 +572,7 @@ export function useAccounts(): UseAccountsResult {
         setIsCreating(false);
       }
     },
-    [isCreating, query.pageSize]
+    [isCreating, organizationId, query.pageSize]
   );
 
   const requestRegenerateInvitation = useCallback((account: InternalAccountResult) => {
@@ -533,12 +602,18 @@ export function useAccounts(): UseAccountsResult {
       return;
     }
 
+    if (!organizationId) {
+      setRegenerateErrorMessage("Vui lòng chọn tổ chức trước khi tạo lại lời mời.");
+      return;
+    }
+
     setIsRegenerating(true);
     setRegenerateErrorMessage(null);
     setSuccessMessage(null);
 
     try {
       const result = await regenerateInvitation(
+        organizationId,
         accountPendingInvitation.id,
         regenerateSendEmail
       );
@@ -555,7 +630,7 @@ export function useAccounts(): UseAccountsResult {
     } finally {
       setIsRegenerating(false);
     }
-  }, [accountPendingInvitation, isRegenerating, regenerateSendEmail]);
+  }, [accountPendingInvitation, isRegenerating, organizationId, regenerateSendEmail]);
 
   const setInvitationResultOpen = useCallback((open: boolean) => {
     setIsInvitationResultOpen(open);

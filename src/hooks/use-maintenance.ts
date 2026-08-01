@@ -3,7 +3,9 @@
 import axios from "axios";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { useAuth } from "@/hooks/use-auth";
 import { useMutationRefreshRecovery } from "@/hooks/use-mutation-refresh-recovery";
+import { hasPermission } from "@/lib/rbac";
 import { getAccountsErrorMessage, listManagementAccounts } from "@/lib/services/accounts";
 import {
   getKioskManagementErrorMessage,
@@ -138,6 +140,8 @@ function matchesSearch(
 }
 
 export function useMaintenance(): UseMaintenanceResult {
+  const { effectiveAccess } = useAuth();
+  const canReadAccounts = hasPermission(effectiveAccess, "accounts.read");
   const mutationInFlightRef = useRef(false);
   const selectedTicketIdRef = useRef<string | null>(null);
   const [filters, setFilters] = useState<MaintenanceFilters>(INITIAL_FILTERS);
@@ -220,34 +224,58 @@ export function useMaintenance(): UseMaintenanceResult {
 
   const loadLookups = useCallback(async (signal?: AbortSignal) => {
     setLookupWarning(null);
-    const [kioskResult, accountResult] = await Promise.allSettled([
-      getManagementKiosks({}, signal),
-      listManagementAccounts(
-        { searchTerm: "", status: "Active", pageNumber: 1, pageSize: 100 },
-        signal,
-      ),
-    ]);
-
-    if (signal?.aborted) {
-      return;
-    }
-
     const warnings: string[] = [];
-    if (kioskResult.status === "fulfilled") {
-      setKiosks(kioskResult.value);
-    } else {
+    let availableKiosks: KioskResult[] = [];
+    try {
+      availableKiosks = await getManagementKiosks({}, signal);
+      if (signal?.aborted) return;
+      setKiosks(availableKiosks);
+    } catch (error) {
+      if (signal?.aborted || axios.isCancel(error)) return;
       setKiosks([]);
       warnings.push(
         getKioskManagementErrorMessage(
-          kioskResult.reason,
+          error,
           "Không thể tải danh sách kiosk cho form bảo trì.",
         ),
       );
     }
 
-    if (accountResult.status === "fulfilled") {
+    const organizationIds = Array.from(
+      new Set(availableKiosks.map((kiosk) => kiosk.organizationId)),
+    );
+    const accountResults = canReadAccounts
+      ? await Promise.allSettled(
+          organizationIds.map((organizationId) =>
+            listManagementAccounts(
+              organizationId,
+              { searchTerm: "", status: "Active", pageNumber: 1, pageSize: 100 },
+              signal,
+            ),
+          ),
+        )
+      : [];
+
+    if (signal?.aborted) {
+      return;
+    }
+
+    const failedAccountResult = accountResults.find((result) => result.status === "rejected");
+    if (!canReadAccounts) {
+      setAssignees([]);
+      warnings.push(
+        "Tài khoản hiện tại không có quyền xem danh sách người phụ trách.",
+      );
+    } else if (!failedAccountResult) {
+      const accountsById = new Map<string, InternalAccountResult>();
+      for (const result of accountResults) {
+        if (result.status !== "fulfilled") continue;
+        for (const account of result.value.data ?? []) {
+          accountsById.set(account.id, account);
+        }
+      }
       setAssignees(
-        (accountResult.value.data ?? []).filter((account) =>
+        Array.from(accountsById.values()).filter((account) =>
           account.roles.some((role) =>
             ["Technician", "Manager", "OrgAdmin"].includes(role.roleCode),
           ),
@@ -257,14 +285,14 @@ export function useMaintenance(): UseMaintenanceResult {
       setAssignees([]);
       warnings.push(
         getAccountsErrorMessage(
-          accountResult.reason,
+          failedAccountResult.reason,
           "Không thể tải danh sách người phụ trách; thao tác phân công tạm thời không khả dụng.",
         ),
       );
     }
 
     setLookupWarning(warnings.length > 0 ? warnings.join(" ") : null);
-  }, []);
+  }, [canReadAccounts]);
 
   useEffect(() => {
     const controller = new AbortController();

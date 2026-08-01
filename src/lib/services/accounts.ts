@@ -24,12 +24,17 @@ function requireData<T>(result: ApiResult<T>, fallbackMessage: string): T {
   return result.data;
 }
 
+function accountsPath(organizationId: string): string {
+  return `/api/v1/management/organizations/${encodeURIComponent(organizationId)}/accounts`;
+}
+
 export async function listManagementAccounts(
+  organizationId: string,
   query: ManagementAccountsQuery,
   signal?: AbortSignal
 ): Promise<PagedResult<InternalAccountResult>> {
   const response = await axiosClient.get<PagedResult<InternalAccountResult>>(
-    "/api/v1/management/accounts",
+    accountsPath(organizationId),
     {
       params: {
         search: query.searchTerm.trim() || undefined,
@@ -49,30 +54,35 @@ export async function listManagementAccounts(
 }
 
 export async function getAccountById(
+  organizationId: string,
   accountId: string,
   signal?: AbortSignal
 ): Promise<InternalAccountResult> {
   const response = await axiosClient.get<ApiResult<InternalAccountResult>>(
-    `/api/v1/management/accounts/${encodeURIComponent(accountId)}`,
+    `${accountsPath(organizationId)}/${encodeURIComponent(accountId)}`,
     { signal }
   );
 
   return requireData(response.data, "Không thể tải chi tiết tài khoản.");
 }
 
-export async function disableAccount(accountId: string): Promise<InternalAccountResult> {
+export async function disableAccount(
+  organizationId: string,
+  accountId: string
+): Promise<InternalAccountResult> {
   const response = await axiosClient.patch<ApiResult<InternalAccountResult>>(
-    `/api/v1/management/accounts/${encodeURIComponent(accountId)}/disable`
+    `${accountsPath(organizationId)}/${encodeURIComponent(accountId)}/disable`
   );
 
   return requireData(response.data, "Không thể vô hiệu hóa tài khoản.");
 }
 
 export async function createAccount(
+  organizationId: string,
   request: CreateInternalAccountRequest
 ): Promise<InternalAccountResult> {
   const response = await axiosClient.post<ApiResult<InternalAccountResult>>(
-    "/api/v1/management/accounts",
+    accountsPath(organizationId),
     request
   );
 
@@ -80,12 +90,13 @@ export async function createAccount(
 }
 
 export async function regenerateInvitation(
+  organizationId: string,
   accountId: string,
   sendEmail: boolean
 ): Promise<AccountInvitationResult> {
   const request: CreateAccountInvitationRequest = { sendEmail };
   const response = await axiosClient.post<ApiResult<AccountInvitationResult>>(
-    `/api/v1/management/accounts/${encodeURIComponent(accountId)}/invitation`,
+    `${accountsPath(organizationId)}/${encodeURIComponent(accountId)}/invitation`,
     request
   );
 
@@ -104,11 +115,12 @@ export async function acceptInvitation(
 }
 
 export async function resetAccountPassword(
+  organizationId: string,
   accountId: string,
   request: ResetPasswordRequest
 ): Promise<void> {
   const response = await axiosClient.put<ApiResult<void>>(
-    `/api/v1/management/accounts/${encodeURIComponent(accountId)}/password`,
+    `${accountsPath(organizationId)}/${encodeURIComponent(accountId)}/password`,
     request
   );
 
@@ -116,11 +128,12 @@ export async function resetAccountPassword(
 }
 
 export async function getEffectiveAccess(
+  organizationId: string,
   accountId: string,
   signal?: AbortSignal
 ): Promise<EffectiveAccessResult> {
   const response = await axiosClient.get<ApiResult<EffectiveAccessResult>>(
-    `/api/v1/management/accounts/${encodeURIComponent(accountId)}/effective-access`,
+    `${accountsPath(organizationId)}/${encodeURIComponent(accountId)}/effective-access`,
     { signal }
   );
 
@@ -128,11 +141,12 @@ export async function getEffectiveAccess(
 }
 
 export async function assignAccountRoles(
+  organizationId: string,
   accountId: string,
   request: AccountRolesAssignmentRequest
 ): Promise<InternalAccountResult> {
   const response = await axiosClient.put<ApiResult<InternalAccountResult>>(
-    `/api/v1/management/accounts/${encodeURIComponent(accountId)}/roles`,
+    `${accountsPath(organizationId)}/${encodeURIComponent(accountId)}/roles`,
     request
   );
 

@@ -24,6 +24,7 @@ export interface InternalAccountResult {
   status: ManagementAccountStatus;
   localLoginEnabled: boolean;
   googleLoginEnabled: boolean;
+  googleEmail?: string | null;
   invitation?: InternalAccountInvitationResult | null;
   roles: InternalAccountRoleResult[];
 }

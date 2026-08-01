@@ -8,6 +8,18 @@ import {
 } from "@/lib/services/maintenance";
 import type { MaintenanceTicketResult } from "@/types/maintenance";
 
+vi.mock("@/hooks/use-auth", () => ({
+  useAuth: () => ({
+    effectiveAccess: {
+      accountId: "system-admin",
+      isSystemAdmin: true,
+      roles: ["SystemAdmin"],
+      roleScopes: [],
+      effectiveScope: { organizationIds: [], storeIds: [], kioskIds: [] },
+    },
+  }),
+}));
+
 vi.mock("@/lib/services/accounts", () => ({
   getAccountsErrorMessage: vi.fn(
     (_error: unknown, fallback: string) => fallback,

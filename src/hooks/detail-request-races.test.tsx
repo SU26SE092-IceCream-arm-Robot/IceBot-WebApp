@@ -69,6 +69,7 @@ vi.mock("@/lib/services/transactions", () => ({
 
 const idA = "11111111-1111-1111-1111-111111111111";
 const idB = "22222222-2222-2222-2222-222222222222";
+const organizationId = "33333333-3333-3333-3333-333333333333";
 
 const emptyPagination = {
   page: 1,
@@ -126,7 +127,7 @@ function AlertsProbe() {
 }
 
 function AccountsProbe() {
-  const state = useAccounts();
+  const state = useAccounts(organizationId);
   return (
     <div>
       <span data-testid="account-detail">

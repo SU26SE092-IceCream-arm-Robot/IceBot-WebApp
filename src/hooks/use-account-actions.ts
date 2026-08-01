@@ -34,6 +34,7 @@ export interface UseAccountActionsResult {
 }
 
 export function useAccountActions(
+  organizationId: string | null,
   onSuccess?: (message: string, account?: InternalAccountResult) => void
 ): UseAccountActionsResult {
   const effectiveAccessAbortRef = useRef<AbortController | null>(null);
@@ -56,6 +57,11 @@ export function useAccountActions(
   const [resetPasswordErrorMessage, setResetPasswordErrorMessage] = useState<string | null>(null);
 
   const loadEffectiveAccess = useCallback(async (accountId: string) => {
+    if (!organizationId) {
+      setEffectiveAccessErrorMessage("Vui lòng chọn tổ chức trước khi xem quyền hạn.");
+      return;
+    }
+
     effectiveAccessAbortRef.current?.abort();
     const controller = new AbortController();
     effectiveAccessAbortRef.current = controller;
@@ -65,7 +71,11 @@ export function useAccountActions(
     setEffectiveAccess(null);
     setEffectiveAccessErrorMessage(null);
     try {
-      const result = await getEffectiveAccess(accountId, controller.signal);
+      const result = await getEffectiveAccess(
+        organizationId,
+        accountId,
+        controller.signal,
+      );
       if (
         controller.signal.aborted ||
         requestId !== effectiveAccessRequestIdRef.current
@@ -87,7 +97,7 @@ export function useAccountActions(
         setIsEffectiveAccessLoading(false);
       }
     }
-  }, []);
+  }, [organizationId]);
 
   const cancelEffectiveAccessLoad = useCallback(() => {
     effectiveAccessRequestIdRef.current += 1;
@@ -106,8 +116,26 @@ export function useAccountActions(
     [],
   );
 
+  useEffect(() => {
+    effectiveAccessRequestIdRef.current += 1;
+    effectiveAccessAbortRef.current?.abort();
+    effectiveAccessAbortRef.current = null;
+    const timeoutId = window.setTimeout(() => {
+      setEffectiveAccess(null);
+      setEffectiveAccessErrorMessage(null);
+      setIsEffectiveAccessLoading(false);
+      setIsEditRolesOpen(false);
+      setEditRolesErrorMessage(null);
+      setRoleScopeOptionsByRole({});
+      setRoleScopeErrorsByRole({});
+      setIsResetPasswordOpen(false);
+      setResetPasswordErrorMessage(null);
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
+  }, [organizationId]);
+
   const loadRoleScopeOptions = useCallback(async (roleCode: string) => {
-    if (!roleCode) {
+    if (!roleCode || !organizationId) {
       return null;
     }
 
@@ -115,8 +143,14 @@ export function useAccountActions(
     setRoleScopeErrorsByRole((current) => ({ ...current, [roleCode]: "" }));
     try {
       const result = await getRoleScopeOptions(roleCode);
-      setRoleScopeOptionsByRole((current) => ({ ...current, [roleCode]: result }));
-      return result;
+      const scopedResult = {
+        ...result,
+        organizations: result.organizations.filter(
+          (organization) => organization.id === organizationId,
+        ),
+      };
+      setRoleScopeOptionsByRole((current) => ({ ...current, [roleCode]: scopedResult }));
+      return scopedResult;
     } catch (error) {
       const message = error instanceof Error ? error.message : "Không thể tải phạm vi vai trò.";
       setRoleScopeErrorsByRole((current) => ({ ...current, [roleCode]: message }));
@@ -124,14 +158,19 @@ export function useAccountActions(
     } finally {
       setIsRoleScopeLoading(false);
     }
-  }, []);
+  }, [organizationId]);
 
   const submitEditRoles = useCallback(
     async (accountId: string, roles: AccountRoleScopeRequest[]) => {
+      if (!organizationId) {
+        setEditRolesErrorMessage("Vui lòng chọn tổ chức trước khi cập nhật vai trò.");
+        return false;
+      }
+
       setIsEditingRoles(true);
       setEditRolesErrorMessage(null);
       try {
-        const result = await assignAccountRoles(accountId, { roles });
+        const result = await assignAccountRoles(organizationId, accountId, { roles });
         setEffectiveAccess(null);
         setIsEditRolesOpen(false);
         onSuccess?.("Đã cập nhật vai trò thành công.", result);
@@ -143,15 +182,20 @@ export function useAccountActions(
         setIsEditingRoles(false);
       }
     },
-    [onSuccess]
+    [onSuccess, organizationId]
   );
 
   const submitResetPassword = useCallback(
     async (accountId: string, newPassword: string) => {
+      if (!organizationId) {
+        setResetPasswordErrorMessage("Vui lòng chọn tổ chức trước khi đặt lại mật khẩu.");
+        return false;
+      }
+
       setIsResettingPassword(true);
       setResetPasswordErrorMessage(null);
       try {
-        await resetAccountPassword(accountId, { newPassword });
+        await resetAccountPassword(organizationId, accountId, { newPassword });
         setIsResetPasswordOpen(false);
         onSuccess?.("Đã đặt lại mật khẩu thành công.");
         return true;
@@ -162,7 +206,7 @@ export function useAccountActions(
         setIsResettingPassword(false);
       }
     },
-    [onSuccess]
+    [onSuccess, organizationId]
   );
 
   return {

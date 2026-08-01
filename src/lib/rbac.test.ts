@@ -65,6 +65,21 @@ describe("catalog read permissions", () => {
   });
 });
 
+describe("organization-scoped account permissions", () => {
+  it("allows SystemAdmin and OrgAdmin to read and manage accounts", () => {
+    for (const role of ["SystemAdmin", "OrgAdmin"] as const) {
+      expect(hasPermission(accessFor(role), "accounts.read")).toBe(true);
+      expect(hasPermission(accessFor(role), "accounts.manage")).toBe(true);
+    }
+  });
+
+  it("does not expose account management to Manager", () => {
+    expect(hasPermission(accessFor("Manager"), "accounts.read")).toBe(false);
+    expect(hasPermission(accessFor("Manager"), "accounts.manage")).toBe(false);
+    expect(canAccessRoute(accessFor("Manager"), "/users")).toBe(false);
+  });
+});
+
 describe("SystemAdmin platform catalog permissions", () => {
   it.each([
     "product-categories.manage",

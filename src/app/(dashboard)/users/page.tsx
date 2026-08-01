@@ -4,6 +4,7 @@ import { useCallback, useEffect } from "react";
 
 import {
   AlertTriangle,
+  Building2,
   ChevronLeft,
   ChevronRight,
   ContactRound,
@@ -42,6 +43,7 @@ import {
 } from "@/components/ui/select";
 import { useAccounts } from "@/hooks/use-accounts";
 import { useAccountActions } from "@/hooks/use-account-actions";
+import { useAccountOrganizationScope } from "@/hooks/use-account-organization-scope";
 import { useAuth } from "@/hooks/use-auth";
 import { hasPermission } from "@/lib/rbac";
 import type { ManagementAccountStatusFilter } from "@/types/accounts";
@@ -127,6 +129,7 @@ function StatCard({
 
 export default function UsersPage() {
   const { currentUser, effectiveAccess } = useAuth();
+  const organizationScope = useAccountOrganizationScope();
   const {
     accounts,
     query,
@@ -181,7 +184,7 @@ export default function UsersPage() {
     confirmRegenerateInvitation,
     setInvitationResultOpen,
     clearSuccessMessage,
-  } = useAccounts();
+  } = useAccounts(organizationScope.selectedOrganizationId);
 
   const handleAccountActionSuccess = useCallback(
     (message: string, account?: { id: string }) => {
@@ -193,7 +196,10 @@ export default function UsersPage() {
     },
     [isDetailOpen, openAccountDetail, refresh],
   );
-  const accountActions = useAccountActions(handleAccountActionSuccess);
+  const accountActions = useAccountActions(
+    organizationScope.selectedOrganizationId,
+    handleAccountActionSuccess,
+  );
   const handleDetailOpenChange = useCallback(
     (open: boolean) => {
       setDetailOpen(open);
@@ -235,13 +241,60 @@ export default function UsersPage() {
             Làm mới
           </Button>
           {canManageAccounts ? (
-            <Button className="h-10" onClick={() => setCreateOpen(true)}>
+            <Button
+              className="h-10"
+              disabled={!organizationScope.selectedOrganizationId}
+              onClick={() => setCreateOpen(true)}
+            >
               <UserPlus className="size-4" />
               Tạo tài khoản
             </Button>
           ) : null}
         </div>
       </section>
+
+      <Card className="rounded-xl border border-border bg-card shadow-none">
+        <CardContent className="flex flex-col gap-4 p-5 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-start gap-3">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
+              <Building2 className="size-5" />
+            </span>
+            <div className="space-y-1">
+              <p className="font-medium text-foreground">Phạm vi tổ chức</p>
+              <p className="text-sm text-muted-foreground">
+                Danh sách và thao tác tài khoản chỉ áp dụng trong tổ chức được chọn.
+              </p>
+            </div>
+          </div>
+          <div className="w-full lg:max-w-md">
+            <Select
+              value={organizationScope.selectedOrganizationId ?? ""}
+              onValueChange={(value) => organizationScope.setSelectedOrganizationId(value || null)}
+              disabled={organizationScope.isLoading || organizationScope.organizations.length === 0}
+            >
+              <SelectTrigger className="w-full bg-card">
+                <SelectValue>
+                  {organizationScope.selectedOrganization
+                    ? `${organizationScope.selectedOrganization.name} — ${organizationScope.selectedOrganization.code}`
+                    : organizationScope.isLoading
+                      ? "Đang tải tổ chức..."
+                      : "Chọn tổ chức"}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {organizationScope.organizations.map((organization) => (
+                  <SelectItem key={organization.id} value={organization.id}>
+                    {organization.name} — {organization.code}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {organizationScope.errorMessage ? (
+              <p className="mt-2 text-sm text-destructive">{organizationScope.errorMessage}</p>
+            ) : null}
+          </div>
+        </CardContent>
+      </Card>
 
       <section className="grid gap-4 sm:grid-cols-3">
         <StatCard
@@ -336,9 +389,15 @@ export default function UsersPage() {
               <span className="flex size-12 items-center justify-center rounded-xl border border-border bg-muted/20 text-muted-foreground">
                 <UsersRound className="size-5" />
               </span>
-              <p className="text-sm font-medium text-foreground">Không có tài khoản phù hợp</p>
+              <p className="text-sm font-medium text-foreground">
+                {organizationScope.selectedOrganizationId
+                  ? "Không có tài khoản phù hợp"
+                  : "Chưa chọn tổ chức"}
+              </p>
               <p className="text-sm text-muted-foreground">
-                Thử thay đổi từ khóa hoặc bộ lọc trạng thái.
+                {organizationScope.selectedOrganizationId
+                  ? "Thử thay đổi từ khóa hoặc bộ lọc trạng thái."
+                  : "Chọn một tổ chức để xem và quản lý tài khoản thuộc phạm vi đó."}
               </p>
             </div>
           ) : (
