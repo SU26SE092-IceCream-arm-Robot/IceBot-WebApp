@@ -12,6 +12,7 @@ import {
   deployConfiguration,
   getConfigurationInventoryReadiness,
   getConfigurationReleaseAuthoringOptions,
+  getConfigurationRelease,
   forkProductionPackageInstallation,
   getPackageWorkspace,
   getProductionOperationsErrorMessage,
@@ -36,7 +37,7 @@ import {
 } from "@/lib/services/production-operations";
 import type {
   ConfigurationDeploymentResult,
-  ConfigurationReleaseResult,
+  ConfigurationReleaseSummaryResult,
   ConfigurationReleaseAuthoringOptions,
   ConfigurationReleaseRouteRequest,
   CreateRobotProgramRequest,
@@ -63,7 +64,7 @@ export function useProductionOperations(scope: ProductionOperationsScope) {
   const [programs, setPrograms] = useState<RobotProgramResult[]>([]);
   const [packages, setPackages] = useState<ProductionPackageResult[]>([]);
   const [installations, setInstallations] = useState<PackageInstallationResult[]>([]);
-  const [releases, setReleases] = useState<ConfigurationReleaseResult[]>([]);
+  const [releases, setReleases] = useState<ConfigurationReleaseSummaryResult[]>([]);
   const [releaseAuthoringOptions, setReleaseAuthoringOptions] = useState<ConfigurationReleaseAuthoringOptions | null>(null);
   const [deployments, setDeployments] = useState<ConfigurationDeploymentResult[]>([]);
   const [workspaces, setWorkspaces] = useState<Record<string, PackageWorkspaceResult>>({});
@@ -77,6 +78,7 @@ export function useProductionOperations(scope: ProductionOperationsScope) {
   const [deploymentPreview, setDeploymentPreview] = useState<DeploymentPreview | null>(null);
   const [inventoryReadiness, setInventoryReadiness] = useState<InventoryReadinessResult | null>(null);
   const mutationRef = useRef(false);
+  const releaseAuthoringRequestRef = useRef(0);
 
   const load = useCallback(async (signal?: AbortSignal) => {
     setIsLoading(true);
@@ -229,6 +231,19 @@ export function useProductionOperations(scope: ProductionOperationsScope) {
     }
   }, [scope.organizationId]);
 
+  const loadReleaseForAuthoring = useCallback(async (releaseId: string) => {
+    const requestId = ++releaseAuthoringRequestRef.current;
+    setMutationError(null);
+    try {
+      return await getConfigurationRelease(scope.organizationId, releaseId);
+    } catch (error) {
+      if (requestId === releaseAuthoringRequestRef.current) {
+        setMutationError(getProductionOperationsErrorMessage(error, "Không thể tải chi tiết bản phát hành cấu hình."));
+      }
+      return null;
+    }
+  }, [scope.organizationId]);
+
   return {
     programs,
     packages,
@@ -256,6 +271,7 @@ export function useProductionOperations(scope: ProductionOperationsScope) {
     },
     loadWorkspace,
     loadReleaseAuthoringOptions,
+    loadReleaseForAuthoring,
     createProgram: (request: CreateRobotProgramRequest) => runMutation(
       () => createRobotProgram(scope.organizationId, { ...request, storeId: scope.storeId, kioskId: scope.kioskId }),
       "Đã tạo bản nháp chương trình robot.",
@@ -272,8 +288,8 @@ export function useProductionOperations(scope: ProductionOperationsScope) {
       () => createConfigurationRelease(scope.organizationId),
       "Đã tạo bản nháp cấu hình.",
     ),
-    replaceReleaseRoutes: (releaseId: string, routes: ConfigurationReleaseRouteRequest[]) => runMutation(
-      () => replaceConfigurationReleaseRoutes(scope.organizationId, releaseId, routes),
+    replaceReleaseRoutes: (releaseId: string, expectedRevision: string, routes: ConfigurationReleaseRouteRequest[]) => runMutation(
+      () => replaceConfigurationReleaseRoutes(scope.organizationId, releaseId, expectedRevision, routes),
       "Đã cập nhật tuyến sản xuất cho bản nháp.",
     ),
     changeReleaseLifecycle: (releaseId: string, action: "publish" | "retire" | "discard") => runMutation(

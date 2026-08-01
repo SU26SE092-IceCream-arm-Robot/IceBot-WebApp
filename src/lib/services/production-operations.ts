@@ -8,6 +8,7 @@ import type {
   ConfigurationDeploymentResult,
   ConfigurationReleaseAuthoringOptions,
   ConfigurationReleaseResult,
+  ConfigurationReleaseSummaryResult,
   ConfigurationReleaseRouteRequest,
   ConfigurationReleasesPage,
   CreateRobotProgramRequest,
@@ -224,7 +225,7 @@ export async function changePackageUpgradeLifecycle(
 }
 
 export async function listConfigurationReleases(organizationId: string, signal?: AbortSignal) {
-  return collectPagedResults<ConfigurationReleaseResult>(async (pageNumber) => {
+  return collectPagedResults<ConfigurationReleaseSummaryResult>(async (pageNumber) => {
     const response = await axiosClient.get<ConfigurationReleasesPage>(
       `/api/v1/management/organizations/${encodeURIComponent(organizationId)}/configuration-releases`,
       { params: { pageNumber, pageSize: OPERATIONS_PAGE_SIZE }, signal },
@@ -262,11 +263,12 @@ export async function createConfigurationRelease(organizationId: string) {
 export async function replaceConfigurationReleaseRoutes(
   organizationId: string,
   releaseId: string,
+  expectedRevision: string,
   routes: ConfigurationReleaseRouteRequest[],
 ) {
   const response = await axiosClient.put<ApiResult<ConfigurationReleaseResult>>(
     `/api/v1/management/organizations/${encodeURIComponent(organizationId)}/configuration-releases/${encodeURIComponent(releaseId)}/routes`,
-    { routes },
+    { expectedRevision, routes },
   );
   return requireData(response.data, "Không thể cập nhật tuyến sản xuất.");
 }
@@ -350,6 +352,18 @@ export async function rollbackConfigurationDeployment(kioskId: string, deploymen
     { headers: { "Idempotency-Key": idempotencyKey("configuration-rollback") } },
   );
   return requireData(response.data, "Không thể rollback cấu hình.");
+}
+
+export async function getConfigurationRelease(
+  organizationId: string,
+  releaseId: string,
+  signal?: AbortSignal,
+) {
+  const response = await axiosClient.get<ApiResult<ConfigurationReleaseResult>>(
+    `/api/v1/management/organizations/${encodeURIComponent(organizationId)}/configuration-releases/${encodeURIComponent(releaseId)}`,
+    { signal },
+  );
+  return requireData(response.data, "Không thể tải chi tiết bản phát hành cấu hình.");
 }
 
 const authoringImportsPath = (organizationId: string) =>

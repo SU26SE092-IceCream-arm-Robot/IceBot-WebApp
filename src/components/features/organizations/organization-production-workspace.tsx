@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowLeft, Factory } from "lucide-react";
 
 import { RobotAuthoringImportsPanel } from "@/components/features/organizations/robot-authoring-imports-panel";
+import { OrganizationConfigurationReleasesPanel } from "@/components/features/organizations/organization-configuration-releases-panel";
 import { buttonVariants } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { hasScopedPermission } from "@/lib/rbac";
@@ -40,6 +41,10 @@ export function OrganizationProductionWorkspace({ organizationId }: Organization
         canUpload={canUpload}
         canManagePrograms={canManagePrograms}
         canManageReleases={canManageReleases}
+      />
+      <OrganizationConfigurationReleasesPanel
+        organizationId={organizationId}
+        canManage={canManageReleases}
       />
     </div>
   );

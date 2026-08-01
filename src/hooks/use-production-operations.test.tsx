@@ -26,6 +26,8 @@ vi.mock("@/lib/services/production-operations", () => ({
   getPackageWorkspace: vi.fn(),
   getProductionOperationsErrorMessage: vi.fn((_error: unknown, fallback: string) => fallback),
   installProductionPackage: vi.fn(),
+  getConfigurationRelease: vi.fn(),
+  getConfigurationReleaseAuthoringOptions: vi.fn(),
   listConfigurationDeployments: vi.fn(),
   listConfigurationReleases: vi.fn(),
   listPackageInstallations: vi.fn(),

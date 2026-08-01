@@ -9,6 +9,7 @@ import {
   changePackageUpgradeLifecycle,
   deployConfiguration,
   forkProductionPackageInstallation,
+  getConfigurationRelease,
   getConfigurationReleaseAuthoringOptions,
   getConfigurationInventoryReadiness,
   installProductionPackage,
@@ -258,7 +259,7 @@ describe("production operations management contracts", () => {
       recipeId: "recipe-1",
       routeCode: "ROUTE-1",
       priority: 1,
-      requiredCapabilitiesJson: null,
+      requiredCapabilities: [{ code: "DISPENSE", required: true }],
       supportedOptionCodes: [],
       robotBindings: [{
         robotProgramId: "program-1",
@@ -274,14 +275,19 @@ describe("production operations management contracts", () => {
     );
 
     await createConfigurationRelease("org-1");
-    await replaceConfigurationReleaseRoutes("org-1", "release-1", routes);
+    await replaceConfigurationReleaseRoutes(
+      "org-1",
+      "release-1",
+      "a".repeat(64),
+      routes,
+    );
 
     expect(axiosClient.post).toHaveBeenCalledWith(
       "/api/v1/management/organizations/org-1/configuration-releases",
     );
     expect(axiosClient.put).toHaveBeenCalledWith(
       "/api/v1/management/organizations/org-1/configuration-releases/release-1/routes",
-      { routes },
+      { expectedRevision: "a".repeat(64), routes },
     );
   });
 
@@ -313,6 +319,19 @@ describe("production operations management contracts", () => {
 
     expect(axiosClient.delete).toHaveBeenCalledWith(
       "/api/v1/management/organizations/org-1/configuration-releases/release-1",
+    );
+  });
+
+  it("loads full release detail before replace-all route authoring", async () => {
+    vi.mocked(axiosClient.get).mockResolvedValue(
+      response({ succeeded: true, statusCode: 200, data: release }),
+    );
+
+    await getConfigurationRelease("org-1", "release-1");
+
+    expect(axiosClient.get).toHaveBeenCalledWith(
+      "/api/v1/management/organizations/org-1/configuration-releases/release-1",
+      { signal: undefined },
     );
   });
 

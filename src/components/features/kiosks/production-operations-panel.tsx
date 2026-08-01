@@ -10,8 +10,13 @@ import {
   RotateCcw,
   Settings2,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 
+import { ConfigurationReleaseRoutesDialog } from "@/components/features/kiosks/configuration-release-routes-dialog";
+import {
+  createConfigurationReleaseRouteDrafts,
+  validateConfigurationReleaseRouteDrafts,
+} from "@/components/features/kiosks/configuration-release-routes";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -35,9 +40,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useProductionOperations } from "@/hooks/use-production-operations";
 import type {
   PackageInstallRequest,
-  ConfigurationReleaseAuthoringOptions,
   ConfigurationReleaseResult,
-  ConfigurationReleaseRouteRequest,
   ProductionPackageResult,
   RobotProgramResult,
 } from "@/types/production-operations";
@@ -206,96 +209,12 @@ function InstallDialog({
   );
 }
 
-function ReleaseRoutesDialog({
-  open,
-  release,
-  options,
-  isSubmitting,
-  errorMessage,
-  onOpenChange,
-  onLoadOptions,
-  onSubmit,
-}: {
-  open: boolean;
-  release: ConfigurationReleaseResult;
-  options: ConfigurationReleaseAuthoringOptions | null;
-  isSubmitting: boolean;
-  errorMessage?: string | null;
-  onOpenChange: (open: boolean) => void;
-  onLoadOptions: () => Promise<unknown>;
-  onSubmit: (routes: ConfigurationReleaseRouteRequest[]) => Promise<unknown>;
-}) {
-  const [recipeId, setRecipeId] = useState(release.routes[0]?.recipeId ?? "");
-  const [programId, setProgramId] = useState(release.routes[0]?.robotBindings[0]?.robotProgramId ?? "");
-  const [routeCode, setRouteCode] = useState(release.routes[0]?.routeCode ?? "");
-  const [capabilityCode, setCapabilityCode] = useState(release.routes[0]?.robotBindings[0]?.requiredWorkcellCapabilityCode ?? "WORKCELL");
-  const [validation, setValidation] = useState<string | null>(null);
-
-  const recipes = options?.recipes ?? [];
-  const programs = options?.robotPrograms ?? [];
-  const selectedRecipe = recipes.find((item) => item.id === recipeId);
-
-  const submit = async () => {
-    if (!recipeId || !programId || !routeCode.trim() || !capabilityCode.trim()) {
-      setValidation("Chọn recipe, chương trình robot và nhập mã tuyến cùng capability workcell.");
-      return;
-    }
-    if (routeCode.trim().length > 100 || capabilityCode.trim().length > 100) {
-      setValidation("Mã tuyến và capability workcell tối đa 100 ký tự.");
-      return;
-    }
-    const result = await onSubmit([{
-      recipeId,
-      routeCode: routeCode.trim(),
-      priority: 0,
-      requiredCapabilitiesJson: null,
-      supportedOptionCodes: [],
-      robotBindings: [{
-        robotProgramId: programId,
-        bindingOrder: 1,
-        requiredWorkcellCapabilityCode: capabilityCode.trim(),
-      }],
-    }]);
-    if (result) onOpenChange(false);
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
-        <DialogHeader>
-          <DialogTitle>Soạn tuyến sản xuất cho bản nháp #{release.releaseNumber}</DialogTitle>
-          <DialogDescription>
-            Chọn recipe và chương trình đã phát hành. Capability workcell là điều kiện kỹ thuật mà endpoint phải công bố; không nhập JSON hoặc credential tại đây.
-          </DialogDescription>
-        </DialogHeader>
-        {!options ? (
-          <div className="space-y-3 rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
-            <p>Tải recipe và chương trình khả dụng trước khi soạn tuyến.</p>
-            <Button variant="outline" onClick={() => void onLoadOptions()} disabled={isSubmitting}>Tải dữ liệu soạn thảo</Button>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <div className="space-y-1.5"><Label>Recipe</Label><Select value={recipeId} onValueChange={(value) => { setRecipeId(value ?? ""); if (!routeCode && value) setRouteCode(`ROUTE-${recipes.find((item) => item.id === value)?.productVariantCode ?? ""}`); }} disabled={isSubmitting}><SelectTrigger className="w-full"><SelectValue>{selectedRecipe ? `${selectedRecipe.productVariantName} - ${selectedRecipe.name} v${selectedRecipe.version}` : "Chọn recipe đã phát hành"}</SelectValue></SelectTrigger><SelectContent>{recipes.map((item) => <SelectItem key={item.id} value={item.id}>{item.productVariantName} - {item.name} v{item.version}</SelectItem>)}</SelectContent></Select></div>
-            <div className="space-y-1.5"><Label>Chương trình robot</Label><Select value={programId} onValueChange={(value) => setProgramId(value ?? "")} disabled={isSubmitting}><SelectTrigger className="w-full"><SelectValue>{programs.find((item) => item.id === programId) ? `${programs.find((item) => item.id === programId)?.name} - ${programs.find((item) => item.id === programId)?.code}` : "Chọn chương trình đã phát hành"}</SelectValue></SelectTrigger><SelectContent>{programs.map((item) => <SelectItem key={item.id} value={item.id}>{item.name} - {item.code}</SelectItem>)}</SelectContent></Select></div>
-            <div className="space-y-1.5"><Label htmlFor="release-route-code">Mã tuyến</Label><Input id="release-route-code" maxLength={100} value={routeCode} onChange={(event) => setRouteCode(event.target.value)} disabled={isSubmitting} /></div>
-            <div className="space-y-1.5"><Label htmlFor="release-workcell-code">Capability workcell</Label><Input id="release-workcell-code" maxLength={100} value={capabilityCode} onChange={(event) => setCapabilityCode(event.target.value)} disabled={isSubmitting} /></div>
-            <p className="text-xs text-muted-foreground">Tuyến này chưa khai báo option ảnh hưởng sản xuất. Thêm option chỉ qua authoring flow có hợp đồng option kỹ thuật đầy đủ.</p>
-          </div>
-        )}
-        {validation || errorMessage ? <p className="text-sm text-destructive" role="alert">{validation || errorMessage}</p> : null}
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>Hủy</Button>
-          <Button onClick={() => void submit()} disabled={!options || isSubmitting}>{isSubmitting ? "Đang lưu..." : "Lưu tuyến"}</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
 export function ProductionOperationsPanel(props: ProductionOperationsPanelProps) {
   const state = useProductionOperations({ organizationId: props.organizationId, storeId: props.storeId, kioskId: props.kioskId });
   const [programDialog, setProgramDialog] = useState<{ open: boolean; program?: RobotProgramResult | null }>({ open: false });
   const [releaseRoutesDialog, setReleaseRoutesDialog] = useState<ConfigurationReleaseResult | null>(null);
+  const [releasePublishDialog, setReleasePublishDialog] = useState<ConfigurationReleaseResult | null>(null);
+  const releaseEditorRequestRef = useRef(0);
   const [installOpen, setInstallOpen] = useState(false);
   const [selectedInstallationId, setSelectedInstallationId] = useState<string | null>(null);
   const [selectedReleaseId, setSelectedReleaseId] = useState<string>("");
@@ -310,6 +229,25 @@ export function ProductionOperationsPanel(props: ProductionOperationsPanelProps)
   const selectedRelease = state.releases.find((item) => item.id === selectedReleaseId);
   const eligibleEndpoint = state.deploymentPreview?.endpoints.find((item) => item.kioskExecutionEndpointId === selectedEndpointId);
   const upgradeChoices = useMemo(() => state.packages.flatMap((item) => item.versions.filter((version) => version.status === "Published" && version.id !== selectedInstallation?.packageVersionId).map((version) => ({ packageName: item.name, version }))), [selectedInstallation?.packageVersionId, state.packages]);
+
+  const openReleaseRoutesEditor = async (releaseId: string) => {
+    const requestId = ++releaseEditorRequestRef.current;
+    const [detail] = await Promise.all([
+      state.loadReleaseForAuthoring(releaseId),
+      state.loadReleaseAuthoringOptions(),
+    ]);
+    if (requestId === releaseEditorRequestRef.current && detail) {
+      setReleaseRoutesDialog(detail);
+    }
+  };
+
+  const openReleasePublishReview = async (releaseId: string) => {
+    const requestId = ++releaseEditorRequestRef.current;
+    const detail = await state.loadReleaseForAuthoring(releaseId);
+    if (requestId === releaseEditorRequestRef.current && detail) {
+      setReleasePublishDialog(detail);
+    }
+  };
 
   if (state.isLoading) return <div className="rounded-lg border p-5 text-sm text-muted-foreground">Đang tải vận hành cấu hình sản xuất...</div>;
 
@@ -352,7 +290,7 @@ export function ProductionOperationsPanel(props: ProductionOperationsPanelProps)
           <div><h4 className="font-medium">Phát hành và triển khai</h4><p className="text-xs text-muted-foreground">Bản phát hành đóng gói recipe, chương trình robot và capability trước khi triển khai tới kiosk.</p></div>
           <div className="space-y-3 rounded-lg border p-4">
             <div className="flex flex-wrap items-center justify-between gap-3"><div><h5 className="font-medium">Bản phát hành cấu hình</h5><p className="text-xs text-muted-foreground">Chỉ bản đã phát hành mới có thể được kiểm tra và triển khai.</p></div>{props.canManageReleases ? <Button size="sm" disabled={state.isMutating} onClick={() => void state.createRelease()}>Tạo bản nháp</Button> : null}</div>
-            {state.releases.length === 0 ? <EmptyState>Chưa có bản phát hành cấu hình trong tổ chức.</EmptyState> : <div className="divide-y rounded-lg border">{state.releases.map((release) => <div key={release.id} className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:justify-between"><div><div className="flex flex-wrap items-center gap-2"><span className="font-medium">Bản phát hành #{release.releaseNumber}</span><StatusBadge status={release.status} /></div><p className="mt-1 text-xs text-muted-foreground">{release.routeCount} tuyến · {release.releaseChecksum ? "Đã có checksum" : "Chưa đóng gói"}</p></div>{props.canManageReleases ? <div className="flex flex-wrap gap-2">{release.status === "Draft" ? <><Button size="sm" variant="outline" disabled={state.isMutating} onClick={() => { setReleaseRoutesDialog(release); void state.loadReleaseAuthoringOptions(); }}>Soạn tuyến</Button><Button size="sm" disabled={state.isMutating || release.routeCount === 0} onClick={() => { if (window.confirm("Phát hành bản cấu hình này? Bản đã phát hành sẽ không còn sửa tuyến trực tiếp.")) void state.changeReleaseLifecycle(release.id, "publish"); }}>Phát hành</Button><Button size="sm" variant="destructive" disabled={state.isMutating} onClick={() => { if (window.confirm("Xóa bản nháp cấu hình này?")) void state.changeReleaseLifecycle(release.id, "discard"); }}>Xóa nháp</Button></> : null}{release.status === "Published" ? <Button size="sm" variant="outline" disabled={state.isMutating} onClick={() => { if (window.confirm("Ngừng sử dụng bản phát hành này cho các lần triển khai mới?")) void state.changeReleaseLifecycle(release.id, "retire"); }}>Ngừng sử dụng</Button> : null}</div> : null}</div>)}</div>}
+            {state.releases.length === 0 ? <EmptyState>Chưa có bản phát hành cấu hình trong tổ chức.</EmptyState> : <div className="divide-y rounded-lg border">{state.releases.map((release) => <div key={release.id} className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:justify-between"><div><div className="flex flex-wrap items-center gap-2"><span className="font-medium">Bản phát hành #{release.releaseNumber}</span><StatusBadge status={release.status} /></div><p className="mt-1 text-xs text-muted-foreground">{release.routeCount} tuyến · {release.releaseChecksum ? "Đã có checksum" : "Chưa đóng gói"}</p></div>{props.canManageReleases ? <div className="flex flex-wrap gap-2">{release.status === "Draft" ? <><Button size="sm" variant="outline" disabled={state.isMutating} onClick={() => void openReleaseRoutesEditor(release.id)}>Soạn tuyến</Button><Button size="sm" disabled={state.isMutating || release.routeCount === 0} onClick={() => void openReleasePublishReview(release.id)}>Phát hành</Button><Button size="sm" variant="destructive" disabled={state.isMutating} onClick={() => { if (window.confirm("Xóa bản nháp cấu hình này?")) void state.changeReleaseLifecycle(release.id, "discard"); }}>Xóa nháp</Button></> : null}{release.status === "Published" ? <Button size="sm" variant="outline" disabled={state.isMutating} onClick={() => { if (window.confirm("Ngừng sử dụng bản phát hành này cho các lần triển khai mới?")) void state.changeReleaseLifecycle(release.id, "retire"); }}>Ngừng sử dụng</Button> : null}</div> : null}</div>)}</div>}
           </div>
           {props.canDeploy ? <div className="space-y-3 rounded-lg border p-4"><div className="flex flex-col gap-2 sm:flex-row"><Select value={selectedReleaseId} onValueChange={(value) => { setSelectedReleaseId(value ?? ""); setSelectedEndpointId(""); setAcknowledgeRisk(false); state.clearPreviews(); }}><SelectTrigger className="w-full"><SelectValue>{selectedRelease ? `Bản phát hành #${selectedRelease.releaseNumber} · ${statusLabels[selectedRelease.status] ?? selectedRelease.status}` : "Chọn bản phát hành"}</SelectValue></SelectTrigger><SelectContent>{state.releases.filter((release) => release.status === "Published").map((release) => <SelectItem key={release.id} value={release.id}>Bản phát hành #{release.releaseNumber} · {release.routeCount} tuyến</SelectItem>)}</SelectContent></Select><Button variant="outline" disabled={!selectedReleaseId || state.isMutating} onClick={() => void state.previewDeployment(selectedReleaseId)}>Kiểm tra triển khai</Button></div>
             {state.deploymentPreview ? <div className="space-y-3"><div className={`rounded-lg border p-3 ${state.inventoryReadiness?.isReady ? "border-success/30 bg-success/5" : "border-warning/30 bg-warning/5"}`}><p className="font-medium">Tồn kho: {state.inventoryReadiness?.isReady ? "Sẵn sàng" : "Chưa sẵn sàng"}</p><p className="text-xs text-muted-foreground">{readinessLabels[state.inventoryReadiness?.overallStatus ?? ""] ?? "Không thể xác định"}</p></div><div className="space-y-1.5"><Label>Điểm thực thi</Label><Select value={selectedEndpointId} onValueChange={(value) => setSelectedEndpointId(value ?? "")}><SelectTrigger className="w-full"><SelectValue>{eligibleEndpoint ? `${eligibleEndpoint.endpointCode} — ${profileLabels[eligibleEndpoint.executionProfile] ?? eligibleEndpoint.executionProfile}` : "Chọn điểm thực thi từ bản xem trước"}</SelectValue></SelectTrigger><SelectContent>{state.deploymentPreview.endpoints.map((endpoint) => <SelectItem key={endpoint.kioskExecutionEndpointId} value={endpoint.kioskExecutionEndpointId}>{endpoint.endpointCode} — {profileLabels[endpoint.executionProfile] ?? endpoint.executionProfile} — {endpoint.isEligible ? "Đủ điều kiện" : `${endpoint.blockers.length} điều kiện chưa đạt`}</SelectItem>)}</SelectContent></Select></div>{eligibleEndpoint ? <div className="rounded-lg border p-3 text-sm"><p>{eligibleEndpoint.artifactCount} tệp thực thi · {(eligibleEndpoint.artifactStorageBytes / 1024).toFixed(1)} KB</p>{eligibleEndpoint.blockers.map((blocker) => <p key={`${blocker.code}-${blocker.message}`} className="mt-1 text-destructive">{blocker.message}</p>)}</div> : null}<label className="flex items-start gap-2 text-sm"><input type="checkbox" className="mt-1" checked={acknowledgeRisk} onChange={(event) => setAcknowledgeRisk(event.target.checked)} /><span>Tôi đã xem bản kiểm tra và xác nhận các rủi ro còn lại.</span></label><Button disabled={!eligibleEndpoint?.isEligible || !acknowledgeRisk || state.isMutating} onClick={() => { if (state.deploymentPreview && eligibleEndpoint && window.confirm("Triển khai cấu hình đã chọn tới điểm thực thi này?")) void state.deploy(state.deploymentPreview, eligibleEndpoint.kioskExecutionEndpointId, true); }}><Rocket className="size-4" />Triển khai</Button></div> : null}
@@ -363,7 +301,8 @@ export function ProductionOperationsPanel(props: ProductionOperationsPanelProps)
 
       {programDialog.open ? <ProgramDialog open program={programDialog.program} isSubmitting={state.isMutating} errorMessage={state.mutationError} onOpenChange={(open) => setProgramDialog({ open })} onSubmit={(request) => programDialog.program ? state.updateProgram(programDialog.program.id, request) : state.createProgram(request)} /> : null}
       {installOpen ? <InstallDialog open packages={state.packages} isSubmitting={state.isMutating} preview={state.installationPreview} errorMessage={state.mutationError} storeId={props.storeId} kioskId={props.kioskId} onOpenChange={setInstallOpen} onPreview={state.previewInstall} onInstall={state.installPackage} /> : null}
-      {releaseRoutesDialog ? <ReleaseRoutesDialog open release={releaseRoutesDialog} options={state.releaseAuthoringOptions} isSubmitting={state.isMutating} errorMessage={state.mutationError} onOpenChange={(open) => { if (!open) setReleaseRoutesDialog(null); }} onLoadOptions={state.loadReleaseAuthoringOptions} onSubmit={(routes) => state.replaceReleaseRoutes(releaseRoutesDialog.id, routes)} /> : null}
+      {releaseRoutesDialog ? <ConfigurationReleaseRoutesDialog release={releaseRoutesDialog} options={state.releaseAuthoringOptions} isSubmitting={state.isMutating} errorMessage={state.mutationError} onOpenChange={(open) => { if (!open) { releaseEditorRequestRef.current += 1; setReleaseRoutesDialog(null); } }} onLoadOptions={state.loadReleaseAuthoringOptions} onSubmit={(routes) => state.replaceReleaseRoutes(releaseRoutesDialog.id, releaseRoutesDialog.revision, routes)} /> : null}
+      {releasePublishDialog ? <Dialog open onOpenChange={(open) => { if (!open && !state.isMutating) setReleasePublishDialog(null); }}><DialogContent className="sm:max-w-2xl"><DialogHeader><DialogTitle>Phát hành bản cấu hình #{releasePublishDialog.releaseNumber}</DialogTitle><DialogDescription>Sau khi phát hành, danh sách tuyến trở thành bất biến. Kiểm tra phạm vi trước khi xác nhận.</DialogDescription></DialogHeader><div className="grid gap-3 sm:grid-cols-3"><div className="rounded-md border p-3"><p className="text-xs text-muted-foreground">Tuyến sản xuất</p><p className="mt-1 text-xl font-semibold">{releasePublishDialog.routes.length}</p></div><div className="rounded-md border p-3"><p className="text-xs text-muted-foreground">Liên kết thực thi</p><p className="mt-1 text-xl font-semibold">{releasePublishDialog.routes.reduce((total, route) => total + route.robotBindings.length, 0)}</p></div><div className="rounded-md border p-3"><p className="text-xs text-muted-foreground">Tùy chọn được hỗ trợ</p><p className="mt-1 text-xl font-semibold">{releasePublishDialog.routes.reduce((total, route) => total + route.supportedOptionCodes.length, 0)}</p></div></div><div className="max-h-56 divide-y overflow-y-auto rounded-md border">{releasePublishDialog.routes.map((route) => <div key={route.id} className="p-3 text-sm"><div className="flex items-center justify-between gap-2"><span className="font-medium">{route.routeCode}</span><Badge variant="outline">Ưu tiên {route.priority}</Badge></div><p className="mt-1 text-xs text-muted-foreground">{route.productVariantCode ?? "Phiên bản chưa xác định"} · {route.recipeCode ?? "Recipe chưa xác định"} · {route.robotBindings.length} liên kết</p></div>)}</div>{validateConfigurationReleaseRouteDrafts(createConfigurationReleaseRouteDrafts(releasePublishDialog)) ? <p className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">{validateConfigurationReleaseRouteDrafts(createConfigurationReleaseRouteDrafts(releasePublishDialog))}</p> : null}<DialogFooter><Button variant="outline" disabled={state.isMutating} onClick={() => setReleasePublishDialog(null)}>Hủy</Button><Button disabled={state.isMutating || Boolean(validateConfigurationReleaseRouteDrafts(createConfigurationReleaseRouteDrafts(releasePublishDialog)))} onClick={async () => { const result = await state.changeReleaseLifecycle(releasePublishDialog.id, "publish"); if (result) setReleasePublishDialog(null); }}>{state.isMutating ? "Đang phát hành..." : "Xác nhận phát hành"}</Button></DialogFooter></DialogContent></Dialog> : null}
     </section>
   );
 }
