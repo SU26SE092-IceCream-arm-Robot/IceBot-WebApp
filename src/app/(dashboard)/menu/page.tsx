@@ -71,7 +71,7 @@ import {
   MenuFormDialog,
   MenuItemFormDialog,
 } from "@/components/features/menu/menu-crud-dialogs";
-import { hasPermission } from "@/lib/rbac";
+import { hasAnyRole, hasPermission } from "@/lib/rbac";
 import type {
   MenuStatus,
   MenuManagementPagination,
@@ -103,6 +103,16 @@ function CatalogLoadingTable() {
 }
 
 type StatTone = "primary" | "success";
+
+function organizationLabel(organization: {
+  name?: string;
+  code?: string;
+}) {
+  const name = organization.name?.trim();
+  const code = organization.code?.trim();
+  if (name && code) return `${name} — ${code}`;
+  return name || code || "Tổ chức trong phạm vi được giao";
+}
 
 const STAT_TONES: Record<StatTone, { iconClassName: string; valueClassName: string }> = {
   primary: {
@@ -459,6 +469,11 @@ export default function MenuPage() {
   } = useProductCrud({ organizationId: selectedOrganizationId, onChanged: handleProductChanged });
 
   const canManage = hasPermission(effectiveAccess, "products.manage");
+  const catalogDescription = effectiveAccess?.isSystemAdmin
+    ? "Quản lý danh mục sản phẩm và thực đơn trên toàn hệ thống."
+    : hasAnyRole(effectiveAccess, ["OrgAdmin"])
+      ? "Quản lý sản phẩm và thực đơn của tổ chức."
+      : "Vận hành sản phẩm và thực đơn trong phạm vi được giao.";
   const canManageProductCategories = hasPermission(
     effectiveAccess,
     "product-categories.manage",
@@ -497,7 +512,7 @@ export default function MenuPage() {
         <div className="max-w-2xl space-y-2">
           <h1 className="text-3xl font-semibold tracking-tight text-foreground">Thực đơn</h1>
           <p className="text-sm leading-6 text-muted-foreground">
-            Theo dõi danh mục sản phẩm và các thực đơn đang phân phối tới kênh bán của IceBot.
+            {catalogDescription}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -554,18 +569,14 @@ export default function MenuPage() {
             <SelectTrigger className="h-10 w-full lg:w-[360px]">
               <SelectValue placeholder={isOrganizationLoading ? "Đang tải tổ chức..." : "Chọn tổ chức"}>
                 {selectedOrganization
-                  ? selectedOrganization.name
-                    ? selectedOrganization.name
-                    : selectedOrganization.id
+                  ? organizationLabel(selectedOrganization)
                   : null}
               </SelectValue>
             </SelectTrigger>
             <SelectContent>
               {organizations.map((organization) => (
                 <SelectItem key={organization.id} value={organization.id}>
-                  {organization.name
-                    ? organization.name
-                    : organization.id}
+                  {organizationLabel(organization)}
                 </SelectItem>
               ))}
             </SelectContent>

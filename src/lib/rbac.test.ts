@@ -58,10 +58,10 @@ describe("payment method permissions", () => {
 });
 
 describe("catalog read permissions", () => {
-  it("does not expose ingredient catalog reads to OrgAdmin", () => {
+  it("allows catalog authoring roles to read ingredients", () => {
     expect(hasPermission(accessFor("SystemAdmin"), "ingredients.read")).toBe(true);
     expect(hasPermission(accessFor("Manager"), "ingredients.read")).toBe(true);
-    expect(hasPermission(accessFor("OrgAdmin"), "ingredients.read")).toBe(false);
+    expect(hasPermission(accessFor("OrgAdmin"), "ingredients.read")).toBe(true);
   });
 });
 
@@ -303,6 +303,9 @@ describe("OrgAdmin governance permission matrix", () => {
     "package.read",
     "package.install",
     "package.fork",
+    "products.manage",
+    "menus.manage",
+    "ingredients.read",
   ] as const)("allows OrgAdmin %s in its assigned organization", (permission) => {
     expect(hasPermission(orgAdminAccess(), permission)).toBe(true);
     expect(
@@ -311,8 +314,6 @@ describe("OrgAdmin governance permission matrix", () => {
   });
 
   it.each([
-    "products.manage",
-    "menus.manage",
     "payments.manage",
     "refunds.manage",
     "inventory.manage",

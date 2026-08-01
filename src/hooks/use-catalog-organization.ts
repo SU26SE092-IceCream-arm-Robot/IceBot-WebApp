@@ -8,6 +8,7 @@ import {
   getOrganizationsErrorMessage,
   listManagementOrganizations,
 } from "@/lib/services/organizations";
+import { getRoleScopeOptions } from "@/lib/services/roles";
 const ORGANIZATION_PAGE_SIZE = 100;
 
 export interface CatalogOrganizationOption {
@@ -37,6 +38,11 @@ export function useCatalogOrganization() {
   const isSystemAdmin = session?.account.roles.some(
     (role) => role.roleCode === "SystemAdmin",
   ) ?? false;
+  const scopedCatalogRole = session?.account.roles.some(
+    (role) => role.roleCode === "OrgAdmin",
+  )
+    ? "OrgAdmin"
+    : "Manager";
 
   const loadOrganizations = useCallback(
     async (signal?: AbortSignal) => {
@@ -46,7 +52,14 @@ export function useCatalogOrganization() {
 
       try {
         if (!isSystemAdmin) {
-          const scopedOptions = scopedOrganizationIds.map((id) => ({ id }));
+          const scopeOptions = await getRoleScopeOptions(scopedCatalogRole, signal);
+          const scopedOptions = scopeOptions.organizations
+            .filter((organization) => scopedOrganizationIds.includes(organization.id))
+            .map((organization) => ({
+              id: organization.id,
+              name: organization.name,
+              code: organization.code,
+            }));
           setOrganizations(scopedOptions);
           setSelectedOrganizationId((current) => {
             if (current && scopedOptions.some((organization) => organization.id === current)) {
@@ -96,7 +109,7 @@ export function useCatalogOrganization() {
         if (!signal?.aborted) setIsLoading(false);
       }
     },
-    [isSystemAdmin, scopedOrganizationIds, status],
+    [isSystemAdmin, scopedCatalogRole, scopedOrganizationIds, status],
   );
 
   useEffect(() => {
