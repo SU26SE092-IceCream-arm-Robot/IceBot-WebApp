@@ -191,9 +191,14 @@ describe("operations diagnostics permission", () => {
 
   it("does not treat notification governance as diagnostics access", () => {
     const orgAdmin = accessFor("OrgAdmin");
+    const manager = accessFor("Manager");
 
+    expect(hasPermission(orgAdmin, "notifications.view")).toBe(true);
     expect(hasPermission(orgAdmin, "notifications.manage")).toBe(true);
+    expect(hasPermission(manager, "notifications.view")).toBe(true);
+    expect(hasPermission(manager, "notifications.manage")).toBe(true);
     expect(hasPermission(orgAdmin, "operations.diagnostics")).toBe(false);
+    expect(hasPermission(manager, "operations.diagnostics")).toBe(false);
   });
 });
 

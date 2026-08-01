@@ -101,13 +101,13 @@ export function OrganizationDetailView({ organizationId }: OrganizationDetailVie
   const canEditOrganization = hasScopedPermission(effectiveAccess, "organizations.update", organizationScope);
   const canManageStores = hasScopedPermission(effectiveAccess, "stores.manage", organizationScope);
   const canReadAuthoringImports = hasScopedPermission(effectiveAccess, "program.read", organizationScope);
-  const canViewNotificationDiagnostics = hasScopedPermission(
+  const canViewNotificationDeliveries = hasScopedPermission(
     effectiveAccess,
-    "operations.diagnostics",
+    "notifications.view",
     organizationScope,
   );
   const canManageNotifications =
-    canViewNotificationDiagnostics &&
+    canViewNotificationDeliveries &&
     hasScopedPermission(effectiveAccess, "notifications.manage", organizationScope);
 
   const loadData = useCallback(async (
@@ -278,7 +278,7 @@ export function OrganizationDetailView({ organizationId }: OrganizationDetailVie
       />
       <NotificationDeliveriesPanel
         organizationId={organization.id}
-        canView={canViewNotificationDiagnostics}
+        canView={canViewNotificationDeliveries}
         canManage={canManageNotifications}
       />
 
