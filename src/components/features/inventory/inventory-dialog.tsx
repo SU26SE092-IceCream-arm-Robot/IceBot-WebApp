@@ -99,11 +99,23 @@ const ACTION_LABELS: Record<string, string> = {
 };
 
 function getEventKindLabel(kind: string): string {
+  if (kind === "SensorObservation") return "Cảm biến";
   return EVENT_KIND_LABELS[kind] ?? kind;
 }
 
 function getActionLabel(action: string): string {
+  if (action === "Low") return "Mức thấp";
+  if (action === "Medium") return "Mức trung bình";
+  if (action === "Full") return "Mức đầy";
+  if (action === "Applied") return "Đã áp dụng";
+  if (action === "OutOfOrder") return "Bằng chứng cũ, không ghi đè";
   return ACTION_LABELS[action] ?? action;
+}
+
+function getReasonLabel(reason: string): string {
+  if (reason === "Applied") return "Đã áp dụng vào tồn kho";
+  if (reason === "OutOfOrder") return "Bằng chứng cũ, không ghi đè";
+  return reason;
 }
 
 function formatActor(event: DispenserHistoryResult): string {
@@ -192,7 +204,7 @@ function DispenserHistoryItem({ event }: { event: DispenserHistoryResult }) {
           <DetailField label="Trạng thái hoạt động" value={activeTransition} />
         ) : null}
         {event.reason?.trim() ? (
-          <DetailField label="Lý do" value={event.reason} />
+          <DetailField label="Lý do" value={getReasonLabel(event.reason)} />
         ) : null}
         {event.relatedDispenserStateId ? (
           <DetailField

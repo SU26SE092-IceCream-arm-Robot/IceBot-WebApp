@@ -51,3 +51,4 @@ next-env.d.ts
 !README.md
 !**/README.md
 !AGENTS.md
+!LOCAL_RUN_COMMANDS.md
