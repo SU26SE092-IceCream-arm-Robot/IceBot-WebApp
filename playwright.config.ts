@@ -2,6 +2,14 @@ import { defineConfig, devices } from "@playwright/test";
 
 const baseURL = process.env.ICEBOT_E2E_BASE_URL ?? "http://localhost:3000";
 const useExternalWebServer = process.env.ICEBOT_E2E_EXTERNAL_WEB === "1";
+const hasOrgAdminCredentials = Boolean(
+  process.env.ICEBOT_E2E_ORG_ADMIN_USERNAME &&
+    process.env.ICEBOT_E2E_ORG_ADMIN_PASSWORD,
+);
+const hasManagerCredentials = Boolean(
+  process.env.ICEBOT_E2E_MANAGER_USERNAME &&
+    process.env.ICEBOT_E2E_MANAGER_PASSWORD,
+);
 
 export default defineConfig({
   testDir: "./e2e",
@@ -17,7 +25,6 @@ export default defineConfig({
   },
   use: {
     baseURL,
-    storageState: ".playwright/.auth/system-admin.json",
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
     video: "retain-on-failure",
@@ -32,18 +39,44 @@ export default defineConfig({
       },
   projects: [
     {
-      name: "desktop-chromium",
+      name: "system-admin-desktop",
       use: {
         ...devices["Desktop Chrome"],
         viewport: { width: 1440, height: 900 },
+        storageState: ".playwright/.auth/system-admin.json",
       },
     },
     {
-      name: "tablet-chromium",
+      name: "system-admin-tablet",
       use: {
         ...devices["Desktop Chrome"],
         viewport: { width: 1024, height: 768 },
+        storageState: ".playwright/.auth/system-admin.json",
       },
     },
+    ...(hasOrgAdminCredentials
+      ? [
+          {
+            name: "org-admin-desktop",
+            use: {
+              ...devices["Desktop Chrome"],
+              viewport: { width: 1440, height: 900 },
+              storageState: ".playwright/.auth/org-admin.json",
+            },
+          },
+        ]
+      : []),
+    ...(hasManagerCredentials
+      ? [
+          {
+            name: "manager-desktop",
+            use: {
+              ...devices["Desktop Chrome"],
+              viewport: { width: 1440, height: 900 },
+              storageState: ".playwright/.auth/manager.json",
+            },
+          },
+        ]
+      : []),
   ],
 });

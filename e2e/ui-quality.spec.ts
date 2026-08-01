@@ -1,7 +1,8 @@
 import { expect, test } from "@playwright/test";
 
 for (const theme of ["light", "dark"] as const) {
-  test(`Dashboard đọc được ở giao diện ${theme}`, async ({ page }) => {
+  test(`Dashboard đọc được ở giao diện ${theme}`, async ({ page }, testInfo) => {
+    test.skip(!testInfo.project.name.startsWith("system-admin"));
     await page.addInitScript((selectedTheme) => {
       window.localStorage.setItem("icebot-admin-theme", selectedTheme);
     }, theme);

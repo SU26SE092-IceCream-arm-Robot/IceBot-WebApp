@@ -7,11 +7,22 @@ chạy mutation tạo, sửa hoặc xóa dữ liệu.
 ## Chuẩn bị
 
 Backend phải hoạt động và frontend proxy phải trỏ đúng backend cần kiểm thử.
-Đặt thông tin tài khoản test trong terminal hiện tại:
+Đặt thông tin SystemAdmin trong terminal hiện tại. Cặp biến cũ vẫn được hỗ trợ,
+nhưng tên theo role được ưu tiên:
 
 ```powershell
-$env:ICEBOT_E2E_USERNAME = "<tai-khoan-test>"
-$env:ICEBOT_E2E_PASSWORD = "<mat-khau-test>"
+$env:ICEBOT_E2E_SYSTEM_ADMIN_USERNAME = "<tai-khoan-system-admin>"
+$env:ICEBOT_E2E_SYSTEM_ADMIN_PASSWORD = "<mat-khau-system-admin>"
+```
+
+Để chạy thêm matrix read-only cho OrgAdmin và Manager, đặt đủ từng cặp sau.
+Không đặt một nửa cặp vì global setup sẽ dừng để tránh dùng nhầm phiên:
+
+```powershell
+$env:ICEBOT_E2E_ORG_ADMIN_USERNAME = "<tai-khoan-org-admin>"
+$env:ICEBOT_E2E_ORG_ADMIN_PASSWORD = "<mat-khau-org-admin>"
+$env:ICEBOT_E2E_MANAGER_USERNAME = "<tai-khoan-manager>"
+$env:ICEBOT_E2E_MANAGER_PASSWORD = "<mat-khau-manager>"
 ```
 
 Lần đầu trên một máy, cài Chromium dành cho Playwright:
@@ -48,6 +59,7 @@ Artifact của test lỗi nằm trong `test-results/`; báo cáo HTML nằm tron
 ## Phạm vi
 
 - System Admin: đăng nhập và smoke toàn bộ module sidebar.
+- OrgAdmin/Manager: kiểm tra module được phép và module phải ẩn theo role.
 - Desktop `1440x900` và tablet `1024x768`.
 - Phát hiện page error, console error và management API trả `401`, `403` hoặc
   `5xx`.

@@ -59,6 +59,10 @@ function collectRuntimeFailures(page: Page, testInfo: TestInfo) {
 }
 
 test.describe("System Admin - smoke toàn bộ module", () => {
+  test.beforeEach(({}, testInfo) => {
+    test.skip(!testInfo.project.name.startsWith("system-admin"));
+  });
+
   for (const moduleRoute of MODULE_ROUTES) {
     test(`${moduleRoute.name} tải thành công`, async ({ page }, testInfo) => {
       const assertNoRuntimeFailures = collectRuntimeFailures(page, testInfo);
