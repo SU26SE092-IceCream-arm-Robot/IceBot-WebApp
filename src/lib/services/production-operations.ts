@@ -327,6 +327,7 @@ export async function deployConfiguration(
   preview: DeploymentPreview,
   endpointId: string,
   acknowledgeRemainingRisk: boolean,
+  reason: string,
 ) {
   const endpoint = preview.endpoints.find((item) => item.kioskExecutionEndpointId === endpointId);
   if (!endpoint) throw new Error("Điểm thực thi đã chọn không còn trong bản xem trước.");
@@ -337,6 +338,7 @@ export async function deployConfiguration(
       configurationReleaseId: preview.configurationReleaseId,
       kioskExecutionEndpointId: endpoint.kioskExecutionEndpointId,
       deploymentPreviewChecksum: endpoint.deploymentChecksum,
+      reason: reason.trim(),
       acknowledgeRemainingRisk,
       ...(profilePath === "low-cost" ? { selections: endpoint.selections } : {}),
     },
@@ -345,10 +347,18 @@ export async function deployConfiguration(
   return requireData(response.data, "Không thể triển khai cấu hình.");
 }
 
-export async function rollbackConfigurationDeployment(kioskId: string, deploymentId: string) {
+export async function rollbackConfigurationDeployment(
+  kioskId: string,
+  deploymentId: string,
+  expectedActiveDeploymentId: string,
+  reason: string,
+) {
   const response = await axiosClient.post<ApiResult<ConfigurationDeploymentResult>>(
     `/api/v1/management/kiosks/${encodeURIComponent(kioskId)}/configuration-deployments/${encodeURIComponent(deploymentId)}/rollback`,
-    undefined,
+    {
+      reason: reason.trim(),
+      expectedActiveDeploymentId,
+    },
     { headers: { "Idempotency-Key": idempotencyKey("configuration-rollback") } },
   );
   return requireData(response.data, "Không thể rollback cấu hình.");
@@ -381,6 +391,8 @@ export async function listRobotAuthoringImports(
       ...(query.kioskId ? { kioskId: query.kioskId } : {}),
       ...(query.deviceId ? { deviceId: query.deviceId } : {}),
       ...(query.search?.trim() ? { search: query.search.trim() } : {}),
+      ...(query.createdFrom ? { createdFrom: query.createdFrom } : {}),
+      ...(query.createdTo ? { createdTo: query.createdTo } : {}),
       pageNumber: query.pageNumber,
       pageSize: query.pageSize,
     },

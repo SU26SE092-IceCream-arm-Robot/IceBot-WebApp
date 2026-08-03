@@ -111,7 +111,6 @@ export interface ManagementRoleResult {
   name: string;
   description?: string | null;
   isSystemRole: boolean;
-  isAssignable: boolean;
   allowedScopeTypes: ManagementScopeType[];
   requiresScope: boolean;
 }
@@ -172,6 +171,7 @@ export interface EffectiveAccessResult {
   accountId: string;
   isSystemAdmin: boolean;
   roles: string[];
+  permissionCodes: string[];
   roleScopes: AccountRoleScopeAccessResult[];
   effectiveScope: EffectiveScopeResult;
 }

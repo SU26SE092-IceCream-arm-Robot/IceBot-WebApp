@@ -328,6 +328,7 @@ export interface ConfigurationDeploymentResult {
   kioskId: string;
   kioskExecutionEndpointId: string;
   endpointCode: string;
+  observedActiveDeploymentId?: string | null;
   configurationReleaseId: string;
   releaseNumber: number;
   releaseChecksum: string;
@@ -435,6 +436,7 @@ export interface RobotAuthoringImportListItem {
   publishedAt?: string | null;
   failureCode?: string | null;
   failureMessage?: string | null;
+  createdByDisplayName?: string | null;
 }
 
 export interface RobotAuthoringImportResult extends Omit<RobotAuthoringImportListItem, "validation"> {
@@ -509,6 +511,8 @@ export interface RobotAuthoringImportQuery {
   kioskId?: string;
   deviceId?: string;
   search?: string;
+  createdFrom?: string;
+  createdTo?: string;
   pageNumber: number;
   pageSize: number;
 }

@@ -451,9 +451,7 @@ export function useAccounts(organizationId: string | null): UseAccountsResult {
         return;
       }
 
-      const assignableRoles = roles.filter(
-        (role) => role.isAssignable && role.code !== "SystemAdmin",
-      );
+      const assignableRoles = roles.filter((role) => role.code !== "SystemAdmin");
       setManagementRoles(assignableRoles);
 
       const firstRole = assignableRoles[0];

@@ -52,6 +52,7 @@ const currentAccess: EffectiveAccessResult = {
   accountId: storedSession.account.id,
   isSystemAdmin: true,
   roles: ["SystemAdmin"],
+  permissionCodes: ["dashboard.view"],
   roleScopes: [],
   effectiveScope: {
     organizationIds: [],

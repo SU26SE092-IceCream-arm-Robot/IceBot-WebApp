@@ -116,7 +116,18 @@ export interface UseMenuManagementResult {
   confirmAction: () => Promise<void>;
 }
 
-export function useMenuManagement(organizationId: string | null): UseMenuManagementResult {
+interface UseMenuManagementOptions {
+  includeMenus?: boolean;
+  productSearchFollowsCatalog?: boolean;
+}
+
+export function useMenuManagement(
+  organizationId: string | null,
+  {
+    includeMenus = true,
+    productSearchFollowsCatalog = true,
+  }: UseMenuManagementOptions = {},
+): UseMenuManagementResult {
   const [searchTerm, setSearchTermValue] = useState("");
   const [productsPage, setProductsPage] = useState(1);
   const [menusPage, setMenusPage] = useState(1);
@@ -147,6 +158,7 @@ export function useMenuManagement(organizationId: string | null): UseMenuManagem
   const [menuActionId, setMenuActionId] = useState<string | null>(null);
   const [menuItemActionId, setMenuItemActionId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const productSearchTerm = productSearchFollowsCatalog ? searchTerm : "";
 
   const fetchProducts = useCallback(
     async (signal?: AbortSignal, propagateError = false) => {
@@ -154,7 +166,7 @@ export function useMenuManagement(organizationId: string | null): UseMenuManagem
 
       const query: MenuManagementQuery = {
         organizationId: organizationId ?? undefined,
-        searchTerm,
+        searchTerm: productSearchTerm,
         pageNumber: productsPage,
         pageSize: PAGE_SIZE,
       };
@@ -187,7 +199,7 @@ export function useMenuManagement(organizationId: string | null): UseMenuManagem
         }
       }
     },
-    [organizationId, productsPage, searchTerm]
+    [organizationId, productSearchTerm, productsPage]
   );
 
   const fetchMenus = useCallback(
@@ -239,17 +251,17 @@ export function useMenuManagement(organizationId: string | null): UseMenuManagem
     const abortController = new AbortController();
     const timeoutId = window.setTimeout(
       () => void fetchProducts(abortController.signal),
-      searchTerm ? 250 : 0
+      productSearchTerm ? 250 : 0
     );
 
     return () => {
       window.clearTimeout(timeoutId);
       abortController.abort();
     };
-  }, [fetchProducts, organizationId, searchTerm]);
+  }, [fetchProducts, organizationId, productSearchTerm]);
 
   useEffect(() => {
-    if (!organizationId) {
+    if (!organizationId || !includeMenus) {
       return;
     }
     const abortController = new AbortController();
@@ -262,7 +274,7 @@ export function useMenuManagement(organizationId: string | null): UseMenuManagem
       window.clearTimeout(timeoutId);
       abortController.abort();
     };
-  }, [fetchMenus, organizationId, searchTerm]);
+  }, [fetchMenus, includeMenus, organizationId, searchTerm]);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -648,7 +660,9 @@ export function useMenuManagement(organizationId: string | null): UseMenuManagem
       ? products
       : { data: [], pagination: emptyPagination(), isLoading: false, errorMessage: null },
     menus: organizationId
-      ? menus
+      ? includeMenus
+        ? menus
+        : { data: [], pagination: emptyPagination(), isLoading: false, errorMessage: null }
       : { data: [], pagination: emptyPagination(), isLoading: false, errorMessage: null },
     selectedProduct,
     selectedMenu,
@@ -675,7 +689,7 @@ export function useMenuManagement(organizationId: string | null): UseMenuManagem
       if (!organizationId) return;
       await Promise.all([
         fetchProducts(undefined, propagateError),
-        fetchMenus(undefined, propagateError),
+        ...(includeMenus ? [fetchMenus(undefined, propagateError)] : []),
       ]);
     },
     openProductDetail,

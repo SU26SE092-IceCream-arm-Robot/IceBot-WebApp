@@ -43,7 +43,7 @@ import {
 } from "@/components/ui/table";
 import { useAuth } from "@/hooks/use-auth";
 import { useTenantMutationRefresh } from "@/hooks/use-tenant-mutation-refresh";
-import { hasPermission } from "@/lib/rbac";
+import { hasScopedPermission } from "@/lib/rbac";
 import { getStoreOpeningState } from "@/lib/presenters/sales-admission";
 import {
   getKioskLifecycleLabel,
@@ -165,9 +165,6 @@ export function StoreDetailView({ storeId }: StoreDetailViewProps) {
   const [formOpen, setFormOpen] = useState(false);
   const [lifecycleOpen, setLifecycleOpen] = useState(false);
   const [salesActionOpen, setSalesActionOpen] = useState(false);
-
-  const canEdit = hasPermission(effectiveAccess, "stores.update");
-  const canManage = hasPermission(effectiveAccess, "stores.manage");
 
   const loadData = useCallback(async (
     signal?: AbortSignal,
@@ -323,6 +320,13 @@ export function StoreDetailView({ storeId }: StoreDetailViewProps) {
   if (!store) {
     return <TenantErrorState message={errorMessage ?? "Không tìm thấy cửa hàng."} onRetry={() => void loadData()} />;
   }
+
+  const scope = {
+    organizationId: store.organizationId,
+    storeId: store.id,
+  };
+  const canEdit = hasScopedPermission(effectiveAccess, "stores.update", scope);
+  const canManage = hasScopedPermission(effectiveAccess, "stores.manage", scope);
 
   const location = [store.address, store.city, store.province, store.country]
     .filter(Boolean)

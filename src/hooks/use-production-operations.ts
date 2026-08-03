@@ -328,12 +328,12 @@ export function useProductionOperations(scope: ProductionOperationsScope) {
       action === "cutover" ? "Đã chuyển sang phiên bản gói mới." : action === "abandon" ? "Đã hủy tiến trình nâng cấp." : "Đã yêu cầu rollback nâng cấp.",
     ),
     previewDeployment,
-    deploy: (preview: DeploymentPreview, endpointId: string, acknowledgeRisk: boolean) => runMutation(
-      () => deployConfiguration(scope.kioskId, preview, endpointId, acknowledgeRisk),
+    deploy: (preview: DeploymentPreview, endpointId: string, acknowledgeRisk: boolean, reason: string) => runMutation(
+      () => deployConfiguration(scope.kioskId, preview, endpointId, acknowledgeRisk, reason),
       "Đã gửi yêu cầu triển khai cấu hình.",
     ),
-    rollbackDeployment: (deploymentId: string) => runMutation(
-      () => rollbackConfigurationDeployment(scope.kioskId, deploymentId),
+    rollbackDeployment: (deploymentId: string, expectedActiveDeploymentId: string, reason: string) => runMutation(
+      () => rollbackConfigurationDeployment(scope.kioskId, deploymentId, expectedActiveDeploymentId, reason),
       "Đã gửi yêu cầu rollback cấu hình.",
     ),
   };

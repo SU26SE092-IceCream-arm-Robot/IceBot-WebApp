@@ -5,7 +5,7 @@ import type {
 } from "@/types";
 import type { EffectiveAccessResult } from "@/types/accounts";
 
-const PERMISSION_ROLES: Record<
+export const PERMISSION_ROLES: Record<
   DashboardPermission,
   readonly BackendRoleCode[]
 > = {
@@ -40,8 +40,7 @@ const PERMISSION_ROLES: Record<
   "reports.view": ["SystemAdmin", "OrgAdmin", "Manager"],
   "accounts.read": ["SystemAdmin", "OrgAdmin"],
   "accounts.manage": ["SystemAdmin", "OrgAdmin"],
-  "roles.view": ["SystemAdmin", "OrgAdmin", "Manager"],
-  "role-scope-options.view": ["SystemAdmin", "OrgAdmin", "Manager"],
+  "permission-matrix.view": ["SystemAdmin"],
   "tenant-tree.view": ["SystemAdmin", "OrgAdmin", "Manager", "Technician"],
   "maintenance.view": ["SystemAdmin", "OrgAdmin", "Manager", "Staff", "Technician"],
   "maintenance.create": ["SystemAdmin", "OrgAdmin", "Manager", "Staff", "Technician"],
@@ -80,10 +79,12 @@ export const ROUTE_PERMISSIONS: Record<
   "/kiosks": "kiosks.view",
   "/inventory": "inventory.view",
   "/transactions": "orders.view",
-  "/menu": "products.manage",
+  "/menu": "menus.manage",
+  "/products": "products.manage",
+  "/menus": "menus.manage",
   "/reports": "reports.view",
   "/users": "accounts.read",
-  "/roles": "roles.view",
+  "/roles": "permission-matrix.view",
   "/maintenance": "maintenance.view",
   "/alerts": "alerts.view",
   "/platform/exceptions": "sync-dead-letters.manage",
@@ -140,7 +141,10 @@ export function hasScopedPermission(
   permission: DashboardPermission,
   scope: { organizationId: string; storeId?: string | null; kioskId?: string | null },
 ): boolean {
-  return hasScopedRole(access, PERMISSION_ROLES[permission], scope);
+  return (
+    hasPermission(access, permission) &&
+    hasScopedRole(access, PERMISSION_ROLES[permission], scope)
+  );
 }
 
 export function hasPermission(
@@ -151,10 +155,7 @@ export function hasPermission(
     return false;
   }
 
-  const roles = effectiveRoles(access);
-  return PERMISSION_ROLES[permission].some((role) =>
-    roles.has(role.toLocaleLowerCase()),
-  );
+  return access.permissionCodes.includes(permission);
 }
 
 export const hasEffectivePermission = hasPermission;

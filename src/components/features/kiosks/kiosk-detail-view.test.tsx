@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
     accountId: "account-1",
     isSystemAdmin: true,
     roles: ["SystemAdmin"],
+    permissionCodes: ["devices.manage", "program.read", "release.read", "package.read"],
     roleScopes: [],
     effectiveScope: { organizationIds: [], storeIds: [], kioskIds: [] },
   } as EffectiveAccessResult,
@@ -86,6 +87,7 @@ describe("KioskDetailView tab persistence", () => {
       accountId: "account-1",
       isSystemAdmin: true,
       roles: ["SystemAdmin"],
+      permissionCodes: ["devices.manage", "program.read", "release.read", "package.read"],
       roleScopes: [],
       effectiveScope: { organizationIds: [], storeIds: [], kioskIds: [] },
     };
@@ -119,6 +121,7 @@ describe("KioskDetailView tab persistence", () => {
       accountId: "manager-1",
       isSystemAdmin: false,
       roles: ["Manager"],
+      permissionCodes: ["devices.manage", "program.read", "release.read", "package.read"],
       roleScopes: [
         {
           roleCode: "Manager",

@@ -3,10 +3,7 @@
 import axios from "axios";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { useAuth } from "@/hooks/use-auth";
 import { useMutationRefreshRecovery } from "@/hooks/use-mutation-refresh-recovery";
-import { hasPermission } from "@/lib/rbac";
-import { getAccountsErrorMessage, listManagementAccounts } from "@/lib/services/accounts";
 import {
   getKioskManagementErrorMessage,
   getManagementKiosks,
@@ -18,16 +15,17 @@ import {
   createManagementMaintenanceTicket,
   getMaintenanceErrorMessage,
   getManagementMaintenanceTicketById,
+  listMaintenanceTicketAssigneeOptions,
   listManagementMaintenanceTickets,
   resolveManagementMaintenanceTicket,
   startManagementMaintenanceTicket,
   updateManagementMaintenanceTicket,
 } from "@/lib/services/maintenance";
-import type { InternalAccountResult } from "@/types/accounts";
 import type { KioskResult } from "@/types/kiosk-management";
 import type {
   CreateMaintenanceTicketRequest,
   MaintenanceEditorMode,
+  MaintenanceAssigneeOptionResult,
   MaintenanceFilters,
   MaintenancePaginationMeta,
   MaintenancePriorityFilter,
@@ -71,7 +69,8 @@ export interface UseMaintenanceResult {
   filters: MaintenanceFilters;
   summary: MaintenanceSummary;
   kiosks: KioskResult[];
-  assignees: InternalAccountResult[];
+  assignees: MaintenanceAssigneeOptionResult[];
+  isAssigneesLoading: boolean;
   lookupWarning: string | null;
   selectedTicket: MaintenanceTicketResult | null;
   isDetailOpen: boolean;
@@ -140,10 +139,9 @@ function matchesSearch(
 }
 
 export function useMaintenance(): UseMaintenanceResult {
-  const { effectiveAccess } = useAuth();
-  const canReadAccounts = hasPermission(effectiveAccess, "accounts.read");
   const mutationInFlightRef = useRef(false);
   const selectedTicketIdRef = useRef<string | null>(null);
+  const assigneeRequestIdRef = useRef(0);
   const [filters, setFilters] = useState<MaintenanceFilters>(INITIAL_FILTERS);
   const [page, setPage] = useState(1);
   const [selectedTicket, setSelectedTicket] =
@@ -152,7 +150,8 @@ export function useMaintenance(): UseMaintenanceResult {
   const [isDetailLoading, setIsDetailLoading] = useState(false);
   const [detailErrorMessage, setDetailErrorMessage] = useState<string | null>(null);
   const [kiosks, setKiosks] = useState<KioskResult[]>([]);
-  const [assignees, setAssignees] = useState<InternalAccountResult[]>([]);
+  const [assignees, setAssignees] = useState<MaintenanceAssigneeOptionResult[]>([]);
+  const [isAssigneesLoading, setIsAssigneesLoading] = useState(false);
   const [lookupWarning, setLookupWarning] = useState<string | null>(null);
   const [editorMode, setEditorMode] = useState<MaintenanceEditorMode | null>(null);
   const [editorTicket, setEditorTicket] =
@@ -241,58 +240,8 @@ export function useMaintenance(): UseMaintenanceResult {
       );
     }
 
-    const organizationIds = Array.from(
-      new Set(availableKiosks.map((kiosk) => kiosk.organizationId)),
-    );
-    const accountResults = canReadAccounts
-      ? await Promise.allSettled(
-          organizationIds.map((organizationId) =>
-            listManagementAccounts(
-              organizationId,
-              { searchTerm: "", status: "Active", pageNumber: 1, pageSize: 100 },
-              signal,
-            ),
-          ),
-        )
-      : [];
-
-    if (signal?.aborted) {
-      return;
-    }
-
-    const failedAccountResult = accountResults.find((result) => result.status === "rejected");
-    if (!canReadAccounts) {
-      setAssignees([]);
-      warnings.push(
-        "Tài khoản hiện tại không có quyền xem danh sách người phụ trách.",
-      );
-    } else if (!failedAccountResult) {
-      const accountsById = new Map<string, InternalAccountResult>();
-      for (const result of accountResults) {
-        if (result.status !== "fulfilled") continue;
-        for (const account of result.value.data ?? []) {
-          accountsById.set(account.id, account);
-        }
-      }
-      setAssignees(
-        Array.from(accountsById.values()).filter((account) =>
-          account.roles.some((role) =>
-            ["Technician", "Manager", "OrgAdmin"].includes(role.roleCode),
-          ),
-        ),
-      );
-    } else {
-      setAssignees([]);
-      warnings.push(
-        getAccountsErrorMessage(
-          failedAccountResult.reason,
-          "Không thể tải danh sách người phụ trách; thao tác phân công tạm thời không khả dụng.",
-        ),
-      );
-    }
-
     setLookupWarning(warnings.length > 0 ? warnings.join(" ") : null);
-  }, [canReadAccounts]);
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -471,6 +420,45 @@ export function useMaintenance(): UseMaintenanceResult {
     [editorTicket, runMutation],
   );
 
+  const loadAssigneeOptions = useCallback(async (ticketId: string) => {
+    const requestId = ++assigneeRequestIdRef.current;
+    setAssignees([]);
+    setIsAssigneesLoading(true);
+    try {
+      const options = await listMaintenanceTicketAssigneeOptions(ticketId);
+      if (requestId !== assigneeRequestIdRef.current) return;
+      setAssignees(options);
+    } catch (error) {
+      if (requestId !== assigneeRequestIdRef.current) return;
+      setMutationErrorMessage(
+        getMaintenanceErrorMessage(
+          error,
+          "Không thể tải danh sách người có thể nhận yêu cầu bảo trì.",
+        ),
+      );
+    } finally {
+      if (requestId === assigneeRequestIdRef.current) {
+        setIsAssigneesLoading(false);
+      }
+    }
+  }, []);
+
+  const requestWorkflow = useCallback(
+    (ticket: MaintenanceTicketResult, action: MaintenanceWorkflowAction) => {
+      ++assigneeRequestIdRef.current;
+      setAssignees([]);
+      setIsAssigneesLoading(false);
+      setWorkflowTicket(ticket);
+      setWorkflowAction(action);
+      setMutationErrorMessage(null);
+      setIsWorkflowOpen(true);
+      if (action === "assign") {
+        void loadAssigneeOptions(ticket.id);
+      }
+    },
+    [loadAssigneeOptions],
+  );
+
   const submitWorkflow = useCallback(
     async (submission: MaintenanceWorkflowSubmission) => {
       if (!workflowTicket || !workflowAction) {
@@ -535,6 +523,9 @@ export function useMaintenance(): UseMaintenanceResult {
       } else {
         setIsWorkflowOpen(open);
         if (!open) {
+          ++assigneeRequestIdRef.current;
+          setAssignees([]);
+          setIsAssigneesLoading(false);
           setWorkflowAction(null);
           setWorkflowTicket(null);
         }
@@ -550,6 +541,7 @@ export function useMaintenance(): UseMaintenanceResult {
     summary,
     kiosks,
     assignees,
+    isAssigneesLoading,
     lookupWarning,
     selectedTicket,
     isDetailOpen,
@@ -607,12 +599,7 @@ export function useMaintenance(): UseMaintenanceResult {
     setEditorOpen: (open) => closeMutationDialog(open, "editor"),
     submitCreate,
     submitUpdate,
-    requestWorkflow: (ticket, action) => {
-      setWorkflowTicket(ticket);
-      setWorkflowAction(action);
-      setMutationErrorMessage(null);
-      setIsWorkflowOpen(true);
-    },
+    requestWorkflow,
     setWorkflowOpen: (open) => closeMutationDialog(open, "workflow"),
     submitWorkflow,
     clearSuccessMessage: () => setSuccessMessage(null),

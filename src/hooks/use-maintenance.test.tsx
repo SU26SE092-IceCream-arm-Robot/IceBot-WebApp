@@ -4,38 +4,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useMaintenance } from "@/hooks/use-maintenance";
 import {
   createManagementMaintenanceTicket,
+  listMaintenanceTicketAssigneeOptions,
   listManagementMaintenanceTickets,
 } from "@/lib/services/maintenance";
 import type { MaintenanceTicketResult } from "@/types/maintenance";
-
-vi.mock("@/hooks/use-auth", () => ({
-  useAuth: () => ({
-    effectiveAccess: {
-      accountId: "system-admin",
-      isSystemAdmin: true,
-      roles: ["SystemAdmin"],
-      roleScopes: [],
-      effectiveScope: { organizationIds: [], storeIds: [], kioskIds: [] },
-    },
-  }),
-}));
-
-vi.mock("@/lib/services/accounts", () => ({
-  getAccountsErrorMessage: vi.fn(
-    (_error: unknown, fallback: string) => fallback,
-  ),
-  listManagementAccounts: vi.fn().mockResolvedValue({
-    data: [],
-    pagination: {
-      page: 1,
-      pageSize: 100,
-      totalCount: 0,
-      totalPages: 0,
-      hasNext: false,
-      hasPrevious: false,
-    },
-  }),
-}));
 
 vi.mock("@/lib/services/kiosk-management", () => ({
   getKioskManagementErrorMessage: vi.fn(
@@ -53,6 +25,7 @@ vi.mock("@/lib/services/maintenance", () => ({
     (_error: unknown, fallback: string) => fallback,
   ),
   getManagementMaintenanceTicketById: vi.fn(),
+  listMaintenanceTicketAssigneeOptions: vi.fn(),
   listManagementMaintenanceTickets: vi.fn(),
   resolveManagementMaintenanceTicket: vi.fn(),
   startManagementMaintenanceTicket: vi.fn(),
@@ -98,6 +71,7 @@ describe("maintenance mutation recovery", () => {
       pagination,
     });
     vi.mocked(createManagementMaintenanceTicket).mockResolvedValue(ticket);
+    vi.mocked(listMaintenanceTicketAssigneeOptions).mockResolvedValue([]);
   });
 
   it("keeps mutation success when refresh fails and retries reads only", async () => {
@@ -172,5 +146,23 @@ describe("maintenance mutation recovery", () => {
     await act(async () => {
       await first;
     });
+  });
+
+  it("loads backend-authoritative assignee options only when assignment opens", async () => {
+    const option = {
+      accountId: "technician-1",
+      displayName: "Kỹ thuật viên A",
+      roleCodes: ["Technician"],
+    };
+    vi.mocked(listMaintenanceTicketAssigneeOptions).mockResolvedValue([option]);
+    const { result } = renderHook(() => useMaintenance());
+    await waitFor(() =>
+      expect(listManagementMaintenanceTickets).toHaveBeenCalledOnce(),
+    );
+
+    act(() => result.current.requestWorkflow(ticket, "assign"));
+
+    await waitFor(() => expect(result.current.assignees).toEqual([option]));
+    expect(listMaintenanceTicketAssigneeOptions).toHaveBeenCalledWith("ticket-1");
   });
 });

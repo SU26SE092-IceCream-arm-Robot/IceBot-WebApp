@@ -54,6 +54,12 @@ export interface AssignMaintenanceTicketRequest {
   assignedToAccountId: string;
 }
 
+export interface MaintenanceAssigneeOptionResult {
+  accountId: string;
+  displayName: string;
+  roleCodes: string[];
+}
+
 export interface ResolveMaintenanceTicketRequest {
   resolutionNotes: string;
 }

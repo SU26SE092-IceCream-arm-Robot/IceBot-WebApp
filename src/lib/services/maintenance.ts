@@ -7,6 +7,7 @@ import type {
   CancelMaintenanceTicketRequest,
   CreateMaintenanceTicketRequest,
   ManagementMaintenanceTicketsQuery,
+  MaintenanceAssigneeOptionResult,
   MaintenancePagedResult,
   MaintenanceTicketResult,
   ResolveMaintenanceTicketRequest,
@@ -91,6 +92,21 @@ export async function getManagementMaintenanceTicketById(
   );
 
   return requireData(response.data, "Không thể tải chi tiết yêu cầu bảo trì.");
+}
+
+export async function listMaintenanceTicketAssigneeOptions(
+  ticketId: string,
+  signal?: AbortSignal,
+): Promise<MaintenanceAssigneeOptionResult[]> {
+  const response = await axiosClient.get<ApiResult<MaintenanceAssigneeOptionResult[]>>(
+    `/api/v1/management/maintenance-tickets/${encodeURIComponent(ticketId)}/assignee-options`,
+    { signal },
+  );
+
+  return requireData(
+    response.data,
+    "Không thể tải danh sách người có thể nhận yêu cầu bảo trì.",
+  );
 }
 
 export async function createManagementMaintenanceTicket(

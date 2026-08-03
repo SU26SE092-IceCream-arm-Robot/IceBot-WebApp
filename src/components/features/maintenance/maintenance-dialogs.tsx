@@ -36,10 +36,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { InternalAccountResult } from "@/types/accounts";
 import type { KioskResult } from "@/types/kiosk-management";
 import type {
   CreateMaintenanceTicketRequest,
+  MaintenanceAssigneeOptionResult,
   MaintenanceEditorMode,
   MaintenanceOperationalImpact,
   MaintenancePriority,
@@ -121,19 +121,6 @@ export function getAvailableMaintenanceWorkflowActions(
     action === "start" || action === "resolve"
       ? canWork
       : canCoordinate,
-  );
-}
-
-export function isEligibleMaintenanceAssignee(
-  account: InternalAccountResult,
-  ticket: MaintenanceTicketResult,
-): boolean {
-  return account.roles.some(
-    (role) =>
-      ["Technician", "Manager", "OrgAdmin"].includes(role.roleCode) &&
-      (role.kioskId === ticket.kioskId ||
-        role.storeId === ticket.storeId ||
-        role.organizationId === ticket.organizationId),
   );
 }
 
@@ -566,7 +553,8 @@ export function MaintenanceEditorDialog({
 interface MaintenanceWorkflowDialogProps {
   action: MaintenanceWorkflowAction;
   ticket: MaintenanceTicketResult;
-  assignees: InternalAccountResult[];
+  assignees: MaintenanceAssigneeOptionResult[];
+  isAssigneesLoading: boolean;
   open: boolean;
   isSubmitting: boolean;
   errorMessage: string | null;
@@ -578,6 +566,7 @@ export function MaintenanceWorkflowDialog({
   action,
   ticket,
   assignees,
+  isAssigneesLoading,
   open,
   isSubmitting,
   errorMessage,
@@ -589,11 +578,8 @@ export function MaintenanceWorkflowDialog({
   const [validationMessage, setValidationMessage] = useState<string | null>(null);
   const config = WORKFLOW_BUTTONS[action];
   const Icon = config.icon;
-  const eligibleAssignees = assignees.filter((account) =>
-    isEligibleMaintenanceAssignee(account, ticket),
-  );
-  const selectedAssignee = eligibleAssignees.find(
-    (account) => account.id === accountId,
+  const selectedAssignee = assignees.find(
+    (account) => account.accountId === accountId,
   );
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -602,7 +588,7 @@ export function MaintenanceWorkflowDialog({
 
     if (
       action === "assign" &&
-      !eligibleAssignees.some((account) => account.id === accountId)
+      !assignees.some((account) => account.accountId === accountId)
     ) {
       setValidationMessage("Vui lòng chọn một người phụ trách phù hợp phạm vi.");
       return;
@@ -653,28 +639,30 @@ export function MaintenanceWorkflowDialog({
               <label className="text-sm font-medium">Người phụ trách <span className="text-destructive">*</span></label>
               <Select
                 value={accountId || null}
-                disabled={isSubmitting || eligibleAssignees.length === 0}
+                disabled={isSubmitting || isAssigneesLoading || assignees.length === 0}
                 onValueChange={(value) => setAccountId(value ?? "")}
               >
                 <SelectTrigger className="h-10 w-full">
                   <SelectValue placeholder="Chọn người phụ trách">
                     {selectedAssignee
-                      ? `${selectedAssignee.fullName?.trim() || selectedAssignee.userName} · ${selectedAssignee.email}`
-                      : "Chọn người phụ trách"}
+                      ? selectedAssignee.displayName
+                      : isAssigneesLoading ? "Đang tải người phụ trách..." : "Chọn người phụ trách"}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
-                  {eligibleAssignees.map((account) => (
-                    <SelectItem key={account.id} value={account.id}>
-                      {account.fullName?.trim() || account.userName} · {account.email}
+                  {assignees.map((account) => (
+                    <SelectItem key={account.accountId} value={account.accountId}>
+                      {account.displayName} · {account.roleCodes.join(", ")}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">
-                {eligibleAssignees.length > 0
-                  ? `${eligibleAssignees.length} tài khoản phù hợp phạm vi.`
-                  : "Không có tài khoản phù hợp; không thể phân công bằng ID thủ công."}
+                {isAssigneesLoading
+                  ? "Đang kiểm tra người có thể nhận ticket trong phạm vi hiện tại."
+                  : assignees.length > 0
+                    ? `${assignees.length} tài khoản được backend xác nhận phù hợp.`
+                    : "Không có tài khoản phù hợp; không thể phân công bằng ID thủ công."}
               </p>
             </div>
           ) : null}

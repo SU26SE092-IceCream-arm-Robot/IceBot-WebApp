@@ -151,6 +151,7 @@ export default function MaintenancePage() {
     summary,
     kiosks,
     assignees,
+    isAssigneesLoading,
     lookupWarning,
     selectedTicket,
     isDetailOpen,
@@ -510,6 +511,7 @@ export default function MaintenancePage() {
           action={workflowAction}
           ticket={workflowTicket}
           assignees={assignees}
+          isAssigneesLoading={isAssigneesLoading}
           open={isWorkflowOpen}
           isSubmitting={isMutationSubmitting}
           errorMessage={mutationErrorMessage}

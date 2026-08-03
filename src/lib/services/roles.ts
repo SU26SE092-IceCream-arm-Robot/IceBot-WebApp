@@ -20,7 +20,7 @@ export async function getManagementRoles(
   signal?: AbortSignal
 ): Promise<ManagementRoleResult[]> {
   const response = await axiosClient.get<ApiResult<ManagementRoleResult[]>>(
-    "/api/v1/management/roles",
+    "/api/v1/management/accounts/assignable-role-options",
     { signal }
   );
 

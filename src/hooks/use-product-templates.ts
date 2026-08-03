@@ -42,6 +42,9 @@ export function useProductTemplates({
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [cloningTemplateId, setCloningTemplateId] = useState<string | null>(null);
+  const [refreshWarningMessage, setRefreshWarningMessage] = useState<string | null>(null);
+  const [isRefreshRetrying, setIsRefreshRetrying] = useState(false);
+  const [clonedProduct, setClonedProduct] = useState<ProductResult | null>(null);
 
   const loadTemplates = useCallback(async (signal?: AbortSignal) => {
     setIsLoading(true);
@@ -80,8 +83,25 @@ export function useProductTemplates({
       setPage(1);
       setSearchTerm("");
       setErrorMessage(null);
+      setRefreshWarningMessage(null);
+      setClonedProduct(null);
     }
   }, []);
+
+  const refreshClonedProduct = useCallback(async (product: ProductResult) => {
+    try {
+      await onCloned(product);
+      setRefreshWarningMessage(null);
+      setClonedProduct(null);
+      return true;
+    } catch {
+      setRefreshWarningMessage(
+        "Sản phẩm đã được tạo nhưng danh sách mới chưa tải lại được. Bạn có thể thử tải lại mà không tạo thêm sản phẩm.",
+      );
+      setClonedProduct(product);
+      return false;
+    }
+  }, [onCloned]);
 
   const cloneTemplate = useCallback(async (template: ProductResult) => {
     if (!organizationId || cloningTemplateId) return;
@@ -91,15 +111,22 @@ export function useProductTemplates({
       const product = await cloneProductTemplate(organizationId, {
         templateProductId: template.id,
       });
-      await onCloned(product);
       toast.success(`Đã tạo sản phẩm ${product.displayName || product.name} từ mẫu.`);
       setOpenState(false);
+      await refreshClonedProduct(product);
     } catch (error) {
       setErrorMessage(getMenuManagementErrorMessage(error, "sản phẩm từ mẫu"));
     } finally {
       setCloningTemplateId(null);
     }
-  }, [cloningTemplateId, onCloned, organizationId]);
+  }, [cloningTemplateId, organizationId, refreshClonedProduct]);
+
+  const retryRefresh = useCallback(async () => {
+    if (!clonedProduct || isRefreshRetrying) return;
+    setIsRefreshRetrying(true);
+    await refreshClonedProduct(clonedProduct);
+    setIsRefreshRetrying(false);
+  }, [clonedProduct, isRefreshRetrying, refreshClonedProduct]);
 
   return {
     open,
@@ -114,9 +141,12 @@ export function useProductTemplates({
     isLoading,
     errorMessage,
     cloningTemplateId,
+    refreshWarningMessage,
+    isRefreshRetrying,
     previousPage: () => setPage((current) => Math.max(1, current - 1)),
     nextPage: () => setPage((current) => current + 1),
     retry: () => void loadTemplates(),
+    retryRefresh,
     cloneTemplate,
   };
 }

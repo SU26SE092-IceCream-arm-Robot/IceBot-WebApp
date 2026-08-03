@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import DashboardPage from "@/app/(dashboard)/dashboard/page";
+import { PERMISSION_ROLES } from "@/lib/rbac";
 
 const { authState } = vi.hoisted(() => ({
   authState: {
@@ -16,6 +17,11 @@ vi.mock("@/hooks/use-auth", () => ({
       accountId: "11111111-1111-1111-1111-111111111111",
       isSystemAdmin: authState.isSystemAdmin,
       roles: authState.roles,
+      permissionCodes: Object.entries(PERMISSION_ROLES)
+        .filter(([, roles]) =>
+          roles.some((role) => authState.roles.includes(role)),
+        )
+        .map(([permission]) => permission),
       roleScopes: [],
       effectiveScope: {
         organizationIds: [],

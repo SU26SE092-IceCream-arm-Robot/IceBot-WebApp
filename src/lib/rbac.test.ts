@@ -9,14 +9,24 @@ import {
   hasScopedPermission,
   hasEffectivePermission,
   hasPermission,
+  PERMISSION_ROLES,
 } from "@/lib/rbac";
+import type { DashboardPermission } from "@/types";
 import type { EffectiveAccessResult } from "@/types/accounts";
 
 function accessFor(...roles: string[]): EffectiveAccessResult {
+  const normalizedRoles = new Set(roles.map((role) => role.toLowerCase()));
+  const permissionCodes = Object.entries(PERMISSION_ROLES)
+    .filter(([, allowedRoles]) =>
+      allowedRoles.some((role) => normalizedRoles.has(role.toLowerCase())),
+    )
+    .map(([permission]) => permission as DashboardPermission);
+
   return {
     accountId: "11111111-1111-1111-1111-111111111111",
     isSystemAdmin: roles.includes("SystemAdmin"),
     roles,
+    permissionCodes,
     roleScopes: [],
     effectiveScope: {
       organizationIds: [],
@@ -27,6 +37,14 @@ function accessFor(...roles: string[]): EffectiveAccessResult {
 }
 
 describe("payment method permissions", () => {
+  it("uses backend permission codes instead of inferring permission from a role name", () => {
+    const access = accessFor("SystemAdmin");
+    access.permissionCodes = ["dashboard.view"];
+
+    expect(hasPermission(access, "dashboard.view")).toBe(true);
+    expect(hasPermission(access, "payment-methods.manage")).toBe(false);
+  });
+
   it("allows configured management roles to view the Payment Methods route", () => {
     expect(hasPermission(accessFor("SystemAdmin"), "payments.manage")).toBe(true);
     expect(hasPermission(accessFor("Manager"), "payments.manage")).toBe(true);
@@ -139,7 +157,21 @@ describe("exact backend roles and route visibility", () => {
   it("guards detail routes with the permission of their owning module", () => {
     expect(getDashboardRoutePath("/kiosks/kiosk-1")).toBe("/kiosks");
     expect(getDashboardRoutePath("/organizations/org-1")).toBe("/organizations");
+    expect(getDashboardRoutePath("/products")).toBe("/products");
+    expect(getDashboardRoutePath("/menus")).toBe("/menus");
     expect(getDashboardRoutePath("/outside-dashboard")).toBeNull();
+  });
+
+  it("guards products and menus with their own backend permissions", () => {
+    const productsOnly = accessFor("SystemAdmin");
+    productsOnly.permissionCodes = ["products.manage"];
+    const menusOnly = accessFor("SystemAdmin");
+    menusOnly.permissionCodes = ["menus.manage"];
+
+    expect(canAccessRoute(productsOnly, "/products")).toBe(true);
+    expect(canAccessRoute(productsOnly, "/menus")).toBe(false);
+    expect(canAccessRoute(menusOnly, "/products")).toBe(false);
+    expect(canAccessRoute(menusOnly, "/menus")).toBe(true);
   });
 
   it("routes Staff to permitted work instead of an inaccessible dashboard", () => {
@@ -164,11 +196,12 @@ describe("exact backend roles and route visibility", () => {
     expect(hasPermission(staffAccess, "maintenance.manage")).toBe(false);
   });
 
-  it("combines all role scopes instead of authorizing from one display role", () => {
+  it("combines backend permission codes with all role scopes", () => {
     const access = accessFor("Manager");
     access.roleScopes = [
       { roleCode: "OrgAdmin", organizationId: "org-1" },
     ];
+    access.permissionCodes.push("organizations.update");
 
     expect(hasPermission(access, "products.manage")).toBe(true);
     expect(hasPermission(access, "organizations.update")).toBe(true);

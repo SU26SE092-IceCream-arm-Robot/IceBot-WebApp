@@ -4,7 +4,7 @@ import Link from "next/link";
 import {
   Building2,
   CreditCard,
-  IceCream,
+  ShoppingBag,
   Microchip,
   Package,
   ShieldCheck,
@@ -41,8 +41,8 @@ const PLATFORM_SHORTCUTS: Array<{
     description: "Ma trận policy hiện hành",
   },
   {
-    href: "/menu",
-    icon: IceCream,
+    href: "/products",
+    icon: ShoppingBag,
     label: "Danh mục sản phẩm",
     description: "Sản phẩm, mẫu và danh mục dùng chung",
   },

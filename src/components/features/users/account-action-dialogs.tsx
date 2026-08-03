@@ -215,7 +215,7 @@ export function EditRolesDialog({
   };
 
   const addRole = () => {
-    const firstAssignableRole = managementRoles.find((role) => role.isAssignable);
+    const firstAssignableRole = managementRoles[0];
     const row = createRoleRow();
     setRoles((current) => [...current, row]);
     if (firstAssignableRole) {
@@ -327,11 +327,7 @@ export function EditRolesDialog({
                         <SelectTrigger><SelectValue placeholder="Chọn vai trò" /></SelectTrigger>
                         <SelectContent>
                           {managementRoles.map((item) => (
-                            <SelectItem
-                              key={item.code}
-                              value={item.code}
-                              disabled={!item.isAssignable && item.code !== role.roleCode}
-                            >
+                            <SelectItem key={item.code} value={item.code}>
                               {item.name}
                             </SelectItem>
                           ))}

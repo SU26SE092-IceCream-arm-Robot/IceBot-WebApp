@@ -40,7 +40,6 @@ export function RolesTable({ roles }: { roles: ManagementRoleResult[] }) {
             <TableHead>Mô tả</TableHead>
             <TableHead className="text-center w-[120px]">Phạm vi</TableHead>
             <TableHead className="text-center w-[120px]">Hệ thống</TableHead>
-            <TableHead className="text-center w-[120px]">Có thể gán</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -67,13 +66,6 @@ export function RolesTable({ roles }: { roles: ManagementRoleResult[] }) {
               <TableCell className="text-center">
                 {role.isSystemRole ? (
                   <Check className="mx-auto h-4 w-4 text-primary" />
-                ) : (
-                  <X className="mx-auto h-4 w-4 text-muted-foreground/30" />
-                )}
-              </TableCell>
-              <TableCell className="text-center">
-                {role.isAssignable ? (
-                  <Check className="mx-auto h-4 w-4 text-success" />
                 ) : (
                   <X className="mx-auto h-4 w-4 text-muted-foreground/30" />
                 )}

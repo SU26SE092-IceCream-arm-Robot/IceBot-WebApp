@@ -12,7 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useAuth } from "@/hooks/use-auth";
-import { hasScopedRole } from "@/lib/rbac";
+import { hasScopedPermission } from "@/lib/rbac";
 import type { AlertResult, AlertSeverity, AlertStatus } from "@/types/alerts";
 
 function formatDateTime(isoString: string) {
@@ -91,9 +91,9 @@ export function AlertDetailDrawer({
     alert.organizationId &&
       alert.storeId &&
       alert.kioskId &&
-      hasScopedRole(
+      hasScopedPermission(
         effectiveAccess,
-        ["SystemAdmin", "OrgAdmin", "Manager", "Technician"],
+        "alerts.manage",
         {
           organizationId: alert.organizationId,
           storeId: alert.storeId,

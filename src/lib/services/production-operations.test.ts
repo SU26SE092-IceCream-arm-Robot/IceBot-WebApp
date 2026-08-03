@@ -199,7 +199,13 @@ describe("production operations management contracts", () => {
       .mockResolvedValueOnce(response({ succeeded: true, statusCode: 200, data: deployment }));
 
     await previewConfigurationDeployment("kiosk-1", "release-1");
-    await deployConfiguration("kiosk-1", preview, "endpoint-1", true);
+    await deployConfiguration(
+      "kiosk-1",
+      preview,
+      "endpoint-1",
+      true,
+      "Triển khai cấu hình đã kiểm tra",
+    );
 
     expect(axiosClient.post).toHaveBeenNthCalledWith(1,
       "/api/v1/management/kiosks/kiosk-1/configuration-deployments/preview",
@@ -212,6 +218,7 @@ describe("production operations management contracts", () => {
         kioskExecutionEndpointId: "endpoint-1",
         deploymentPreviewChecksum: "b".repeat(64),
         acknowledgeRemainingRisk: true,
+        reason: "Triển khai cấu hình đã kiểm tra",
         selections: [{ executionRouteId: "route-1", robotProgramId: "program-1" }],
       },
       { headers: { "Idempotency-Key": "configuration-deploy-request-id" } },
@@ -232,10 +239,18 @@ describe("production operations management contracts", () => {
 
   it("rolls back only through the management deployment route with idempotency", async () => {
     vi.mocked(axiosClient.post).mockResolvedValue(response({ succeeded: true, statusCode: 200, data: deployment }));
-    await rollbackConfigurationDeployment("kiosk-1", "deployment-1");
+    await rollbackConfigurationDeployment(
+      "kiosk-1",
+      "deployment-1",
+      "deployment-active",
+      "Khôi phục cấu hình ổn định trước đó",
+    );
     expect(axiosClient.post).toHaveBeenCalledWith(
       "/api/v1/management/kiosks/kiosk-1/configuration-deployments/deployment-1/rollback",
-      undefined,
+      {
+        expectedActiveDeploymentId: "deployment-active",
+        reason: "Khôi phục cấu hình ổn định trước đó",
+      },
       { headers: { "Idempotency-Key": "configuration-rollback-request-id" } },
     );
   });
@@ -350,6 +365,8 @@ describe("production operations management contracts", () => {
       status: "Failed",
       kioskId: "kiosk-1",
       search: "  fairino  ",
+      createdFrom: "2026-08-01T00:00:00Z",
+      createdTo: "2026-08-03T23:59:59Z",
       pageNumber: 2,
       pageSize: 10,
     });
@@ -357,7 +374,15 @@ describe("production operations management contracts", () => {
     expect(axiosClient.get).toHaveBeenCalledWith(
       "/api/v1/management/organizations/org-1/robot-authoring-imports",
       {
-        params: { status: "Failed", kioskId: "kiosk-1", search: "fairino", pageNumber: 2, pageSize: 10 },
+        params: {
+          status: "Failed",
+          kioskId: "kiosk-1",
+          search: "fairino",
+          createdFrom: "2026-08-01T00:00:00Z",
+          createdTo: "2026-08-03T23:59:59Z",
+          pageNumber: 2,
+          pageSize: 10,
+        },
         signal: undefined,
       },
     );

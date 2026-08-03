@@ -9,6 +9,7 @@ import {
   ChevronLeft,
   ChevronRight,
   CreditCard,
+  BookOpen,
   Factory,
   IceCream,
   LayoutDashboard,
@@ -17,8 +18,10 @@ import {
   Package,
   ClipboardCheck,
   ShoppingCart,
+  ShoppingBag,
   ShieldAlert,
   Users,
+  UserRound,
   Wrench,
 } from "lucide-react";
 import Link from "next/link";
@@ -26,7 +29,7 @@ import { usePathname } from "next/navigation";
 
 import { ThemeModeToggle } from "@/components/shared/theme-mode-toggle";
 import { getVisibleRoutes } from "@/lib/rbac";
-import { getRoleLabel, isBackendRoleCode } from "@/lib/role-labels";
+import { getRoleLabel } from "@/lib/role-labels";
 import type { DashboardRoutePath, DashboardUser } from "@/types";
 import type { EffectiveAccessResult } from "@/types/accounts";
 
@@ -43,7 +46,8 @@ const SIDEBAR_ITEMS: readonly SidebarItem[] = [
   { href: "/kiosks", label: "Quản lý Kiosk", icon: Monitor },
   { href: "/inventory", label: "Tồn kho", icon: Package },
   { href: "/transactions", label: "Giao dịch", icon: ShoppingCart },
-  { href: "/menu", label: "Thực đơn", icon: IceCream },
+  { href: "/products", label: "Sản phẩm", icon: ShoppingBag },
+  { href: "/menus", label: "Thực đơn", icon: BookOpen },
   { href: "/reports", label: "Báo cáo", icon: BarChart3 },
   { href: "/organizations", label: "Tổ chức & cửa hàng", icon: Building2 },
   { href: "/users", label: "Tài khoản", icon: Users },
@@ -61,7 +65,7 @@ const SIDEBAR_GROUPS: readonly {
     label: "Vận hành",
     routes: ["/dashboard", "/readiness", "/production", "/alerts", "/kiosks", "/inventory", "/maintenance"],
   },
-  { label: "Kinh doanh", routes: ["/transactions", "/menu", "/reports"] },
+  { label: "Kinh doanh", routes: ["/transactions", "/products", "/menus", "/reports"] },
   { label: "Quản trị", routes: ["/organizations", "/users", "/settings/payment-methods", "/platform/exceptions"] },
 ];
 
@@ -84,30 +88,6 @@ export function AppSidebar({
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const accountAreaRef = useRef<HTMLDivElement>(null);
   const visibleRoutes = new Set(getVisibleRoutes(effectiveAccess));
-  const effectiveRoleLabels = Array.from(
-    new Set([
-      ...effectiveAccess.roles,
-      ...effectiveAccess.roleScopes.map((scope) => scope.roleCode),
-    ]),
-  )
-    .filter(isBackendRoleCode)
-    .map(getRoleLabel);
-  const scopeSummary = effectiveAccess.isSystemAdmin
-    ? "Phạm vi toàn hệ thống"
-    : [
-        effectiveAccess.effectiveScope.organizationIds.length
-          ? `${effectiveAccess.effectiveScope.organizationIds.length} tổ chức`
-          : null,
-        effectiveAccess.effectiveScope.storeIds.length
-          ? `${effectiveAccess.effectiveScope.storeIds.length} cửa hàng`
-          : null,
-        effectiveAccess.effectiveScope.kioskIds.length
-          ? `${effectiveAccess.effectiveScope.kioskIds.length} kiosk`
-          : null,
-      ]
-        .filter(Boolean)
-        .join(" · ") || "Chưa có phạm vi được giao";
-
   const visibleItems = SIDEBAR_ITEMS.filter((item) => visibleRoutes.has(item.href));
   const visibleItemsByRoute = new Map(visibleItems.map((item) => [item.href, item]));
   const groupedItems = SIDEBAR_GROUPS.map((group) => ({
@@ -227,21 +207,26 @@ export function AppSidebar({
                 : "right-2 bottom-full mb-2 left-2"
             }`}
           >
-            <div className="space-y-1 px-2 py-2">
+            <div className="px-2 py-2">
               <p className="truncate text-sm font-semibold text-foreground">
                 {currentUser.name}
               </p>
               <p className="truncate text-xs text-muted-foreground">
                 {currentUser.email}
               </p>
-              <p className="text-xs font-medium text-primary">
+              <p className="mt-1 text-xs font-medium text-primary">
                 {getRoleLabel(currentUser.primaryRole)}
               </p>
-              <p className="text-xs text-muted-foreground">
-                {effectiveRoleLabels.join(" · ")}
-              </p>
-              <p className="text-xs text-muted-foreground">{scopeSummary}</p>
             </div>
+            <Link
+              href="/profile"
+              onClick={() => setAccountMenuOpen(false)}
+              className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <UserRound className="size-4 text-muted-foreground" />
+              Thông tin cá nhân
+            </Link>
+            <div className="my-1 h-px bg-border" />
             <div className="px-2 pb-2">
               <p className="mb-1.5 text-[11px] font-medium text-muted-foreground">
                 Giao diện
