@@ -61,6 +61,7 @@ export function useRobotAuthoringImports(organizationId: string) {
   const [isLoadingSelection, setIsLoadingSelection] = useState(false);
   const [isMutating, setIsMutating] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [refreshWarning, setRefreshWarning] = useState<string | null>(null);
   const [selectionWarning, setSelectionWarning] = useState<string | null>(null);
   const mutationRef = useRef(false);
   const listRequestRef = useRef(0);
@@ -69,6 +70,7 @@ export function useRobotAuthoringImports(organizationId: string) {
   const loadList = useCallback(async (
     nextQuery = query,
     signal?: AbortSignal,
+    preserveCurrentData = false,
   ) => {
     const requestId = ++listRequestRef.current;
     setIsLoading(true);
@@ -81,9 +83,11 @@ export function useRobotAuthoringImports(organizationId: string) {
       return true;
     } catch (error) {
       if (signal?.aborted || axios.isCancel(error) || requestId !== listRequestRef.current) return false;
-      setItems([]);
-      setPagination(INITIAL_PAGINATION);
-      setErrorMessage(getProductionOperationsErrorMessage(error, "Không thể tải các gói cấu hình đã nhập."));
+      if (!preserveCurrentData) {
+        setItems([]);
+        setPagination(INITIAL_PAGINATION);
+        setErrorMessage(getProductionOperationsErrorMessage(error, "Không thể tải các gói cấu hình đã nhập."));
+      }
       return false;
     } finally {
       if (!signal?.aborted && requestId === listRequestRef.current) setIsLoading(false);
@@ -132,6 +136,7 @@ export function useRobotAuthoringImports(organizationId: string) {
   const refresh = useCallback(async () => {
     const loaded = await loadList(query);
     if (selectedImportId) await loadSelected(selectedImportId);
+    if (loaded) setRefreshWarning(null);
     return loaded;
   }, [loadList, loadSelected, query, selectedImportId]);
 
@@ -149,10 +154,14 @@ export function useRobotAuthoringImports(organizationId: string) {
       const result = await mutation();
       onSuccess?.(result);
       toast.success(successMessage);
-      const listLoaded = await loadList(query);
+      const listLoaded = await loadList(query, undefined, true);
       if (selectedImportId) await loadSelected(selectedImportId);
       if (!listLoaded) {
-        toast.warning("Thao tác đã thành công nhưng danh sách mới chưa tải lại được. Hãy dùng nút Làm mới.");
+        const warning = "Thao tác đã thành công nhưng danh sách mới chưa tải lại được.";
+        setRefreshWarning(warning);
+        toast.warning(`${warning} Hãy dùng nút Làm mới.`);
+      } else {
+        setRefreshWarning(null);
       }
       return result;
     } catch (error) {
@@ -216,6 +225,7 @@ export function useRobotAuthoringImports(organizationId: string) {
     isLoadingSelection,
     isMutating,
     errorMessage,
+    refreshWarning,
     selectionWarning,
     setStatus,
     setSearch,

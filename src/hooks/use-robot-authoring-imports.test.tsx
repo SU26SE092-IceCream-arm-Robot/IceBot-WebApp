@@ -7,6 +7,7 @@ import {
   getRobotAuthoringImport,
   getRobotAuthoringWorkspace,
   listRobotAuthoringImports,
+  uploadRobotAuthoringImport,
   validateRobotAuthoringImport,
 } from "@/lib/services/production-operations";
 
@@ -87,7 +88,8 @@ describe("useRobotAuthoringImports", () => {
     vi.mocked(validateRobotAuthoringImport).mockResolvedValue({ id: "import-1" } as never);
     vi.mocked(listRobotAuthoringImports)
       .mockResolvedValueOnce(page([]))
-      .mockRejectedValueOnce(new Error("refresh failed"));
+      .mockRejectedValueOnce(new Error("refresh failed"))
+      .mockResolvedValueOnce(page([]));
     const { result } = renderHook(() => useRobotAuthoringImports("org-1"));
     await waitFor(() => expect(result.current.isLoading).toBe(false));
     await act(async () => { await result.current.selectImport("import-1"); });
@@ -97,5 +99,29 @@ describe("useRobotAuthoringImports", () => {
     expect(validateRobotAuthoringImport).toHaveBeenCalledOnce();
     expect(toast.success).toHaveBeenCalledWith("Đã kiểm tra gói cấu hình.");
     expect(toast.warning).toHaveBeenCalledWith("Thao tác đã thành công nhưng danh sách mới chưa tải lại được. Hãy dùng nút Làm mới.");
+    expect(result.current.refreshWarning).toBe("Thao tác đã thành công nhưng danh sách mới chưa tải lại được.");
+
+    await act(async () => { await result.current.refresh(); });
+
+    expect(validateRobotAuthoringImport).toHaveBeenCalledOnce();
+    expect(listRobotAuthoringImports).toHaveBeenCalledTimes(3);
+    expect(result.current.refreshWarning).toBeNull();
+  });
+
+  it("prevents duplicate bundle uploads while the first mutation is still pending", async () => {
+    const pendingUpload = deferred<never>();
+    vi.mocked(uploadRobotAuthoringImport).mockReturnValue(pendingUpload.promise);
+    const { result } = renderHook(() => useRobotAuthoringImports("org-1"));
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    const file = new File(["bundle"], "fairino.zip", { type: "application/zip" });
+
+    act(() => {
+      void result.current.upload({ bundle: file });
+      void result.current.upload({ bundle: file });
+    });
+
+    expect(uploadRobotAuthoringImport).toHaveBeenCalledOnce();
+    pendingUpload.resolve({ id: "import-1" } as never);
+    await act(async () => { await pendingUpload.promise; });
   });
 });
