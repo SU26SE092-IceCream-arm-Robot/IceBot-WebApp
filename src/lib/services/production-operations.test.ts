@@ -13,6 +13,7 @@ import {
   getConfigurationReleaseAuthoringOptions,
   getConfigurationInventoryReadiness,
   installProductionPackage,
+  importRawLuaRobotProgramArtifacts,
   listRobotAuthoringImports,
   listPackageInstallations,
   previewConfigurationDeployment,
@@ -20,6 +21,7 @@ import {
   publishConfigurationRelease,
   recoverPackageInstallation,
   replaceConfigurationReleaseRoutes,
+  replaceRobotProgramArtifacts,
   retireConfigurationRelease,
   rollbackConfigurationDeployment,
   startPackageUpgrade,
@@ -38,6 +40,7 @@ import type {
   PackageInstallationsPage,
   PackageUpgradePreviewResult,
   PackageUpgradeResult,
+  RobotProgramResult,
 } from "@/types/production-operations";
 
 vi.mock("@/lib/axios-client", () => ({
@@ -405,6 +408,44 @@ describe("production operations management contracts", () => {
     const formData = vi.mocked(axiosClient.post).mock.calls[0]?.[1] as FormData;
     expect(formData.get("bundle")).toBe(bundle);
     expect(formData.get("kioskId")).toBe("kiosk-1");
+  });
+
+  it("imports a raw Lua ZIP only through the selected draft program route", async () => {
+    vi.mocked(axiosClient.post).mockResolvedValue(
+      response({ succeeded: true, statusCode: 201, data: { upload: { totalCount: 1 }, appendedArtifactIds: [] } }),
+    );
+    const archive = new File(["zip"], "legacy-lua.zip", { type: "application/zip" });
+
+    await importRawLuaRobotProgramArtifacts("org-1", "program-1", {
+      files: [archive],
+      runtimeTargetCode: "FAIRINO-LUA",
+      machineModelCode: "FR5",
+    });
+
+    expect(axiosClient.post).toHaveBeenCalledWith(
+      "/api/v1/management/organizations/org-1/robot-programs/program-1/raw-lua-artifacts",
+      expect.any(FormData),
+    );
+    const formData = vi.mocked(axiosClient.post).mock.calls[0]?.[1] as FormData;
+    expect(formData.get("archive")).toBe(archive);
+    expect(formData.get("runtimeTargetCode")).toBe("FAIRINO-LUA");
+    expect(formData.get("machineModelCode")).toBe("FR5");
+  });
+
+  it("persists a complete ordered artifact list for a draft program", async () => {
+    vi.mocked(axiosClient.put).mockResolvedValue(
+      response({ succeeded: true, statusCode: 200, data: { id: "program-1", artifacts: [], lastModifiedAt: "2026-08-04T00:00:00Z" } as RobotProgramResult }),
+    );
+
+    await replaceRobotProgramArtifacts("org-1", "program-1", {
+      expectedLastModifiedAt: "2026-08-04T00:00:00Z",
+      artifacts: [{ robotArtifactId: "artifact-2", runOrder: 1 }, { robotArtifactId: "artifact-1", runOrder: 2 }],
+    });
+
+    expect(axiosClient.put).toHaveBeenCalledWith(
+      "/api/v1/management/organizations/org-1/robot-programs/program-1/artifacts",
+      { expectedLastModifiedAt: "2026-08-04T00:00:00Z", artifacts: [{ robotArtifactId: "artifact-2", runOrder: 1 }, { robotArtifactId: "artifact-1", runOrder: 2 }] },
+    );
   });
 
   it("uses the import lifecycle and release-draft contracts without direct robot calls", async () => {

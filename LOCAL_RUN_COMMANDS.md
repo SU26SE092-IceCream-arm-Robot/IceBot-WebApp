@@ -65,7 +65,29 @@ Swagger:   http://localhost:51967/swagger
 Health:    http://localhost:51967/health/ready
 ```
 
-## 5. Verification
+## 5. Run Fairino Studio
+
+In a third PowerShell terminal:
+
+```powershell
+cd D:\SE\Projects\IceCream_arm_Robot\Fairino-Studio
+npm ci
+npm run dev
+```
+
+Use the desktop application's Export menu:
+
+- `Export IceBot Authoring Bundle`: export the complete robot program package.
+  Use this when the program is ready to be imported into IceBot with its
+  execution information and configuration metadata.
+- `Export Steps ZIP (Opaque technical Lua)`: export only the Lua files for
+  individual robot steps. Use this for legacy files, testing, or when the
+  execution information will be completed later in IceBot.
+
+Use `npm ci` only after a fresh clone or when `node_modules` is absent. For a
+normal subsequent run, execute only `npm run dev`.
+
+## 6. Verification
 
 ```powershell
 npm run lint
@@ -79,7 +101,7 @@ Production preview after a successful build:
 npm run start
 ```
 
-## 6. Local Bootstrap Account
+## 7. Local Bootstrap Account
 
 The local SystemAdmin account is defined by Backend user secrets, not this
 repository. Inspect it only on the local development machine:

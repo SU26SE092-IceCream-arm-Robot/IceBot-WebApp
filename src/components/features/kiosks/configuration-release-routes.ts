@@ -3,8 +3,7 @@ import type {
   ConfigurationReleaseRouteRequest,
 } from "@/types/production-operations";
 
-export interface ConfigurationReleaseRouteDraft
-  extends ConfigurationReleaseRouteRequest {
+export interface ConfigurationReleaseRouteDraft extends ConfigurationReleaseRouteRequest {
   clientKey: string;
 }
 
@@ -16,16 +15,19 @@ export function createConfigurationReleaseRouteDrafts(
     recipeId: route.recipeId,
     routeCode: route.routeCode,
     priority: route.priority,
-    requiredCapabilities: route.requiredCapabilities.map((item) => ({ ...item })),
+    requiredCapabilities: route.requiredCapabilities.map((item) => ({
+      ...item,
+    })),
     supportedOptionCodes: [...route.supportedOptionCodes],
     robotBindings: route.robotBindings
       .slice()
       .sort((left, right) => left.bindingOrder - right.bindingOrder)
       .map((binding) => ({
+        productionProgramBindingId:
+          binding.productionProgramBindingId ?? undefined,
         robotProgramId: binding.robotProgramId,
         bindingOrder: binding.bindingOrder,
-        requiredWorkcellCapabilityCode:
-          binding.requiredWorkcellCapabilityCode,
+        requiredWorkcellCapabilityCode: binding.requiredWorkcellCapabilityCode,
       })),
   }));
 }
@@ -43,6 +45,7 @@ export function toConfigurationReleaseRouteRequests(
     })),
     supportedOptionCodes: [...new Set(route.supportedOptionCodes)],
     robotBindings: route.robotBindings.map((binding, index) => ({
+      productionProgramBindingId: binding.productionProgramBindingId,
       robotProgramId: binding.robotProgramId,
       bindingOrder: index + 1,
       requiredWorkcellCapabilityCode:
@@ -54,7 +57,8 @@ export function toConfigurationReleaseRouteRequests(
 export function validateConfigurationReleaseRouteDrafts(
   drafts: ConfigurationReleaseRouteDraft[],
 ): string | null {
-  if (drafts.length === 0) return "Bản nháp phải có ít nhất một tuyến sản xuất.";
+  if (drafts.length === 0)
+    return "Bản nháp phải có ít nhất một tuyến sản xuất.";
 
   const routeCodes = new Set<string>();
   for (const [routeIndex, route] of drafts.entries()) {
@@ -65,7 +69,8 @@ export function validateConfigurationReleaseRouteDrafts(
       return `Mã tuyến ${position} phải có từ 1 đến 100 ký tự.`;
     }
     const normalizedCode = routeCode.toUpperCase();
-    if (routeCodes.has(normalizedCode)) return `Mã tuyến "${routeCode}" đang bị trùng.`;
+    if (routeCodes.has(normalizedCode))
+      return `Mã tuyến "${routeCode}" đang bị trùng.`;
     routeCodes.add(normalizedCode);
     if (!Number.isInteger(route.priority) || route.priority < 0) {
       return `Độ ưu tiên của tuyến ${position} phải là số nguyên không âm.`;
@@ -75,7 +80,19 @@ export function validateConfigurationReleaseRouteDrafts(
     }
     const programIds = new Set<string>();
     for (const binding of route.robotBindings) {
-      if (!binding.robotProgramId) return `Tuyến ${position} chưa chọn đủ chương trình robot.`;
+      if (binding.productionProgramBindingId) {
+        if (programIds.has(binding.productionProgramBindingId)) {
+          return `Route ${position} uses the same production binding more than once.`;
+        }
+        programIds.add(binding.productionProgramBindingId);
+        const capability = binding.requiredWorkcellCapabilityCode.trim();
+        if (!capability || capability.length > 100) {
+          return `Route ${position} has an invalid workcell capability.`;
+        }
+        continue;
+      }
+      if (!binding.robotProgramId)
+        return `Tuyến ${position} chưa chọn đủ chương trình robot.`;
       if (programIds.has(binding.robotProgramId)) {
         return `Tuyến ${position} đang dùng trùng một chương trình robot.`;
       }

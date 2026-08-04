@@ -8,6 +8,7 @@ import {
   getConfigurationRelease,
   getConfigurationReleaseAuthoringOptions,
   listConfigurationReleases,
+  listProductionProgramBindings,
 } from "@/lib/services/production-operations";
 import type { ConfigurationReleaseResult } from "@/types/production-operations";
 
@@ -24,6 +25,7 @@ vi.mock("@/lib/services/production-operations", () => ({
     (_error: unknown, fallback: string) => fallback,
   ),
   listConfigurationReleases: vi.fn(),
+  listProductionProgramBindings: vi.fn(),
   publishConfigurationRelease: vi.fn(),
   replaceConfigurationReleaseRoutes: vi.fn(),
   retireConfigurationRelease: vi.fn(),
@@ -41,12 +43,13 @@ const release = {
   id: "release-1",
   revision: "a".repeat(64),
   routes: [],
-} as ConfigurationReleaseResult;
+} as unknown as ConfigurationReleaseResult;
 
 describe("useConfigurationReleases", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(listConfigurationReleases).mockResolvedValue([]);
+    vi.mocked(listProductionProgramBindings).mockResolvedValue([]);
   });
 
   it("loads release detail and authoritative authoring options together", async () => {
@@ -67,7 +70,10 @@ describe("useConfigurationReleases", () => {
 
     expect(detail).toBe(release);
     expect(getConfigurationRelease).toHaveBeenCalledWith("org-1", "release-1");
-    expect(getConfigurationReleaseAuthoringOptions).toHaveBeenCalledWith("org-1");
+    expect(getConfigurationReleaseAuthoringOptions).toHaveBeenCalledWith(
+      "org-1",
+    );
+    expect(listProductionProgramBindings).toHaveBeenCalledWith("org-1");
   });
 
   it("keeps mutation success separate from a failed list refresh", async () => {

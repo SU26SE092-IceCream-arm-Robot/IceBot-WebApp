@@ -21,6 +21,7 @@ const release = {
       robotBindings: [
         {
           id: "binding-a",
+          productionProgramBindingId: "production-binding-a",
           robotProgramId: "program-a",
           bindingOrder: 2,
           requiredWorkcellCapabilityCode: "ARM",
@@ -60,15 +61,20 @@ describe("configuration release route drafts", () => {
     });
     expect(requests[1]).toMatchObject({ routeCode: "ROUTE-B" });
     expect(requests[0].robotBindings[0].bindingOrder).toBe(1);
+    expect(requests[0].robotBindings[0].productionProgramBindingId).toBe(
+      "production-binding-a",
+    );
   });
 
   it("rejects duplicate routes and duplicate programs before submit", () => {
     const drafts = createConfigurationReleaseRouteDrafts(release);
     drafts[1].routeCode = "route-a";
-    expect(validateConfigurationReleaseRouteDrafts(drafts)).toContain("bị trùng");
+    expect(validateConfigurationReleaseRouteDrafts(drafts)).toContain(
+      "bị trùng",
+    );
 
     drafts[1].routeCode = "ROUTE-B";
-    drafts[0].robotBindings.push({ ...drafts[0].robotBindings[0] });
+    drafts[1].robotBindings.push({ ...drafts[1].robotBindings[0] });
     expect(validateConfigurationReleaseRouteDrafts(drafts)).toContain(
       "dùng trùng",
     );
