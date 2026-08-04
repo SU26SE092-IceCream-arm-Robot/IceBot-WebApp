@@ -5,6 +5,7 @@ import type { ApiResult } from "@/types";
 import type {
   ConfigurationDeploymentsPage,
   ConfigurationDeploymentRollbackResult,
+  ConfigurationDeploymentArtifactResult,
   ConfigurationDeploymentResult,
   ConfigurationReleaseAuthoringOptions,
   ConfigurationReleaseResult,
@@ -33,7 +34,11 @@ import type {
   RobotAuthoringWorkspaceResult,
   UploadRobotAuthoringImportRequest,
   CreateRobotAuthoringReleaseDraftRequest,
+  RawLuaRobotProgramArtifactImportResult,
+  ReplaceRobotProgramArtifactsRequest,
   UpdateRobotProgramRequest,
+  CreateProductionProgramBindingRequest,
+  ProductionProgramBindingResult,
 } from "@/types/production-operations";
 
 function requireData<T>(result: ApiResult<T>, fallbackMessage: string): T {
@@ -50,7 +55,9 @@ function idempotencyKey(prefix: string) {
 const OPERATIONS_PAGE_SIZE = 100;
 
 async function collectPagedResults<T>(
-  fetchPage: (pageNumber: number) => Promise<{ data?: T[] | null; pagination: { hasNext: boolean } }>,
+  fetchPage: (
+    pageNumber: number,
+  ) => Promise<{ data?: T[] | null; pagination: { hasNext: boolean } }>,
 ) {
   const items: T[] = [];
   let pageNumber = 1;
@@ -63,18 +70,27 @@ async function collectPagedResults<T>(
   }
 }
 
-export async function listRobotPrograms(organizationId: string, signal?: AbortSignal) {
+export async function listRobotPrograms(
+  organizationId: string,
+  signal?: AbortSignal,
+) {
   return collectPagedResults<RobotProgramResult>(async (pageNumber) => {
     const response = await axiosClient.get<RobotProgramsPage>(
       `/api/v1/management/organizations/${encodeURIComponent(organizationId)}/robot-programs`,
       { params: { pageNumber, pageSize: OPERATIONS_PAGE_SIZE }, signal },
     );
-    if (!response.data.succeeded) throw new Error(response.data.message || "Không thể tải chương trình robot.");
+    if (!response.data.succeeded)
+      throw new Error(
+        response.data.message || "Không thể tải chương trình robot.",
+      );
     return response.data;
   });
 }
 
-export async function createRobotProgram(organizationId: string, request: CreateRobotProgramRequest) {
+export async function createRobotProgram(
+  organizationId: string,
+  request: CreateRobotProgramRequest,
+) {
   const response = await axiosClient.post<ApiResult<RobotProgramResult>>(
     `/api/v1/management/organizations/${encodeURIComponent(organizationId)}/robot-programs`,
     request,
@@ -82,12 +98,73 @@ export async function createRobotProgram(organizationId: string, request: Create
   return requireData(response.data, "Không thể tạo chương trình robot.");
 }
 
-export async function updateRobotProgram(organizationId: string, programId: string, request: UpdateRobotProgramRequest) {
+export async function updateRobotProgram(
+  organizationId: string,
+  programId: string,
+  request: UpdateRobotProgramRequest,
+) {
   const response = await axiosClient.put<ApiResult<RobotProgramResult>>(
     `/api/v1/management/organizations/${encodeURIComponent(organizationId)}/robot-programs/${encodeURIComponent(programId)}`,
     request,
   );
   return requireData(response.data, "Không thể cập nhật chương trình robot.");
+}
+
+export async function getRobotProgram(
+  organizationId: string,
+  programId: string,
+  signal?: AbortSignal,
+) {
+  const response = await axiosClient.get<ApiResult<RobotProgramResult>>(
+    `/api/v1/management/organizations/${encodeURIComponent(organizationId)}/robot-programs/${encodeURIComponent(programId)}`,
+    { signal },
+  );
+  return requireData(response.data, "Cannot load robot program.");
+}
+
+export async function replaceRobotProgramArtifacts(
+  organizationId: string,
+  programId: string,
+  request: ReplaceRobotProgramArtifactsRequest,
+) {
+  const response = await axiosClient.put<ApiResult<RobotProgramResult>>(
+    `/api/v1/management/organizations/${encodeURIComponent(organizationId)}/robot-programs/${encodeURIComponent(programId)}/artifacts`,
+    request,
+  );
+  return requireData(
+    response.data,
+    "Cannot save robot program artifact order.",
+  );
+}
+
+export async function importRawLuaRobotProgramArtifacts(
+  organizationId: string,
+  programId: string,
+  request: {
+    files: File[];
+    runtimeTargetCode: string;
+    machineModelCode: string;
+    description?: string;
+  },
+) {
+  const formData = new FormData();
+  const archive = request.files.find((file) =>
+    file.name.toLowerCase().endsWith(".zip"),
+  );
+  if (archive) formData.append("archive", archive);
+  else request.files.forEach((file) => formData.append("files", file));
+  formData.append("runtimeTargetCode", request.runtimeTargetCode.trim());
+  formData.append("machineModelCode", request.machineModelCode.trim());
+  if (request.description?.trim())
+    formData.append("description", request.description.trim());
+
+  const response = await axiosClient.post<
+    ApiResult<RawLuaRobotProgramArtifactImportResult>
+  >(
+    `/api/v1/management/organizations/${encodeURIComponent(organizationId)}/robot-programs/${encodeURIComponent(programId)}/raw-lua-artifacts`,
+    formData,
+  );
+  return requireData(response.data, "Cannot import raw Lua artifacts.");
 }
 
 export async function changeRobotProgramLifecycle(
@@ -99,15 +176,27 @@ export async function changeRobotProgramLifecycle(
   if (action === "discard") {
     const response = await axiosClient.delete<ApiResult<object>>(path);
     if (!response.data.succeeded) {
-      throw new Error(response.data.message || response.data.businessError || "Không thể xóa bản nháp chương trình robot.");
+      throw new Error(
+        response.data.message ||
+          response.data.businessError ||
+          "Không thể xóa bản nháp chương trình robot.",
+      );
     }
     return null;
   }
-  const response = await axiosClient.patch<ApiResult<RobotProgramResult>>(`${path}/${action}`);
-  return requireData(response.data, "Không thể cập nhật vòng đời chương trình robot.");
+  const response = await axiosClient.patch<ApiResult<RobotProgramResult>>(
+    `${path}/${action}`,
+  );
+  return requireData(
+    response.data,
+    "Không thể cập nhật vòng đời chương trình robot.",
+  );
 }
 
-export async function listProductionPackageCatalog(organizationId: string, signal?: AbortSignal) {
+export async function listProductionPackageCatalog(
+  organizationId: string,
+  signal?: AbortSignal,
+) {
   const response = await axiosClient.get<ApiResult<ProductionPackageResult[]>>(
     `/api/v1/management/organizations/${encodeURIComponent(organizationId)}/production-packages/catalog`,
     { signal },
@@ -118,26 +207,41 @@ export async function listProductionPackageCatalog(organizationId: string, signa
 const installationsPath = (organizationId: string) =>
   `/api/v1/management/organizations/${encodeURIComponent(organizationId)}/production-package-installations`;
 
-export async function listPackageInstallations(organizationId: string, kioskId: string, signal?: AbortSignal) {
+export async function listPackageInstallations(
+  organizationId: string,
+  kioskId: string,
+  signal?: AbortSignal,
+) {
   return collectPagedResults<PackageInstallationResult>(async (pageNumber) => {
-    const response = await axiosClient.get<PackageInstallationsPage>(installationsPath(organizationId), {
-      params: { kioskId, pageNumber, pageSize: OPERATIONS_PAGE_SIZE },
-      signal,
-    });
-    if (!response.data.succeeded) throw new Error(response.data.message || "Không thể tải các gói đã cài đặt.");
+    const response = await axiosClient.get<PackageInstallationsPage>(
+      installationsPath(organizationId),
+      {
+        params: { kioskId, pageNumber, pageSize: OPERATIONS_PAGE_SIZE },
+        signal,
+      },
+    );
+    if (!response.data.succeeded)
+      throw new Error(
+        response.data.message || "Không thể tải các gói đã cài đặt.",
+      );
     return response.data;
   });
 }
 
-export async function previewPackageInstallation(organizationId: string, request: PackageInstallRequest) {
-  const response = await axiosClient.post<ApiResult<PackageInstallationPreview>>(
-    `${installationsPath(organizationId)}/preview`,
-    request,
-  );
+export async function previewPackageInstallation(
+  organizationId: string,
+  request: PackageInstallRequest,
+) {
+  const response = await axiosClient.post<
+    ApiResult<PackageInstallationPreview>
+  >(`${installationsPath(organizationId)}/preview`, request);
   return requireData(response.data, "Không thể xem trước gói sản xuất.");
 }
 
-export async function installProductionPackage(organizationId: string, request: PackageInstallRequest) {
+export async function installProductionPackage(
+  organizationId: string,
+  request: PackageInstallRequest,
+) {
   const response = await axiosClient.post<ApiResult<PackageInstallationResult>>(
     installationsPath(organizationId),
     request,
@@ -146,12 +250,19 @@ export async function installProductionPackage(organizationId: string, request: 
   return requireData(response.data, "Không thể cài đặt gói sản xuất.");
 }
 
-export async function getPackageWorkspace(organizationId: string, installationId: string, signal?: AbortSignal) {
+export async function getPackageWorkspace(
+  organizationId: string,
+  installationId: string,
+  signal?: AbortSignal,
+) {
   const response = await axiosClient.get<ApiResult<PackageWorkspaceResult>>(
     `${installationsPath(organizationId)}/${encodeURIComponent(installationId)}/workspace`,
     { signal },
   );
-  return requireData(response.data, "Không thể tải không gian làm việc của gói.");
+  return requireData(
+    response.data,
+    "Không thể tải không gian làm việc của gói.",
+  );
 }
 
 export async function recoverPackageInstallation(
@@ -161,20 +272,29 @@ export async function recoverPackageInstallation(
 ) {
   const path = `${installationsPath(organizationId)}/${encodeURIComponent(installationId)}/${action}`;
   if (action === "repair") {
-    const response = await axiosClient.post<ApiResult<PackageRepairResult>>(path);
+    const response =
+      await axiosClient.post<ApiResult<PackageRepairResult>>(path);
     return requireData(response.data, "Không thể sửa dữ liệu cài đặt gói.");
   }
-  const response = await axiosClient.post<ApiResult<PackageInstallationResult>>(path);
+  const response =
+    await axiosClient.post<ApiResult<PackageInstallationResult>>(path);
   return requireData(response.data, "Không thể thử lại cài đặt gói.");
 }
 
-export async function listPackageUpgrades(organizationId: string, installationId: string, signal?: AbortSignal) {
+export async function listPackageUpgrades(
+  organizationId: string,
+  installationId: string,
+  signal?: AbortSignal,
+) {
   return collectPagedResults<PackageUpgradeResult>(async (pageNumber) => {
     const response = await axiosClient.get<PackageUpgradesPage>(
       `${installationsPath(organizationId)}/${encodeURIComponent(installationId)}/upgrades`,
       { params: { pageNumber, pageSize: OPERATIONS_PAGE_SIZE }, signal },
     );
-    if (!response.data.succeeded) throw new Error(response.data.message || "Không thể tải lịch sử nâng cấp.");
+    if (!response.data.succeeded)
+      throw new Error(
+        response.data.message || "Không thể tải lịch sử nâng cấp.",
+      );
     return response.data;
   });
 }
@@ -185,7 +305,9 @@ export async function previewPackageUpgrade(
   targetPackageVersionId: string,
   productSourceKeys: string[],
 ) {
-  const response = await axiosClient.post<ApiResult<PackageUpgradePreviewResult>>(
+  const response = await axiosClient.post<
+    ApiResult<PackageUpgradePreviewResult>
+  >(
     `${installationsPath(organizationId)}/${encodeURIComponent(installationId)}/upgrades/preview`,
     { targetPackageVersionId, productSourceKeys },
   );
@@ -224,37 +346,101 @@ export async function changePackageUpgradeLifecycle(
   return requireData(response.data, "Không thể cập nhật nâng cấp gói.");
 }
 
-export async function listConfigurationReleases(organizationId: string, signal?: AbortSignal) {
-  return collectPagedResults<ConfigurationReleaseSummaryResult>(async (pageNumber) => {
-    const response = await axiosClient.get<ConfigurationReleasesPage>(
-      `/api/v1/management/organizations/${encodeURIComponent(organizationId)}/configuration-releases`,
-      { params: { pageNumber, pageSize: OPERATIONS_PAGE_SIZE }, signal },
-    );
-    if (!response.data.succeeded) throw new Error(response.data.message || "Không thể tải bản phát hành cấu hình.");
-    return response.data;
-  });
+export async function listConfigurationReleases(
+  organizationId: string,
+  signal?: AbortSignal,
+) {
+  return collectPagedResults<ConfigurationReleaseSummaryResult>(
+    async (pageNumber) => {
+      const response = await axiosClient.get<ConfigurationReleasesPage>(
+        `/api/v1/management/organizations/${encodeURIComponent(organizationId)}/configuration-releases`,
+        { params: { pageNumber, pageSize: OPERATIONS_PAGE_SIZE }, signal },
+      );
+      if (!response.data.succeeded)
+        throw new Error(
+          response.data.message || "Không thể tải bản phát hành cấu hình.",
+        );
+      return response.data;
+    },
+  );
 }
 
-export async function forkProductionPackageInstallation(organizationId: string, installationId: string) {
+export async function forkProductionPackageInstallation(
+  organizationId: string,
+  installationId: string,
+) {
   const response = await axiosClient.post<ApiResult<PackageInstallationResult>>(
     `${installationsPath(organizationId)}/${encodeURIComponent(installationId)}/fork`,
   );
-  return requireData(response.data, "Không thể tách cấu hình khỏi gói sản xuất.");
+  return requireData(
+    response.data,
+    "Không thể tách cấu hình khỏi gói sản xuất.",
+  );
 }
 
 export async function getConfigurationReleaseAuthoringOptions(
   organizationId: string,
   signal?: AbortSignal,
 ) {
-  const response = await axiosClient.get<ApiResult<ConfigurationReleaseAuthoringOptions>>(
+  const response = await axiosClient.get<
+    ApiResult<ConfigurationReleaseAuthoringOptions>
+  >(
     `/api/v1/management/organizations/${encodeURIComponent(organizationId)}/configuration-releases/authoring-options`,
     { signal },
   );
-  return requireData(response.data, "Không thể tải dữ liệu soạn bản phát hành.");
+  return requireData(
+    response.data,
+    "Không thể tải dữ liệu soạn bản phát hành.",
+  );
+}
+
+export async function listProductionProgramBindings(organizationId: string) {
+  const response = await axiosClient.get<
+    ApiResult<ProductionProgramBindingResult[]>
+  >(
+    `/api/v1/management/organizations/${encodeURIComponent(organizationId)}/production-program-bindings`,
+  );
+  return requireData(
+    response.data,
+    "Không thể tải liên kết chương trình sản xuất.",
+  );
+}
+
+export async function createProductionProgramBinding(
+  organizationId: string,
+  request: CreateProductionProgramBindingRequest,
+) {
+  const response = await axiosClient.post<
+    ApiResult<ProductionProgramBindingResult>
+  >(
+    `/api/v1/management/organizations/${encodeURIComponent(organizationId)}/production-program-bindings`,
+    request,
+  );
+  return requireData(
+    response.data,
+    "Không thể tạo liên kết chương trình sản xuất.",
+  );
+}
+
+export async function retireProductionProgramBinding(
+  organizationId: string,
+  bindingId: string,
+) {
+  const response = await axiosClient.patch<
+    ApiResult<ProductionProgramBindingResult>
+  >(
+    `/api/v1/management/organizations/${encodeURIComponent(organizationId)}/production-program-bindings/${encodeURIComponent(bindingId)}/retire`,
+  );
+  return requireData(
+    response.data,
+    "Không thể ngừng sử dụng liên kết chương trình sản xuất.",
+  );
 }
 
 export async function createConfigurationRelease(organizationId: string) {
-  const response = await axiosClient.post<ApiResult<ConfigurationReleaseResult>>(
+  const response = await axiosClient.post<
+    ApiResult<ConfigurationReleaseResult>
+  >(
     `/api/v1/management/organizations/${encodeURIComponent(organizationId)}/configuration-releases`,
   );
   return requireData(response.data, "Không thể tạo bản nháp cấu hình.");
@@ -273,48 +459,94 @@ export async function replaceConfigurationReleaseRoutes(
   return requireData(response.data, "Không thể cập nhật tuyến sản xuất.");
 }
 
-export async function publishConfigurationRelease(organizationId: string, releaseId: string) {
-  const response = await axiosClient.patch<ApiResult<ConfigurationReleaseResult>>(
+export async function publishConfigurationRelease(
+  organizationId: string,
+  releaseId: string,
+) {
+  const response = await axiosClient.patch<
+    ApiResult<ConfigurationReleaseResult>
+  >(
     `/api/v1/management/organizations/${encodeURIComponent(organizationId)}/configuration-releases/${encodeURIComponent(releaseId)}/publish`,
   );
   return requireData(response.data, "Không thể phát hành cấu hình.");
 }
 
-export async function retireConfigurationRelease(organizationId: string, releaseId: string) {
-  const response = await axiosClient.patch<ApiResult<ConfigurationReleaseResult>>(
+export async function retireConfigurationRelease(
+  organizationId: string,
+  releaseId: string,
+) {
+  const response = await axiosClient.patch<
+    ApiResult<ConfigurationReleaseResult>
+  >(
     `/api/v1/management/organizations/${encodeURIComponent(organizationId)}/configuration-releases/${encodeURIComponent(releaseId)}/retire`,
   );
   return requireData(response.data, "Không thể ngừng sử dụng bản phát hành.");
 }
 
-export async function discardConfigurationRelease(organizationId: string, releaseId: string) {
+export async function discardConfigurationRelease(
+  organizationId: string,
+  releaseId: string,
+) {
   const response = await axiosClient.delete<ApiResult<object>>(
     `/api/v1/management/organizations/${encodeURIComponent(organizationId)}/configuration-releases/${encodeURIComponent(releaseId)}`,
   );
   if (!response.data.succeeded) {
-    throw new Error(response.data.message || response.data.businessError || "Không thể xóa bản nháp cấu hình.");
+    throw new Error(
+      response.data.message ||
+        response.data.businessError ||
+        "Không thể xóa bản nháp cấu hình.",
+    );
   }
 }
 
-export async function listConfigurationDeployments(kioskId: string, signal?: AbortSignal) {
-  return collectPagedResults<ConfigurationDeploymentResult>(async (pageNumber) => {
-    const response = await axiosClient.get<ConfigurationDeploymentsPage>(
-      `/api/v1/management/kiosks/${encodeURIComponent(kioskId)}/configuration-deployments`,
-      { params: { pageNumber, pageSize: OPERATIONS_PAGE_SIZE }, signal },
-    );
-    if (!response.data.succeeded) throw new Error(response.data.message || "Không thể tải lịch sử triển khai.");
-    return response.data;
-  });
+export async function listConfigurationDeployments(
+  kioskId: string,
+  signal?: AbortSignal,
+) {
+  return collectPagedResults<ConfigurationDeploymentResult>(
+    async (pageNumber) => {
+      const response = await axiosClient.get<ConfigurationDeploymentsPage>(
+        `/api/v1/management/kiosks/${encodeURIComponent(kioskId)}/configuration-deployments`,
+        { params: { pageNumber, pageSize: OPERATIONS_PAGE_SIZE }, signal },
+      );
+      if (!response.data.succeeded)
+        throw new Error(
+          response.data.message || "Không thể tải lịch sử triển khai.",
+        );
+      return response.data;
+    },
+  );
 }
 
-export async function getConfigurationInventoryReadiness(kioskId: string, releaseId: string) {
+export async function getConfigurationDeploymentArtifacts(
+  kioskId: string,
+  deploymentId: string,
+) {
+  const response = await axiosClient.get<
+    ApiResult<ConfigurationDeploymentArtifactResult[]>
+  >(
+    `/api/v1/management/kiosks/${encodeURIComponent(kioskId)}/configuration-deployments/${encodeURIComponent(deploymentId)}/artifacts`,
+  );
+  return requireData(
+    response.data,
+    "Không thể tải artifact của lần triển khai.",
+  );
+}
+
+export async function getConfigurationInventoryReadiness(
+  kioskId: string,
+  releaseId: string,
+) {
   const response = await axiosClient.get<ApiResult<InventoryReadinessResult>>(
     `/api/v1/management/kiosks/${encodeURIComponent(kioskId)}/configuration-releases/${encodeURIComponent(releaseId)}/inventory-readiness`,
   );
   return requireData(response.data, "Không thể kiểm tra mức sẵn sàng tồn kho.");
 }
 
-export async function previewConfigurationDeployment(kioskId: string, releaseId: string) {
+export async function previewConfigurationDeployment(
+  kioskId: string,
+  releaseId: string,
+) {
   const response = await axiosClient.post<ApiResult<DeploymentPreview>>(
     `/api/v1/management/kiosks/${encodeURIComponent(kioskId)}/configuration-deployments/preview`,
     { configurationReleaseId: releaseId, selections: [] },
@@ -329,10 +561,16 @@ export async function deployConfiguration(
   acknowledgeRemainingRisk: boolean,
   reason: string,
 ) {
-  const endpoint = preview.endpoints.find((item) => item.kioskExecutionEndpointId === endpointId);
-  if (!endpoint) throw new Error("Điểm thực thi đã chọn không còn trong bản xem trước.");
-  const profilePath = endpoint.executionProfile === "FullEdge" ? "full-edge" : "low-cost";
-  const response = await axiosClient.post<ApiResult<ConfigurationDeploymentRollbackResult>>(
+  const endpoint = preview.endpoints.find(
+    (item) => item.kioskExecutionEndpointId === endpointId,
+  );
+  if (!endpoint)
+    throw new Error("Điểm thực thi đã chọn không còn trong bản xem trước.");
+  const profilePath =
+    endpoint.executionProfile === "FullEdge" ? "full-edge" : "low-cost";
+  const response = await axiosClient.post<
+    ApiResult<ConfigurationDeploymentRollbackResult>
+  >(
     `/api/v1/management/kiosks/${encodeURIComponent(kioskId)}/configuration-deployments/${profilePath}`,
     {
       configurationReleaseId: preview.configurationReleaseId,
@@ -340,7 +578,9 @@ export async function deployConfiguration(
       deploymentPreviewChecksum: endpoint.deploymentChecksum,
       reason: reason.trim(),
       acknowledgeRemainingRisk,
-      ...(profilePath === "low-cost" ? { selections: endpoint.selections } : {}),
+      ...(profilePath === "low-cost"
+        ? { selections: endpoint.selections }
+        : {}),
     },
     { headers: { "Idempotency-Key": idempotencyKey("configuration-deploy") } },
   );
@@ -353,13 +593,17 @@ export async function rollbackConfigurationDeployment(
   expectedActiveDeploymentId: string,
   reason: string,
 ) {
-  const response = await axiosClient.post<ApiResult<ConfigurationDeploymentResult>>(
+  const response = await axiosClient.post<
+    ApiResult<ConfigurationDeploymentResult>
+  >(
     `/api/v1/management/kiosks/${encodeURIComponent(kioskId)}/configuration-deployments/${encodeURIComponent(deploymentId)}/rollback`,
     {
       reason: reason.trim(),
       expectedActiveDeploymentId,
     },
-    { headers: { "Idempotency-Key": idempotencyKey("configuration-rollback") } },
+    {
+      headers: { "Idempotency-Key": idempotencyKey("configuration-rollback") },
+    },
   );
   return requireData(response.data, "Không thể rollback cấu hình.");
 }
@@ -373,7 +617,10 @@ export async function getConfigurationRelease(
     `/api/v1/management/organizations/${encodeURIComponent(organizationId)}/configuration-releases/${encodeURIComponent(releaseId)}`,
     { signal },
   );
-  return requireData(response.data, "Không thể tải chi tiết bản phát hành cấu hình.");
+  return requireData(
+    response.data,
+    "Không thể tải chi tiết bản phát hành cấu hình.",
+  );
 }
 
 const authoringImportsPath = (organizationId: string) =>
@@ -384,22 +631,31 @@ export async function listRobotAuthoringImports(
   query: RobotAuthoringImportQuery,
   signal?: AbortSignal,
 ) {
-  const response = await axiosClient.get<RobotAuthoringImportsPage>(authoringImportsPath(organizationId), {
-    params: {
-      ...(query.status && query.status !== "ALL" ? { status: query.status } : {}),
-      ...(query.storeId ? { storeId: query.storeId } : {}),
-      ...(query.kioskId ? { kioskId: query.kioskId } : {}),
-      ...(query.deviceId ? { deviceId: query.deviceId } : {}),
-      ...(query.search?.trim() ? { search: query.search.trim() } : {}),
-      ...(query.createdFrom ? { createdFrom: query.createdFrom } : {}),
-      ...(query.createdTo ? { createdTo: query.createdTo } : {}),
-      pageNumber: query.pageNumber,
-      pageSize: query.pageSize,
+  const response = await axiosClient.get<RobotAuthoringImportsPage>(
+    authoringImportsPath(organizationId),
+    {
+      params: {
+        ...(query.status && query.status !== "ALL"
+          ? { status: query.status }
+          : {}),
+        ...(query.storeId ? { storeId: query.storeId } : {}),
+        ...(query.kioskId ? { kioskId: query.kioskId } : {}),
+        ...(query.deviceId ? { deviceId: query.deviceId } : {}),
+        ...(query.search?.trim() ? { search: query.search.trim() } : {}),
+        ...(query.createdFrom ? { createdFrom: query.createdFrom } : {}),
+        ...(query.createdTo ? { createdTo: query.createdTo } : {}),
+        pageNumber: query.pageNumber,
+        pageSize: query.pageSize,
+      },
+      signal,
     },
-    signal,
-  });
+  );
   if (!response.data.succeeded) {
-    throw new Error(response.data.message || response.data.businessError || "Không thể tải các gói cấu hình đã nhập.");
+    throw new Error(
+      response.data.message ||
+        response.data.businessError ||
+        "Không thể tải các gói cấu hình đã nhập.",
+    );
   }
   return response.data;
 }
@@ -421,11 +677,16 @@ export async function getRobotAuthoringWorkspace(
   importId: string,
   signal?: AbortSignal,
 ) {
-  const response = await axiosClient.get<ApiResult<RobotAuthoringWorkspaceResult>>(
+  const response = await axiosClient.get<
+    ApiResult<RobotAuthoringWorkspaceResult>
+  >(
     `${authoringImportsPath(organizationId)}/${encodeURIComponent(importId)}/workspace`,
     { signal },
   );
-  return requireData(response.data, "Không thể tải workspace cấu hình sản xuất.");
+  return requireData(
+    response.data,
+    "Không thể tải workspace cấu hình sản xuất.",
+  );
 }
 
 export async function uploadRobotAuthoringImport(
@@ -437,40 +698,66 @@ export async function uploadRobotAuthoringImport(
   if (request.storeId) formData.append("storeId", request.storeId);
   if (request.kioskId) formData.append("kioskId", request.kioskId);
   if (request.deviceId) formData.append("deviceId", request.deviceId);
-  const response = await axiosClient.post<ApiResult<RobotAuthoringImportResult>>(
-    authoringImportsPath(organizationId),
-    formData,
-    { headers: { "Idempotency-Key": idempotencyKey("robot-authoring-import") } },
-  );
+  const response = await axiosClient.post<
+    ApiResult<RobotAuthoringImportResult>
+  >(authoringImportsPath(organizationId), formData, {
+    headers: { "Idempotency-Key": idempotencyKey("robot-authoring-import") },
+  });
   return requireData(response.data, "Không thể tải lên gói cấu hình.");
 }
 
-export async function validateRobotAuthoringImport(organizationId: string, importId: string) {
-  const response = await axiosClient.post<ApiResult<RobotAuthoringImportResult>>(
+export async function validateRobotAuthoringImport(
+  organizationId: string,
+  importId: string,
+) {
+  const response = await axiosClient.post<
+    ApiResult<RobotAuthoringImportResult>
+  >(
     `${authoringImportsPath(organizationId)}/${encodeURIComponent(importId)}/validate`,
   );
   return requireData(response.data, "Không thể kiểm tra gói cấu hình.");
 }
 
-export async function materializeRobotAuthoringImport(organizationId: string, importId: string) {
-  const response = await axiosClient.post<ApiResult<RobotAuthoringImportResult>>(
+export async function materializeRobotAuthoringImport(
+  organizationId: string,
+  importId: string,
+) {
+  const response = await axiosClient.post<
+    ApiResult<RobotAuthoringImportResult>
+  >(
     `${authoringImportsPath(organizationId)}/${encodeURIComponent(importId)}/materialize`,
   );
-  return requireData(response.data, "Không thể tạo tài nguyên từ gói cấu hình.");
+  return requireData(
+    response.data,
+    "Không thể tạo tài nguyên từ gói cấu hình.",
+  );
 }
 
-export async function discardRobotAuthoringImport(organizationId: string, importId: string) {
-  const response = await axiosClient.post<ApiResult<RobotAuthoringImportResult>>(
+export async function discardRobotAuthoringImport(
+  organizationId: string,
+  importId: string,
+) {
+  const response = await axiosClient.post<
+    ApiResult<RobotAuthoringImportResult>
+  >(
     `${authoringImportsPath(organizationId)}/${encodeURIComponent(importId)}/discard`,
   );
   return requireData(response.data, "Không thể hủy gói cấu hình đã nhập.");
 }
 
-export async function publishRobotAuthoringImportResources(organizationId: string, importId: string) {
-  const response = await axiosClient.post<ApiResult<RobotAuthoringImportResult>>(
+export async function publishRobotAuthoringImportResources(
+  organizationId: string,
+  importId: string,
+) {
+  const response = await axiosClient.post<
+    ApiResult<RobotAuthoringImportResult>
+  >(
     `${authoringImportsPath(organizationId)}/${encodeURIComponent(importId)}/publish-resources`,
   );
-  return requireData(response.data, "Không thể phát hành tài nguyên từ gói cấu hình.");
+  return requireData(
+    response.data,
+    "Không thể phát hành tài nguyên từ gói cấu hình.",
+  );
 }
 
 export async function previewRobotAuthoringComposition(
@@ -479,11 +766,16 @@ export async function previewRobotAuthoringComposition(
   recipeId: string,
   selectedOptionCodes: string[],
 ) {
-  const response = await axiosClient.post<ApiResult<RobotAuthoringCompositionPreview>>(
+  const response = await axiosClient.post<
+    ApiResult<RobotAuthoringCompositionPreview>
+  >(
     `${authoringImportsPath(organizationId)}/${encodeURIComponent(importId)}/preview-composition`,
     { recipeId, selectedOptionCodes },
   );
-  return requireData(response.data, "Không thể xem trước cấu thành chương trình robot.");
+  return requireData(
+    response.data,
+    "Không thể xem trước cấu thành chương trình robot.",
+  );
 }
 
 export async function confirmRobotAuthoringComposition(
@@ -497,7 +789,10 @@ export async function confirmRobotAuthoringComposition(
     `${authoringImportsPath(organizationId)}/${encodeURIComponent(importId)}/confirm-composition`,
     { recipeId, selectedOptionCodes, previewChecksum },
   );
-  return requireData(response.data, "Không thể xác nhận cấu thành chương trình robot.");
+  return requireData(
+    response.data,
+    "Không thể xác nhận cấu thành chương trình robot.",
+  );
 }
 
 export async function createRobotAuthoringReleaseDraft(
@@ -505,22 +800,43 @@ export async function createRobotAuthoringReleaseDraft(
   importId: string,
   request: CreateRobotAuthoringReleaseDraftRequest,
 ) {
-  const response = await axiosClient.post<ApiResult<{
-    import: RobotAuthoringImportResult;
-    configurationRelease: ConfigurationReleaseResult;
-  }>>(
+  const response = await axiosClient.post<
+    ApiResult<{
+      import: RobotAuthoringImportResult;
+      configurationRelease: ConfigurationReleaseResult;
+    }>
+  >(
     `${authoringImportsPath(organizationId)}/${encodeURIComponent(importId)}/create-release-draft`,
     request,
   );
-  return requireData(response.data, "Không thể tạo bản nháp cấu hình từ gói đã nhập.");
+  return requireData(
+    response.data,
+    "Không thể tạo bản nháp cấu hình từ gói đã nhập.",
+  );
 }
 
-export function getProductionOperationsErrorMessage(error: unknown, fallbackMessage: string) {
+export function getProductionOperationsErrorMessage(
+  error: unknown,
+  fallbackMessage: string,
+) {
   if (axios.isCancel(error)) return "";
   if (axios.isAxiosError<ApiResult<unknown>>(error)) {
-    if (error.response?.status === 403) return "Tài khoản hiện tại không có quyền thực hiện thao tác này trong phạm vi đã chọn.";
-    if (error.response?.status === 409) return error.response.data?.message || "Dữ liệu đã thay đổi. Hãy tải lại trước khi tiếp tục.";
-    return error.response?.data?.message || error.response?.data?.businessError || fallbackMessage;
+    if (error.response?.status === 403)
+      return "Tài khoản hiện tại không có quyền thực hiện thao tác này trong phạm vi đã chọn.";
+    if (error.response?.status === 409)
+      return (
+        error.response.data?.message ||
+        "Dữ liệu đã thay đổi. Hãy tải lại trước khi tiếp tục."
+      );
+    const validationMessages = Object.values(
+      error.response?.data?.validationErrors ?? {},
+    ).flat();
+    if (validationMessages.length > 0) return validationMessages[0];
+    return (
+      error.response?.data?.message ||
+      error.response?.data?.businessError ||
+      fallbackMessage
+    );
   }
   return error instanceof Error ? error.message : fallbackMessage;
 }

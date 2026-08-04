@@ -2,7 +2,8 @@ import type { PagedResult } from "@/types/accounts";
 
 export type RobotProgramStatus = "Draft" | "Published" | "Retired";
 export type ConfigurationReleaseStatus = "Draft" | "Published" | "Retired";
-export type ConfigurationDeploymentStatus = "Pending" | "Installed" | "Active" | "Failed";
+export type ConfigurationDeploymentStatus =
+  "Pending" | "Installed" | "Active" | "Failed";
 export type ConfigurationDeploymentProfile = "FullEdge" | "LowCostController";
 export type PackageInstallationStatus =
   | "Pending"
@@ -34,14 +35,18 @@ export interface RobotProgramResult {
   description?: string | null;
   programManifestChecksum?: string | null;
   publishedAt?: string | null;
+  lastModifiedAt: string;
   artifacts: Array<{
     id: string;
     robotArtifactId: string;
     runOrder: number;
+    parametersJson?: string | null;
     requiredOptionCode?: string | null;
     artifactCode?: string | null;
     artifactName?: string | null;
     artifactStatus?: string | null;
+    runtimeTargetCode?: string | null;
+    machineModelCode?: string | null;
   }>;
 }
 
@@ -58,6 +63,36 @@ export interface UpdateRobotProgramRequest {
   code: string;
   name: string;
   description?: string | null;
+}
+
+export interface ReplaceRobotProgramArtifactsRequest {
+  expectedLastModifiedAt?: string;
+  artifacts: Array<{
+    robotArtifactId: string;
+    runOrder: number;
+    parametersJson?: string | null;
+    requiredOptionCode?: string | null;
+  }>;
+}
+
+export interface RawLuaRobotProgramArtifactImportResult {
+  upload: {
+    totalCount: number;
+    succeededCount: number;
+    failedCount: number;
+    uploadedCount: number;
+    existingCount: number;
+    items: Array<{
+      fileName: string;
+      succeeded: boolean;
+      statusCode: number;
+      message?: string | null;
+      robotArtifactId?: string | null;
+    }>;
+  };
+  program?: RobotProgramResult | null;
+  appendedArtifactIds: string[];
+  appendPending: boolean;
 }
 
 export interface ProductionPackageVersionResult {
@@ -147,15 +182,81 @@ export interface PackageWorkspaceResult {
   packageName: string;
   packageVersionId: string;
   packageVersion: number;
-  products: Array<{ id: string; sourceKey: string; code: string; name: string; status: string }>;
-  productVariants: Array<{ id: string; sourceKey: string; code: string; name: string; status: string }>;
-  options: Array<{ id: string; sourceKey: string; groupCode: string; code: string; name: string; status: string; executionImpact: string }>;
-  recipes: Array<{ id: string; sourceKey: string; code: string; name: string; status: string }>;
-  menus: Array<{ id: string; code: string; name: string; status: string; storeId?: string | null; kioskId?: string | null; assignedProductVariantIds: string[]; sellableProductVariantIds: string[] }>;
-  artifacts: Array<{ id: string; sourceKey: string; code: string; name: string; status: string; technicalContractId?: string | null; technicalContractReady: boolean }>;
-  programs: Array<{ id: string; sourceKey: string; code: string; name: string; status: string; artifacts: Array<{ robotArtifactId: string; runOrder: number; requiredOptionCode?: string | null }> }>;
-  release?: { id: string; releaseNumber: number; status: string; routeCount: number; releaseChecksum?: string | null } | null;
-  technicalReadiness: { isReady: boolean; hasTargetKiosk: boolean; hasActiveExecutionEndpoint: boolean; latestDeploymentStatus?: string | null; blockers: WorkspaceBlockerResult[] };
+  products: Array<{
+    id: string;
+    sourceKey: string;
+    code: string;
+    name: string;
+    status: string;
+  }>;
+  productVariants: Array<{
+    id: string;
+    sourceKey: string;
+    code: string;
+    name: string;
+    status: string;
+  }>;
+  options: Array<{
+    id: string;
+    sourceKey: string;
+    groupCode: string;
+    code: string;
+    name: string;
+    status: string;
+    executionImpact: string;
+  }>;
+  recipes: Array<{
+    id: string;
+    sourceKey: string;
+    code: string;
+    name: string;
+    status: string;
+  }>;
+  menus: Array<{
+    id: string;
+    code: string;
+    name: string;
+    status: string;
+    storeId?: string | null;
+    kioskId?: string | null;
+    assignedProductVariantIds: string[];
+    sellableProductVariantIds: string[];
+  }>;
+  artifacts: Array<{
+    id: string;
+    sourceKey: string;
+    code: string;
+    name: string;
+    status: string;
+    technicalContractId?: string | null;
+    technicalContractReady: boolean;
+  }>;
+  programs: Array<{
+    id: string;
+    sourceKey: string;
+    code: string;
+    name: string;
+    status: string;
+    artifacts: Array<{
+      robotArtifactId: string;
+      runOrder: number;
+      requiredOptionCode?: string | null;
+    }>;
+  }>;
+  release?: {
+    id: string;
+    releaseNumber: number;
+    status: string;
+    routeCount: number;
+    releaseChecksum?: string | null;
+  } | null;
+  technicalReadiness: {
+    isReady: boolean;
+    hasTargetKiosk: boolean;
+    hasActiveExecutionEndpoint: boolean;
+    latestDeploymentStatus?: string | null;
+    blockers: WorkspaceBlockerResult[];
+  };
   commercialReadiness: { isReady: boolean; blockers: WorkspaceBlockerResult[] };
   requiredActions: WorkspaceActionResult[];
   optionalActions: WorkspaceActionResult[];
@@ -178,7 +279,10 @@ export interface WorkspaceActionResult {
     optionGroupId?: number | null;
     kioskExecutionEndpointId?: string | null;
     executionProfile?: string | null;
-    deploymentSelections?: Array<{ executionRouteId: string; robotProgramId: string }> | null;
+    deploymentSelections?: Array<{
+      executionRouteId: string;
+      robotProgramId: string;
+    }> | null;
   } | null;
 }
 
@@ -222,8 +326,7 @@ export interface ConfigurationReleaseSummaryResult {
   routeCount: number;
 }
 
-export interface ConfigurationReleaseResult
-  extends ConfigurationReleaseSummaryResult {
+export interface ConfigurationReleaseResult extends ConfigurationReleaseSummaryResult {
   revision: string;
   routes: Array<{
     id: string;
@@ -237,6 +340,8 @@ export interface ConfigurationReleaseResult
     supportedOptionCodes: string[];
     robotBindings: Array<{
       id: string;
+      productionProgramBindingId?: string | null;
+      productionProgramBindingChecksum?: string | null;
       robotProgramId: string;
       robotProgramCode?: string | null;
       bindingOrder: number;
@@ -262,6 +367,8 @@ export interface ConfigurationReleaseAuthoringOptions {
   recipes: Array<{
     id: string;
     productId: string;
+    productCode: string;
+    productName: string;
     productVariantId: string;
     productVariantCode: string;
     productVariantName: string;
@@ -302,6 +409,29 @@ export interface ConfigurationReleaseAuthoringOptions {
   }>;
 }
 
+export interface ProductionProgramBindingResult {
+  id: string;
+  organizationId: string;
+  productVariantId: string;
+  recipeId: string;
+  recipeVersion: number;
+  robotProgramId: string;
+  programManifestChecksum: string;
+  requiredWorkcellCapabilityCode: string;
+  supportedOptionCodes: string[];
+  bindingChecksum: string;
+  status: "Active" | "Retired";
+  createdAt: string;
+  retiredAt?: string | null;
+}
+
+export interface CreateProductionProgramBindingRequest {
+  recipeId: string;
+  robotProgramId: string;
+  requiredWorkcellCapabilityCode: string;
+  supportedOptionCodes: string[];
+}
+
 export interface ConfigurationReleaseCapabilityRequirement {
   code: string;
   required: boolean;
@@ -314,6 +444,7 @@ export interface ConfigurationReleaseRouteRequest {
   requiredCapabilities: ConfigurationReleaseCapabilityRequirement[];
   supportedOptionCodes: string[];
   robotBindings: Array<{
+    productionProgramBindingId?: string;
     robotProgramId: string;
     bindingOrder: number;
     requiredWorkcellCapabilityCode: string;
@@ -353,6 +484,18 @@ export interface ConfigurationDeploymentRollbackResult {
   status: string;
 }
 
+export interface ConfigurationDeploymentArtifactResult {
+  executionRouteId: string;
+  robotProgramId: string;
+  robotArtifactId: string;
+  runOrder: number;
+  artifactChecksum: string;
+  contentLengthBytes: number;
+  runtimeTargetCode: string;
+  machineModelCode: string;
+  requiredOptionCode?: string | null;
+}
+
 export interface DeploymentPreview {
   configurationReleaseId: string;
   releaseChecksum: string;
@@ -382,8 +525,19 @@ export interface InventoryReadinessResult {
   storeId: string;
   isReady: boolean;
   overallStatus: string;
-  ingredients: Array<{ ingredientCode: string; ingredientName: string; status: string }>;
-  optionGroups: Array<{ routeCode: string; optionGroupCode: string; isRequired: boolean; minimumSelections: number; readyOptionCount: number; isReady: boolean }>;
+  ingredients: Array<{
+    ingredientCode: string;
+    ingredientName: string;
+    status: string;
+  }>;
+  optionGroups: Array<{
+    routeCode: string;
+    optionGroupCode: string;
+    isRequired: boolean;
+    minimumSelections: number;
+    readyOptionCount: number;
+    isReady: boolean;
+  }>;
 }
 
 export type RobotAuthoringImportStatus =
@@ -439,7 +593,10 @@ export interface RobotAuthoringImportListItem {
   createdByDisplayName?: string | null;
 }
 
-export interface RobotAuthoringImportResult extends Omit<RobotAuthoringImportListItem, "validation"> {
+export interface RobotAuthoringImportResult extends Omit<
+  RobotAuthoringImportListItem,
+  "validation"
+> {
   clientExportId: string;
   importChecksum: string;
   schemaVersion: number;
@@ -464,6 +621,24 @@ export interface RobotAuthoringImportResult extends Omit<RobotAuthoringImportLis
 export interface RobotAuthoringWorkspaceResult {
   import: RobotAuthoringImportResult;
   configurationReleaseStatus?: string | null;
+  recipeResolution: {
+    status:
+      | "NotReady"
+      | "NoMatch"
+      | "SingleMatch"
+      | "MultipleMatches"
+      | "OptionSelectionRequired";
+    message: string;
+    candidates: Array<{
+      recipeId: string;
+      recipeCode: string;
+      recipeName: string;
+      productCode: string;
+      productName: string;
+      productVariantCode: string;
+      productVariantName: string;
+    }>;
+  };
   packageTargets: Array<{
     installationId: string;
     ownershipMode: string;
@@ -471,14 +646,24 @@ export interface RobotAuthoringWorkspaceResult {
     requiresForkBeforeTechnicalMutation: boolean;
   }>;
   deploymentPreview?: DeploymentPreview | null;
-  blockers: Array<{ code: string; message: string; statusCode?: number | null }>;
-  actions: Array<{ code: string; isBlocked: boolean; blockerCode?: string | null; resourceId?: string | null }>;
+  blockers: Array<{
+    code: string;
+    message: string;
+    statusCode?: number | null;
+  }>;
+  actions: Array<{
+    code: string;
+    isBlocked: boolean;
+    blockerCode?: string | null;
+    resourceId?: string | null;
+  }>;
 }
 
 export interface RobotAuthoringCompositionPreview {
   importId: string;
   robotProgramId: string;
   recipeId: string;
+  programLastModifiedAt: string;
   selectedOptionCodes: string[];
   canConfirm: boolean;
   previewChecksum: string;
@@ -533,6 +718,9 @@ export interface CreateRobotAuthoringReleaseDraftRequest {
 export type RobotProgramsPage = PagedResult<RobotProgramResult>;
 export type PackageInstallationsPage = PagedResult<PackageInstallationResult>;
 export type PackageUpgradesPage = PagedResult<PackageUpgradeResult>;
-export type ConfigurationReleasesPage = PagedResult<ConfigurationReleaseSummaryResult>;
-export type ConfigurationDeploymentsPage = PagedResult<ConfigurationDeploymentResult>;
-export type RobotAuthoringImportsPage = PagedResult<RobotAuthoringImportListItem>;
+export type ConfigurationReleasesPage =
+  PagedResult<ConfigurationReleaseSummaryResult>;
+export type ConfigurationDeploymentsPage =
+  PagedResult<ConfigurationDeploymentResult>;
+export type RobotAuthoringImportsPage =
+  PagedResult<RobotAuthoringImportListItem>;

@@ -63,6 +63,12 @@ async function rotateBrowserSession(): Promise<string> {
 axiosClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   config.url = normalizeApiRequestPath(config.url);
 
+  // The instance defaults to JSON for API commands. Let the browser supply the
+  // multipart boundary when a command carries a file instead.
+  if (typeof FormData !== "undefined" && config.data instanceof FormData) {
+    config.headers.delete("Content-Type");
+  }
+
   const accessToken = getStoredAccessToken();
   if (accessToken) {
     config.headers.Authorization = `Bearer ${accessToken}`;
