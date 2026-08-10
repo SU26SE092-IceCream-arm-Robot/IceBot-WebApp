@@ -30,6 +30,22 @@ function formatFileSize(size: number) {
   return `${(size / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+function findScrollContainer(element: HTMLElement | null) {
+  let current = element?.parentElement ?? null;
+  while (current) {
+    const computedStyle = window.getComputedStyle(current);
+    const overflowY =
+      current.style.overflowY ||
+      computedStyle.overflowY ||
+      current.style.overflow ||
+      computedStyle.overflow;
+    if (overflowY === "auto" || overflowY === "scroll")
+      return current;
+    current = current.parentElement;
+  }
+  return null;
+}
+
 export function RobotAuthoringBundleUpload({
   disabled,
   isUploading,
@@ -37,6 +53,7 @@ export function RobotAuthoringBundleUpload({
   onUpload,
 }: RobotAuthoringBundleUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const chooseFileButtonRef = useRef<HTMLButtonElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -50,11 +67,24 @@ export function RobotAuthoringBundleUpload({
 
   const submit = async () => {
     if (!selectedFile || disabled || isUploading) return;
+    const scrollContainer = findScrollContainer(inputRef.current);
+    const scrollTop = scrollContainer?.scrollTop ?? window.scrollY;
     const succeeded = await onUpload(selectedFile);
     if (succeeded) {
       setSelectedFile(null);
       setValidationError(null);
       if (inputRef.current) inputRef.current.value = "";
+
+      // Selecting the new import expands a large workspace while the focused
+      // upload button is removed. Keep both focus and the dashboard viewport
+      // anchored to the upload area after React commits the replacement UI.
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
+          chooseFileButtonRef.current?.focus({ preventScroll: true });
+          if (scrollContainer) scrollContainer.scrollTop = scrollTop;
+          else window.scrollTo({ top: scrollTop, behavior: "auto" });
+        });
+      });
     }
   };
 
@@ -145,6 +175,7 @@ export function RobotAuthoringBundleUpload({
               Một file .zip, tối đa 50 MB
             </p>
             <Button
+              ref={chooseFileButtonRef}
               className="mt-4"
               size="sm"
               variant="outline"

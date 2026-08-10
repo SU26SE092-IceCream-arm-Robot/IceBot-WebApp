@@ -124,6 +124,20 @@ describe("useRobotAuthoringImports", () => {
     await act(async () => { await pendingUpload.promise; });
   });
 
+  it("does not fetch the new import detail twice after upload", async () => {
+    vi.mocked(uploadRobotAuthoringImport).mockResolvedValue({ id: "import-1" } as never);
+    const { result } = renderHook(() => useRobotAuthoringImports("org-1"));
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    await act(async () => {
+      await result.current.upload({
+        bundle: new File(["bundle"], "fairino.zip", { type: "application/zip" }),
+      });
+    });
+
+    expect(getRobotAuthoringImport).not.toHaveBeenCalled();
+  });
+
   it("resumes validation and materialization through one operator action", async () => {
     vi.mocked(getRobotAuthoringImport).mockResolvedValue({
       id: "import-1",

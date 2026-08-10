@@ -317,7 +317,6 @@ export function useRobotAuthoringImports(organizationId: string) {
       runMutation(
         () => uploadRobotAuthoringImport(organizationId, request),
         "Đã nhập chương trình và tạo tài nguyên Draft.",
-        (result) => void loadSelected(result.id),
       ),
     resume: () =>
       selectedImportId

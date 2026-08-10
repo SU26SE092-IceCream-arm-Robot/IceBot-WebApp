@@ -462,7 +462,7 @@ export function RobotAuthoringImportsPanel(
         ) : null}
         {selected ? (
           <section
-            className="space-y-4 rounded-lg border bg-card p-4"
+            className="space-y-4 rounded-lg border bg-card p-4 [overflow-anchor:none]"
             aria-live="polite"
           >
             <div className="flex flex-col gap-3 border-b pb-4 sm:flex-row sm:items-start sm:justify-between">
