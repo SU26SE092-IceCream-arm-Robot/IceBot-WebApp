@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/select";
 import { useCreateKiosk } from "@/hooks/use-create-kiosk";
 import { isStatusFilter, useKiosks } from "@/hooks/use-kiosks";
-import { hasPermission } from "@/lib/rbac";
+import { hasPermission, hasScopedPermission } from "@/lib/rbac";
 import type { KioskStatusFilter } from "@/types";
 
 const STATUS_OPTIONS: { value: KioskStatusFilter; label: string }[] = [
@@ -355,7 +355,19 @@ export default function KiosksPage() {
         ) : (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {kiosks.map((kiosk) => (
-              <KioskCard key={kiosk.kioskId} kiosk={kiosk} />
+              <KioskCard
+                key={kiosk.kioskId}
+                kiosk={kiosk}
+                canDeployConfiguration={hasScopedPermission(
+                  effectiveAccess,
+                  "release.deploy",
+                  {
+                    organizationId: kiosk.organizationId,
+                    storeId: kiosk.locationId,
+                    kioskId: kiosk.managementId,
+                  },
+                )}
+              />
             ))}
           </div>
         )}

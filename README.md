@@ -92,10 +92,4 @@ git diff --check
 
 There is no separate `typecheck` script; `npm run build` performs TypeScript validation.
 
-## Development Rules
-
-- Keep backend/API status as the source of truth.
-- Preserve loading, error, empty, and mutation-in-progress states.
-- Do not store production credentials or secrets in frontend environment variables.
-- Do not add packages, stage, commit, or push without explicit approval.
 - Verify important API contracts against current backend source or Swagger before implementation.

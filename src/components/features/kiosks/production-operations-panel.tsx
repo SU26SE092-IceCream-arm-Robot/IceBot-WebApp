@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import {
   AlertTriangle,
   Bot,
@@ -43,19 +44,20 @@ import type {
   PackageInstallRequest,
   ConfigurationReleaseResult,
   ProductionPackageResult,
-  RobotProgramResult,
+  RobotProgramSummaryResult,
 } from "@/types/production-operations";
 
 interface ProductionOperationsPanelProps {
   organizationId: string;
   storeId: string;
   kioskId: string;
-  canManagePrograms: boolean;
-  canManageReleases: boolean;
-  canForkPackages: boolean;
-  canInstallPackages: boolean;
+  canManagePrograms?: boolean;
+  canManageReleases?: boolean;
+  canForkPackages?: boolean;
+  canInstallPackages?: boolean;
   canDeploy: boolean;
   canRollback: boolean;
+  deploymentOnly?: boolean;
 }
 
 const statusLabels: Record<string, string> = {
@@ -118,7 +120,7 @@ function ProgramDialog({
   onSubmit,
 }: {
   open: boolean;
-  program?: RobotProgramResult | null;
+  program?: Pick<RobotProgramSummaryResult, "id" | "code" | "name" | "description"> | null;
   isSubmitting: boolean;
   errorMessage?: string | null;
   onOpenChange: (open: boolean) => void;
@@ -424,7 +426,7 @@ export function ProductionOperationsPanel(
   });
   const [programDialog, setProgramDialog] = useState<{
     open: boolean;
-    program?: RobotProgramResult | null;
+    program?: Pick<RobotProgramSummaryResult, "id" | "code" | "name" | "description"> | null;
   }>({ open: false });
   const [releaseRoutesDialog, setReleaseRoutesDialog] =
     useState<ConfigurationReleaseResult | null>(null);
@@ -453,6 +455,9 @@ export function ProductionOperationsPanel(
     : [];
   const selectedRelease = state.releases.find(
     (item) => item.id === selectedReleaseId,
+  );
+  const publishedReleases = state.releases.filter(
+    (item) => item.status === "Published",
   );
   const eligibleEndpoint = state.deploymentPreview?.endpoints.find(
     (item) => item.kioskExecutionEndpointId === selectedEndpointId,
@@ -503,10 +508,14 @@ export function ProductionOperationsPanel(
         <div>
           <h3 className="flex items-center gap-2 font-semibold">
             <Settings2 className="size-4" />
-            Cấu hình sản xuất
+            {props.deploymentOnly
+              ? "Triển khai cấu hình cho kiosk"
+              : "Cấu hình sản xuất"}
           </h3>
           <p className="mt-1 text-sm text-muted-foreground">
-            Theo dõi chương trình, gói sản xuất và các lần triển khai của kiosk.
+            {props.deploymentOnly
+              ? "Chọn bản phát hành, kiểm tra điều kiện kiosk, triển khai hoặc quay lại phiên bản ổn định."
+              : "Theo dõi chương trình và gói sản xuất của kiosk."}
           </p>
         </div>
         <Button
@@ -538,13 +547,28 @@ export function ProductionOperationsPanel(
         </p>
       ) : null}
 
-      <Tabs defaultValue="programs" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3 sm:w-auto">
-          <TabsTrigger value="programs">Chương trình</TabsTrigger>
-          <TabsTrigger value="packages">Gói sản xuất</TabsTrigger>
+      <Tabs
+        defaultValue={props.deploymentOnly ? "deployments" : "programs"}
+        className="space-y-4"
+      >
+        <TabsList
+          className={
+            props.deploymentOnly
+              ? "inline-flex"
+              : "grid w-full grid-cols-3 sm:w-auto"
+          }
+        >
+          {!props.deploymentOnly ? (
+            <>
+              <TabsTrigger value="programs">Chương trình</TabsTrigger>
+              <TabsTrigger value="packages">Gói sản xuất</TabsTrigger>
+            </>
+          ) : null}
           <TabsTrigger value="deployments">Triển khai</TabsTrigger>
         </TabsList>
 
+        {!props.deploymentOnly ? (
+          <>
         <TabsContent value="programs" className="space-y-3">
           <div className="flex items-center justify-between gap-3">
             <div>
@@ -579,7 +603,7 @@ export function ProductionOperationsPanel(
                       <StatusBadge status={program.status} />
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      {program.code} · {program.artifacts.length} tệp chương
+                      {program.code} · {program.artifactCount} tệp chương
                       trình
                     </p>
                   </div>
@@ -1018,15 +1042,23 @@ export function ProductionOperationsPanel(
             </div>
           ) : null}
         </TabsContent>
+          </>
+        ) : null}
 
         <TabsContent value="deployments" className="space-y-4">
           <div>
-            <h4 className="font-medium">Phát hành và triển khai</h4>
+            <h4 className="font-medium">
+              {props.deploymentOnly
+                ? "Triển khai phiên bản đã phát hành"
+                : "Phát hành và triển khai"}
+            </h4>
             <p className="text-xs text-muted-foreground">
-              Bản phát hành đóng gói recipe, chương trình robot và capability
-              trước khi triển khai tới kiosk.
+              {props.deploymentOnly
+                ? "Chọn phiên bản đã phát hành, kiểm tra khả năng tương thích của kiosk rồi triển khai hoặc rollback."
+                : "Bản phát hành đóng gói recipe, chương trình robot và capability trước khi triển khai tới kiosk."}
             </p>
           </div>
+          {!props.deploymentOnly ? (
           <div className="space-y-3 rounded-lg border p-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
@@ -1140,46 +1172,61 @@ export function ProductionOperationsPanel(
               </div>
             )}
           </div>
+          ) : null}
           {props.canDeploy ? (
             <div className="space-y-3 rounded-lg border p-4">
-              <div className="flex flex-col gap-2 sm:flex-row">
-                <Select
-                  value={selectedReleaseId}
-                  onValueChange={(value) => {
-                    setSelectedReleaseId(value ?? "");
-                    setSelectedEndpointId("");
-                    setAcknowledgeRisk(false);
-                    state.clearPreviews();
-                  }}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue>
-                      {selectedRelease
-                        ? `Bản phát hành #${selectedRelease.releaseNumber} · ${statusLabels[selectedRelease.status] ?? selectedRelease.status}`
-                        : "Chọn bản phát hành"}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {state.releases
-                      .filter((release) => release.status === "Published")
-                      .map((release) => (
+              {publishedReleases.length === 0 ? (
+                <div className="rounded-lg border border-warning/30 bg-warning/5 p-3">
+                  <p className="font-medium text-warning">
+                    Chưa có phiên bản cấu hình đã phát hành
+                  </p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Chương trình robot đã phát hành chưa thể triển khai trực tiếp.
+                    Cần tạo và phát hành phiên bản cấu hình chứa liên kết Recipe
+                    và chương trình trước.
+                  </p>
+                  <Button asChild className="mt-3" size="sm" variant="outline">
+                    <Link href="/production">Mở Cấu hình sản xuất</Link>
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <Select
+                    value={selectedReleaseId}
+                    onValueChange={(value) => {
+                      setSelectedReleaseId(value ?? "");
+                      setSelectedEndpointId("");
+                      setAcknowledgeRisk(false);
+                      state.clearPreviews();
+                    }}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue>
+                        {selectedRelease
+                          ? `Phiên bản ${selectedRelease.releaseNumber} · ${statusLabels[selectedRelease.status] ?? selectedRelease.status}`
+                          : "Chọn phiên bản đã phát hành"}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {publishedReleases.map((release) => (
                         <SelectItem key={release.id} value={release.id}>
-                          Bản phát hành #{release.releaseNumber} ·{" "}
-                          {release.routeCount} tuyến
+                          Phiên bản {release.releaseNumber} ·{" "}
+                          {release.routeCount} món đã cấu hình
                         </SelectItem>
                       ))}
-                  </SelectContent>
-                </Select>
-                <Button
-                  variant="outline"
-                  disabled={!selectedReleaseId || state.isMutating}
-                  onClick={() =>
-                    void state.previewDeployment(selectedReleaseId)
-                  }
-                >
-                  Kiểm tra triển khai
-                </Button>
-              </div>
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    variant="outline"
+                    disabled={!selectedReleaseId || state.isMutating}
+                    onClick={() =>
+                      void state.previewDeployment(selectedReleaseId)
+                    }
+                  >
+                    Kiểm tra triển khai
+                  </Button>
+                </div>
+              )}
               {state.deploymentPreview ? (
                 <div className="space-y-3">
                   <div
@@ -1329,7 +1376,7 @@ export function ProductionOperationsPanel(
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="font-medium">
-                          Bản phát hành #{deployment.releaseNumber}
+                          Phiên bản {deployment.releaseNumber}
                         </span>
                         <StatusBadge status={deployment.status} />
                       </div>

@@ -7,8 +7,8 @@ import {
   getRobotAuthoringImport,
   getRobotAuthoringWorkspace,
   listRobotAuthoringImports,
+  resumeRobotAuthoringImport,
   uploadRobotAuthoringImport,
-  validateRobotAuthoringImport,
 } from "@/lib/services/production-operations";
 
 vi.mock("sonner", () => ({
@@ -24,11 +24,10 @@ vi.mock("@/lib/services/production-operations", () => ({
   getRobotAuthoringImport: vi.fn(),
   getRobotAuthoringWorkspace: vi.fn(),
   listRobotAuthoringImports: vi.fn(),
-  materializeRobotAuthoringImport: vi.fn(),
   previewRobotAuthoringComposition: vi.fn(),
   publishRobotAuthoringImportResources: vi.fn(),
+  resumeRobotAuthoringImport: vi.fn(),
   uploadRobotAuthoringImport: vi.fn(),
-  validateRobotAuthoringImport: vi.fn(),
 }));
 
 const page = (items: Array<{ id: string }>) => ({
@@ -36,7 +35,7 @@ const page = (items: Array<{ id: string }>) => ({
   statusCode: 200,
   data: items,
   pagination: { page: 1, pageSize: 10, totalCount: items.length, totalPages: 1, hasNext: false, hasPrevious: false },
-});
+}) as never;
 
 function deferred<T>() {
   let resolve!: (value: T) => void;
@@ -83,9 +82,9 @@ describe("useRobotAuthoringImports", () => {
     expect(result.current.selectedImport?.id).toBe("import-b");
   });
 
-  it("reports mutation success separately when the subsequent list refresh fails", async () => {
+  it("reports retry success separately when the subsequent list refresh fails", async () => {
     vi.mocked(getRobotAuthoringImport).mockResolvedValue({ id: "import-1", nextActions: ["ValidateImport"], composedOptionCodes: [], items: [] } as never);
-    vi.mocked(validateRobotAuthoringImport).mockResolvedValue({ id: "import-1" } as never);
+    vi.mocked(resumeRobotAuthoringImport).mockResolvedValue({ id: "import-1" } as never);
     vi.mocked(listRobotAuthoringImports)
       .mockResolvedValueOnce(page([]))
       .mockRejectedValueOnce(new Error("refresh failed"))
@@ -94,16 +93,16 @@ describe("useRobotAuthoringImports", () => {
     await waitFor(() => expect(result.current.isLoading).toBe(false));
     await act(async () => { await result.current.selectImport("import-1"); });
 
-    await act(async () => { await result.current.validate(); });
+    await act(async () => { await result.current.resume(); });
 
-    expect(validateRobotAuthoringImport).toHaveBeenCalledOnce();
-    expect(toast.success).toHaveBeenCalledWith("Đã kiểm tra gói cấu hình.");
+    expect(resumeRobotAuthoringImport).toHaveBeenCalledOnce();
+    expect(toast.success).toHaveBeenCalledWith("Đã tiếp tục nhập chương trình.");
     expect(toast.warning).toHaveBeenCalledWith("Thao tác đã thành công nhưng danh sách mới chưa tải lại được. Hãy dùng nút Làm mới.");
     expect(result.current.refreshWarning).toBe("Thao tác đã thành công nhưng danh sách mới chưa tải lại được.");
 
     await act(async () => { await result.current.refresh(); });
 
-    expect(validateRobotAuthoringImport).toHaveBeenCalledOnce();
+    expect(resumeRobotAuthoringImport).toHaveBeenCalledOnce();
     expect(listRobotAuthoringImports).toHaveBeenCalledTimes(3);
     expect(result.current.refreshWarning).toBeNull();
   });
@@ -123,5 +122,28 @@ describe("useRobotAuthoringImports", () => {
     expect(uploadRobotAuthoringImport).toHaveBeenCalledOnce();
     pendingUpload.resolve({ id: "import-1" } as never);
     await act(async () => { await pendingUpload.promise; });
+  });
+
+  it("resumes validation and materialization through one operator action", async () => {
+    vi.mocked(getRobotAuthoringImport).mockResolvedValue({
+      id: "import-1",
+      status: "Failed",
+      nextActions: ["ValidateImport"],
+      composedOptionCodes: [],
+      items: [],
+    } as never);
+    vi.mocked(resumeRobotAuthoringImport).mockResolvedValue({
+      id: "import-1",
+      status: "Materialized",
+      materializedRobotProgramId: "program-1",
+    } as never);
+    const { result } = renderHook(() => useRobotAuthoringImports("org-1"));
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    await act(async () => { await result.current.selectImport("import-1"); });
+
+    await act(async () => { await result.current.resume(); });
+
+    expect(resumeRobotAuthoringImport).toHaveBeenCalledWith("org-1", "import-1");
+    expect(toast.success).toHaveBeenCalledWith("Đã tiếp tục nhập chương trình.");
   });
 });

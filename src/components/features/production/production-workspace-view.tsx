@@ -134,6 +134,7 @@ function ProductionOrganizationSelector({
 export function ProductionWorkspaceView() {
   const { effectiveAccess } = useAuth();
   const scope = useProductionOrganizationScope();
+  const [activeStage, setActiveStage] = useState("programs");
   const selected = scope.selectedOrganization;
   const organizationScope = selected
     ? { organizationId: selected.id, storeId: null, kioskId: null }
@@ -150,7 +151,6 @@ export function ProductionWorkspaceView() {
   const canManageReleases = organizationScope
     ? hasScopedPermission(effectiveAccess, "release.publish", organizationScope)
     : false;
-
   return (
     <div className="space-y-6">
       <section className="flex flex-col gap-4 border-b border-border pb-6 lg:flex-row lg:items-end lg:justify-between">
@@ -228,7 +228,10 @@ export function ProductionWorkspaceView() {
             </CardContent>
           </Card>
           {canRead ? (
-            <Tabs defaultValue="programs">
+            <Tabs
+              value={activeStage}
+              onValueChange={(value) => setActiveStage(value ?? "programs")}
+            >
               <TabsList
                 variant="line"
                 aria-label="Các giai đoạn cấu hình sản xuất"
@@ -238,7 +241,7 @@ export function ProductionWorkspaceView() {
                   2. Bind Configuration
                 </TabsTrigger>
                 <TabsTrigger value="releases">
-                  3. Release / Deployment
+                  3. Phát hành cấu hình
                 </TabsTrigger>
               </TabsList>
               <TabsContent value="programs" className="pt-4">
@@ -252,6 +255,7 @@ export function ProductionWorkspaceView() {
                   canRead={canRead}
                   canUpload={canUpload}
                   canManagePrograms={canManagePrograms}
+                  onOpenBindings={() => setActiveStage("bindings")}
                   mode="programs"
                 />
               </TabsContent>

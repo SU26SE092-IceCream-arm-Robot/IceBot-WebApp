@@ -41,8 +41,9 @@ export function OrganizationConfigurationReleasesPanel({
           <div>
             <h2 className="font-semibold">Bản phát hành cấu hình</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Soạn tuyến sản xuất của tổ chức trước khi chuyển sang Kiosk để
-              kiểm tra và triển khai.
+              Chọn các món đã liên kết với chương trình robot, kiểm tra điều kiện
+              phát hành và tạo phiên bản cấu hình. Triển khai kiosk thực hiện ở
+              khu vực Kiosk.
             </p>
           </div>
         </div>
@@ -63,7 +64,7 @@ export function OrganizationConfigurationReleasesPanel({
               onClick={() => void state.createRelease()}
             >
               <Plus className="size-4" />
-              Tạo bản nháp
+              Tạo phiên bản nháp
             </Button>
           ) : null}
         </div>
@@ -100,15 +101,15 @@ export function OrganizationConfigurationReleasesPanel({
               <div>
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="font-medium">
-                    Bản phát hành #{release.releaseNumber}
+                    Phiên bản {release.releaseNumber}
                   </p>
                   <Badge variant="outline">
                     {statusLabels[release.status] ?? release.status}
                   </Badge>
                 </div>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  {release.routeCount} tuyến ·{" "}
-                  {release.releaseChecksum ? "Đã đóng gói" : "Chưa đóng gói"}
+                  {release.routeCount} món đã cấu hình ·{" "}
+                  {release.releaseChecksum ? "Sẵn sàng triển khai" : "Đang soạn"}
                 </p>
               </div>
               {canManage ? (
@@ -121,7 +122,7 @@ export function OrganizationConfigurationReleasesPanel({
                         disabled={state.isMutating}
                         onClick={() => void openEditor(release.id)}
                       >
-                        Soạn tuyến
+                        Cấu hình món
                       </Button>
                       <Button
                         size="sm"

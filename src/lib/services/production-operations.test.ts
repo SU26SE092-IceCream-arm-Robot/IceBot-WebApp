@@ -13,13 +13,14 @@ import {
   getConfigurationReleaseAuthoringOptions,
   getConfigurationInventoryReadiness,
   installProductionPackage,
-  importRawLuaRobotProgramArtifacts,
+  listRobotPrograms,
   listRobotAuthoringImports,
   listPackageInstallations,
   previewConfigurationDeployment,
   previewPackageUpgrade,
   publishConfigurationRelease,
   recoverPackageInstallation,
+  resumeRobotAuthoringImport,
   replaceConfigurationReleaseRoutes,
   replaceRobotProgramArtifacts,
   retireConfigurationRelease,
@@ -410,31 +411,45 @@ describe("production operations management contracts", () => {
     expect(formData.get("kioskId")).toBe("kiosk-1");
   });
 
-  it("imports a raw Lua ZIP only through the selected draft program route", async () => {
-    vi.mocked(axiosClient.post).mockResolvedValue(
-      response({ succeeded: true, statusCode: 201, data: { upload: { totalCount: 1 }, appendedArtifactIds: [] } }),
-    );
-    const archive = new File(["zip"], "legacy-lua.zip", { type: "application/zip" });
-
-    await importRawLuaRobotProgramArtifacts("org-1", "program-1", {
-      files: [archive],
-      runtimeTargetCode: "FAIRINO-LUA",
-      machineModelCode: "FR5",
+  it("treats the robot-program list as summaries without artifact details", async () => {
+    const summary = {
+      id: "program-1",
+      organizationId: "org-1",
+      code: "VANILLA",
+      name: "Vanilla serve",
+      scopeType: "Organization",
+      status: "Draft",
+      artifactCount: 3,
+    };
+    vi.mocked(axiosClient.get).mockResolvedValue({
+      ...response({ succeeded: true, statusCode: 200, data: [summary] }),
+      data: {
+        succeeded: true,
+        statusCode: 200,
+        data: [summary],
+        pagination: { page: 1, pageSize: 100, totalCount: 1, totalPages: 1, hasNext: false, hasPrevious: false },
+      },
     });
 
-    expect(axiosClient.post).toHaveBeenCalledWith(
-      "/api/v1/management/organizations/org-1/robot-programs/program-1/raw-lua-artifacts",
-      expect.any(FormData),
-    );
-    const formData = vi.mocked(axiosClient.post).mock.calls[0]?.[1] as FormData;
-    expect(formData.get("archive")).toBe(archive);
-    expect(formData.get("runtimeTargetCode")).toBe("FAIRINO-LUA");
-    expect(formData.get("machineModelCode")).toBe("FR5");
+    await expect(listRobotPrograms("org-1")).resolves.toEqual([summary]);
   });
 
   it("persists a complete ordered artifact list for a draft program", async () => {
     vi.mocked(axiosClient.put).mockResolvedValue(
-      response({ succeeded: true, statusCode: 200, data: { id: "program-1", artifacts: [], lastModifiedAt: "2026-08-04T00:00:00Z" } as RobotProgramResult }),
+      response({
+        succeeded: true,
+        statusCode: 200,
+        data: {
+          id: "program-1",
+          code: "VANILLA",
+          name: "Vanilla serve",
+          scopeType: "Organization",
+          status: "Draft",
+          restartPolicy: "ManualOnly",
+          artifacts: [],
+          lastModifiedAt: "2026-08-04T00:00:00Z",
+        } satisfies RobotProgramResult,
+      }),
     );
 
     await replaceRobotProgramArtifacts("org-1", "program-1", {
@@ -456,7 +471,6 @@ describe("production operations management contracts", () => {
     await validateRobotAuthoringImport("org-1", "import-1");
     await createRobotAuthoringReleaseDraft("org-1", "import-1", {
       recipeId: "recipe-1",
-      requiredWorkcellCapabilityCode: null,
       supportedOptionCodes: ["TOPPING"],
     });
 
@@ -467,7 +481,19 @@ describe("production operations management contracts", () => {
     expect(axiosClient.post).toHaveBeenNthCalledWith(
       2,
       "/api/v1/management/organizations/org-1/robot-authoring-imports/import-1/create-release-draft",
-      { recipeId: "recipe-1", requiredWorkcellCapabilityCode: null, supportedOptionCodes: ["TOPPING"] },
+      { recipeId: "recipe-1", supportedOptionCodes: ["TOPPING"] },
+    );
+  });
+
+  it("resumes automatic authoring-import processing through its scoped route", async () => {
+    vi.mocked(axiosClient.post).mockResolvedValue(
+      response({ succeeded: true, statusCode: 200, data: { id: "import-1" } }),
+    );
+
+    await resumeRobotAuthoringImport("org-1", "import-1");
+
+    expect(axiosClient.post).toHaveBeenCalledWith(
+      "/api/v1/management/organizations/org-1/robot-authoring-imports/import-1/resume",
     );
   });
 

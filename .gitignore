@@ -48,7 +48,7 @@ next-env.d.ts
 
 # Local Markdown docs
 *.md
+
 !README.md
 !**/README.md
-!AGENTS.md
 !LOCAL_RUN_COMMANDS.md

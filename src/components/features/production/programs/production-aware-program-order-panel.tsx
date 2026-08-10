@@ -138,8 +138,9 @@ export function ProductionAwareProgramOrderPanel({
             Thứ tự artifact của Production-aware Lua
           </p>
           <p className="mt-1 text-xs leading-5 text-muted-foreground">
-            Kéo thả hoặc dùng nút lên/xuống khi Program còn Draft. Backend vẫn
-            kiểm tra các ordering constraint bắt buộc khi preview composition.
+            Kéo thả hoặc dùng nút lên/xuống khi Program còn Draft. Thứ tự đã
+            lưu là thứ tự chạy mà Cloud chuyển tiếp; metadata ordering chỉ mang
+            tính tham khảo.
           </p>
         </div>
         <Button
