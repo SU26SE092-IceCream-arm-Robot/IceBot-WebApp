@@ -51,7 +51,7 @@ describe("RobotAuthoringBundleUpload", () => {
       { target: { files: [file] } },
     );
     expect(screen.getByText("fairino-export.zip")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Nhập bundle" }));
+    fireEvent.click(screen.getByRole("button", { name: "Nhập chương trình" }));
 
     await waitFor(() => expect(onUpload).toHaveBeenCalledWith(file));
     expect(screen.queryByText("fairino-export.zip")).not.toBeInTheDocument();

@@ -27,7 +27,8 @@ export function createConfigurationReleaseRouteDrafts(
           binding.productionProgramBindingId ?? undefined,
         robotProgramId: binding.robotProgramId,
         bindingOrder: binding.bindingOrder,
-        requiredWorkcellCapabilityCode: binding.requiredWorkcellCapabilityCode,
+        requiredWorkcellCapabilityCode:
+          binding.requiredCapabilityCodes[0] ?? "",
       })),
   }));
 }
@@ -85,10 +86,6 @@ export function validateConfigurationReleaseRouteDrafts(
           return `Route ${position} uses the same production binding more than once.`;
         }
         programIds.add(binding.productionProgramBindingId);
-        const capability = binding.requiredWorkcellCapabilityCode.trim();
-        if (!capability || capability.length > 100) {
-          return `Route ${position} has an invalid workcell capability.`;
-        }
         continue;
       }
       if (!binding.robotProgramId)

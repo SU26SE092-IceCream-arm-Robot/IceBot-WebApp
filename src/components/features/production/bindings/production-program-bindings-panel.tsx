@@ -1,7 +1,7 @@
 "use client";
 
 import { Link2, RefreshCw } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -37,7 +37,6 @@ export function ProductionProgramBindingsPanel({
   );
   const [recipeId, setRecipeId] = useState("");
   const [programId, setProgramId] = useState("");
-  const [capability, setCapability] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -67,22 +66,22 @@ export function ProductionProgramBindingsPanel({
   }, [load]);
   const recipe = options?.recipes.find((item) => item.id === recipeId);
   const program = options?.robotPrograms.find((item) => item.id === programId);
-  const capabilityOptions = useMemo(
-    () =>
-      program?.workcellCapabilityCodes ??
-      options?.workcellCapabilities.map((item) => item.code) ??
-      [],
-    [options, program],
-  );
+  const recipeLabel = recipe
+    ? [recipe.productName, recipe.productVariantName, recipe.name]
+        .filter(Boolean)
+        .join(" · ")
+    : "Chọn Recipe";
+  const programLabel = program
+    ? [program.name, program.code].filter(Boolean).join(" · ")
+    : "Chọn chương trình đã phát hành";
   const create = async () => {
-    if (!recipe || !program || !capability) return;
+    if (!recipe || !program) return;
     setBusy(true);
     setError(null);
     try {
       await createProductionProgramBinding(organizationId, {
         recipeId,
         robotProgramId: programId,
-        requiredWorkcellCapabilityCode: capability,
         supportedOptionCodes: recipe.productionOptionCandidates
           .filter((option) => option.isAvailable)
           .map((option) => option.code),
@@ -107,8 +106,8 @@ export function ProductionProgramBindingsPanel({
           <div>
             <h2 className="font-semibold">Liên kết Recipe và chương trình</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Tạo một bằng chứng tương thích bất biến giữa Recipe, option policy
-              và Robot Program đã phát hành.
+              Xác nhận Robot Program mà người vận hành chọn cho Recipe và các tùy chọn sản xuất.
+              Backend lưu liên kết bất biến nhưng không chứng minh hành vi bên trong Lua.
             </p>
           </div>
         </div>
@@ -130,7 +129,7 @@ export function ProductionProgramBindingsPanel({
         </p>
       ) : null}
       {canManage ? (
-        <div className="grid gap-4 border-b p-4 md:grid-cols-3">
+        <div className="grid gap-4 border-b p-4 md:grid-cols-2">
           <div>
             <Label>Recipe</Label>
             <Select
@@ -138,7 +137,7 @@ export function ProductionProgramBindingsPanel({
               onValueChange={(value) => setRecipeId(value ?? "")}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Chọn Recipe" />
+                <SelectValue>{recipeLabel}</SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {options?.recipes.map((item) => (
@@ -153,18 +152,10 @@ export function ProductionProgramBindingsPanel({
             <Label>Robot Program</Label>
             <Select
               value={programId}
-              onValueChange={(value) => {
-                const nextProgramId = value ?? "";
-                const nextProgram = options?.robotPrograms.find(
-                  (item) => item.id === nextProgramId,
-                );
-                const capabilities = nextProgram?.workcellCapabilityCodes ?? [];
-                setProgramId(nextProgramId);
-                setCapability(capabilities.length === 1 ? capabilities[0] : "");
-              }}
+              onValueChange={(value) => setProgramId(value ?? "")}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Chọn chương trình đã phát hành" />
+                <SelectValue>{programLabel}</SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {options?.robotPrograms.map((item) => (
@@ -175,38 +166,10 @@ export function ProductionProgramBindingsPanel({
               </SelectContent>
             </Select>
           </div>
-          <div>
-            <Label>Môi trường chạy</Label>
-            {capabilityOptions.length === 1 ? (
-              <p className="mt-1.5 rounded-md border bg-muted/30 px-3 py-2 text-sm">
-                {capabilityOptions[0]}
-              </p>
-            ) : capabilityOptions.length > 1 ? (
-              <Select
-                value={capability}
-                onValueChange={(value) => setCapability(value ?? "")}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Chọn môi trường tương thích" />
-                </SelectTrigger>
-                <SelectContent>
-                  {capabilityOptions.map((item) => (
-                    <SelectItem key={item} value={item}>
-                      {item}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            ) : (
-              <p className="mt-1.5 rounded-md border border-warning/30 bg-warning/5 px-3 py-2 text-sm text-warning">
-                Chương trình chưa công bố môi trường chạy tương thích.
-              </p>
-            )}
-          </div>
           <div className="md:col-span-3">
             <Button
               onClick={() => void create()}
-              disabled={busy || !recipe || !program || !capability}
+              disabled={busy || !recipe || !program}
             >
               Tạo liên kết
             </Button>
@@ -235,8 +198,15 @@ export function ProductionProgramBindingsPanel({
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground">
                   Recipe v{binding.recipeVersion} ·{" "}
-                  {binding.requiredWorkcellCapabilityCode} · {binding.status}
+                  {binding.requiredCapabilityCodes.length > 0
+                    ? binding.requiredCapabilityCodes.join(", ")
+                    : "Không khai báo yêu cầu thiết bị"} · {binding.status}
                 </p>
+                {binding.capabilityEvidenceStatus === "Missing" ? (
+                  <p className="mt-1 text-xs text-warning">
+                    Bundle không khai báo yêu cầu thiết bị. Backend không tự suy đoán yêu cầu từ Lua.
+                  </p>
+                ) : null}
               </div>
               {canManage && binding.status === "Active" ? (
                 <Button

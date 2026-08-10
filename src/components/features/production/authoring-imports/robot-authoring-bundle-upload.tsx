@@ -120,7 +120,7 @@ export function RobotAuthoringBundleUpload({
                 ) : (
                   <UploadCloud className="size-4" />
                 )}
-                {isUploading ? "Đang tải lên" : "Nhập bundle"}
+                {isUploading ? "Đang nhập chương trình" : "Nhập chương trình"}
               </Button>
               <Button
                 size="icon-sm"
@@ -163,31 +163,16 @@ export function RobotAuthoringBundleUpload({
       </div>
 
       <div className="rounded-lg border bg-muted/20 p-4">
-        <p className="text-sm font-semibold">Bundle cần có</p>
-        <pre className="mt-3 overflow-x-auto rounded-md border bg-background p-2 text-xs text-foreground">{`export-manifest.json\nartifacts/*.lua\ncontracts/*.icebot.json`}</pre>
-        <ol className="mt-3 space-y-3 text-sm text-muted-foreground">
-          <li>
-            <span className="font-medium text-foreground">
-              ZIP không hợp lệ:
-            </span>{" "}
-            file không đọc được, bị mã hóa hoặc vượt giới hạn.
-          </li>
-          <li>
-            <span className="font-medium text-foreground">
-              Manifest/sidecar không hợp lệ:
-            </span>{" "}
-            schema, target hoặc trường bắt buộc sai.
-          </li>
-          <li>
-            <span className="font-medium text-foreground">
-              Tham chiếu file sai:
-            </span>{" "}
-            manifest không tìm thấy Lua hoặc sidecar tương ứng trong ZIP.
-          </li>
-        </ol>
+        <p className="text-sm font-semibold">Bundle Fairino cần có</p>
+        <pre className="mt-3 overflow-x-auto rounded-md border bg-background p-2 text-xs text-foreground">{`export-manifest.json          # danh sách file và thứ tự chạy\nartifacts/*.lua               # Lua được xem là black box\ncontracts/*.icebot.json       # metadata khai báo; effects có thể rỗng`}</pre>
+        <p className="mt-3 text-sm leading-5 text-muted-foreground">
+          Thư mục <code>contracts</code> là envelope metadata của định dạng
+          bundle hiện tại, không phải chứng nhận rằng Lua khớp Recipe, thiết bị
+          hoặc model máy.
+        </p>
         <p className="mt-4 text-xs leading-5 text-muted-foreground">
-          Nhập bundle chỉ đăng ký dữ liệu trên hệ thống. Thao tác này chưa triển
-          khai chương trình xuống robot.
+          Chỉ cần chọn file và nhấn Nhập chương trình. Nếu cấu trúc ZIP không đọc
+          được, hệ thống sẽ chỉ rõ lỗi cần sửa. Thao tác này chưa triển khai xuống robot.
         </p>
       </div>
     </div>

@@ -80,9 +80,10 @@ Use the desktop application's Export menu:
 - `Export IceBot Authoring Bundle`: export the complete robot program package.
   Use this when the program is ready to be imported into IceBot with its
   execution information and configuration metadata.
-- `Export Steps ZIP (Opaque technical Lua)`: export only the Lua files for
-  individual robot steps. Use this for legacy files, testing, or when the
-  execution information will be completed later in IceBot.
+- `Export Steps ZIP`: export only individual Lua files for local inspection or
+  controller-side testing. The normal IceBot WebApp import does not accept this
+  archive as a production-authoring bundle; use `Export IceBot Authoring
+  Bundle` for the WebApp workflow.
 
 Use `npm ci` only after a fresh clone or when `node_modules` is absent. For a
 normal subsequent run, execute only `npm run dev`.

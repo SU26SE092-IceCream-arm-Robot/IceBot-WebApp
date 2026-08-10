@@ -4,6 +4,7 @@ import {
   Building2,
   CalendarClock,
   MapPin,
+  Rocket,
   Server,
 } from "lucide-react";
 
@@ -23,6 +24,7 @@ import type {
 
 interface KioskCardProps {
   kiosk: KioskFleetItem;
+  canDeployConfiguration?: boolean;
 }
 
 function formatTimestamp(value?: string | null): string {
@@ -84,7 +86,7 @@ function getOperationalVariant(
   return "secondary";
 }
 
-export function KioskCard({ kiosk }: KioskCardProps) {
+export function KioskCard({ kiosk, canDeployConfiguration = false }: KioskCardProps) {
   return (
     <Card className="relative overflow-hidden border-border/80 shadow-none transition-colors hover:bg-secondary/15">
       <span
@@ -148,7 +150,19 @@ export function KioskCard({ kiosk }: KioskCardProps) {
           </div>
         </div>
 
-        <div className="border-t border-border pt-3">
+        <div className="flex flex-col gap-2 border-t border-border pt-3">
+          {canDeployConfiguration ? (
+            <Link
+              href={`/kiosks/${encodeURIComponent(kiosk.managementId)}?tab=deployments`}
+              className={cn(
+                buttonVariants({ variant: "outline", size: "sm" }),
+                "w-full justify-between",
+              )}
+            >
+              Triển khai cấu hình
+              <Rocket className="size-4" />
+            </Link>
+          ) : null}
           <Link
             href={`/kiosks/${encodeURIComponent(kiosk.managementId)}`}
             className={cn(

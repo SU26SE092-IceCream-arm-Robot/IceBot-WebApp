@@ -36,7 +36,6 @@ export function OrganizationProductionWorkspace({
     "release.publish",
     scope,
   );
-
   if (!canRead) {
     return (
       <div className="rounded-lg border border-dashed px-5 py-10 text-center text-sm text-muted-foreground">

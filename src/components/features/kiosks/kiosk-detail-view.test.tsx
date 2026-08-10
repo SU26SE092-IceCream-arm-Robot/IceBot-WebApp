@@ -93,7 +93,7 @@ describe("KioskDetailView tab persistence", () => {
     };
   });
 
-  it("keeps the advanced operations tab after focus revalidation reloads detail", () => {
+  it("keeps the technical operations tab after focus revalidation reloads detail", () => {
     const { rerender } = render(<KioskDetailView kioskId="kiosk-1" />);
 
     fireEvent.click(screen.getByRole("tab", { name: "Vận hành kỹ thuật" }));
@@ -101,7 +101,7 @@ describe("KioskDetailView tab persistence", () => {
       "aria-selected",
       "true",
     );
-    expect(screen.getByText("Cấu hình sản xuất thử nghiệm")).toBeInTheDocument();
+    expect(screen.getByText("Danh sách thiết bị thử nghiệm")).toBeInTheDocument();
 
     mocks.detail = { ...readyDetail(), kiosk: null, state: "LOADING" };
     rerender(<KioskDetailView kioskId="kiosk-1" />);
@@ -113,7 +113,20 @@ describe("KioskDetailView tab persistence", () => {
       "aria-selected",
       "true",
     );
+    expect(screen.getByText("Danh sách thiết bị thử nghiệm")).toBeInTheDocument();
+  });
+
+  it("opens kiosk deployment separately from technical operations", () => {
+    render(<KioskDetailView kioskId="kiosk-1" />);
+
+    fireEvent.click(screen.getByRole("tab", { name: "Triển khai" }));
+
+    expect(screen.getByRole("tab", { name: "Triển khai" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
     expect(screen.getByText("Cấu hình sản xuất thử nghiệm")).toBeInTheDocument();
+    expect(screen.queryByText("Danh sách thiết bị thử nghiệm")).not.toBeInTheDocument();
   });
 
   it("does not expose device management from a Manager assignment outside the kiosk scope", () => {

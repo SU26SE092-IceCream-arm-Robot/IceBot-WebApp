@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   Activity,
   AlertTriangle,
@@ -605,9 +606,12 @@ function EventsTable({
 }
 
 export function KioskDetailView({ kioskId }: KioskDetailViewProps) {
+  const searchParams = useSearchParams();
+  const initialTab =
+    searchParams?.get("tab") === "deployments" ? "deployments" : "overview";
   const { effectiveAccess } = useAuth();
   const [operationalStateOpen, setOperationalStateOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState(initialTab);
   const {
     kiosk,
     state,
@@ -662,15 +666,13 @@ export function KioskDetailView({ kioskId }: KioskDetailViewProps) {
   };
   const canManageOperationalState = hasScopedPermission(effectiveAccess, "kiosks.update", scope);
   const canManageDevices = hasScopedPermission(effectiveAccess, "devices.manage", scope);
-  const canManagePrograms = hasScopedPermission(effectiveAccess, "program.manage", scope);
-  const canInstallPackages = hasScopedPermission(effectiveAccess, "package.install", scope);
-  const canManageReleases = hasScopedPermission(effectiveAccess, "release.publish", scope);
-  const canForkPackages = hasScopedPermission(effectiveAccess, "package.fork", scope);
   const canDeploy = hasScopedPermission(effectiveAccess, "release.deploy", scope);
   const canRollbackDeployments = hasScopedPermission(effectiveAccess, "release.rollback", scope);
-  const canViewProductionOperations = hasScopedPermission(effectiveAccess, "release.read", scope)
-    || hasScopedPermission(effectiveAccess, "package.read", scope)
-    || hasScopedPermission(effectiveAccess, "program.read", scope);
+  const canViewDeployments =
+    canDeploy ||
+    canRollbackDeployments ||
+    hasScopedPermission(effectiveAccess, "release.read", scope) ||
+    hasScopedPermission(effectiveAccess, "deployment.read", scope);
 
   return (
     <div className="space-y-6">
@@ -694,11 +696,16 @@ export function KioskDetailView({ kioskId }: KioskDetailViewProps) {
       ) : null}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full space-y-6">
-        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 lg:w-auto lg:inline-flex">
+        <TabsList
+          className={`grid w-full grid-cols-2 ${canViewDeployments ? "lg:grid-cols-5" : "lg:grid-cols-4"} lg:w-auto lg:inline-flex`}
+        >
           <TabsTrigger value="overview">Tổng quan</TabsTrigger>
           <TabsTrigger value="heartbeats">Kết nối</TabsTrigger>
           <TabsTrigger value="events">Sự kiện</TabsTrigger>
           <TabsTrigger value="devices">Vận hành kỹ thuật</TabsTrigger>
+          {canViewDeployments ? (
+            <TabsTrigger value="deployments">Triển khai</TabsTrigger>
+          ) : null}
         </TabsList>
         <TabsContent value="overview" className="space-y-6">
           <div className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
@@ -722,22 +729,24 @@ export function KioskDetailView({ kioskId }: KioskDetailViewProps) {
             </div>
             <DevicesTable kioskId={kioskId} canManage={canManageDevices} />
             <ExecutionEndpointsTable kioskId={kioskId} canManage={canManageDevices} />
-            {canViewProductionOperations ? (
+            <OperationLogsPanel kioskId={kioskId} />
+          </div>
+        </TabsContent>
+
+        {canViewDeployments ? (
+          <TabsContent value="deployments">
+            {activeTab === "deployments" ? (
               <ProductionOperationsPanel
                 organizationId={kiosk.organizationId}
                 storeId={kiosk.locationId}
                 kioskId={kiosk.managementId}
-                canManagePrograms={canManagePrograms}
-                canInstallPackages={canInstallPackages}
-                canManageReleases={canManageReleases}
-                canForkPackages={canForkPackages}
                 canDeploy={canDeploy}
                 canRollback={canRollbackDeployments}
+                deploymentOnly
               />
             ) : null}
-            <OperationLogsPanel kioskId={kioskId} />
-          </div>
-        </TabsContent>
+          </TabsContent>
+        ) : null}
       </Tabs>
 
       {operationalStateOpen ? (

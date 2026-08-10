@@ -12,11 +12,10 @@ import {
   getRobotAuthoringImport,
   getRobotAuthoringWorkspace,
   listRobotAuthoringImports,
-  materializeRobotAuthoringImport,
   previewRobotAuthoringComposition,
   publishRobotAuthoringImportResources,
+  resumeRobotAuthoringImport,
   uploadRobotAuthoringImport,
-  validateRobotAuthoringImport,
 } from "@/lib/services/production-operations";
 import type {
   ConfigurationReleaseAuthoringOptions,
@@ -317,23 +316,15 @@ export function useRobotAuthoringImports(organizationId: string) {
     upload: (request: UploadRobotAuthoringImportRequest) =>
       runMutation(
         () => uploadRobotAuthoringImport(organizationId, request),
-        "Đã tải lên gói cấu hình. Hãy kiểm tra trước khi tạo tài nguyên.",
+        "Đã nhập chương trình và tạo tài nguyên Draft.",
         (result) => void loadSelected(result.id),
       ),
-    validate: () =>
+    resume: () =>
       selectedImportId
         ? runMutation(
             () =>
-              validateRobotAuthoringImport(organizationId, selectedImportId),
-            "Đã kiểm tra gói cấu hình.",
-          )
-        : Promise.resolve(null),
-    materialize: () =>
-      selectedImportId
-        ? runMutation(
-            () =>
-              materializeRobotAuthoringImport(organizationId, selectedImportId),
-            "Đã tạo tài nguyên từ gói cấu hình.",
+              resumeRobotAuthoringImport(organizationId, selectedImportId),
+            "Đã tiếp tục nhập chương trình.",
           )
         : Promise.resolve(null),
     publishResources: () =>

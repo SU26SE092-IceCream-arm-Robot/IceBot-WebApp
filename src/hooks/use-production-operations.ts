@@ -50,7 +50,7 @@ import type {
   PackageUpgradeResult,
   PackageWorkspaceResult,
   ProductionPackageResult,
-  RobotProgramResult,
+  RobotProgramSummaryResult,
   UpdateRobotProgramRequest,
 } from "@/types/production-operations";
 
@@ -61,7 +61,7 @@ interface ProductionOperationsScope {
 }
 
 export function useProductionOperations(scope: ProductionOperationsScope) {
-  const [programs, setPrograms] = useState<RobotProgramResult[]>([]);
+  const [programs, setPrograms] = useState<RobotProgramSummaryResult[]>([]);
   const [packages, setPackages] = useState<ProductionPackageResult[]>([]);
   const [installations, setInstallations] = useState<PackageInstallationResult[]>([]);
   const [releases, setReleases] = useState<ConfigurationReleaseSummaryResult[]>([]);

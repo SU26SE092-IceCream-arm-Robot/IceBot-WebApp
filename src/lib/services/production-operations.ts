@@ -26,6 +26,7 @@ import type {
   PackageWorkspaceResult,
   ProductionPackageResult,
   RobotProgramResult,
+  RobotProgramSummaryResult,
   RobotProgramsPage,
   RobotAuthoringCompositionPreview,
   RobotAuthoringImportQuery,
@@ -34,7 +35,6 @@ import type {
   RobotAuthoringWorkspaceResult,
   UploadRobotAuthoringImportRequest,
   CreateRobotAuthoringReleaseDraftRequest,
-  RawLuaRobotProgramArtifactImportResult,
   ReplaceRobotProgramArtifactsRequest,
   UpdateRobotProgramRequest,
   CreateProductionProgramBindingRequest,
@@ -74,7 +74,7 @@ export async function listRobotPrograms(
   organizationId: string,
   signal?: AbortSignal,
 ) {
-  return collectPagedResults<RobotProgramResult>(async (pageNumber) => {
+  return collectPagedResults<RobotProgramSummaryResult>(async (pageNumber) => {
     const response = await axiosClient.get<RobotProgramsPage>(
       `/api/v1/management/organizations/${encodeURIComponent(organizationId)}/robot-programs`,
       { params: { pageNumber, pageSize: OPERATIONS_PAGE_SIZE }, signal },
@@ -135,36 +135,6 @@ export async function replaceRobotProgramArtifacts(
     response.data,
     "Cannot save robot program artifact order.",
   );
-}
-
-export async function importRawLuaRobotProgramArtifacts(
-  organizationId: string,
-  programId: string,
-  request: {
-    files: File[];
-    runtimeTargetCode: string;
-    machineModelCode: string;
-    description?: string;
-  },
-) {
-  const formData = new FormData();
-  const archive = request.files.find((file) =>
-    file.name.toLowerCase().endsWith(".zip"),
-  );
-  if (archive) formData.append("archive", archive);
-  else request.files.forEach((file) => formData.append("files", file));
-  formData.append("runtimeTargetCode", request.runtimeTargetCode.trim());
-  formData.append("machineModelCode", request.machineModelCode.trim());
-  if (request.description?.trim())
-    formData.append("description", request.description.trim());
-
-  const response = await axiosClient.post<
-    ApiResult<RawLuaRobotProgramArtifactImportResult>
-  >(
-    `/api/v1/management/organizations/${encodeURIComponent(organizationId)}/robot-programs/${encodeURIComponent(programId)}/raw-lua-artifacts`,
-    formData,
-  );
-  return requireData(response.data, "Cannot import raw Lua artifacts.");
 }
 
 export async function changeRobotProgramLifecycle(
@@ -716,6 +686,21 @@ export async function validateRobotAuthoringImport(
     `${authoringImportsPath(organizationId)}/${encodeURIComponent(importId)}/validate`,
   );
   return requireData(response.data, "Không thể kiểm tra gói cấu hình.");
+}
+
+export async function resumeRobotAuthoringImport(
+  organizationId: string,
+  importId: string,
+) {
+  const response = await axiosClient.post<
+    ApiResult<RobotAuthoringImportResult>
+  >(
+    `${authoringImportsPath(organizationId)}/${encodeURIComponent(importId)}/resume`,
+  );
+  return requireData(
+    response.data,
+    "Không thể tiếp tục nhập chương trình.",
+  );
 }
 
 export async function materializeRobotAuthoringImport(

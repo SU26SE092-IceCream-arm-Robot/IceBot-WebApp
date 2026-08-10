@@ -50,6 +50,22 @@ export interface RobotProgramResult {
   }>;
 }
 
+export interface RobotProgramSummaryResult {
+  id: string;
+  organizationId?: string | null;
+  storeId?: string | null;
+  kioskId?: string | null;
+  deviceId?: string | null;
+  code: string;
+  name: string;
+  scopeType: string;
+  status: RobotProgramStatus;
+  description?: string | null;
+  programManifestChecksum?: string | null;
+  publishedAt?: string | null;
+  artifactCount: number;
+}
+
 export interface CreateRobotProgramRequest {
   code: string;
   name: string;
@@ -73,26 +89,6 @@ export interface ReplaceRobotProgramArtifactsRequest {
     parametersJson?: string | null;
     requiredOptionCode?: string | null;
   }>;
-}
-
-export interface RawLuaRobotProgramArtifactImportResult {
-  upload: {
-    totalCount: number;
-    succeededCount: number;
-    failedCount: number;
-    uploadedCount: number;
-    existingCount: number;
-    items: Array<{
-      fileName: string;
-      succeeded: boolean;
-      statusCode: number;
-      message?: string | null;
-      robotArtifactId?: string | null;
-    }>;
-  };
-  program?: RobotProgramResult | null;
-  appendedArtifactIds: string[];
-  appendPending: boolean;
 }
 
 export interface ProductionPackageVersionResult {
@@ -345,7 +341,7 @@ export interface ConfigurationReleaseResult extends ConfigurationReleaseSummaryR
       robotProgramId: string;
       robotProgramCode?: string | null;
       bindingOrder: number;
-      requiredWorkcellCapabilityCode: string;
+      requiredCapabilityCodes: string[];
     }>;
   }>;
 }
@@ -417,7 +413,8 @@ export interface ProductionProgramBindingResult {
   recipeVersion: number;
   robotProgramId: string;
   programManifestChecksum: string;
-  requiredWorkcellCapabilityCode: string;
+  requiredCapabilityCodes: string[];
+  capabilityEvidenceStatus: "Declared" | "Missing";
   supportedOptionCodes: string[];
   bindingChecksum: string;
   status: "Active" | "Retired";
@@ -428,7 +425,6 @@ export interface ProductionProgramBindingResult {
 export interface CreateProductionProgramBindingRequest {
   recipeId: string;
   robotProgramId: string;
-  requiredWorkcellCapabilityCode: string;
   supportedOptionCodes: string[];
 }
 
@@ -711,11 +707,10 @@ export interface UploadRobotAuthoringImportRequest {
 
 export interface CreateRobotAuthoringReleaseDraftRequest {
   recipeId: string;
-  requiredWorkcellCapabilityCode?: string | null;
   supportedOptionCodes: string[];
 }
 
-export type RobotProgramsPage = PagedResult<RobotProgramResult>;
+export type RobotProgramsPage = PagedResult<RobotProgramSummaryResult>;
 export type PackageInstallationsPage = PagedResult<PackageInstallationResult>;
 export type PackageUpgradesPage = PagedResult<PackageUpgradeResult>;
 export type ConfigurationReleasesPage =

@@ -4,7 +4,6 @@ import {
   ChevronLeft,
   ChevronRight,
   FileArchive,
-  FileCode2,
   LoaderCircle,
   RefreshCw,
   Rocket,
@@ -16,11 +15,6 @@ import { useEffect, useMemo, useState } from "react";
 
 import { RobotAuthoringBundleUpload } from "@/components/features/production/authoring-imports/robot-authoring-bundle-upload";
 import { ProductionAwareProgramOrderPanel } from "@/components/features/production/programs/production-aware-program-order-panel";
-import { RawLuaProgramImportPanel } from "@/components/features/production/programs/raw-lua-program-import-panel";
-import {
-  ProductionWorkflowStepper,
-  type ProductionWorkflowStep,
-} from "@/components/features/production/production-workflow-stepper";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,35 +38,17 @@ interface RobotAuthoringImportsPanelProps {
   canRead: boolean;
   canUpload: boolean;
   canManagePrograms: boolean;
+  onOpenBindings?: () => void;
   mode?: "programs" | "bindings";
 }
 
 const STATUS_LABELS: Record<RobotAuthoringImportStatus, string> = {
-  Uploaded: "Đã tải lên",
-  Validated: "Đã kiểm tra",
-  Materialized: "Đã tạo tài nguyên",
-  ResourcesPublished: "Đã phát hành tài nguyên",
-  Failed: "Cần xử lý",
+  Uploaded: "Đang xử lý",
+  Validated: "Sẵn sàng tạo bản nháp",
+  Materialized: "Bản nháp sẵn sàng",
+  ResourcesPublished: "Robot Program đã phát hành",
+  Failed: "Cần sửa bundle",
   Discarded: "Đã hủy",
-};
-
-const ACTION_LABELS: Record<string, string> = {
-  ValidateImport: "Kiểm tra bundle",
-  MaterializeImport: "Tạo tài nguyên",
-  PublishImportResources: "Phát hành tài nguyên",
-  DiscardImport: "Hủy import",
-  PreviewSemanticComposition: "Xem trước cấu thành",
-  ReviewTechnicalContracts: "Rà soát hợp đồng kỹ thuật",
-  CreateConfigurationReleaseDraft: "Tạo bản nháp cấu hình",
-  ReviewConfigurationReleaseDraft: "Xem bản nháp cấu hình",
-  PublishConfigurationRelease: "Phát hành bản cấu hình",
-  SelectDeploymentKiosk: "Chọn kiosk triển khai",
-  SelectExecutionEndpoint: "Chọn điểm thực thi",
-  ConfirmDeployment: "Xác nhận triển khai",
-  ResolveDeploymentBlockers: "Xử lý điều kiện chưa đạt",
-  ResolveArtifactRevisionConflict: "Xử lý xung đột phiên bản artifact",
-  ResolvePublishedCompositionGap:
-    "Tạo import mới để xác nhận Recipe trước khi phát hành",
 };
 
 const NON_AUTHORING_ACTIONS = new Set([
@@ -104,6 +80,17 @@ function formatDate(value?: string | null) {
   }).format(new Date(value));
 }
 
+function groupIssues<T extends { code: string; message: string }>(issues: T[]) {
+  const grouped = new Map<string, T & { count: number }>();
+  for (const issue of issues) {
+    const key = `${issue.code}\u0000${issue.message}`;
+    const existing = grouped.get(key);
+    if (existing) existing.count += 1;
+    else grouped.set(key, { ...issue, count: 1 });
+  }
+  return [...grouped.values()];
+}
+
 function CompositionPreviewDetails({
   preview,
 }: {
@@ -112,11 +99,11 @@ function CompositionPreviewDetails({
   return (
     <div className="space-y-3 rounded-lg border p-4 text-sm">
       <div>
-        <p className="font-semibold">Kết quả cấu thành được đề xuất</p>
+        <p className="font-semibold">Đối chiếu metadata do người tải lên khai báo</p>
         <p className="mt-1 text-xs leading-5 text-muted-foreground">
-          Backend xác định artifact nào đáp ứng từng yêu cầu Recipe. Hãy review
-          trước khi xác nhận; không có Product hoặc Variant nào được tự gán trên
-          giao diện.
+          Backend chỉ so sánh metadata với Recipe để hỗ trợ review. Hệ thống
+          không đọc Lua và không chứng minh artifact thực sự tạo đúng nguyên
+          liệu, topping hoặc định lượng.
         </p>
       </div>
       <div className="overflow-x-auto rounded-md border">
@@ -125,7 +112,7 @@ function CompositionPreviewDetails({
             <tr>
               <th className="px-3 py-2 font-medium">Yêu cầu</th>
               <th className="px-3 py-2 font-medium">Trạng thái</th>
-              <th className="px-3 py-2 font-medium">Artifact có thể đáp ứng</th>
+              <th className="px-3 py-2 font-medium">Artifact có khai báo tương ứng</th>
             </tr>
           </thead>
           <tbody className="divide-y">
@@ -187,9 +174,6 @@ export function RobotAuthoringImportsPanel(
   props: RobotAuthoringImportsPanelProps,
 ) {
   const state = useRobotAuthoringImports(props.organizationId);
-  const [importMode, setImportMode] = useState<"production-aware" | "opaque">(
-    "production-aware",
-  );
   const [recipeId, setRecipeId] = useState("");
   const selected = state.selectedImport;
   const availableActions = useMemo(
@@ -215,25 +199,12 @@ export function RobotAuthoringImportsPanel(
   const hasPublishedResources = Boolean(selected?.publishedAt);
   const publishedBeforeComposition =
     hasPublishedResources && !hasConfirmedComposition;
-  const completedSteps: ProductionWorkflowStep[] = selected
-    ? [
-        ...(hasMaterializedProgram ? [1 as const] : []),
-        ...(hasConfirmedComposition ? [2 as const] : []),
-        ...(hasPublishedResources && hasConfirmedComposition
-          ? [3 as const]
-          : []),
-      ]
-    : [];
-  const currentStep: ProductionWorkflowStep | null = !selected
-    ? 1
-    : !hasMaterializedProgram
-      ? 1
-      : !hasConfirmedComposition
-        ? 2
-        : !hasPublishedResources
-          ? 3
-          : null;
-
+  const canResumeImport =
+    canAuthorImport &&
+    !hasMaterializedProgram &&
+    (selected?.status === "Uploaded" ||
+      selected?.status === "Validated" ||
+      selected?.status === "Failed");
   useEffect(() => {
     const resolution = state.workspace?.recipeResolution;
     if (!(
@@ -272,15 +243,6 @@ export function RobotAuthoringImportsPanel(
 
   return (
     <div className="space-y-5">
-      <div className="flex justify-end">
-        <ProductionWorkflowStepper
-          currentStep={currentStep}
-          completedSteps={completedSteps}
-          organizationName={props.organizationName ?? "Tổ chức hiện tại"}
-          workflow="authoring"
-        />
-      </div>
-
       <section
         className="min-w-0 space-y-5"
         aria-label="Workspace cấu hình sản xuất"
@@ -289,19 +251,12 @@ export function RobotAuthoringImportsPanel(
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h2 className="flex items-center gap-2 text-base font-semibold">
-                {importMode === "production-aware" ? (
-                  <FileArchive className="size-4 text-primary" />
-                ) : (
-                  <FileCode2 className="size-4 text-primary" />
-                )}
-                {importMode === "production-aware"
-                  ? "Nhập Production-aware Lua"
-                  : "Nhập Opaque technical Lua"}
+                <FileArchive className="size-4 text-primary" />
+                Nhập chương trình Lua
               </h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                {importMode === "production-aware"
-                  ? "Bundle chuẩn có manifest và sidecar contract để kiểm tra composition với Recipe."
-                  : "Dùng cho Lua legacy hoặc file lẻ; artifact tạo ở Draft và technical contract được author sau."}
+                Chọn bundle Fairino một lần. Backend tự kiểm tra cấu trúc và tạo
+                Robot Program Draft; Lua được xem là black box.
               </p>
             </div>
             <Button
@@ -314,53 +269,13 @@ export function RobotAuthoringImportsPanel(
               Làm mới
             </Button>
           </div>
-          <div
-            className="mt-4 inline-flex rounded-md border p-1"
-            role="group"
-            aria-label="Lua import mode"
-          >
-            <Button
-              type="button"
-              size="sm"
-              variant={
-                importMode === "production-aware" ? "secondary" : "ghost"
-              }
-              className="gap-2"
-              title="Bundle có production semantics và sidecar contract"
-              aria-pressed={importMode === "production-aware"}
-              onClick={() => setImportMode("production-aware")}
-            >
-              <FileArchive className="size-4" />
-              Production-aware
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant={importMode === "opaque" ? "secondary" : "ghost"}
-              className="gap-2"
-              title="Lua raw tạo Draft artifact, chưa có production semantics"
-              aria-pressed={importMode === "opaque"}
-              onClick={() => setImportMode("opaque")}
-            >
-              <FileCode2 className="size-4" />
-              Opaque technical
-            </Button>
-          </div>
           <div className="mt-4">
-            {importMode === "production-aware" ? (
-              <RobotAuthoringBundleUpload
-                canUpload={props.canUpload}
-                disabled={state.isMutating}
-                isUploading={state.isMutating}
-                onUpload={upload}
-              />
-            ) : (
-              <RawLuaProgramImportPanel
-                organizationId={props.organizationId}
-                canManage={canAuthorImport}
-                embedded
-              />
-            )}
+            <RobotAuthoringBundleUpload
+              canUpload={props.canUpload}
+              disabled={state.isMutating}
+              isUploading={state.isMutating}
+              onUpload={upload}
+            />
           </div>
         </div> : null}
 
@@ -408,7 +323,7 @@ export function RobotAuthoringImportsPanel(
                 <Input
                   value={state.query.search ?? ""}
                   className="pl-9"
-                  placeholder="Tìm chương trình, target hoặc machine model"
+                  placeholder="Tìm theo tên hoặc mã chương trình"
                   onChange={(event) => state.setSearch(event.target.value)}
                 />
               </div>
@@ -447,7 +362,7 @@ export function RobotAuthoringImportsPanel(
               <FileArchive className="mx-auto size-8 text-muted-foreground" />
               <p className="mt-3 font-medium">Chưa có gói cấu hình nào</p>
               <p className="mt-1 text-sm text-muted-foreground">
-                Nhập bundle Fairino đầu tiên để bắt đầu kiểm tra nội dung.
+                Nhập bundle Fairino đầu tiên để tạo Robot Program Draft.
               </p>
             </div>
           ) : (
@@ -456,7 +371,6 @@ export function RobotAuthoringImportsPanel(
                 <thead className="border-b bg-muted/40 text-left text-xs text-muted-foreground">
                   <tr>
                     <th className="px-4 py-3 font-medium">Chương trình</th>
-                    <th className="px-4 py-3 font-medium">Target / model</th>
                     <th className="px-4 py-3 font-medium">Trạng thái</th>
                     <th className="px-4 py-3 font-medium">Cập nhật</th>
                     <th className="px-4 py-3 text-right font-medium">
@@ -473,12 +387,6 @@ export function RobotAuthoringImportsPanel(
                         </p>
                         <p className="mt-1 font-mono text-xs text-muted-foreground">
                           {item.proposedProgramCode} · {item.itemCount} mục
-                        </p>
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground">
-                        <p>{item.runtimeTargetCode}</p>
-                        <p className="mt-1 font-mono text-xs">
-                          {item.machineModelCode}
                         </p>
                       </td>
                       <td className="px-4 py-3">
@@ -561,7 +469,7 @@ export function RobotAuthoringImportsPanel(
               <div>
                 <div className="flex flex-wrap items-center gap-2">
                   <h2 className="text-base font-semibold">
-                    Xem trước và liên kết
+                    Chi tiết chương trình
                   </h2>
                   <ImportStatusBadge status={selected.status} />
                 </div>
@@ -603,37 +511,22 @@ export function RobotAuthoringImportsPanel(
             <div className="space-y-3 rounded-lg border p-4">
               <div>
                 <p className="font-semibold">
-                  Bước 1: Nhập, kiểm tra và tạo tài nguyên
+                  Kết quả nhập chương trình
                 </p>
                 <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                  Kiểm tra bundle trước, sau đó tạo artifact và RobotProgram ở
-                  trạng thái Draft.
+                  Backend tự kiểm tra cấu trúc bundle và tạo artifact cùng
+                  Robot Program ở trạng thái Draft. Đây không phải kiểm tra hành vi Lua.
                 </p>
               </div>
-              {selected.validation ? (
+              {selected.validation?.errors.length ? (
                 <div className="rounded-lg border p-4 text-sm">
-                  <p className="font-semibold">Kết quả kiểm tra bundle</p>
-                  <p className="mt-1 text-muted-foreground">
-                    {selected.validation.errors.length} lỗi ·{" "}
-                    {selected.validation.warnings.length} cảnh báo ·{" "}
-                    {selected.validation.canMaterialize
-                      ? "Có thể tạo tài nguyên"
-                      : "Chưa thể tạo tài nguyên"}
-                  </p>
-                  {selected.validation.errors.map((issue) => (
+                  <p className="font-semibold">Bundle cần sửa</p>
+                  {groupIssues(selected.validation.errors).map((issue) => (
                     <p
                       key={`${issue.code}-${issue.message}`}
                       className="mt-2 text-destructive"
                     >
-                      {issue.message}
-                    </p>
-                  ))}
-                  {selected.validation.warnings.map((issue) => (
-                    <p
-                      key={`${issue.code}-${issue.message}`}
-                      className="mt-2 text-warning"
-                    >
-                      {issue.message}
+                      {issue.message}{issue.count > 1 ? ` (${issue.count} artifact)` : ""}
                     </p>
                   ))}
                 </div>
@@ -652,22 +545,13 @@ export function RobotAuthoringImportsPanel(
                 </div>
               ) : null}
               <div className="flex flex-wrap gap-2">
-                {canAuthorImport && hasAction("ValidateImport") ? (
+                {canResumeImport ? (
                   <Button
                     size="sm"
                     disabled={state.isMutating}
-                    onClick={() => void state.validate()}
+                    onClick={() => void state.resume()}
                   >
-                    Kiểm tra bundle
-                  </Button>
-                ) : null}
-                {canAuthorImport && hasAction("MaterializeImport") ? (
-                  <Button
-                    size="sm"
-                    disabled={state.isMutating}
-                    onClick={() => void state.materialize()}
-                  >
-                    Tạo tài nguyên
+                    Thử lại nhập chương trình
                   </Button>
                 ) : null}
                 {canAuthorImport && hasAction("DiscardImport") ? (
@@ -713,8 +597,9 @@ export function RobotAuthoringImportsPanel(
                     Bước 2: Chọn và xác nhận Recipe
                   </p>
                   <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                    Chọn Recipe, kiểm tra cấu thành artifact rồi xác nhận. Chỉ
-                    sau bước này mới được phát hành tài nguyên.
+                    Chọn Recipe và xem metadata khai báo để có thêm ngữ cảnh,
+                    sau đó xác nhận bằng trách nhiệm của người vận hành. Backend
+                    không chứng minh Lua khớp Recipe.
                   </p>
                 </div>
                 <div className="space-y-2">
@@ -794,7 +679,7 @@ export function RobotAuthoringImportsPanel(
                       )
                     }
                   >
-                    Kiểm tra cấu thành
+                      Xem đối chiếu khai báo
                   </Button>
                   {preview && !hasConfirmedComposition ? (
                     <Button
@@ -813,7 +698,7 @@ export function RobotAuthoringImportsPanel(
                         )
                       }
                     >
-                      Xác nhận cấu thành
+                      Xác nhận liên kết Recipe
                     </Button>
                   ) : null}
                 </div>
@@ -823,13 +708,12 @@ export function RobotAuthoringImportsPanel(
                   >
                     <p className="font-medium">
                       {preview.canConfirm
-                        ? "Cấu thành hợp lệ"
-                        : "Cấu thành chưa hợp lệ"}
+                          ? "Sẵn sàng để người vận hành xác nhận"
+                          : "Chưa thể xác nhận do tài nguyên hoặc trạng thái không hợp lệ"}
                     </p>
                     <p className="mt-1 text-muted-foreground">
                       {preview.proposedArtifacts.length} artifact đề xuất ·{" "}
-                      {preview.suggestedCapabilityCodes.length} năng lực do
-                      backend gợi ý.
+                      {preview.suggestedCapabilityCodes.length} yêu cầu thiết bị lấy từ metadata do người tải lên khai báo.
                     </p>
                     {preview.blockers.map((item) => (
                       <p
@@ -857,11 +741,11 @@ export function RobotAuthoringImportsPanel(
             {showPrograms && hasMaterializedProgram && !hasPublishedResources ? (
               <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-4">
                 <div>
-                  <p className="font-semibold">Bước 3: Phát hành tài nguyên</p>
+                  <p className="font-semibold">Phát hành Robot Program</p>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    Recipe và cấu thành đã được xác nhận. Phát hành
-                    artifact/program. Tạo Release và triển khai được thực hiện
-                    trong workspace Kiosk sau khi phát hành.
+                    Khóa phiên bản artifact và thứ tự chương trình để có thể
+                    chọn chương trình này trong tab Bind Configuration. Bước
+                    này không xác nhận Lua khớp Recipe.
                   </p>
                 </div>
                 {!hasPublishedResources &&
@@ -875,18 +759,6 @@ export function RobotAuthoringImportsPanel(
                     Phát hành tài nguyên
                   </Button>
                 ) : null}
-              </div>
-            ) : null}
-            {showBindings && publishedBeforeComposition ? (
-              <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
-                <p className="font-semibold">
-                  Import này đã phát hành theo thứ tự cũ
-                </p>
-                <p className="mt-1">
-                  Chưa có Recipe composition được xác nhận nên backend chặn tạo
-                  Release draft. Tạo một import mới, xác nhận Recipe trước rồi
-                  mới phát hành tài nguyên.
-                </p>
               </div>
             ) : null}
             {showPrograms && selected.linkedConfigurationReleaseId ? (
@@ -914,46 +786,26 @@ export function RobotAuthoringImportsPanel(
               </div>
             ) : null}
             {showPrograms && hasPublishedResources &&
-            hasConfirmedComposition &&
             !selected.linkedConfigurationReleaseId ? (
               <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-4 text-sm">
                 <div>
                   <p className="font-semibold">
-                    Tài nguyên đã sẵn sàng cho triển khai
+                    Robot Program đã sẵn sàng để liên kết
                   </p>
                   <p className="mt-1 text-muted-foreground">
-                    Artifact và RobotProgram đã phát hành. Tạo/review Release,
-                    chọn Edge và triển khai trong workspace Kiosk; import không
-                    tự tạo cấu hình hoặc gửi lệnh xuống máy.
+                    Chuyển sang Bind Configuration để chọn Recipe và xác nhận
+                    quan hệ với chương trình này.
                   </p>
                 </div>
-                <Link
-                  className={buttonVariants({ size: "sm" })}
-                  href={
-                    selected.kioskId ? `/kiosks/${selected.kioskId}` : "/kiosks"
-                  }
+                <Button
+                  size="sm"
+                  onClick={props.onOpenBindings}
+                  disabled={!props.onOpenBindings}
                 >
-                  <Rocket className="size-4" />
-                  {selected.kioskId
-                    ? "Mở Kiosk để triển khai"
-                    : "Chọn Kiosk để triển khai"}
-                </Link>
+                  Mở Bind Configuration
+                </Button>
               </div>
             ) : null}
-            <div className="rounded-lg border bg-muted/20 p-4 text-sm">
-              <p className="font-semibold">Việc backend đề xuất tiếp theo</p>
-              {[...availableActions].length ? (
-                <ul className="mt-2 space-y-1 text-muted-foreground">
-                  {[...availableActions].map((action) => (
-                    <li key={action}>• {ACTION_LABELS[action] ?? action}</li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="mt-1 text-muted-foreground">
-                  Chưa có thao tác tiếp theo.
-                </p>
-              )}
-            </div>
           </section>
         ) : null}
       </section>
