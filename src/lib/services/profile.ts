@@ -6,7 +6,7 @@ import type {
   ChangeCurrentAccountPasswordRequest,
   CurrentAccountNotificationDevice,
   CurrentAccountProfile,
-  CurrentAccountSession,
+  CurrentAccountSessionsResult,
   RevokeCurrentAccountSessionsResult,
   UpdateCurrentAccountProfileRequest,
 } from "@/types/profile";
@@ -52,11 +52,17 @@ export async function changeCurrentAccountPassword(
   requireData(response.data, "Không thể đổi mật khẩu.");
 }
 
-export async function listCurrentAccountSessions(): Promise<CurrentAccountSession[]> {
-  const response = await axiosClient.get<ApiResult<CurrentAccountSession[]>>(
+export async function listCurrentAccountSessions(): Promise<CurrentAccountSessionsResult> {
+  const response = await axiosClient.get<ApiResult<CurrentAccountSessionsResult>>(
     "/api/v1/me/sessions",
   );
   return requireData(response.data, "Không thể tải các phiên đăng nhập.");
+}
+
+export async function revokeCurrentAccountSession(sessionId: string): Promise<void> {
+  await axiosClient.delete(
+    `/api/v1/me/sessions/${encodeURIComponent(sessionId)}`,
+  );
 }
 
 export async function revokeAllCurrentAccountSessions(): Promise<number> {

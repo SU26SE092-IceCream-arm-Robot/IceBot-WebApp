@@ -33,6 +33,16 @@ function formatDateTime(value?: string | null): string {
     : "Chưa có";
 }
 
+function statusLabel(status: string): string {
+  const labels: Record<string, string> = {
+    Open: "Đang mở",
+    RetryInProgress: "Đang thử lại",
+    Resolved: "Đã xử lý",
+    Ignored: "Đã bỏ qua",
+  };
+  return labels[status] || status;
+}
+
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="grid gap-1 border-b border-border py-3 sm:grid-cols-[160px_1fr]">
@@ -66,7 +76,7 @@ export function SyncDeadLetterDetailDialog({ open, onOpenChange, item, loading, 
           <ScrollArea className="max-h-[65vh] pr-4">
             <dl>
               <DetailRow label="Loại sự kiện" value={item.eventType} />
-              <DetailRow label="Trạng thái" value={item.status} />
+              <DetailRow label="Trạng thái" value={statusLabel(item.status)} />
               <DetailRow label="Kiosk" value={item.kioskCode || "Không gắn kiosk"} />
               <DetailRow label="Đối tượng liên quan" value={item.aggregateType || "Không có"} />
               <DetailRow label="Số lần xử lý" value={String(item.processingAttempts)} />

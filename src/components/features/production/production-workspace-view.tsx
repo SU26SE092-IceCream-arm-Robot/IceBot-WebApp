@@ -7,7 +7,7 @@ import {
   RefreshCw,
   Search,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { RobotAuthoringImportsPanel } from "@/components/features/production/authoring-imports/robot-authoring-imports-panel";
 import { ProductionProgramBindingsPanel } from "@/components/features/production/bindings/production-program-bindings-panel";
@@ -23,6 +23,13 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/use-auth";
 import { useProductionOrganizationScope } from "@/hooks/use-production-organization-scope";
@@ -38,7 +45,6 @@ function ProductionOrganizationSelector({
   scope: ReturnType<typeof useProductionOrganizationScope>;
 }) {
   const selected = scope.selectedOrganization;
-  const [query, setQuery] = useState("");
   const options =
     selected &&
     !scope.organizations.some((organization) => organization.id === selected.id)
@@ -47,12 +53,6 @@ function ProductionOrganizationSelector({
   const selectedLabel = selected
     ? organizationLabel(selected.name, selected.code)
     : "";
-
-  useEffect(() => {
-    if (!selected) return;
-    const timer = window.setTimeout(() => setQuery(selectedLabel), 0);
-    return () => window.clearTimeout(timer);
-  }, [selected, selectedLabel]);
 
   if (!scope.isLoading && scope.pagination.totalCount === 1 && selected) {
     return (
@@ -67,40 +67,52 @@ function ProductionOrganizationSelector({
 
   return (
     <div className="space-y-3">
-      <Label htmlFor="production-organization-search">
-        Tổ chức đang cấu hình
-      </Label>
-      <div className="relative max-w-xl">
-        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          id="production-organization-search"
-          value={query}
-          className="pl-9"
-          placeholder="Tìm và chọn theo tên hoặc mã tổ chức"
-          list="production-organization-options"
-          disabled={scope.isLoading}
-          onChange={(event) => {
-            const value = event.target.value;
-            setQuery(value);
-            const organization = options.find(
-              (item) => organizationLabel(item.name, item.code) === value,
-            );
-            if (organization) {
+      <div className="grid max-w-xl gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="production-organization-search">Tìm tổ chức</Label>
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              id="production-organization-search"
+              value={scope.search}
+              className="h-10 pl-9"
+              placeholder="Tên hoặc mã tổ chức"
+              disabled={scope.isLoading}
+              onChange={(event) => scope.setSearch(event.target.value)}
+            />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="production-organization-select">
+            Tổ chức đang cấu hình
+          </Label>
+          <Select
+            value={selected?.id ?? ""}
+            disabled={scope.isLoading || options.length === 0}
+            onValueChange={(value) => {
+              const organization = options.find((item) => item.id === value);
+              if (!organization) return;
               scope.selectOrganization(organization);
               scope.setSearch("");
-              return;
-            }
-            scope.setSearch(value);
-          }}
-        />
-        <datalist id="production-organization-options">
-          {options.map((organization) => (
-            <option
-              key={organization.id}
-              value={organizationLabel(organization.name, organization.code)}
-            />
-          ))}
-        </datalist>
+            }}
+          >
+            <SelectTrigger
+              id="production-organization-select"
+              className="h-10 w-full"
+            >
+              <SelectValue placeholder="Chọn tổ chức">
+                {selected ? selectedLabel : "Chọn tổ chức"}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent align="start">
+              {options.map((organization) => (
+                <SelectItem key={organization.id} value={organization.id}>
+                  {organizationLabel(organization.name, organization.code)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
       <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground sm:max-w-xl">
         <span>

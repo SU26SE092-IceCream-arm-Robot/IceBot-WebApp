@@ -1,5 +1,9 @@
 import axiosClient from "@/lib/axios-client";
-import type { PaymentMethodResult, PaymentMethodStatusUpdateRequest } from "@/types/payments";
+import type {
+  PaymentMethodResult,
+  PaymentMethodStatusUpdateRequest,
+  PaymentSessionDiagnosticsResult,
+} from "@/types/payments";
 import type { ApiResult } from "@/types";
 
 function requireData<T>(result: ApiResult<T>, fallbackMessage: string): T {
@@ -38,4 +42,21 @@ export async function setPaymentMethodStatus(id: number, isActive: boolean): Pro
   }
 
   return response.data.data;
+}
+
+export async function getOrderPaymentDiagnostics(
+  orderId: string,
+  signal?: AbortSignal,
+): Promise<PaymentSessionDiagnosticsResult[]> {
+  const response = await axiosClient.get<
+    ApiResult<PaymentSessionDiagnosticsResult[]>
+  >(
+    `/api/v1/management/orders/${encodeURIComponent(orderId)}/payment-diagnostics`,
+    { signal },
+  );
+
+  return requireData(
+    response.data,
+    "Không thể tải bằng chứng chẩn đoán thanh toán.",
+  );
 }

@@ -20,7 +20,7 @@ import {
   validateConfigurationReleaseRouteDrafts,
 } from "@/components/features/kiosks/configuration-release-routes";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -1185,9 +1185,12 @@ export function ProductionOperationsPanel(
                     Cần tạo và phát hành phiên bản cấu hình chứa liên kết Recipe
                     và chương trình trước.
                   </p>
-                  <Button asChild className="mt-3" size="sm" variant="outline">
-                    <Link href="/production">Mở Cấu hình sản xuất</Link>
-                  </Button>
+                  <Link
+                    href="/production"
+                    className={`${buttonVariants({ size: "sm", variant: "outline" })} mt-3`}
+                  >
+                    Mở Cấu hình sản xuất
+                  </Link>
                 </div>
               ) : (
                 <div className="flex flex-col gap-2 sm:flex-row">

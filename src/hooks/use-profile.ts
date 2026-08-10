@@ -11,6 +11,7 @@ import {
   listCurrentAccountSessions,
   listCurrentAccountNotificationDevices,
   revokeAllCurrentAccountSessions,
+  revokeCurrentAccountSession,
   unregisterCurrentAccountNotificationDevice,
   updateCurrentAccountProfile,
 } from "@/lib/services/profile";
@@ -36,8 +37,10 @@ export function useProfile() {
   const [notificationDevicesErrorMessage, setNotificationDevicesErrorMessage] = useState<string | null>(null);
   const [unregisteringInstallationId, setUnregisteringInstallationId] = useState<string | null>(null);
   const [sessions, setSessions] = useState<CurrentAccountSession[]>([]);
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [isSessionsLoading, setIsSessionsLoading] = useState(true);
   const [sessionsErrorMessage, setSessionsErrorMessage] = useState<string | null>(null);
+  const [revokingSessionId, setRevokingSessionId] = useState<string | null>(null);
   const [isRevokingAllSessions, setIsRevokingAllSessions] = useState(false);
 
   const loadProfile = useCallback(async () => {
@@ -70,7 +73,9 @@ export function useProfile() {
     setIsSessionsLoading(true);
     setSessionsErrorMessage(null);
     try {
-      setSessions(await listCurrentAccountSessions());
+      const result = await listCurrentAccountSessions();
+      setCurrentSessionId(result.currentSessionId ?? null);
+      setSessions(result.sessions);
     } catch (error) {
       setSessionsErrorMessage(getProfileErrorMessage(error, "Không thể tải các phiên đăng nhập."));
     } finally {
@@ -160,6 +165,7 @@ export function useProfile() {
     try {
       const revokedCount = await revokeAllCurrentAccountSessions();
       setSessions([]);
+      setCurrentSessionId(null);
       await logout();
       return revokedCount;
     } catch (error) {
@@ -170,6 +176,40 @@ export function useProfile() {
       setIsRevokingAllSessions(false);
     }
   }, [logout]);
+
+  const revokeSession = useCallback(
+    async (sessionToRevoke: CurrentAccountSession) => {
+      setRevokingSessionId(sessionToRevoke.sessionId);
+      setSessionsErrorMessage(null);
+      const isCurrentSession =
+        sessionToRevoke.isCurrentSession ||
+        sessionToRevoke.sessionId === currentSessionId;
+
+      try {
+        await revokeCurrentAccountSession(sessionToRevoke.sessionId);
+        setSessions((current) =>
+          current.filter(
+            (item) => item.sessionId !== sessionToRevoke.sessionId,
+          ),
+        );
+        if (isCurrentSession) {
+          setCurrentSessionId(null);
+          await logout();
+        }
+        return isCurrentSession;
+      } catch (error) {
+        const message = getProfileErrorMessage(
+          error,
+          "Không thể đăng xuất khỏi thiết bị này.",
+        );
+        setSessionsErrorMessage(message);
+        throw new Error(message);
+      } finally {
+        setRevokingSessionId(null);
+      }
+    },
+    [currentSessionId, logout],
+  );
 
   return {
     profile,
@@ -182,8 +222,10 @@ export function useProfile() {
     notificationDevicesErrorMessage,
     unregisteringInstallationId,
     sessions,
+    currentSessionId,
     isSessionsLoading,
     sessionsErrorMessage,
+    revokingSessionId,
     isRevokingAllSessions,
     loadProfile,
     loadNotificationDevices,
@@ -191,6 +233,7 @@ export function useProfile() {
     changePassword,
     unregisterNotificationDevice,
     loadSessions,
+    revokeSession,
     revokeAllSessions,
   };
 }

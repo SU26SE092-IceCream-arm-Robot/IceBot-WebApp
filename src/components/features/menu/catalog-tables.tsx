@@ -15,6 +15,7 @@ import type {
   MenuItemStatus,
   MenuResult,
   MenuStatus,
+  ProductCategoryResult,
   ProductResult,
   TenantScopeType,
 } from "@/types/menu-management";
@@ -238,6 +239,7 @@ export function MenusTable({
 
 interface ProductsTableProps {
   canManage: boolean;
+  categories: ProductCategoryResult[];
   productActionId: string | null;
   products: ProductResult[];
   onToggleAvailability: (product: ProductResult) => void;
@@ -246,21 +248,23 @@ interface ProductsTableProps {
 
 export function ProductsTable({
   canManage,
+  categories,
   productActionId,
   products,
   onToggleAvailability,
   onView,
 }: ProductsTableProps) {
   return (
-    <Table className="min-w-[1080px] table-fixed">
+    <Table className="min-w-[1160px] table-fixed">
       <TableHeader>
         <TableRow className="hover:bg-transparent">
-          <TableHead className="w-[30%] px-5">Sản phẩm</TableHead>
-          <TableHead className="w-[13%] text-center">Khả dụng</TableHead>
-          <TableHead className="w-[12%] text-center">Phạm vi</TableHead>
-          <TableHead className="w-[25%] text-center">Phiên bản</TableHead>
-          <TableHead className="w-[11%] text-right">Giá cơ bản</TableHead>
-          <TableHead className="w-[9%] px-5 text-center">Thao tác</TableHead>
+          <TableHead className="w-[24%] px-5">Sản phẩm</TableHead>
+          <TableHead className="w-[13%] text-center">Danh mục</TableHead>
+          <TableHead className="w-[12%] text-center">Khả dụng</TableHead>
+          <TableHead className="w-[11%] text-center">Phạm vi</TableHead>
+          <TableHead className="w-[22%] text-center">Phiên bản</TableHead>
+          <TableHead className="w-[10%] text-right">Giá cơ bản</TableHead>
+          <TableHead className="w-[8%] px-5 text-center">Thao tác</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -277,6 +281,26 @@ export function ProductsTable({
                   </p>
                   <p className="tabular-nums text-xs text-muted-foreground">{product.code}</p>
                 </div>
+              </div>
+            </TableCell>
+            <TableCell className="text-center">
+              <div className="flex items-center justify-center">
+                {product.categoryId === null || product.categoryId === undefined ? (
+                  <span className="text-xs text-muted-foreground">Chưa phân loại</span>
+                ) : (() => {
+                  const category = categories.find((item) => item.id === product.categoryId);
+                  return category ? (
+                    <Badge
+                      variant="outline"
+                      className={category.isActive ? undefined : "border-border text-muted-foreground"}
+                      title={category.isActive ? category.name : `${category.name} (đã tắt)`}
+                    >
+                      {category.name}{category.isActive ? "" : " (đã tắt)"}
+                    </Badge>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">Danh mục không còn khả dụng</span>
+                  );
+                })()}
               </div>
             </TableCell>
             <TableCell className="text-center">

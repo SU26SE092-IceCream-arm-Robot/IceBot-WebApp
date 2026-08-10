@@ -1,6 +1,6 @@
 "use client";
 
-import { Link2, RefreshCw } from "lucide-react";
+import { AlertTriangle, Link2, RefreshCw } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ import {
 import {
   createProductionProgramBinding,
   getConfigurationReleaseAuthoringOptions,
+  getProductionOperationsErrorMessage,
   listProductionProgramBindings,
   retireProductionProgramBinding,
 } from "@/lib/services/production-operations";
@@ -37,32 +38,55 @@ export function ProductionProgramBindingsPanel({
   );
   const [recipeId, setRecipeId] = useState("");
   const [programId, setProgramId] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [optionsError, setOptionsError] = useState<string | null>(null);
+  const [bindingsError, setBindingsError] = useState<string | null>(null);
+  const [mutationError, setMutationError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (signal?: AbortSignal) => {
     setBusy(true);
-    setError(null);
-    try {
-      const [nextOptions, nextBindings] = await Promise.all([
-        getConfigurationReleaseAuthoringOptions(organizationId),
-        listProductionProgramBindings(organizationId),
-      ]);
-      setOptions(nextOptions);
-      setBindings(nextBindings);
-    } catch (reason) {
-      setError(
-        reason instanceof Error
-          ? reason.message
-          : "Không thể tải liên kết sản xuất.",
+    setOptionsError(null);
+    setBindingsError(null);
+    setMutationError(null);
+
+    const [optionsResult, bindingsResult] = await Promise.allSettled([
+      getConfigurationReleaseAuthoringOptions(organizationId, signal),
+      listProductionProgramBindings(organizationId, signal),
+    ]);
+    if (signal?.aborted) return;
+
+    if (optionsResult.status === "fulfilled") {
+      setOptions(optionsResult.value);
+    } else {
+      setOptions(null);
+      setOptionsError(
+        getProductionOperationsErrorMessage(
+          optionsResult.reason,
+          "Không thể tải Recipe và chương trình robot.",
+        ),
       );
-    } finally {
-      setBusy(false);
     }
+
+    if (bindingsResult.status === "fulfilled") {
+      setBindings(bindingsResult.value);
+    } else {
+      setBindings([]);
+      setBindingsError(
+        getProductionOperationsErrorMessage(
+          bindingsResult.reason,
+          "Không thể tải danh sách liên kết hiện có.",
+        ),
+      );
+    }
+    setBusy(false);
   }, [organizationId]);
   useEffect(() => {
-    const timer = window.setTimeout(() => void load(), 0);
-    return () => window.clearTimeout(timer);
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => void load(controller.signal), 0);
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
   }, [load]);
   const recipe = options?.recipes.find((item) => item.id === recipeId);
   const program = options?.robotPrograms.find((item) => item.id === programId);
@@ -77,7 +101,7 @@ export function ProductionProgramBindingsPanel({
   const create = async () => {
     if (!recipe || !program) return;
     setBusy(true);
-    setError(null);
+    setMutationError(null);
     try {
       await createProductionProgramBinding(organizationId, {
         recipeId,
@@ -88,8 +112,11 @@ export function ProductionProgramBindingsPanel({
       });
       await load();
     } catch (reason) {
-      setError(
-        reason instanceof Error ? reason.message : "Không thể tạo liên kết.",
+      setMutationError(
+        getProductionOperationsErrorMessage(
+          reason,
+          "Không thể tạo liên kết.",
+        ),
       );
     } finally {
       setBusy(false);
@@ -120,26 +147,45 @@ export function ProductionProgramBindingsPanel({
           <RefreshCw className="size-4" /> Làm mới
         </Button>
       </header>
-      {error ? (
+      {optionsError || mutationError ? (
         <p
           role="alert"
           className="m-4 rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive"
         >
-          {error}
+          {mutationError ?? optionsError}
         </p>
       ) : null}
-      {canManage ? (
-        <div className="grid gap-4 border-b p-4 md:grid-cols-2">
+      {bindingsError ? (
+        <div
+          role="status"
+          className="m-4 flex items-start gap-2 rounded-md border border-warning/30 bg-warning/5 p-3 text-sm text-warning"
+        >
+          <AlertTriangle className="mt-0.5 size-4 shrink-0" />
           <div>
-            <Label>Recipe</Label>
+            <p className="font-medium">Chưa tải được các liên kết hiện có.</p>
+            <p className="mt-1 text-muted-foreground">
+              {bindingsError} Bạn vẫn có thể xem các lựa chọn, nhưng chưa thể
+              tạo liên kết mới để tránh dữ liệu trùng.
+            </p>
+          </div>
+        </div>
+      ) : null}
+      {canManage ? (
+        <div className="grid gap-5 border-b p-4 md:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="production-binding-recipe">Recipe</Label>
             <Select
               value={recipeId}
+              disabled={busy || !options || options.recipes.length === 0}
               onValueChange={(value) => setRecipeId(value ?? "")}
             >
-              <SelectTrigger>
+              <SelectTrigger
+                id="production-binding-recipe"
+                className="h-10 w-full"
+              >
                 <SelectValue>{recipeLabel}</SelectValue>
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent align="start">
                 {options?.recipes.map((item) => (
                   <SelectItem key={item.id} value={item.id}>
                     {item.productName} / {item.productVariantName} / {item.name}
@@ -148,16 +194,22 @@ export function ProductionProgramBindingsPanel({
               </SelectContent>
             </Select>
           </div>
-          <div>
-            <Label>Robot Program</Label>
+          <div className="space-y-2">
+            <Label htmlFor="production-binding-program">Robot Program</Label>
             <Select
               value={programId}
+              disabled={
+                busy || !options || options.robotPrograms.length === 0
+              }
               onValueChange={(value) => setProgramId(value ?? "")}
             >
-              <SelectTrigger>
+              <SelectTrigger
+                id="production-binding-program"
+                className="h-10 w-full"
+              >
                 <SelectValue>{programLabel}</SelectValue>
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent align="start">
                 {options?.robotPrograms.map((item) => (
                   <SelectItem key={item.id} value={item.id}>
                     {item.name} / {item.code}
@@ -166,10 +218,12 @@ export function ProductionProgramBindingsPanel({
               </SelectContent>
             </Select>
           </div>
-          <div className="md:col-span-3">
+          <div className="md:col-span-2">
             <Button
               onClick={() => void create()}
-              disabled={busy || !recipe || !program}
+              disabled={
+                busy || Boolean(bindingsError) || !recipe || !program
+              }
             >
               Tạo liên kết
             </Button>
@@ -177,7 +231,22 @@ export function ProductionProgramBindingsPanel({
         </div>
       ) : null}
       <div className="divide-y">
-        {bindings.length === 0 ? (
+        {bindingsError ? (
+          <div className="p-8 text-center">
+            <p className="text-sm text-muted-foreground">
+              Danh sách liên kết chưa khả dụng.
+            </p>
+            <Button
+              className="mt-3"
+              size="sm"
+              variant="outline"
+              disabled={busy}
+              onClick={() => void load()}
+            >
+              Thử lại
+            </Button>
+          </div>
+        ) : bindings.length === 0 ? (
           <p className="p-8 text-center text-sm text-muted-foreground">
             Chưa có liên kết Recipe và Robot Program.
           </p>
@@ -221,12 +290,13 @@ export function ProductionProgramBindingsPanel({
                         organizationId,
                         binding.id,
                       )
-                        .then(load)
+                        .then(() => load())
                         .catch((reason) =>
-                          setError(
-                            reason instanceof Error
-                              ? reason.message
-                              : "Không thể ngừng liên kết.",
+                          setMutationError(
+                            getProductionOperationsErrorMessage(
+                              reason,
+                              "Không thể ngừng liên kết.",
+                            ),
                           ),
                         );
                   }}

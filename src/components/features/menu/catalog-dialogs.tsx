@@ -31,6 +31,7 @@ import type {
   MenuItemStatus,
   MenuResult,
   MenuStatus,
+  ProductCategoryResult,
   ProductResult,
   ProductVariantResult,
   TenantScopeType,
@@ -38,6 +39,7 @@ import type {
 
 interface ProductDetailDialogProps {
   canManage: boolean;
+  categories: ProductCategoryResult[];
   errorMessage: string | null;
   isLoading: boolean;
   open: boolean;
@@ -242,6 +244,7 @@ function AvailabilityBadge({ isAvailable }: { isAvailable: boolean }) {
 
 export function ProductDetailDialog({
   canManage,
+  categories,
   errorMessage,
   isLoading,
   open,
@@ -295,6 +298,18 @@ export function ProductDetailDialog({
               </DetailField>
               <DetailField label="Loại sản phẩm">
                 {getProductTypeLabel(product.productType)}
+              </DetailField>
+              <DetailField label="Danh mục sản phẩm">
+                {product.categoryId === null || product.categoryId === undefined
+                  ? "Chưa phân loại"
+                  : (() => {
+                      const category = categories.find((item) => item.id === product.categoryId);
+                      return category
+                        ? category.isActive
+                          ? category.name
+                          : `${category.name} (đã tắt)`
+                        : "Danh mục không còn khả dụng";
+                    })()}
               </DetailField>
               <div className="sm:col-span-2">
                 <DetailField label="Mô tả">

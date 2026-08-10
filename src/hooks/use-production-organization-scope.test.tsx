@@ -76,7 +76,9 @@ describe("useProductionOrganizationScope", () => {
         expect.any(AbortSignal),
       ),
     );
-    expect(result.current.organizations[0]?.id).toBe("org-101");
+    await waitFor(() =>
+      expect(result.current.organizations[0]?.id).toBe("org-101"),
+    );
   });
 
   it("keeps the chosen organization while its search page changes", async () => {

@@ -158,4 +158,26 @@ describe("KioskDetailView tab persistence", () => {
       "false",
     );
   });
+
+  it("uses the kiosks.manage permission for the operational-state action", () => {
+    mocks.access = {
+      ...mocks.access,
+      permissionCodes: ["kiosks.manage"],
+    };
+
+    const { rerender } = render(<KioskDetailView kioskId="kiosk-1" />);
+    expect(
+      screen.getByRole("button", { name: "Trạng thái vận hành" }),
+    ).toBeInTheDocument();
+
+    mocks.access = {
+      ...mocks.access,
+      permissionCodes: ["kiosks.update"],
+    };
+    rerender(<KioskDetailView kioskId="kiosk-1" />);
+
+    expect(
+      screen.queryByRole("button", { name: "Trạng thái vận hành" }),
+    ).not.toBeInTheDocument();
+  });
 });

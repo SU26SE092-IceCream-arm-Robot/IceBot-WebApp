@@ -121,7 +121,7 @@ export function AppSidebar({
         collapsed ? "w-16" : "w-56"
       } relative flex shrink-0 flex-col border-r border-border bg-card transition-all duration-300 ease-out`}
     >
-      <div className="min-w-0 flex-1">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <div
           className={`flex h-14 items-center border-b border-border transition-all duration-300 ease-out ${
             collapsed ? "justify-center px-2" : "gap-3 px-4"
@@ -143,7 +143,11 @@ export function AppSidebar({
           </div>
         </div>
 
-        <nav className={`mt-4 px-2 ${collapsed ? "space-y-3" : "space-y-4"}`}>
+        <nav
+          className={`mt-4 min-h-0 flex-1 overflow-y-auto px-2 pb-4 ${
+            collapsed ? "space-y-3" : "space-y-4"
+          }`}
+        >
           {groupedItems.map((group) => (
             <div key={group.label} className="space-y-1">
               <div
@@ -245,17 +249,18 @@ export function AppSidebar({
           </div>
         ) : null}
 
-        <button
-          type="button"
-          className={`relative flex shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground ${
-            collapsed ? "mx-auto size-9" : "size-9"
-          }`}
-          title="Thông báo"
-          aria-label="Thông báo"
-        >
-          <Bell className="size-4" />
-          <span className="absolute top-2 right-2 size-1.5 rounded-full bg-destructive" />
-        </button>
+        {visibleRoutes.has("/alerts") ? (
+          <Link
+            href="/alerts"
+            className={`flex shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+              collapsed ? "mx-auto size-9" : "size-9"
+            }`}
+            title="Mở cảnh báo"
+            aria-label="Mở cảnh báo"
+          >
+            <Bell className="size-4" />
+          </Link>
+        ) : null}
 
         <button
           type="button"

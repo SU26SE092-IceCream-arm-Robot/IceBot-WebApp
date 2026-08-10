@@ -312,7 +312,11 @@ export default function TransactionsPage() {
         />
         <StatCard
           icon={CreditCard}
-          label={activeTab === "orders" ? "Đã thanh toán" : "Đã xử lý"}
+          label={
+            activeTab === "orders"
+              ? "Đã thanh toán trên trang"
+              : "Đã xử lý trên trang"
+          }
           value={
             activeTab === "orders"
               ? summary.paidOnPage
@@ -322,7 +326,11 @@ export default function TransactionsPage() {
         />
         <StatCard
           icon={RotateCcw}
-          label={activeTab === "orders" ? "Cần hoàn tiền" : "Đã yêu cầu"}
+          label={
+            activeTab === "orders"
+              ? "Cần hoàn tiền trên trang"
+              : "Đã yêu cầu trên trang"
+          }
           value={
             activeTab === "orders"
               ? summary.refundRequiredOnPage
@@ -332,7 +340,11 @@ export default function TransactionsPage() {
         />
         <StatCard
           icon={XCircle}
-          label={activeTab === "orders" ? "Thất bại / hủy" : "Lỗi / từ chối"}
+          label={
+            activeTab === "orders"
+              ? "Thất bại / hủy trên trang"
+              : "Lỗi / từ chối trên trang"
+          }
           value={
             activeTab === "orders"
               ? summary.failedOrCancelledOnPage

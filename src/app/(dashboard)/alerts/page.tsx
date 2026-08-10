@@ -71,6 +71,7 @@ export default function AlertsPage() {
     selectedAlert,
     isDetailOpen,
     isMutationSubmitting,
+    mutationErrorMessage,
     setStatusFilter,
     setSeverityFilter,
     previousPage,
@@ -284,6 +285,7 @@ export default function AlertsPage() {
         onAcknowledge={acknowledgeAlert}
         onResolve={resolveAlert}
         isSubmitting={isMutationSubmitting}
+        mutationErrorMessage={mutationErrorMessage}
       />
     </div>
   );

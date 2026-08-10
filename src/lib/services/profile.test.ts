@@ -7,6 +7,7 @@ import {
   getCurrentAccountProfile,
   listCurrentAccountSessions,
   listCurrentAccountNotificationDevices,
+  revokeCurrentAccountSession,
   revokeAllCurrentAccountSessions,
   unregisterCurrentAccountNotificationDevice,
   updateCurrentAccountProfile,
@@ -135,18 +136,46 @@ describe("current account profile service", () => {
     const sessions = [
       {
         sessionId: "session-1",
+        isCurrentSession: true,
         createdAt: "2026-08-03T10:00:00Z",
         expiresAt: "2026-08-10T10:00:00Z",
         ipAddress: "127.0.0.1",
         userAgent: "IceBot test browser",
+        deviceName: "Chrome on Windows",
       },
     ];
+    const result = { currentSessionId: "session-1", sessions };
     vi.mocked(axiosClient.get).mockResolvedValue(
-      apiResponse({ succeeded: true, statusCode: 200, data: sessions }),
+      apiResponse({ succeeded: true, statusCode: 200, data: result }),
     );
 
-    await expect(listCurrentAccountSessions()).resolves.toEqual(sessions);
+    await expect(listCurrentAccountSessions()).resolves.toEqual(result);
     expect(axiosClient.get).toHaveBeenCalledWith("/api/v1/me/sessions");
+  });
+
+  it("does not turn a failed sessions envelope into an empty list", async () => {
+    vi.mocked(axiosClient.get).mockResolvedValue(
+      apiResponse({
+        succeeded: false,
+        statusCode: 500,
+        message: "Session lookup failed.",
+      }),
+    );
+
+    await expect(listCurrentAccountSessions()).rejects.toThrow(
+      "Session lookup failed.",
+    );
+  });
+
+  it("revokes only the selected current-account session", async () => {
+    vi.mocked(axiosClient.delete).mockResolvedValue({ status: 204 });
+
+    await expect(
+      revokeCurrentAccountSession("session/with unsafe characters"),
+    ).resolves.toBeUndefined();
+    expect(axiosClient.delete).toHaveBeenCalledWith(
+      "/api/v1/me/sessions/session%2Fwith%20unsafe%20characters",
+    );
   });
 
   it("revokes all current-account sessions through the authenticated endpoint", async () => {

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { assignAccountRoles, getEffectiveAccess, resetAccountPassword } from "@/lib/services/accounts";
+import { assignAccountRoles, getEffectiveAccess, requestAccountPasswordReset } from "@/lib/services/accounts";
 import { getRoleScopeOptions } from "@/lib/services/roles";
 import type { AccountRoleScopeRequest, EffectiveAccessResult, InternalAccountResult, RoleScopeOptionsResult } from "@/types/accounts";
 
@@ -30,7 +30,7 @@ export interface UseAccountActionsResult {
   isResettingPassword: boolean;
   resetPasswordErrorMessage: string | null;
   setResetPasswordOpen: (open: boolean) => void;
-  submitResetPassword: (accountId: string, newPassword: string) => Promise<boolean>;
+  submitResetPassword: (account: InternalAccountResult) => Promise<boolean>;
 }
 
 export function useAccountActions(
@@ -186,27 +186,27 @@ export function useAccountActions(
   );
 
   const submitResetPassword = useCallback(
-    async (accountId: string, newPassword: string) => {
-      if (!organizationId) {
-        setResetPasswordErrorMessage("Vui lòng chọn tổ chức trước khi đặt lại mật khẩu.");
+    async (account: InternalAccountResult) => {
+      if (!account.email && !account.userName) {
+        setResetPasswordErrorMessage("Tài khoản chưa có email hoặc tên đăng nhập hợp lệ.");
         return false;
       }
 
       setIsResettingPassword(true);
       setResetPasswordErrorMessage(null);
       try {
-        await resetAccountPassword(organizationId, accountId, { newPassword });
+        await requestAccountPasswordReset(account.email || account.userName);
         setIsResetPasswordOpen(false);
-        onSuccess?.("Đã đặt lại mật khẩu thành công.");
+        onSuccess?.("Đã gửi yêu cầu. Nếu tài khoản hợp lệ, hướng dẫn đặt lại mật khẩu sẽ được gửi đến email đăng ký.");
         return true;
       } catch (error) {
-        setResetPasswordErrorMessage(error instanceof Error ? error.message : "Không thể đặt lại mật khẩu.");
+        setResetPasswordErrorMessage(error instanceof Error ? error.message : "Không thể gửi hướng dẫn đặt lại mật khẩu.");
         return false;
       } finally {
         setIsResettingPassword(false);
       }
     },
-    [onSuccess, organizationId]
+    [onSuccess]
   );
 
   return {

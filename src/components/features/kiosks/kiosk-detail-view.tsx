@@ -664,7 +664,7 @@ export function KioskDetailView({ kioskId }: KioskDetailViewProps) {
     storeId: kiosk.locationId,
     kioskId: kiosk.managementId,
   };
-  const canManageOperationalState = hasScopedPermission(effectiveAccess, "kiosks.update", scope);
+  const canManageOperationalState = hasScopedPermission(effectiveAccess, "kiosks.manage", scope);
   const canManageDevices = hasScopedPermission(effectiveAccess, "devices.manage", scope);
   const canDeploy = hasScopedPermission(effectiveAccess, "release.deploy", scope);
   const canRollbackDeployments = hasScopedPermission(effectiveAccess, "release.rollback", scope);

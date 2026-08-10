@@ -25,10 +25,17 @@ export interface CurrentAccountNotificationDevice {
 
 export interface CurrentAccountSession {
   sessionId: string;
+  isCurrentSession: boolean;
   createdAt: string;
   expiresAt: string;
   ipAddress?: string | null;
   userAgent?: string | null;
+  deviceName: string;
+}
+
+export interface CurrentAccountSessionsResult {
+  currentSessionId?: string | null;
+  sessions: CurrentAccountSession[];
 }
 
 export interface RevokeCurrentAccountSessionsResult {

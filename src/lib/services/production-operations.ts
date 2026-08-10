@@ -364,11 +364,15 @@ export async function getConfigurationReleaseAuthoringOptions(
   );
 }
 
-export async function listProductionProgramBindings(organizationId: string) {
+export async function listProductionProgramBindings(
+  organizationId: string,
+  signal?: AbortSignal,
+) {
   const response = await axiosClient.get<
     ApiResult<ProductionProgramBindingResult[]>
   >(
     `/api/v1/management/organizations/${encodeURIComponent(organizationId)}/production-program-bindings`,
+    { signal },
   );
   return requireData(
     response.data,

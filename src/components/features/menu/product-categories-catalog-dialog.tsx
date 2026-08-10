@@ -448,7 +448,7 @@ export function ProductCategoriesCatalogDialog({
             <div className="min-w-0 space-y-1">
               <DialogTitle>Danh mục sản phẩm</DialogTitle>
               <DialogDescription>
-                Xem các nhóm phân loại sản phẩm dùng khi tạo và chỉnh sửa catalog.
+                Catalog dùng chung toàn hệ thống để phân loại sản phẩm khi tạo và chỉnh sửa.
               </DialogDescription>
             </div>
           </div>

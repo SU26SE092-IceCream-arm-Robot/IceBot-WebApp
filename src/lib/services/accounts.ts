@@ -13,7 +13,6 @@ import type {
   InternalAccountResult,
   ManagementAccountsQuery,
   PagedResult,
-  ResetPasswordRequest,
 } from "@/types/accounts";
 
 function requireData<T>(result: ApiResult<T>, fallbackMessage: string): T {
@@ -114,17 +113,15 @@ export async function acceptInvitation(
   return requireData(response.data, "Không thể chấp nhận lời mời.");
 }
 
-export async function resetAccountPassword(
-  organizationId: string,
-  accountId: string,
-  request: ResetPasswordRequest
+export async function requestAccountPasswordReset(
+  emailOrUserName: string,
 ): Promise<void> {
-  const response = await axiosClient.put<ApiResult<void>>(
-    `${accountsPath(organizationId)}/${encodeURIComponent(accountId)}/password`,
-    request
+  const response = await axiosClient.post<ApiResult<boolean>>(
+    "/api/v1/authentication/forgot-password",
+    { emailOrUserName },
   );
 
-  requireData(response.data, "Không thể đặt lại mật khẩu.");
+  requireData(response.data, "Không thể gửi hướng dẫn đặt lại mật khẩu.");
 }
 
 export async function getEffectiveAccess(

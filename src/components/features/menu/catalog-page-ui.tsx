@@ -28,6 +28,7 @@ import type {
   MenuManagementPagination,
   MenuResult,
   MenuStatus,
+  ProductCategoryResult,
   ProductResult,
 } from "@/types/menu-management";
 
@@ -204,6 +205,7 @@ export function MenusPanel({
 
 export function ProductsPanel({
   collection,
+  categories,
   onRetry,
   onPrevious,
   onNext,
@@ -213,6 +215,7 @@ export function ProductsPanel({
   onToggleAvailability,
 }: {
   collection: MenuCollectionState<ProductResult>;
+  categories: ProductCategoryResult[];
   onRetry: () => Promise<void>;
   onPrevious: () => void;
   onNext: () => void;
@@ -241,6 +244,7 @@ export function ProductsPanel({
         ) : (
           <ProductsTable
             canManage={canManage}
+            categories={categories}
             productActionId={productActionId}
             products={collection.data}
             onToggleAvailability={onToggleAvailability}

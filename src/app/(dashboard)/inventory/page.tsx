@@ -403,19 +403,19 @@ export default function InventoryPage() {
         />
         <StatCard
           icon={TriangleAlert}
-          label="Sắp hết"
+          label="Sắp hết trên trang"
           value={summary.lowOnPage}
           tone="warning"
         />
         <StatCard
           icon={PackageCheck}
-          label="Đầy"
+          label="Đầy trên trang"
           value={summary.fullOnPage}
           tone="success"
         />
         <StatCard
           icon={CircleHelp}
-          label="Chưa xác định"
+          label="Chưa xác định trên trang"
           value={summary.unknownOnPage}
           tone="muted"
         />

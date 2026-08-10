@@ -13,6 +13,7 @@ import {
 
 import { RefundStatusBadge } from "@/components/features/transactions/refunds-table";
 import { ExecutionAttemptsPanel } from "@/components/features/transactions/execution-attempts-panel";
+import { PaymentDiagnosticsPanel } from "@/components/features/transactions/payment-diagnostics-panel";
 import {
   ORDER_STATUS_LABELS,
   OrderStatusBadge,
@@ -289,6 +290,8 @@ export function TransactionDetailDialog({
                 </div>
               )}
             </div>
+
+            <PaymentDiagnosticsPanel key={order.id} orderId={order.id} />
 
             <ExecutionAttemptsPanel key={order.id} orderId={order.id} />
 

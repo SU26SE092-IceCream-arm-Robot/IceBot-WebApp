@@ -28,6 +28,7 @@ interface AccountDetailDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   accountActions: UseAccountActionsResult;
+  canManageAccounts: boolean;
 }
 
 const ROLE_LABELS: Record<string, string> = {
@@ -59,13 +60,13 @@ function StatusBadge({ status }: { status: ManagementAccountStatus }) {
 
 function getScopeLabel(role: InternalAccountRoleResult): string {
   if (role.kioskId) {
-    return `Kiosk ${role.kioskId}`;
+    return "Kiosk được phân công";
   }
   if (role.storeId) {
-    return `Cửa hàng ${role.storeId}`;
+    return "Cửa hàng được phân công";
   }
   if (role.organizationId) {
-    return `Tổ chức ${role.organizationId}`;
+    return "Tổ chức được phân công";
   }
   return "Toàn hệ thống";
 }
@@ -88,6 +89,7 @@ export function AccountDetailDialog({
   open,
   onOpenChange,
   accountActions,
+  canManageAccounts,
 }: AccountDetailDialogProps) {
   const [activeTab, setActiveTab] = useState("info");
 
@@ -380,15 +382,15 @@ export function AccountDetailDialog({
                         <p className="text-sm font-semibold text-foreground">Bảo mật tài khoản</p>
                       </div>
                     </div>
-                    <div className="flex items-center justify-between bg-muted/20 p-3 rounded-lg">
+                    {canManageAccounts && account.localLoginEnabled ? <div className="flex items-center justify-between gap-3 rounded-lg bg-muted/20 p-3">
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Info className="h-4 w-4" />
-                        Đặt lại mật khẩu cho tài khoản này
+                        Gửi hướng dẫn để người dùng tự đặt lại mật khẩu
                       </div>
                       <Button variant="secondary" size="sm" onClick={() => accountActions.setResetPasswordOpen(true)}>
-                        Đặt lại
+                        Gửi hướng dẫn
                       </Button>
-                    </div>
+                    </div> : null}
                   </div>
                 </TabsContent>
               </ScrollArea>

@@ -107,6 +107,8 @@ export function useAlerts() {
     const requestId = ++detailRequestIdRef.current;
 
     setDetailErrorMessage(null);
+    setMutationErrorMessage(null);
+    setSuccessMessage(null);
     setIsDetailOpen(true);
     setIsDetailLoading(true);
 
@@ -145,6 +147,7 @@ export function useAlerts() {
       detailAbortRef.current = null;
       setIsDetailLoading(false);
       setDetailErrorMessage(null);
+      setMutationErrorMessage(null);
     }
   }, []);
 

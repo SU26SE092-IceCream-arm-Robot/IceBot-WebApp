@@ -9,7 +9,7 @@ import {
   getAccountById,
   listManagementAccounts,
   regenerateInvitation,
-  resetAccountPassword,
+  requestAccountPasswordReset,
 } from "@/lib/services/accounts";
 import type { ApiResult } from "@/types";
 import type {
@@ -137,9 +137,7 @@ describe("organization-scoped account service contract", () => {
     );
 
     await disableAccount(organizationId, accountId);
-    await resetAccountPassword(organizationId, accountId, {
-      newPassword: "ValidPassword123!",
-    });
+    await requestAccountPasswordReset("org-user@example.com");
     await assignAccountRoles(organizationId, accountId, {
       roles: [{ roleCode: "Manager", organizationId }],
     });
@@ -148,17 +146,18 @@ describe("organization-scoped account service contract", () => {
     expect(axiosClient.patch).toHaveBeenCalledWith(
       `${basePath}/${accountId}/disable`,
     );
-    expect(axiosClient.put).toHaveBeenNthCalledWith(
+    expect(axiosClient.post).toHaveBeenNthCalledWith(
       1,
-      `${basePath}/${accountId}/password`,
-      { newPassword: "ValidPassword123!" },
+      "/api/v1/authentication/forgot-password",
+      { emailOrUserName: "org-user@example.com" },
     );
     expect(axiosClient.put).toHaveBeenNthCalledWith(
-      2,
+      1,
       `${basePath}/${accountId}/roles`,
       { roles: [{ roleCode: "Manager", organizationId }] },
     );
-    expect(axiosClient.post).toHaveBeenCalledWith(
+    expect(axiosClient.post).toHaveBeenNthCalledWith(
+      2,
       `${basePath}/${accountId}/invitation`,
       { sendEmail: false },
     );

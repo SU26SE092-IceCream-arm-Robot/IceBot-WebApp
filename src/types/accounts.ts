@@ -176,10 +176,6 @@ export interface EffectiveAccessResult {
   effectiveScope: EffectiveScopeResult;
 }
 
-export interface ResetPasswordRequest {
-  newPassword: string;
-}
-
 export interface AccountRolesAssignmentRequest {
   roles: AccountRoleScopeRequest[];
 }

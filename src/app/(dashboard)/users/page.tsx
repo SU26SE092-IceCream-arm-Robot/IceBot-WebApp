@@ -439,6 +439,7 @@ export default function UsersPage() {
         open={isDetailOpen}
         onOpenChange={handleDetailOpenChange}
         accountActions={accountActions}
+        canManageAccounts={canManageAccounts}
       />
 
       <EditRolesDialog

@@ -186,6 +186,7 @@ export function ProductsManagementView() {
 
       <ProductsPanel
         canManage={canManage}
+        categories={productCategories.categories}
         collection={products}
         productActionId={productActionId}
         onRetry={refresh}
@@ -197,6 +198,7 @@ export function ProductsManagementView() {
 
       <ProductDetailDialog
         canManage={canManage}
+        categories={productCategories.categories}
         errorMessage={productDetailError}
         isLoading={isProductDetailLoading}
         open={isProductDetailOpen}

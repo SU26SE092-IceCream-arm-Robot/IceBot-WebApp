@@ -65,6 +65,7 @@ interface AlertDetailDrawerProps {
   onAcknowledge: (alertId: string) => Promise<boolean>;
   onResolve: (alertId: string, notes: string) => Promise<boolean>;
   isSubmitting: boolean;
+  mutationErrorMessage?: string | null;
 }
 
 const SOURCE_TYPE_LABELS: Record<string, string> = {
@@ -80,6 +81,7 @@ export function AlertDetailDrawer({
   onAcknowledge,
   onResolve,
   isSubmitting,
+  mutationErrorMessage,
 }: AlertDetailDrawerProps) {
   const { effectiveAccess } = useAuth();
   const [resolutionNotes, setResolutionNotes] = useState("");
@@ -215,6 +217,15 @@ export function AlertDetailDrawer({
             </div>
           )}
         </div>
+
+        {mutationErrorMessage ? (
+          <div
+            role="alert"
+            className="mt-4 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive"
+          >
+            {mutationErrorMessage}
+          </div>
+        ) : null}
 
         {canManage && (alert.status === "Open" || alert.status === "Acknowledged") && (
           <div className="mt-6 flex flex-col gap-3 border-t pt-4">

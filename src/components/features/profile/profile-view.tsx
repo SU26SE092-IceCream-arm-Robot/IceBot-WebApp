@@ -8,6 +8,7 @@ import {
   KeyRound,
   Laptop,
   LockKeyhole,
+  LogOut,
   Mail,
   MapPin,
   Phone,
@@ -373,19 +374,25 @@ function NotificationDevicesCard({
   );
 }
 
-function ActiveSessionsCard({
+export function ActiveSessionsCard({
   sessions,
+  currentSessionId,
   isLoading,
   errorMessage,
+  revokingSessionId,
   isRevokingAllSessions,
   onRetry,
+  onRevoke,
   onRevokeAll,
 }: {
   sessions: CurrentAccountSession[];
+  currentSessionId: string | null;
   isLoading: boolean;
   errorMessage: string | null;
+  revokingSessionId: string | null;
   isRevokingAllSessions: boolean;
   onRetry: () => Promise<void>;
+  onRevoke: (session: CurrentAccountSession) => void;
   onRevokeAll: () => void;
 }) {
   return (
@@ -403,7 +410,12 @@ function ActiveSessionsCard({
         <Button
           variant="destructive"
           size="sm"
-          disabled={isLoading || sessions.length === 0 || isRevokingAllSessions}
+          disabled={
+            isLoading ||
+            sessions.length === 0 ||
+            isRevokingAllSessions ||
+            revokingSessionId !== null
+          }
           onClick={onRevokeAll}
         >
           Đăng xuất mọi thiết bị
@@ -433,23 +445,59 @@ function ActiveSessionsCard({
           </div>
         ) : (
           <div className="divide-y divide-border rounded-lg border border-border">
-            {sessions.map((session) => (
-              <div key={session.sessionId} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex min-w-0 gap-3">
-                  <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-                    <Laptop className="size-4" />
-                  </span>
-                  <div className="min-w-0">
-                    <p className="truncate font-medium">{session.userAgent?.trim() || "Thiết bị chưa xác định"}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {session.ipAddress?.trim() || "Không có địa chỉ IP"}
-                      {` · Đăng nhập ${formatDateTime(session.createdAt)}`}
-                    </p>
+            {sessions.map((session) => {
+              const isCurrentSession =
+                session.isCurrentSession ||
+                session.sessionId === currentSessionId;
+
+              return (
+                <div
+                  key={session.sessionId}
+                  className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div className="flex min-w-0 gap-3">
+                    <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                      <Laptop className="size-4" />
+                    </span>
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="truncate font-medium">
+                          {session.deviceName?.trim() || "Thiết bị chưa xác định"}
+                        </p>
+                        {isCurrentSession ? (
+                          <Badge variant="secondary">Phiên hiện tại</Badge>
+                        ) : null}
+                      </div>
+                      <p className="truncate text-sm text-muted-foreground">
+                        {session.userAgent?.trim() || "Không có thông tin trình duyệt"}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {session.ipAddress?.trim() || "Không có địa chỉ IP"}
+                        {` · Đăng nhập ${formatDateTime(session.createdAt)}`}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 flex-wrap items-center gap-2">
+                    <Badge variant="outline">
+                      Hết hạn {formatDateTime(session.expiresAt)}
+                    </Badge>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={
+                        isRevokingAllSessions || revokingSessionId !== null
+                      }
+                      isLoading={revokingSessionId === session.sessionId}
+                      onClick={() => onRevoke(session)}
+                    >
+                      <LogOut className="size-4" />
+                      Đăng xuất
+                    </Button>
                   </div>
                 </div>
-                <Badge variant="secondary">Hết hạn {formatDateTime(session.expiresAt)}</Badge>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </CardContent>
@@ -462,6 +510,8 @@ export function ProfileView() {
   const [notificationDeviceToUnregister, setNotificationDeviceToUnregister] =
     useState<CurrentAccountNotificationDevice | null>(null);
   const [isRevokeAllSessionsDialogOpen, setIsRevokeAllSessionsDialogOpen] = useState(false);
+  const [sessionToRevoke, setSessionToRevoke] =
+    useState<CurrentAccountSession | null>(null);
   const { effectiveAccess } = useAuth();
   const {
     profile,
@@ -477,12 +527,15 @@ export function ProfileView() {
     notificationDevicesErrorMessage,
     unregisteringInstallationId,
     sessions,
+    currentSessionId,
     isSessionsLoading,
     sessionsErrorMessage,
+    revokingSessionId,
     isRevokingAllSessions,
     loadNotificationDevices,
     unregisterNotificationDevice,
     loadSessions,
+    revokeSession,
     revokeAllSessions,
   } = useProfile();
 
@@ -678,10 +731,13 @@ export function ProfileView() {
 
       <ActiveSessionsCard
         sessions={sessions}
+        currentSessionId={currentSessionId}
         isLoading={isSessionsLoading}
         errorMessage={sessionsErrorMessage}
+        revokingSessionId={revokingSessionId}
         isRevokingAllSessions={isRevokingAllSessions}
         onRetry={loadSessions}
+        onRevoke={setSessionToRevoke}
         onRevokeAll={() => setIsRevokeAllSessionsDialogOpen(true)}
       />
 
@@ -734,6 +790,63 @@ export function ProfileView() {
               }}
             >
               Đăng xuất mọi thiết bị
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={sessionToRevoke !== null}
+        onOpenChange={(open) => {
+          if (!open && revokingSessionId === null) {
+            setSessionToRevoke(null);
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Đăng xuất thiết bị này?</DialogTitle>
+            <DialogDescription>
+              Phiên trên {sessionToRevoke?.deviceName?.trim() || "thiết bị chưa xác định"} sẽ bị thu hồi.
+              {sessionToRevoke?.isCurrentSession ||
+              sessionToRevoke?.sessionId === currentSessionId
+                ? " Đây là phiên hiện tại nên bạn sẽ được chuyển về trang đăng nhập."
+                : " Các thiết bị khác vẫn đăng nhập bình thường."}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={revokingSessionId !== null}
+              onClick={() => setSessionToRevoke(null)}
+            >
+              Hủy
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              isLoading={revokingSessionId !== null}
+              onClick={() => {
+                if (!sessionToRevoke) return;
+                void revokeSession(sessionToRevoke)
+                  .then((revokedCurrentSession) => {
+                    toast.success("Đã đăng xuất khỏi thiết bị.");
+                    setSessionToRevoke(null);
+                    if (revokedCurrentSession) {
+                      router.replace("/login");
+                    }
+                  })
+                  .catch((error) => {
+                    toast.error(
+                      error instanceof Error
+                        ? error.message
+                        : "Không thể đăng xuất khỏi thiết bị này.",
+                    );
+                  });
+              }}
+            >
+              Đăng xuất thiết bị
             </Button>
           </DialogFooter>
         </DialogContent>

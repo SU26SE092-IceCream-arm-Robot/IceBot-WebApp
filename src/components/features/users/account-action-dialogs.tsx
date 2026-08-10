@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AlertTriangle, KeyRound, Plus, ShieldCheck, Trash2 } from "lucide-react";
+import { AlertTriangle, MailCheck, Plus, ShieldCheck, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -12,7 +12,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -35,7 +34,7 @@ interface ResetPasswordDialogProps {
   onOpenChange: (open: boolean) => void;
   isSubmitting: boolean;
   errorMessage: string | null;
-  onSubmit: (accountId: string, newPassword: string) => Promise<boolean>;
+  onSubmit: (account: InternalAccountResult) => Promise<boolean>;
 }
 
 export function ResetPasswordDialog({
@@ -46,19 +45,10 @@ export function ResetPasswordDialog({
   errorMessage,
   onSubmit,
 }: ResetPasswordDialogProps) {
-  const [password, setPassword] = useState("");
-
-  useEffect(() => {
-    if (open) {
-      // eslint-disable-next-line
-      setPassword("");
-    }
-  }, [open]);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!account || !password) return;
-    await onSubmit(account.id, password);
+    if (!account) return;
+    await onSubmit(account);
   };
 
   return (
@@ -66,25 +56,17 @@ export function ResetPasswordDialog({
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <KeyRound className="h-5 w-5 text-primary" />
-            Đặt lại mật khẩu
+            <MailCheck className="h-5 w-5 text-primary" />
+            Gửi hướng dẫn đặt lại mật khẩu
           </DialogTitle>
           <DialogDescription>
-            Đặt mật khẩu mới cho tài khoản <span className="font-semibold text-foreground">{account?.userName}</span>.
+            Hệ thống sẽ gửi hướng dẫn để người dùng tự đặt mật khẩu mới cho tài khoản{" "}
+            <span className="font-semibold text-foreground">{account?.userName}</span>.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="new-password">Mật khẩu mới</Label>
-            <Input
-              id="new-password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              disabled={isSubmitting}
-              placeholder="Nhập mật khẩu mới"
-              required
-            />
+          <div className="rounded-lg border border-border bg-muted/20 p-3 text-sm text-muted-foreground">
+            Vì lý do bảo mật, quản trị viên không đặt mật khẩu thay người dùng. Phản hồi của hệ thống không xác nhận email có tồn tại hay không.
           </div>
 
           {errorMessage && (
@@ -98,8 +80,8 @@ export function ResetPasswordDialog({
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
               Hủy
             </Button>
-            <Button type="submit" disabled={isSubmitting || !password}>
-              {isSubmitting ? "Đang xử lý..." : "Xác nhận"}
+            <Button type="submit" disabled={isSubmitting || !account}>
+              {isSubmitting ? "Đang gửi..." : "Gửi hướng dẫn"}
             </Button>
           </DialogFooter>
         </form>

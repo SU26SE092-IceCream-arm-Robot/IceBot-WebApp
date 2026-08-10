@@ -292,19 +292,19 @@ export default function MaintenancePage() {
         />
         <StatCard
           icon={Wrench}
-          label="Đang mở"
+          label="Đang mở trên trang"
           value={summary.openOnPage}
           tone="warning"
         />
         <StatCard
           icon={Filter}
-          label="Đang xử lý"
+          label="Đang xử lý trên trang"
           value={summary.inProgressOnPage}
           tone="success"
         />
         <StatCard
           icon={ShieldAlert}
-          label="Khẩn cấp"
+          label="Khẩn cấp trên trang"
           value={summary.criticalOnPage}
           tone="destructive"
         />
@@ -328,7 +328,7 @@ export default function MaintenancePage() {
               <Input
                 value={filters.searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
-                placeholder="Tìm ticket, tiêu đề, mã lỗi hoặc kiosk..."
+                placeholder="Tìm trong trang hiện tại theo ticket, tiêu đề, mã lỗi hoặc kiosk..."
                 className="h-9 bg-card pl-9 text-sm"
               />
             </div>
