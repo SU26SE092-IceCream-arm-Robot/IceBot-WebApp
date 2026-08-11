@@ -2,9 +2,9 @@ import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { PaymentMethodsView } from "@/components/features/settings/payment-methods-view";
-import { usePaymentMethods } from "@/hooks/use-payment-methods";
+import { usePaymentMethods } from "@/hooks/operations/use-payment-methods";
 
-vi.mock("@/hooks/use-payment-methods", () => ({
+vi.mock("@/hooks/operations/use-payment-methods", () => ({
   usePaymentMethods: vi.fn(),
 }));
 

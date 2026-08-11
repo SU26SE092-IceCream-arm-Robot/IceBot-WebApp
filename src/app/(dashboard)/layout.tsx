@@ -7,7 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { AppSidebar } from "@/components/shared/app-sidebar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/identity/use-auth";
 import { canAccessRoute, getDashboardRoutePath, getVisibleRoutes } from "@/lib/rbac";
 
 export default function DashboardLayout({

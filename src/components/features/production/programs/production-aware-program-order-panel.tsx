@@ -13,8 +13,8 @@ import { Button } from "@/components/ui/button";
 import {
   getRobotProgram,
   replaceRobotProgramArtifacts,
-} from "@/lib/services/production-operations";
-import type { RobotProgramResult } from "@/types/production-operations";
+} from "@/lib/services/production/operations";
+import type { RobotProgramResult } from "@/types/production/operations";
 
 interface ProductionAwareProgramOrderPanelProps {
   organizationId: string;

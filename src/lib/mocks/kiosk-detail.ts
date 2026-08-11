@@ -5,7 +5,7 @@ import type {
   KioskEvent,
   KioskOperationMode,
   KioskTemperaturePoint,
-} from "@/types/kiosk-detail";
+} from "@/types/kiosks/detail";
 
 const TEMPERATURE_OFFSETS = [-0.6, -0.3, 0.2, -0.2, 0.1, 0] as const;
 

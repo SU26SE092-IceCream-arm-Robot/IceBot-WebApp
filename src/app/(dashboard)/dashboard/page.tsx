@@ -18,8 +18,8 @@ import { OperationalShortcuts } from "@/components/features/dashboard/operationa
 import { PlatformControlKpiGrid } from "@/components/features/dashboard/platform-control-kpi-grid";
 import { PlatformControlShortcuts } from "@/components/features/dashboard/platform-control-shortcuts";
 import { PlatformInterventionList } from "@/components/features/dashboard/platform-intervention-list";
-import { useDashboardOverview } from "@/hooks/use-dashboard-overview";
-import { useAuth } from "@/hooks/use-auth";
+import { useDashboardOverview } from "@/hooks/dashboard/use-dashboard-overview";
+import { useAuth } from "@/hooks/identity/use-auth";
 import { getVisibleRoutes } from "@/lib/rbac";
 
 export default function DashboardPage() {

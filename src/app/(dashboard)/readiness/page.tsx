@@ -2,19 +2,19 @@
 
 import { useMemo } from "react";
 
-import { ReadinessCheckGroup } from "@/components/features/readiness/readiness-check-group";
-import { ReadinessHeader } from "@/components/features/readiness/readiness-header";
-import { ReadinessNextActions } from "@/components/features/readiness/readiness-next-actions";
+import { ReadinessCheckGroup } from "@/components/features/operations/readiness/readiness-check-group";
+import { ReadinessHeader } from "@/components/features/operations/readiness/readiness-header";
+import { ReadinessNextActions } from "@/components/features/operations/readiness/readiness-next-actions";
 import {
   ReadinessEmptyState,
   ReadinessErrorState,
   ReadinessLoadingState,
   ReadinessPartialFailureBanner,
-} from "@/components/features/readiness/readiness-overview-states";
-import { ReadinessScopeSelector } from "@/components/features/readiness/readiness-scope-selector";
-import { ReadinessSummaryCard } from "@/components/features/readiness/readiness-summary-card";
-import { useSetupReadiness } from "@/hooks/use-setup-readiness";
-import type { ReadinessCheckGroup as ReadinessCheckGroupName } from "@/types/setup-readiness";
+} from "@/components/features/operations/readiness/readiness-overview-states";
+import { ReadinessScopeSelector } from "@/components/features/operations/readiness/readiness-scope-selector";
+import { ReadinessSummaryCard } from "@/components/features/operations/readiness/readiness-summary-card";
+import { useSetupReadiness } from "@/hooks/operations/use-setup-readiness";
+import type { ReadinessCheckGroup as ReadinessCheckGroupName } from "@/types/operations/readiness";
 
 const GROUP_ORDER: ReadinessCheckGroupName[] = ["scope", "kiosk", "catalog", "payment"];
 

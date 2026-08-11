@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useSyncDeadLetters } from "@/hooks/use-sync-dead-letters";
+import { useSyncDeadLetters } from "@/hooks/platform/use-sync-dead-letters";
 
 function formatDateTime(value: string): string {
   return new Date(value).toLocaleString("vi-VN", {

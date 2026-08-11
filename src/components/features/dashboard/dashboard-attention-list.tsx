@@ -14,7 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type {
   DashboardMetrics,
   InventorySummary,
-} from "@/types/dashboard-overview";
+} from "@/types/dashboard/overview";
 import type { DashboardRoutePath } from "@/types";
 
 type AttentionTone = "warning" | "destructive" | "primary";

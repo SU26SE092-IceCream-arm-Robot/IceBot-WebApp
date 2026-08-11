@@ -1,7 +1,7 @@
 "use client";
 
 import { PaymentMethodsView } from "@/components/features/settings/payment-methods-view";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/identity/use-auth";
 import { hasEffectivePermission } from "@/lib/rbac";
 
 export default function PaymentMethodsPage() {

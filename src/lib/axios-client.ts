@@ -19,7 +19,7 @@ import {
   API_BASE_URL,
   normalizeApiRequestPath,
 } from "@/lib/api-base-url";
-import { refreshAccessToken } from "@/lib/services/auth";
+import { refreshAccessToken } from "@/lib/services/identity/auth";
 
 interface RetryableRequestConfig extends InternalAxiosRequestConfig {
   _retry?: boolean;

@@ -1,5 +1,5 @@
-import type { StoreResult } from "@/types/kiosk-management";
-import type { StoreDayOfWeek } from "@/types/tenant-management";
+import type { StoreResult } from "@/types/kiosks/management";
+import type { StoreDayOfWeek } from "@/types/tenants/management";
 
 export type StoreOpeningState = "OPEN" | "CLOSED" | "UNRESTRICTED" | "UNKNOWN";
 

@@ -4,7 +4,7 @@ import type {
   ReadinessCheckId,
   ReadinessOverallStatus,
   ReadinessStatus,
-} from "@/types/setup-readiness";
+} from "@/types/operations/readiness";
 
 export const READINESS_GROUP_LABELS: Record<ReadinessCheckGroup, string> = {
   scope: "Phạm vi tổ chức",

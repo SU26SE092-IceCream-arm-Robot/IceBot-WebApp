@@ -17,24 +17,25 @@ import {
   OrderActionDialog,
   RefundDetailDialog,
   TransactionDetailDialog,
-} from "@/components/features/transactions/transaction-dialogs";
+} from "@/components/features/transactions/orders/transaction-dialogs";
 import {
   CancelRefundDialog,
   ProcessRefundDialog,
   RejectRefundDialog,
   RequestRefundDialog,
-} from "@/components/features/transactions/refund-action-dialogs";
-import { OrderItemFulfillmentDialog } from "@/components/features/transactions/order-item-fulfillment-dialog";
-import { ProductionIncidentsPanel } from "@/components/features/transactions/production-incidents-panel";
+} from "@/components/features/transactions/refunds/refund-action-dialogs";
+import { OrderItemFulfillmentDialog } from "@/components/features/transactions/execution/order-item-fulfillment-dialog";
+import { ProductionIncidentsPanel } from "@/components/features/transactions/incidents/production-incidents-panel";
+import { PaymentInterventionsPanel } from "@/components/features/transactions/payments/payment-interventions-panel";
 import {
   REFUND_STATUS_LABELS,
   RefundsTable,
-} from "@/components/features/transactions/refunds-table";
+} from "@/components/features/transactions/refunds/refunds-table";
 import {
   ORDER_STATUS_LABELS,
   PAYMENT_STATUS_LABELS,
   TransactionsTable,
-} from "@/components/features/transactions/transactions-table";
+} from "@/components/features/transactions/orders/transactions-table";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -45,9 +46,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useAuth } from "@/hooks/use-auth";
-import { useTransactions } from "@/hooks/use-transactions";
-import { useOrderItemFulfillment } from "@/hooks/use-order-item-fulfillment";
+import { useAuth } from "@/hooks/identity/use-auth";
+import { useTransactions } from "@/hooks/transactions/use-transactions";
+import { useOrderItemFulfillment } from "@/hooks/transactions/use-order-item-fulfillment";
 import { hasPermission } from "@/lib/rbac";
 import type {
   OrderStatus,
@@ -56,7 +57,7 @@ import type {
   PaymentStatusFilter,
   RefundStatus,
   RefundStatusFilter,
-} from "@/types/transactions";
+} from "@/types/transactions/transactions";
 import { useState } from "react";
 
 const ORDER_STATUS_OPTIONS: { value: OrderStatusFilter; label: string }[] = [
@@ -94,7 +95,7 @@ function isRefundStatusFilter(value: string | null): value is RefundStatusFilter
   return REFUND_STATUS_OPTIONS.some((option) => option.value === value);
 }
 
-type TransactionsTab = "orders" | "refunds" | "incidents";
+type TransactionsTab = "orders" | "refunds" | "incidents" | "payment-interventions";
 
 type StatTone = "primary" | "success" | "warning" | "destructive";
 
@@ -180,6 +181,7 @@ export default function TransactionsPage() {
   const [isCancelRefundOpen, setIsCancelRefundOpen] = useState(false);
   const { effectiveAccess } = useAuth();
   const canManageRefunds = hasPermission(effectiveAccess, "refunds.manage");
+  const canManagePayments = hasPermission(effectiveAccess, "payments.manage");
 
   const {
     orders,
@@ -302,7 +304,7 @@ export default function TransactionsPage() {
         </Button>
       </section>
 
-      {activeTab !== "incidents" ? (
+      {activeTab === "orders" || activeTab === "refunds" ? (
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           icon={ReceiptText}
@@ -391,6 +393,19 @@ export default function TransactionsPage() {
         >
           Sự cố sản xuất
         </button>
+        {canManagePayments ? (
+          <button
+            type="button"
+            className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+              activeTab === "payment-interventions"
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:bg-muted/40 hover:text-foreground"
+            }`}
+            onClick={() => setActiveTab("payment-interventions")}
+          >
+            Can thiệp thanh toán
+          </button>
+        ) : null}
       </div>
 
       {activeTab === "incidents" ? (
@@ -405,6 +420,12 @@ export default function TransactionsPage() {
           </CardHeader>
           <CardContent className="p-5">
             <ProductionIncidentsPanel enabled={activeTab === "incidents"} />
+          </CardContent>
+        </Card>
+      ) : activeTab === "payment-interventions" ? (
+        <Card className="rounded-xl border border-border bg-card shadow-none">
+          <CardContent className="p-5">
+            <PaymentInterventionsPanel enabled />
           </CardContent>
         </Card>
       ) : (

@@ -17,12 +17,12 @@ import {
   MaintenanceDetailDialog,
   MaintenanceEditorDialog,
   MaintenanceWorkflowDialog,
-} from "@/components/features/maintenance/maintenance-dialogs";
+} from "@/components/features/operations/maintenance/maintenance-dialogs";
 import {
   MAINTENANCE_PRIORITY_LABELS,
   MAINTENANCE_STATUS_LABELS,
   MaintenanceTable,
-} from "@/components/features/maintenance/maintenance-table";
+} from "@/components/features/operations/maintenance/maintenance-table";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -33,15 +33,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useMaintenance } from "@/hooks/use-maintenance";
-import { useAuth } from "@/hooks/use-auth";
+import { useMaintenance } from "@/hooks/operations/use-maintenance";
+import { useAuth } from "@/hooks/identity/use-auth";
 import { hasPermission, hasScopedRole } from "@/lib/rbac";
 import type {
   MaintenancePriority,
   MaintenancePriorityFilter,
   MaintenanceStatusFilter,
   MaintenanceTicketStatus,
-} from "@/types/maintenance";
+} from "@/types/operations/maintenance";
 
 const STATUS_OPTIONS: { value: MaintenanceStatusFilter; label: string }[] = [
   { value: "ALL", label: "Tất cả trạng thái" },

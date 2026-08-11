@@ -4,7 +4,7 @@ import { DashboardKpiCard } from "@/components/features/dashboard/dashboard-kpi-
 import type {
   DashboardMetrics,
   InventorySummary,
-} from "@/types/dashboard-overview";
+} from "@/types/dashboard/overview";
 import type { DashboardRoutePath } from "@/types";
 
 interface DashboardKpiGridProps {

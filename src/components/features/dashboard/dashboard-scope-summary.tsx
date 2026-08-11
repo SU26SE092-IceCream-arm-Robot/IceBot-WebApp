@@ -1,7 +1,7 @@
 import { Building2, CircleCheck, Monitor, Store } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { DashboardMetrics } from "@/types/dashboard-overview";
+import type { DashboardMetrics } from "@/types/dashboard/overview";
 
 interface DashboardScopeSummaryProps {
   metrics: DashboardMetrics;

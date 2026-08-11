@@ -2,7 +2,7 @@ import type {
   KioskConnectivityStatus,
   KioskLifecycleStatus,
   KioskOperationalState,
-} from "@/types/kiosk-management";
+} from "@/types/kiosks/management";
 
 const LIFECYCLE_LABELS: Record<KioskLifecycleStatus, string> = {
   Provisioning: "Đang cấu hình",

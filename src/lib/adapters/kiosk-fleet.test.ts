@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { toKioskFleetViewModel } from "@/lib/adapters/kiosk-fleet";
-import type { KioskResult, StoreResult } from "@/types/kiosk-management";
+import type { KioskResult, StoreResult } from "@/types/kiosks/management";
 
 const kiosk: KioskResult = {
   id: "11111111-1111-1111-1111-111111111111",

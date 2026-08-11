@@ -1,5 +1,5 @@
-import type { StoreResult } from "@/types/kiosk-management";
-import type { OrganizationResult } from "@/types/tenant-management";
+import type { StoreResult } from "@/types/kiosks/management";
+import type { OrganizationResult } from "@/types/tenants/management";
 
 function normalizeText(value: string): string {
   return value.trim().replace(/\s+/g, " ").toLocaleLowerCase("vi-VN");

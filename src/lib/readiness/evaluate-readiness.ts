@@ -2,9 +2,9 @@ import {
   READINESS_CHECK_DEFINITIONS,
   getReadinessUnknownDetail,
 } from "@/lib/readiness/readiness-labels";
-import type { KioskResult, StoreResult } from "@/types/kiosk-management";
-import type { MenuResult, ProductResult } from "@/types/menu-management";
-import type { PaymentMethodResult } from "@/types/payments";
+import type { KioskResult, StoreResult } from "@/types/kiosks/management";
+import type { MenuResult, ProductResult } from "@/types/catalog/menu-management";
+import type { PaymentMethodResult } from "@/types/transactions/payments";
 import type {
   ReadinessCheck,
   ReadinessCheckId,
@@ -14,8 +14,8 @@ import type {
   ReadinessStatus,
   SetupReadinessRawData,
   SetupReadinessResult,
-} from "@/types/setup-readiness";
-import type { OrganizationResult } from "@/types/tenant-management";
+} from "@/types/operations/readiness";
+import type { OrganizationResult } from "@/types/tenants/management";
 
 const CHECK_ORDER: ReadinessCheckId[] = [
   "ORG_ACTIVE",

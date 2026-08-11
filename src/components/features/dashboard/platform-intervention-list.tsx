@@ -14,7 +14,7 @@ import type { DashboardRoutePath } from "@/types";
 import type {
   DashboardMetrics,
   InventorySummary,
-} from "@/types/dashboard-overview";
+} from "@/types/dashboard/overview";
 
 type InterventionTone = "warning" | "destructive";
 

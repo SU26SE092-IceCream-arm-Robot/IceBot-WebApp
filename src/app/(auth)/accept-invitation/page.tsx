@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { IceCream } from "lucide-react";
 
-import { AcceptInvitationForm } from "@/components/features/auth/accept-invitation-form";
+import { AcceptInvitationForm } from "@/components/features/identity/auth/accept-invitation-form";
 
 function AcceptInvitationLoading() {
   return (

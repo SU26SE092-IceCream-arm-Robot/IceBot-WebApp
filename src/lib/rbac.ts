@@ -3,97 +3,14 @@ import type {
   DashboardPermission,
   DashboardRoutePath,
 } from "@/types";
-import type { EffectiveAccessResult } from "@/types/accounts";
+import type { EffectiveAccessResult } from "@/types/identity/accounts";
+import { DASHBOARD_ROUTE_REGISTRY } from "@/lib/navigation/dashboard-routes";
 
-export const PERMISSION_ROLES: Record<
-  DashboardPermission,
-  readonly BackendRoleCode[]
-> = {
-  "dashboard.view": ["SystemAdmin", "OrgAdmin", "Manager", "Technician"],
-  "organizations.view": ["SystemAdmin", "OrgAdmin"],
-  "organizations.manage": ["SystemAdmin"],
-  "organizations.update": ["SystemAdmin", "OrgAdmin"],
-  "stores.view": ["SystemAdmin", "OrgAdmin", "Manager"],
-  "stores.manage": ["SystemAdmin", "OrgAdmin"],
-  "stores.update": ["SystemAdmin", "OrgAdmin", "Manager"],
-  "kiosks.view": ["SystemAdmin", "OrgAdmin", "Manager", "Technician"],
-  "kiosks.manage": ["SystemAdmin", "OrgAdmin", "Manager", "Technician"],
-  "kiosks.update": ["SystemAdmin", "OrgAdmin", "Manager", "Technician"],
-  "devices.view": ["SystemAdmin", "OrgAdmin", "Manager", "Staff", "Technician"],
-  "devices.manage": ["SystemAdmin", "OrgAdmin", "Manager", "Technician"],
-  "device-catalog.read": ["SystemAdmin", "OrgAdmin", "Manager", "Staff", "Technician"],
-  "inventory.view": ["SystemAdmin", "OrgAdmin", "Manager", "Staff", "Technician"],
-  "inventory.manage": ["SystemAdmin", "Manager", "Staff", "Technician"],
-  "inventory.configure": ["SystemAdmin", "Manager", "Technician"],
-  "orders.view": ["SystemAdmin", "OrgAdmin", "Manager", "Staff"],
-  "orders.manage": ["SystemAdmin", "OrgAdmin", "Manager", "Staff"],
-  "refunds.manage": ["SystemAdmin", "Manager", "Staff"],
-  "products.manage": ["SystemAdmin", "OrgAdmin", "Manager"],
-  "product-categories.manage": ["SystemAdmin"],
-  "ingredients.manage": ["SystemAdmin"],
-  "device-catalog.manage": ["SystemAdmin"],
-  "product-templates.manage": ["SystemAdmin"],
-  "package.manage": ["SystemAdmin"],
-  "sync-dead-letters.manage": ["SystemAdmin"],
-  "menus.manage": ["SystemAdmin", "OrgAdmin", "Manager"],
-  "ingredients.read": ["SystemAdmin", "OrgAdmin", "Manager"],
-  "reports.view": ["SystemAdmin", "OrgAdmin", "Manager"],
-  "accounts.read": ["SystemAdmin", "OrgAdmin"],
-  "accounts.manage": ["SystemAdmin", "OrgAdmin"],
-  "permission-matrix.view": ["SystemAdmin"],
-  "tenant-tree.view": ["SystemAdmin", "OrgAdmin", "Manager", "Technician"],
-  "maintenance.view": ["SystemAdmin", "OrgAdmin", "Manager", "Staff", "Technician"],
-  "maintenance.create": ["SystemAdmin", "OrgAdmin", "Manager", "Staff", "Technician"],
-  "maintenance.manage": ["SystemAdmin", "OrgAdmin", "Manager", "Technician"],
-  "alerts.view": ["SystemAdmin", "OrgAdmin", "Manager", "Staff", "Technician"],
-  "alerts.manage": ["SystemAdmin", "OrgAdmin", "Manager", "Technician"],
-  "payments.manage": ["SystemAdmin", "Manager"],
-  "payment-methods.manage": ["SystemAdmin"],
-  "operations.view": ["SystemAdmin", "OrgAdmin", "Manager", "Staff", "Technician"],
-  "operations.diagnostics": ["SystemAdmin", "Technician"],
-  "notifications.view": ["SystemAdmin", "OrgAdmin", "Manager", "Technician"],
-  "notifications.manage": ["SystemAdmin", "OrgAdmin", "Manager", "Technician"],
-  "artifact.read": ["SystemAdmin", "OrgAdmin"],
-  "artifact.upload": ["SystemAdmin", "OrgAdmin"],
-  "artifact-template.read": ["SystemAdmin", "OrgAdmin"],
-  "program.read": ["SystemAdmin", "OrgAdmin", "Manager"],
-  "program.manage": ["SystemAdmin", "OrgAdmin", "Manager"],
-  "release.read": ["SystemAdmin", "OrgAdmin", "Manager"],
-  "release.publish": ["SystemAdmin", "OrgAdmin"],
-  "release.deploy": ["SystemAdmin", "OrgAdmin", "Manager"],
-  "release.rollback": ["SystemAdmin", "OrgAdmin", "Manager"],
-  "deployment.read": ["SystemAdmin", "OrgAdmin", "Manager", "Technician"],
-  "package.read": ["SystemAdmin", "OrgAdmin", "Manager"],
-  "package.install": ["SystemAdmin", "OrgAdmin", "Manager"],
-  "package.fork": ["SystemAdmin", "OrgAdmin"],
-};
+export const ROUTE_PERMISSIONS = Object.fromEntries(
+  DASHBOARD_ROUTE_REGISTRY.map((route) => [route.path, route.permission]),
+) as Record<DashboardRoutePath, DashboardPermission>;
 
-export const ROUTE_PERMISSIONS: Record<
-  DashboardRoutePath,
-  DashboardPermission
-> = {
-  "/dashboard": "dashboard.view",
-  "/readiness": "dashboard.view",
-  "/production": "program.read",
-  "/organizations": "organizations.view",
-  "/kiosks": "kiosks.view",
-  "/inventory": "inventory.view",
-  "/transactions": "orders.view",
-  "/menu": "menus.manage",
-  "/products": "products.manage",
-  "/menus": "menus.manage",
-  "/reports": "reports.view",
-  "/users": "accounts.read",
-  "/roles": "permission-matrix.view",
-  "/maintenance": "maintenance.view",
-  "/alerts": "alerts.view",
-  "/platform/exceptions": "sync-dead-letters.manage",
-  "/settings/payment-methods": "payments.manage",
-};
-
-const DASHBOARD_ROUTES = Object.keys(
-  ROUTE_PERMISSIONS,
-) as DashboardRoutePath[];
+const DASHBOARD_ROUTES = DASHBOARD_ROUTE_REGISTRY.map((route) => route.path);
 const DASHBOARD_ROUTE_SET: ReadonlySet<string> = new Set(DASHBOARD_ROUTES);
 
 function effectiveRoles(access: EffectiveAccessResult): Set<string> {
@@ -141,10 +58,33 @@ export function hasScopedPermission(
   permission: DashboardPermission,
   scope: { organizationId: string; storeId?: string | null; kioskId?: string | null },
 ): boolean {
-  return (
-    hasPermission(access, permission) &&
-    hasScopedRole(access, PERMISSION_ROLES[permission], scope)
+  if (!access || !hasPermission(access, permission)) return false;
+
+  // A missing scope-evidence field can occur only with an older or malformed
+  // access payload. Treat it as no authorization rather than throwing.
+  const permissionScope = (access.permissionScopes ?? []).find(
+    (item) => item.permissionCode === permission,
   );
+  if (!permissionScope) return false;
+  if (permissionScope.isGlobal) return true;
+
+  return permissionScope.scopes.some((assignment) => {
+    if (
+      assignment.organizationId &&
+      assignment.organizationId !== scope.organizationId
+    ) {
+      return false;
+    }
+    if (assignment.storeId && assignment.storeId !== scope.storeId) {
+      return false;
+    }
+    if (assignment.kioskId && assignment.kioskId !== scope.kioskId) {
+      return false;
+    }
+    return Boolean(
+      assignment.organizationId || assignment.storeId || assignment.kioskId,
+    );
+  });
 }
 
 export function hasPermission(

@@ -26,11 +26,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useRobotAuthoringImports } from "@/hooks/use-robot-authoring-imports";
+import { useRobotAuthoringImports } from "@/hooks/production/use-robot-authoring-imports";
 import type {
   RobotAuthoringCompositionPreview,
   RobotAuthoringImportStatus,
-} from "@/types/production-operations";
+} from "@/types/production/operations";
 
 interface RobotAuthoringImportsPanelProps {
   organizationId: string;

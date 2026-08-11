@@ -1,7 +1,7 @@
 import { Building2, CircleCheck, Monitor, Store } from "lucide-react";
 
 import { DashboardKpiCard } from "@/components/features/dashboard/dashboard-kpi-card";
-import type { DashboardMetrics } from "@/types/dashboard-overview";
+import type { DashboardMetrics } from "@/types/dashboard/overview";
 import type { DashboardRoutePath } from "@/types";
 
 interface PlatformControlKpiGridProps {

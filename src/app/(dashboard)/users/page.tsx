@@ -17,20 +17,20 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-import { AccountsTable } from "@/components/features/users/accounts-table";
+import { AccountsTable } from "@/components/features/identity/accounts/accounts-table";
 import {
   AccountDetailDialog,
-} from "@/components/features/users/account-detail-dialog";
+} from "@/components/features/identity/accounts/account-detail-dialog";
 import {
   EditRolesDialog,
   ResetPasswordDialog,
-} from "@/components/features/users/account-action-dialogs";
-import { DisableAccountDialog } from "@/components/features/users/account-dialogs";
+} from "@/components/features/identity/accounts/account-action-dialogs";
+import { DisableAccountDialog } from "@/components/features/identity/accounts/account-dialogs";
 import {
   CreateAccountDialog,
   InvitationResultDialog,
   RegenerateInvitationDialog,
-} from "@/components/features/users/invitation-dialogs";
+} from "@/components/features/identity/accounts/invitation-dialogs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -41,12 +41,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useAccounts } from "@/hooks/use-accounts";
-import { useAccountActions } from "@/hooks/use-account-actions";
-import { useAccountOrganizationScope } from "@/hooks/use-account-organization-scope";
-import { useAuth } from "@/hooks/use-auth";
+import { useAccounts } from "@/hooks/identity/use-accounts";
+import { useAccountActions } from "@/hooks/identity/use-account-actions";
+import { useAccountOrganizationScope } from "@/hooks/identity/use-account-organization-scope";
+import { useAuth } from "@/hooks/identity/use-auth";
 import { hasPermission } from "@/lib/rbac";
-import type { ManagementAccountStatusFilter } from "@/types/accounts";
+import type { ManagementAccountStatusFilter } from "@/types/identity/accounts";
 
 const STATUS_OPTIONS: { value: ManagementAccountStatusFilter; label: string }[] = [
   { value: "ALL", label: "Tất cả trạng thái" },

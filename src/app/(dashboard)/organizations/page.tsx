@@ -1,4 +1,4 @@
-import { OrganizationsView } from "@/components/features/organizations/organizations-view";
+import { OrganizationsView } from "@/components/features/tenants/organizations/organizations-view";
 
 export default function OrganizationsPage() {
   return <OrganizationsView />;

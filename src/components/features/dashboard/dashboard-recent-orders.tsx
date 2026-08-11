@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { DashboardRecentOrder } from "@/types/dashboard-overview";
+import type { DashboardRecentOrder } from "@/types/dashboard/overview";
 
 const ORDER_STATUS_LABELS: Record<string, string> = {
   Draft: "Nháp",

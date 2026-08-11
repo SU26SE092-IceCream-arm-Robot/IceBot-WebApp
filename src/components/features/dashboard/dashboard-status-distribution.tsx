@@ -1,7 +1,7 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { DashboardStatusCount } from "@/types/dashboard-overview";
+import type { DashboardStatusCount } from "@/types/dashboard/overview";
 import {
   getKioskConnectivityLabel,
   getKioskLifecycleLabel,

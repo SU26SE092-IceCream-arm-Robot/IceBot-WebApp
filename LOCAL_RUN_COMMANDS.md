@@ -13,6 +13,8 @@ Use these local values:
 ```env
 NEXT_PUBLIC_API_URL=/api/backend
 ICEBOT_BACKEND_URL=http://localhost:51967
+# Optional. Use the same Google OAuth web client configured by Backend.
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=
 ```
 
 - `NEXT_PUBLIC_API_URL` is browser-visible and uses the same-origin Next.js proxy.
@@ -91,7 +93,9 @@ normal subsequent run, execute only `npm run dev`.
 ## 6. Verification
 
 ```powershell
+npm run test
 npm run lint
+npm run check:architecture
 npm run build
 git diff --check
 ```

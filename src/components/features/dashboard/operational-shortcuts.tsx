@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/identity/use-auth";
 import { getVisibleRoutes } from "@/lib/rbac";
 import type { DashboardRoutePath } from "@/types";
 

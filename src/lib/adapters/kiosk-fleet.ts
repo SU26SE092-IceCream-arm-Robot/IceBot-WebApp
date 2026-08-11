@@ -1,6 +1,6 @@
 import type { KioskFleetItem } from "@/types";
-import type { KioskManagementDetail } from "@/types/kiosk-detail";
-import type { KioskResult, StoreResult } from "@/types/kiosk-management";
+import type { KioskManagementDetail } from "@/types/kiosks/detail";
+import type { KioskResult, StoreResult } from "@/types/kiosks/management";
 
 function getStoreLabel(store: StoreResult | undefined, storeId: string): string {
   return store?.name ?? `Cửa hàng ${storeId}`;

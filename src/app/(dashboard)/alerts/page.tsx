@@ -14,7 +14,7 @@ import {
   Bell,
 } from "lucide-react";
 
-import { AlertDetailDrawer } from "@/components/features/alerts/alert-detail-drawer";
+import { AlertDetailDrawer } from "@/components/features/operations/alerts/alert-detail-drawer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,8 +33,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useAlerts } from "@/hooks/use-alerts";
-import type { AlertSeverity, AlertStatus } from "@/types/alerts";
+import { useAlerts } from "@/hooks/operations/use-alerts";
+import type { AlertSeverity, AlertStatus } from "@/types/operations/alerts";
 
 const SEVERITY_CONFIG: Record<AlertSeverity, { label: string; icon: React.ElementType; className: string }> = {
   Debug: { label: "Gỡ lỗi", icon: Info, className: "border-muted bg-muted/50 text-muted-foreground" },

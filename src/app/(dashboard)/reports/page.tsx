@@ -9,18 +9,18 @@ import {
   SlidersHorizontal,
 } from "lucide-react";
 
-import { KioskAttentionTable } from "@/components/features/reports/kiosk-attention-table";
-import { OperationsSignals } from "@/components/features/reports/operations-signals";
-import { OrderStatusBreakdown } from "@/components/features/reports/order-status-breakdown";
-import { RecentActivityTable } from "@/components/features/reports/recent-activity-table";
-import { ReportKpiCard } from "@/components/features/reports/report-kpi-card";
-import { RevenueSummary } from "@/components/features/reports/revenue-summary";
+import { KioskAttentionTable } from "@/components/features/operations/reports/kiosk-attention-table";
+import { OperationsSignals } from "@/components/features/operations/reports/operations-signals";
+import { OrderStatusBreakdown } from "@/components/features/operations/reports/order-status-breakdown";
+import { RecentActivityTable } from "@/components/features/operations/reports/recent-activity-table";
+import { ReportKpiCard } from "@/components/features/operations/reports/report-kpi-card";
+import { RevenueSummary } from "@/components/features/operations/reports/revenue-summary";
 import {
   ReportsDataQualityBanner,
   ReportsLoadingState,
   ReportsSectionUnavailable,
   ReportsUnavailableState,
-} from "@/components/features/reports/reports-states";
+} from "@/components/features/operations/reports/reports-states";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -35,8 +35,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useReports } from "@/hooks/use-reports";
-import type { ReportCurrencyAmount, ReportsRangeDays } from "@/types/reports";
+import { useReports } from "@/hooks/operations/use-reports";
+import type { ReportCurrencyAmount, ReportsRangeDays } from "@/types/operations/reports";
 
 const RANGE_OPTIONS: Array<{ value: ReportsRangeDays; label: string }> = [
   { value: 7, label: "7 ngày gần nhất" },

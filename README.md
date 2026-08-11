@@ -40,6 +40,12 @@ The frontend architecture is:
 Page -> Hook/State -> Service -> Axios client -> Backend
 ```
 
+See [ARCHITECTURE.md](ARCHITECTURE.md) for feature ownership, source-folder
+rules, permission scope evidence, and verification expectations.
+
+See [docs/README.md](docs/README.md) for the frontend documentation index and
+[docs/DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md) for visual and interaction rules.
+
 ## API Boundary
 
 Admin Web may use:
@@ -61,7 +67,7 @@ Requirements:
 Install dependencies:
 
 ```powershell
-cd D:\FPT\Capstone\IceBot\Projects_Frontend\IceBot-WebApp
+cd D:\SE\Projects\IceCream_arm_Robot\IceBot-WebApp
 npm ci
 ```
 
@@ -72,6 +78,8 @@ Create `.env.local` without committing it:
 ```env
 NEXT_PUBLIC_API_URL=/api/backend
 ICEBOT_BACKEND_URL=http://localhost:5000
+# Optional: show Google login when the backend Google provider is configured.
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=
 ```
 
 Start development:
@@ -84,12 +92,17 @@ Open `http://localhost:3000`. The Next.js proxy forwards REST and GraphQL reques
 
 ## Verification
 
+Quick check while developing:
+
 ```powershell
-npm run lint
-npm run build
-git diff --check
+npm run test
+npm run check:architecture
 ```
 
-There is no separate `typecheck` script; `npm run build` performs TypeScript validation.
+Run the full repository check from
+[`LOCAL_RUN_COMMANDS.md`](LOCAL_RUN_COMMANDS.md) before handoff. The test-layer
+selection and completion standard are defined in
+[`docs/TESTING_STRATEGY.md`](docs/TESTING_STRATEGY.md). There is no separate
+`typecheck` script; `npm run build` performs TypeScript validation.
 
 - Verify important API contracts against current backend source or Swagger before implementation.

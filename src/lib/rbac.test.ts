@@ -5,28 +5,33 @@ import {
   getDashboardRoutePath,
   getVisibleRoutes,
   hasAnyRole,
-  hasScopedRole,
   hasScopedPermission,
-  hasEffectivePermission,
+  hasScopedRole,
   hasPermission,
-  PERMISSION_ROLES,
 } from "@/lib/rbac";
 import type { DashboardPermission } from "@/types";
-import type { EffectiveAccessResult } from "@/types/accounts";
+import type {
+  EffectiveAccessResult,
+  PermissionScopeAccessResult,
+} from "@/types/identity/accounts";
 
-function accessFor(...roles: string[]): EffectiveAccessResult {
-  const normalizedRoles = new Set(roles.map((role) => role.toLowerCase()));
-  const permissionCodes = Object.entries(PERMISSION_ROLES)
-    .filter(([, allowedRoles]) =>
-      allowedRoles.some((role) => normalizedRoles.has(role.toLowerCase())),
-    )
-    .map(([permission]) => permission as DashboardPermission);
+const organizationScope = {
+  organizationId: "org-1",
+  storeId: "store-1",
+  kioskId: "kiosk-1",
+};
 
+function accessFor(
+  permissionCodes: DashboardPermission[] = [],
+  permissionScopes: PermissionScopeAccessResult[] = [],
+  roles: string[] = [],
+): EffectiveAccessResult {
   return {
     accountId: "11111111-1111-1111-1111-111111111111",
-    isSystemAdmin: roles.includes("SystemAdmin"),
+    isSystemAdmin: false,
     roles,
     permissionCodes,
+    permissionScopes,
     roleScopes: [],
     effectiveScope: {
       organizationIds: [],
@@ -36,349 +41,126 @@ function accessFor(...roles: string[]): EffectiveAccessResult {
   };
 }
 
-describe("payment method permissions", () => {
-  it("uses backend permission codes instead of inferring permission from a role name", () => {
-    const access = accessFor("SystemAdmin");
-    access.permissionCodes = ["dashboard.view"];
+function scopedPermission(
+  permissionCode: DashboardPermission,
+  scopes: PermissionScopeAccessResult["scopes"],
+): PermissionScopeAccessResult {
+  return {
+    permissionCode,
+    scopeRequired: true,
+    isGlobal: false,
+    scopes,
+  };
+}
+
+describe("permission-code access", () => {
+  it("uses permissionCodes as the capability authority", () => {
+    const access = accessFor(["dashboard.view"]);
 
     expect(hasPermission(access, "dashboard.view")).toBe(true);
     expect(hasPermission(access, "payment-methods.manage")).toBe(false);
   });
 
-  it("allows configured management roles to view the Payment Methods route", () => {
-    expect(hasPermission(accessFor("SystemAdmin"), "payments.manage")).toBe(true);
-    expect(hasPermission(accessFor("Manager"), "payments.manage")).toBe(true);
-    expect(hasPermission(accessFor("OrgAdmin"), "payments.manage")).toBe(false);
+  it("keeps route visibility tied to backend permission codes", () => {
+    const access = accessFor(["products.manage", "menus.manage"]);
+
+    expect(canAccessRoute(access, "/products")).toBe(true);
+    expect(canAccessRoute(access, "/menus")).toBe(true);
+    expect(canAccessRoute(access, "/users")).toBe(false);
+    expect(getVisibleRoutes(access)).toContain("/products");
+    expect(getVisibleRoutes(access)).not.toContain("/users");
   });
+});
 
-  it("uses separate effective permissions for viewing and toggling Payment Methods", () => {
-    const systemAdmin = accessFor("SystemAdmin");
-    const manager = accessFor("Manager");
+describe("permission-scope access", () => {
+  it("allows an organization-scoped permission for a descendant store and kiosk", () => {
+    const access = accessFor(
+      ["release.publish"],
+      [scopedPermission("release.publish", [{ organizationId: "org-1" }])],
+    );
 
-    expect(hasEffectivePermission(systemAdmin, "payments.manage")).toBe(true);
     expect(
-      hasEffectivePermission(systemAdmin, "payment-methods.manage"),
+      hasScopedPermission(access, "release.publish", organizationScope),
     ).toBe(true);
-    expect(hasEffectivePermission(manager, "payments.manage")).toBe(true);
-    expect(
-      hasEffectivePermission(manager, "payment-methods.manage"),
-    ).toBe(false);
   });
 
-  it("denies effective permissions when current access is unavailable", () => {
-    expect(
-      hasEffectivePermission(null, "payment-methods.manage"),
-    ).toBe(false);
-    expect(
-      hasEffectivePermission(null, "operations.diagnostics"),
-    ).toBe(false);
-  });
-});
-
-describe("catalog read permissions", () => {
-  it("allows catalog authoring roles to read ingredients", () => {
-    expect(hasPermission(accessFor("SystemAdmin"), "ingredients.read")).toBe(true);
-    expect(hasPermission(accessFor("Manager"), "ingredients.read")).toBe(true);
-    expect(hasPermission(accessFor("OrgAdmin"), "ingredients.read")).toBe(true);
-  });
-});
-
-describe("organization-scoped account permissions", () => {
-  it("allows SystemAdmin and OrgAdmin to read and manage accounts", () => {
-    for (const role of ["SystemAdmin", "OrgAdmin"] as const) {
-      expect(hasPermission(accessFor(role), "accounts.read")).toBe(true);
-      expect(hasPermission(accessFor(role), "accounts.manage")).toBe(true);
-    }
-  });
-
-  it("does not expose account management to Manager", () => {
-    expect(hasPermission(accessFor("Manager"), "accounts.read")).toBe(false);
-    expect(hasPermission(accessFor("Manager"), "accounts.manage")).toBe(false);
-    expect(canAccessRoute(accessFor("Manager"), "/users")).toBe(false);
-  });
-});
-
-describe("SystemAdmin platform catalog permissions", () => {
-  it.each([
-    "product-categories.manage",
-    "ingredients.manage",
-    "device-catalog.manage",
-    "product-templates.manage",
-    "package.manage",
-    "sync-dead-letters.manage",
-  ] as const)("keeps %s exclusive to SystemAdmin", (permission) => {
-    expect(hasPermission(accessFor("SystemAdmin"), permission)).toBe(true);
-    expect(hasPermission(accessFor("OrgAdmin"), permission)).toBe(false);
-    expect(hasPermission(accessFor("Manager"), permission)).toBe(false);
-    expect(hasPermission(accessFor("Technician"), permission)).toBe(false);
-  });
-});
-
-describe("Phase 3 tenant and kiosk operation permissions", () => {
-  it("keeps Store lifecycle and sales management out of the Manager role", () => {
-    expect(hasPermission(accessFor("Manager"), "stores.update")).toBe(true);
-    expect(hasPermission(accessFor("Manager"), "stores.manage")).toBe(false);
-    expect(hasPermission(accessFor("OrgAdmin"), "stores.manage")).toBe(true);
-  });
-
-  it("allows Manager operational Kiosk management and advanced Device access", () => {
-    expect(hasPermission(accessFor("Manager"), "kiosks.manage")).toBe(true);
-    expect(hasPermission(accessFor("Manager"), "devices.manage")).toBe(true);
-    expect(hasPermission(accessFor("Staff"), "devices.manage")).toBe(false);
-  });
-
-  it("limits inventory topology configuration to the backend policy roles", () => {
-    expect(hasPermission(accessFor("SystemAdmin"), "inventory.configure")).toBe(
-      true,
+  it("requires store and kiosk assignments to match their exact scope", () => {
+    const access = accessFor(
+      ["release.deploy"],
+      [scopedPermission("release.deploy", [
+        { organizationId: "org-1", storeId: "store-1", kioskId: "kiosk-1" },
+      ])],
     );
-    expect(hasPermission(accessFor("Manager"), "inventory.configure")).toBe(
-      true,
-    );
+
     expect(
-      hasPermission(accessFor("Technician"), "inventory.configure"),
+      hasScopedPermission(access, "release.deploy", organizationScope),
     ).toBe(true);
-    expect(hasPermission(accessFor("OrgAdmin"), "inventory.configure")).toBe(
-      false,
+    expect(
+      hasScopedPermission(access, "release.deploy", {
+        ...organizationScope,
+        kioskId: "kiosk-2",
+      }),
+    ).toBe(false);
+  });
+
+  it("does not borrow an organization scope from a different permission", () => {
+    const access = accessFor(
+      ["release.publish", "release.deploy"],
+      [
+        scopedPermission("release.publish", [{ organizationId: "org-1" }]),
+        scopedPermission("release.deploy", [{ organizationId: "org-2" }]),
+      ],
     );
-    expect(hasPermission(accessFor("Staff"), "inventory.configure")).toBe(
-      false,
+
+    expect(
+      hasScopedPermission(access, "release.publish", organizationScope),
+    ).toBe(true);
+    expect(
+      hasScopedPermission(access, "release.deploy", organizationScope),
+    ).toBe(false);
+  });
+
+  it("allows global permission evidence without inferring a role", () => {
+    const access = accessFor(
+      ["device-catalog.read"],
+      [{
+        permissionCode: "device-catalog.read",
+        scopeRequired: false,
+        isGlobal: true,
+        scopes: [],
+      }],
     );
+
+    expect(
+      hasScopedPermission(access, "device-catalog.read", organizationScope),
+    ).toBe(true);
+  });
+
+  it("fails closed when a scoped permission has no backend scope evidence", () => {
+    const access = accessFor(["devices.manage"]);
+
+    expect(
+      hasScopedPermission(access, "devices.manage", organizationScope),
+    ).toBe(false);
   });
 });
 
-describe("exact backend roles and route visibility", () => {
-  it("preserves Staff and Technician permissions instead of dropping their session", () => {
-    expect(hasPermission(accessFor("Staff"), "orders.view")).toBe(true);
-    expect(hasPermission(accessFor("Staff"), "dashboard.view")).toBe(false);
-    expect(hasPermission(accessFor("Technician"), "dashboard.view")).toBe(true);
-    expect(hasPermission(accessFor("Technician"), "operations.diagnostics")).toBe(true);
-  });
+describe("role presentation helpers", () => {
+  it("retains role helpers for role-specific presentation only", () => {
+    const access = accessFor([], [], ["Technician"]);
+    access.roleScopes = [{ roleCode: "Manager", organizationId: "org-1" }];
 
-  it("guards detail routes with the permission of their owning module", () => {
+    expect(hasAnyRole(access, ["Technician"])).toBe(true);
+    expect(
+      hasScopedRole(access, ["Manager"], organizationScope),
+    ).toBe(true);
+  });
+});
+
+describe("route path resolution", () => {
+  it("resolves dashboard detail paths to their owning route", () => {
     expect(getDashboardRoutePath("/kiosks/kiosk-1")).toBe("/kiosks");
     expect(getDashboardRoutePath("/organizations/org-1")).toBe("/organizations");
-    expect(getDashboardRoutePath("/products")).toBe("/products");
-    expect(getDashboardRoutePath("/menus")).toBe("/menus");
     expect(getDashboardRoutePath("/outside-dashboard")).toBeNull();
-  });
-
-  it("guards products and menus with their own backend permissions", () => {
-    const productsOnly = accessFor("SystemAdmin");
-    productsOnly.permissionCodes = ["products.manage"];
-    const menusOnly = accessFor("SystemAdmin");
-    menusOnly.permissionCodes = ["menus.manage"];
-
-    expect(canAccessRoute(productsOnly, "/products")).toBe(true);
-    expect(canAccessRoute(productsOnly, "/menus")).toBe(false);
-    expect(canAccessRoute(menusOnly, "/products")).toBe(false);
-    expect(canAccessRoute(menusOnly, "/menus")).toBe(true);
-  });
-
-  it("routes Staff to permitted work instead of an inaccessible dashboard", () => {
-    const access = accessFor("Staff");
-    const routes = getVisibleRoutes(access);
-
-    expect(canAccessRoute(access, "/dashboard")).toBe(false);
-    expect(routes).toContain("/inventory");
-    expect(routes).toContain("/transactions");
-    expect(routes).not.toContain("/dashboard");
-  });
-
-  it("exposes the platform exception queue only to SystemAdmin", () => {
-    expect(canAccessRoute(accessFor("SystemAdmin"), "/platform/exceptions")).toBe(true);
-    expect(canAccessRoute(accessFor("OrgAdmin"), "/platform/exceptions")).toBe(false);
-  });
-
-  it("separates maintenance creation from maintenance management", () => {
-    const staffAccess = accessFor("Staff");
-
-    expect(hasPermission(staffAccess, "maintenance.create")).toBe(true);
-    expect(hasPermission(staffAccess, "maintenance.manage")).toBe(false);
-  });
-
-  it("combines backend permission codes with all role scopes", () => {
-    const access = accessFor("Manager");
-    access.roleScopes = [
-      { roleCode: "OrgAdmin", organizationId: "org-1" },
-    ];
-    access.permissionCodes.push("organizations.update");
-
-    expect(hasPermission(access, "products.manage")).toBe(true);
-    expect(hasPermission(access, "organizations.update")).toBe(true);
-    expect(hasPermission(access, "organizations.manage")).toBe(false);
-  });
-});
-
-describe("operations diagnostics permission", () => {
-  it("matches the backend SystemAdmin and Technician policy", () => {
-    expect(
-      hasEffectivePermission(accessFor("SystemAdmin"), "operations.diagnostics"),
-    ).toBe(true);
-    expect(
-      hasEffectivePermission(accessFor("Technician"), "operations.diagnostics"),
-    ).toBe(true);
-    expect(
-      hasEffectivePermission(accessFor("Manager"), "operations.diagnostics"),
-    ).toBe(false);
-  });
-
-  it("does not treat notification governance as diagnostics access", () => {
-    const orgAdmin = accessFor("OrgAdmin");
-    const manager = accessFor("Manager");
-
-    expect(hasPermission(orgAdmin, "notifications.view")).toBe(true);
-    expect(hasPermission(orgAdmin, "notifications.manage")).toBe(true);
-    expect(hasPermission(manager, "notifications.view")).toBe(true);
-    expect(hasPermission(manager, "notifications.manage")).toBe(true);
-    expect(hasPermission(orgAdmin, "operations.diagnostics")).toBe(false);
-    expect(hasPermission(manager, "operations.diagnostics")).toBe(false);
-  });
-});
-
-describe("maintenance lifecycle role checks", () => {
-  it("distinguishes coordinator roles from Technician work access", () => {
-    expect(
-      hasAnyRole(accessFor("Manager"), ["SystemAdmin", "OrgAdmin", "Manager"]),
-    ).toBe(true);
-    expect(
-      hasAnyRole(accessFor("Technician"), [
-        "SystemAdmin",
-        "OrgAdmin",
-        "Manager",
-      ]),
-    ).toBe(false);
-    expect(
-      hasAnyRole(accessFor("Technician"), [
-        "SystemAdmin",
-        "OrgAdmin",
-        "Manager",
-        "Technician",
-      ]),
-    ).toBe(true);
-  });
-
-  it("does not reuse a Manager role outside its assigned scope", () => {
-    const access = accessFor("Manager", "Staff");
-    access.roleScopes = [
-      { roleCode: "Manager", organizationId: "org-1" },
-      { roleCode: "Staff", organizationId: "org-2" },
-    ];
-
-    expect(
-      hasScopedRole(
-        access,
-        ["SystemAdmin", "OrgAdmin", "Manager"],
-        { organizationId: "org-1", storeId: "store-1", kioskId: "kiosk-1" },
-      ),
-    ).toBe(true);
-    expect(
-      hasScopedRole(
-        access,
-        ["SystemAdmin", "OrgAdmin", "Manager"],
-        { organizationId: "org-2", storeId: "store-2", kioskId: "kiosk-2" },
-      ),
-    ).toBe(false);
-  });
-});
-
-describe("Phase 8 guided production operations scope", () => {
-  const scope = {
-    organizationId: "org-1",
-    storeId: "store-1",
-    kioskId: "kiosk-1",
-  };
-
-  it.each(["SystemAdmin", "OrgAdmin", "Manager"])(
-    "allows %s into the guided production workspace",
-    (role) => {
-      const access = accessFor(role);
-      if (role !== "SystemAdmin") {
-        access.roleScopes = [{ roleCode: role, organizationId: "org-1" }];
-      }
-      expect(
-        hasScopedRole(
-          access,
-          ["SystemAdmin", "OrgAdmin", "Manager"],
-          scope,
-        ),
-      ).toBe(true);
-    },
-  );
-
-  it("keeps Technician and Staff out of Manager package/program authoring", () => {
-    expect(
-      hasScopedRole(
-        accessFor("Technician"),
-        ["SystemAdmin", "OrgAdmin", "Manager"],
-        scope,
-      ),
-    ).toBe(false);
-    expect(
-      hasScopedRole(
-        accessFor("Staff"),
-        ["SystemAdmin", "OrgAdmin", "Manager"],
-        scope,
-      ),
-    ).toBe(false);
-  });
-});
-
-describe("OrgAdmin governance permission matrix", () => {
-  const organizationScope = {
-    organizationId: "org-1",
-    storeId: "store-1",
-    kioskId: "kiosk-1",
-  };
-
-  function orgAdminAccess(organizationId = "org-1"): EffectiveAccessResult {
-    const access = accessFor("OrgAdmin");
-    access.roleScopes = [{ roleCode: "OrgAdmin", organizationId }];
-    return access;
-  }
-
-  it.each([
-    "kiosks.update",
-    "device-catalog.read",
-    "tenant-tree.view",
-    "operations.view",
-    "notifications.view",
-    "notifications.manage",
-    "artifact.read",
-    "artifact.upload",
-    "artifact-template.read",
-    "program.read",
-    "program.manage",
-    "release.read",
-    "release.publish",
-    "release.deploy",
-    "release.rollback",
-    "deployment.read",
-    "package.read",
-    "package.install",
-    "package.fork",
-    "products.manage",
-    "menus.manage",
-    "ingredients.read",
-  ] as const)("allows OrgAdmin %s in its assigned organization", (permission) => {
-    expect(hasPermission(orgAdminAccess(), permission)).toBe(true);
-    expect(
-      hasScopedPermission(orgAdminAccess(), permission, organizationScope),
-    ).toBe(true);
-  });
-
-  it.each([
-    "payments.manage",
-    "refunds.manage",
-    "inventory.manage",
-    "inventory.configure",
-    "operations.diagnostics",
-  ] as const)("keeps non-OrgAdmin policy %s unavailable", (permission) => {
-    expect(hasPermission(orgAdminAccess(), permission)).toBe(false);
-  });
-
-  it("does not authorize an OrgAdmin outside its assigned organization", () => {
-    expect(
-      hasScopedPermission(orgAdminAccess("org-2"), "release.publish", organizationScope),
-    ).toBe(false);
   });
 });

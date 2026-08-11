@@ -19,7 +19,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { usePaymentMethods } from "@/hooks/use-payment-methods";
+import { usePaymentMethods } from "@/hooks/operations/use-payment-methods";
 
 interface PaymentMethodsViewProps {
   canManageStatus: boolean;

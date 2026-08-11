@@ -18,11 +18,11 @@ import {
   getProductionOperationsErrorMessage,
   listProductionProgramBindings,
   retireProductionProgramBinding,
-} from "@/lib/services/production-operations";
+} from "@/lib/services/production/operations";
 import type {
   ConfigurationReleaseAuthoringOptions,
   ProductionProgramBindingResult,
-} from "@/types/production-operations";
+} from "@/types/production/operations";
 
 export function ProductionProgramBindingsPanel({
   organizationId,

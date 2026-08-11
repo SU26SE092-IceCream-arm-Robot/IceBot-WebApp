@@ -18,18 +18,18 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-import { IngredientCatalogDialog } from "@/components/features/inventory/ingredient-catalog-dialog";
+import { IngredientCatalogDialog } from "@/components/features/operations/inventory/ingredient-catalog-dialog";
 
 import {
   InventoryDetailDialog,
   InventoryHistoryDialog,
   InventoryMutationDialog,
-} from "@/components/features/inventory/inventory-dialog";
+} from "@/components/features/operations/inventory/inventory-dialog";
 import {
   InventoryTable,
   StockMovementsTable,
-} from "@/components/features/inventory/inventory-table";
-import { InventoryTopologyPanel } from "@/components/features/inventory/inventory-topology-panel";
+} from "@/components/features/operations/inventory/inventory-table";
+import { InventoryTopologyPanel } from "@/components/features/operations/inventory/inventory-topology-panel";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -45,14 +45,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useInventory } from "@/hooks/use-inventory";
-import { useKioskOperationsRealtime } from "@/hooks/use-kiosk-operations-realtime";
-import { useAuth } from "@/hooks/use-auth";
+import { useInventory } from "@/hooks/operations/use-inventory";
+import { useKioskOperationsRealtime } from "@/hooks/kiosks/use-kiosk-operations-realtime";
+import { useAuth } from "@/hooks/identity/use-auth";
 import { hasPermission } from "@/lib/rbac";
 import type {
   DispenserStateResult,
   InventoryStatusFilter,
-} from "@/types/inventory-management";
+} from "@/types/operations/inventory";
 
 const STATUS_OPTIONS: {
   value: InventoryStatusFilter;

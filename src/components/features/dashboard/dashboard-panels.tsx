@@ -34,7 +34,7 @@ import type {
   InventorySummary,
   KioskStatusOverview,
   OrderOverview,
-} from "@/types/dashboard-overview";
+} from "@/types/dashboard/overview";
 
 function formatTimestamp(value?: string | null): string {
   if (!value) {

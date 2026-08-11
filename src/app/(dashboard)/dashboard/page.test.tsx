@@ -2,26 +2,31 @@ import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import DashboardPage from "@/app/(dashboard)/dashboard/page";
-import { PERMISSION_ROLES } from "@/lib/rbac";
+import type { DashboardPermission } from "@/types";
 
 const { authState } = vi.hoisted(() => ({
   authState: {
     isSystemAdmin: false,
     roles: ["Manager"],
+    permissionCodes: ["dashboard.view"] as DashboardPermission[],
   },
 }));
 
-vi.mock("@/hooks/use-auth", () => ({
+vi.mock("@/hooks/identity/use-auth", () => ({
   useAuth: () => ({
     effectiveAccess: {
       accountId: "11111111-1111-1111-1111-111111111111",
       isSystemAdmin: authState.isSystemAdmin,
       roles: authState.roles,
-      permissionCodes: Object.entries(PERMISSION_ROLES)
-        .filter(([, roles]) =>
-          roles.some((role) => authState.roles.includes(role)),
-        )
-        .map(([permission]) => permission),
+      permissionCodes: authState.permissionCodes,
+      permissionScopes: authState.permissionCodes.map((permissionCode) => ({
+        permissionCode,
+        scopeRequired: true,
+        isGlobal: authState.isSystemAdmin,
+        scopes: authState.isSystemAdmin
+          ? []
+          : [{ organizationId: "org-1", storeId: null, kioskId: null }],
+      })),
       roleScopes: [],
       effectiveScope: {
         organizationIds: [],
@@ -32,7 +37,7 @@ vi.mock("@/hooks/use-auth", () => ({
   }),
 }));
 
-vi.mock("@/hooks/use-dashboard-overview", () => ({
+vi.mock("@/hooks/dashboard/use-dashboard-overview", () => ({
   useDashboardOverview: () => ({
     data: {
       dashboard: {
@@ -65,6 +70,7 @@ describe("DashboardPage partial data", () => {
   beforeEach(() => {
     authState.isSystemAdmin = false;
     authState.roles = ["Manager"];
+    authState.permissionCodes = ["dashboard.view"];
   });
 
   it("keeps usable roots visible and marks unavailable roots independently", () => {
@@ -86,6 +92,14 @@ describe("DashboardPage partial data", () => {
   it("composes a platform control workspace for SystemAdmin", () => {
     authState.isSystemAdmin = true;
     authState.roles = ["SystemAdmin"];
+    authState.permissionCodes = [
+      "dashboard.view",
+      "organizations.read",
+      "kiosks.read",
+      "devices.read",
+      "orders.read",
+      "inventory.read",
+    ];
 
     render(<DashboardPage />);
 

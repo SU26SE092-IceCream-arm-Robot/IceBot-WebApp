@@ -1,7 +1,7 @@
 import type {
   ProductResult,
   ProductVariantResult,
-} from "@/types/menu-management";
+} from "@/types/catalog/menu-management";
 
 export function getMenuItemReadinessBlockers({
   menuCurrency,

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { getStoreOpeningState } from "@/lib/presenters/sales-admission";
-import type { StoreResult } from "@/types/kiosk-management";
+import type { StoreResult } from "@/types/kiosks/management";
 
 const baseStore: Pick<StoreResult, "openingHours" | "timeZone"> = {
   timeZone: "Asia/Bangkok",

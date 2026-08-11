@@ -4,7 +4,7 @@ import { getMenuItemReadinessBlockers } from "@/lib/presenters/menu-item-readine
 import type {
   ProductResult,
   ProductVariantResult,
-} from "@/types/menu-management";
+} from "@/types/catalog/menu-management";
 
 const option = {
   id: "option-1",

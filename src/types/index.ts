@@ -1,7 +1,7 @@
 import type {
   KioskLifecycleStatus,
   KioskOperationalState,
-} from "@/types/kiosk-management";
+} from "@/types/kiosks/management";
 
 export type {
   KioskConnectivityStatus,
@@ -11,7 +11,7 @@ export type {
   ManagementKiosksQuery,
   ManagementStoresQuery,
   StoreResult,
-} from "@/types/kiosk-management";
+} from "@/types/kiosks/management";
 
 export type BackendRoleCode =
   | "SystemAdmin"

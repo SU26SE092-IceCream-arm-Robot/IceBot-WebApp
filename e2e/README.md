@@ -59,12 +59,14 @@ Artifact của test lỗi nằm trong `test-results/`; báo cáo HTML nằm tron
 ## Phạm vi
 
 - System Admin: đăng nhập và smoke toàn bộ module sidebar.
-- OrgAdmin/Manager: kiểm tra module được phép và module phải ẩn theo role.
+- OrgAdmin/Manager: kiểm tra module được phép hoặc phải ẩn theo
+  `permissionCodes` và `permissionScopes` mà backend trả về. Tên role chỉ xác
+  định bộ tài khoản E2E đang chạy, không được dùng để suy luận quyền.
 - Desktop `1440x900` và tablet `1024x768`.
 - Phát hiện page error, console error và management API trả `401`, `403` hoặc
   `5xx`.
 - Kiểm tra Dashboard ở light/dark mode và horizontal overflow.
 
 Mutation success/failure chưa chạy trong suite mặc định. Các case đó cần bộ dữ
-liệu QA có thể hoàn tác, tài khoản theo role và cờ cho phép riêng để tránh làm
-thay đổi dữ liệu ngoài ý muốn.
+liệu QA có thể hoàn tác, tài khoản có permission/scope phù hợp và cờ cho phép
+riêng để tránh làm thay đổi dữ liệu ngoài ý muốn.

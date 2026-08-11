@@ -2,7 +2,7 @@
 
 import { useParams } from "next/navigation";
 
-import { OrganizationProductionWorkspace } from "@/components/features/organizations/organization-production-workspace";
+import { OrganizationProductionWorkspace } from "@/components/features/tenants/organizations/organization-production-workspace";
 
 export default function OrganizationProductionPage() {
   const params = useParams<{ id: string }>();

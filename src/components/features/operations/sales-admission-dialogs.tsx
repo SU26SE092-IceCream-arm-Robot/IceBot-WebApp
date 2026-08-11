@@ -24,7 +24,7 @@ import {
 import type {
   KioskOperationalState,
   SetKioskOperationalStateRequest,
-} from "@/types/kiosk-management";
+} from "@/types/kiosks/management";
 import { getKioskOperationalLabel } from "@/lib/presenters/kiosk-state-labels";
 
 const OPERATIONAL_STATE_OPTIONS: Array<{

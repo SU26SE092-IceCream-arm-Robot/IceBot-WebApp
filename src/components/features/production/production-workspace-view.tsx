@@ -11,7 +11,7 @@ import { useState } from "react";
 
 import { RobotAuthoringImportsPanel } from "@/components/features/production/authoring-imports/robot-authoring-imports-panel";
 import { ProductionProgramBindingsPanel } from "@/components/features/production/bindings/production-program-bindings-panel";
-import { OrganizationConfigurationReleasesPanel } from "@/components/features/organizations/organization-configuration-releases-panel";
+import { ConfigurationReleasesPanel } from "@/components/features/production/releases/configuration-releases-panel";
 import { ProductionWorkflowStepper } from "@/components/features/production/production-workflow-stepper";
 import { Button } from "@/components/ui/button";
 import {
@@ -31,8 +31,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useAuth } from "@/hooks/use-auth";
-import { useProductionOrganizationScope } from "@/hooks/use-production-organization-scope";
+import { useAuth } from "@/hooks/identity/use-auth";
+import { useProductionOrganizationScope } from "@/hooks/production/use-production-organization-scope";
 import { hasScopedPermission } from "@/lib/rbac";
 
 function organizationLabel(name: string, code: string) {
@@ -278,7 +278,7 @@ export function ProductionWorkspaceView() {
                 />
               </TabsContent>
               <TabsContent value="releases" className="pt-4">
-                <OrganizationConfigurationReleasesPanel
+                <ConfigurationReleasesPanel
                   organizationId={selected.id}
                   canManage={canManageReleases}
                 />

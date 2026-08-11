@@ -1,73 +1,26 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { LucideIcon } from "lucide-react";
 import {
-  BarChart3,
   Bell,
-  Building2,
   ChevronLeft,
   ChevronRight,
-  CreditCard,
-  BookOpen,
-  Factory,
   IceCream,
-  LayoutDashboard,
   LogOut,
-  Monitor,
-  Package,
-  ClipboardCheck,
-  ShoppingCart,
-  ShoppingBag,
-  ShieldAlert,
-  Users,
   UserRound,
-  Wrench,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { ThemeModeToggle } from "@/components/shared/theme-mode-toggle";
+import {
+  DASHBOARD_NAVIGATION_GROUPS,
+  DASHBOARD_ROUTE_REGISTRY,
+} from "@/lib/navigation/dashboard-routes";
 import { getVisibleRoutes } from "@/lib/rbac";
 import { getRoleLabel } from "@/lib/role-labels";
-import type { DashboardRoutePath, DashboardUser } from "@/types";
-import type { EffectiveAccessResult } from "@/types/accounts";
-
-interface SidebarItem {
-  href: DashboardRoutePath;
-  label: string;
-  icon: LucideIcon;
-}
-
-const SIDEBAR_ITEMS: readonly SidebarItem[] = [
-  { href: "/dashboard", label: "Tổng quan", icon: LayoutDashboard },
-  { href: "/readiness", label: "Kiểm tra thiết lập", icon: ClipboardCheck },
-  { href: "/production", label: "Cấu hình sản xuất", icon: Factory },
-  { href: "/kiosks", label: "Quản lý Kiosk", icon: Monitor },
-  { href: "/inventory", label: "Tồn kho", icon: Package },
-  { href: "/transactions", label: "Giao dịch", icon: ShoppingCart },
-  { href: "/products", label: "Sản phẩm", icon: ShoppingBag },
-  { href: "/menus", label: "Thực đơn", icon: BookOpen },
-  { href: "/reports", label: "Báo cáo", icon: BarChart3 },
-  { href: "/organizations", label: "Tổ chức & cửa hàng", icon: Building2 },
-  { href: "/users", label: "Tài khoản", icon: Users },
-  { href: "/alerts", label: "Cảnh báo", icon: Bell },
-  { href: "/maintenance", label: "Bảo trì", icon: Wrench },
-  { href: "/platform/exceptions", label: "Sự cố đồng bộ", icon: ShieldAlert },
-  { href: "/settings/payment-methods", label: "Cấu hình thanh toán", icon: CreditCard },
-];
-
-const SIDEBAR_GROUPS: readonly {
-  label: string;
-  routes: readonly DashboardRoutePath[];
-}[] = [
-  {
-    label: "Vận hành",
-    routes: ["/dashboard", "/readiness", "/production", "/alerts", "/kiosks", "/inventory", "/maintenance"],
-  },
-  { label: "Kinh doanh", routes: ["/transactions", "/products", "/menus", "/reports"] },
-  { label: "Quản trị", routes: ["/organizations", "/users", "/settings/payment-methods", "/platform/exceptions"] },
-];
+import type { DashboardUser } from "@/types";
+import type { EffectiveAccessResult } from "@/types/identity/accounts";
 
 interface AppSidebarProps {
   currentUser: DashboardUser;
@@ -88,13 +41,18 @@ export function AppSidebar({
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const accountAreaRef = useRef<HTMLDivElement>(null);
   const visibleRoutes = new Set(getVisibleRoutes(effectiveAccess));
-  const visibleItems = SIDEBAR_ITEMS.filter((item) => visibleRoutes.has(item.href));
-  const visibleItemsByRoute = new Map(visibleItems.map((item) => [item.href, item]));
-  const groupedItems = SIDEBAR_GROUPS.map((group) => ({
+  const groupedItems = DASHBOARD_NAVIGATION_GROUPS.map((group) => ({
     label: group.label,
-    items: group.routes
-      .map((route) => visibleItemsByRoute.get(route))
-      .filter((item): item is SidebarItem => Boolean(item)),
+    items: DASHBOARD_ROUTE_REGISTRY.flatMap((route) => {
+      if (
+        route.navigation?.group !== group.key ||
+        !visibleRoutes.has(route.path)
+      ) {
+        return [];
+      }
+
+      return [{ path: route.path, ...route.navigation }];
+    }),
   })).filter((group) => group.items.length > 0);
 
   useEffect(() => {
@@ -165,12 +123,12 @@ export function AppSidebar({
                 {group.items.map((item) => {
                   const Icon = item.icon;
                   const isActive =
-                    pathname === item.href || pathname.startsWith(`${item.href}/`);
+                    pathname === item.path || pathname.startsWith(`${item.path}/`);
 
                   return (
                     <Link
-                      key={item.href}
-                      href={item.href}
+                      key={item.path}
+                      href={item.path}
                       title={collapsed ? item.label : undefined}
                       className={`flex w-full items-center gap-3 rounded-md text-sm font-medium transition-all duration-200 ease-out ${
                         collapsed ? "justify-center px-0 py-2.5" : "px-3 py-2"

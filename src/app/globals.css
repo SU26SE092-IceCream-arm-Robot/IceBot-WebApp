@@ -6,7 +6,8 @@
 
 /* ============================================================
    IceBot Design System — Semantic Token Layer (Light Theme)
-   Source of Truth: 01_DESIGN_SYSTEM.md
+   Token implementation: globals.css
+   Usage contract: docs/DESIGN_SYSTEM.md
    ============================================================ */
 
 :root {

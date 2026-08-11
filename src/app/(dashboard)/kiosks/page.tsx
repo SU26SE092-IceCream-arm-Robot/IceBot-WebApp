@@ -15,8 +15,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-import { DeviceCatalogDialog } from "@/components/features/kiosks/device-catalog-dialog";
-import { KioskCreateDialog } from "@/components/features/kiosks/kiosk-create-dialog";
+import { DeviceCatalogDialog } from "@/components/features/kiosks/catalog/device-catalog-dialog";
+import { KioskCreateDialog } from "@/components/features/kiosks/management/kiosk-create-dialog";
 import { KioskCard } from "@/components/features/kiosks/kiosk-card";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,8 +28,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useCreateKiosk } from "@/hooks/use-create-kiosk";
-import { isStatusFilter, useKiosks } from "@/hooks/use-kiosks";
+import { useCreateKiosk } from "@/hooks/kiosks/use-create-kiosk";
+import { isStatusFilter, useKiosks } from "@/hooks/kiosks/use-kiosks";
 import { hasPermission, hasScopedPermission } from "@/lib/rbac";
 import type { KioskStatusFilter } from "@/types";
 

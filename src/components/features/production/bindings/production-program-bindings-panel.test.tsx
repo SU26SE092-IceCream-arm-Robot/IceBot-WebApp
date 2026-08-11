@@ -5,10 +5,10 @@ import { ProductionProgramBindingsPanel } from "@/components/features/production
 import {
   getConfigurationReleaseAuthoringOptions,
   listProductionProgramBindings,
-} from "@/lib/services/production-operations";
-import type { ConfigurationReleaseAuthoringOptions } from "@/types/production-operations";
+} from "@/lib/services/production/operations";
+import type { ConfigurationReleaseAuthoringOptions } from "@/types/production/operations";
 
-vi.mock("@/lib/services/production-operations", () => ({
+vi.mock("@/lib/services/production/operations", () => ({
   createProductionProgramBinding: vi.fn(),
   getConfigurationReleaseAuthoringOptions: vi.fn(),
   getProductionOperationsErrorMessage: (

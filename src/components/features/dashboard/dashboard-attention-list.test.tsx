@@ -5,7 +5,7 @@ import { DashboardAttentionList } from "@/components/features/dashboard/dashboar
 import type {
   DashboardMetrics,
   InventorySummary,
-} from "@/types/dashboard-overview";
+} from "@/types/dashboard/overview";
 import type { DashboardRoutePath } from "@/types";
 
 const metrics: DashboardMetrics = {

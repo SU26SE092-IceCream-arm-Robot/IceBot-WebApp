@@ -34,13 +34,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DevicesTable } from "./devices-table";
-import { ExecutionEndpointsTable } from "./execution-endpoints-table";
-import { OperationLogsPanel } from "./operation-logs-panel";
-import { ProductionOperationsPanel } from "./production-operations-panel";
-import { useAuth } from "@/hooks/use-auth";
-import type { KioskEvidenceState } from "@/hooks/use-kiosk-detail";
-import { useKioskDetail } from "@/hooks/use-kiosk-detail";
+import { DevicesTable } from "@/components/features/kiosks/devices/devices-table";
+import { ExecutionEndpointsTable } from "@/components/features/kiosks/execution-endpoints/execution-endpoints-table";
+import { OperationLogsPanel } from "@/components/features/kiosks/diagnostics/operation-logs-panel";
+import { ProductionOperationsPanel } from "@/components/features/kiosks/deployments/production-operations-panel";
+import { useAuth } from "@/hooks/identity/use-auth";
+import type { KioskEvidenceState } from "@/hooks/kiosks/use-kiosk-detail";
+import { useKioskDetail } from "@/hooks/kiosks/use-kiosk-detail";
 import { hasScopedPermission } from "@/lib/rbac";
 import {
   getKioskLifecycleLabel,
@@ -54,7 +54,7 @@ import type {
   KioskHeartbeatResult,
   KioskHeartbeatStatus,
   KioskManagementDetail,
-} from "@/types/kiosk-detail";
+} from "@/types/kiosks/detail";
 
 interface KioskDetailViewProps {
   kioskId: string;
@@ -738,11 +738,9 @@ export function KioskDetailView({ kioskId }: KioskDetailViewProps) {
             {activeTab === "deployments" ? (
               <ProductionOperationsPanel
                 organizationId={kiosk.organizationId}
-                storeId={kiosk.locationId}
                 kioskId={kiosk.managementId}
                 canDeploy={canDeploy}
                 canRollback={canRollbackDeployments}
-                deploymentOnly
               />
             ) : null}
           </TabsContent>

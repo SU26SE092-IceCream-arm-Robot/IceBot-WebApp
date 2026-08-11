@@ -2,9 +2,18 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { KioskDetailView } from "@/components/features/kiosks/kiosk-detail-view";
-import type { UseKioskDetailResult } from "@/hooks/use-kiosk-detail";
-import type { EffectiveAccessResult } from "@/types/accounts";
-import type { KioskManagementDetail } from "@/types/kiosk-detail";
+import type { UseKioskDetailResult } from "@/hooks/kiosks/use-kiosk-detail";
+import type { EffectiveAccessResult } from "@/types/identity/accounts";
+import type { KioskManagementDetail } from "@/types/kiosks/detail";
+
+function globalPermissionScopes(permissionCodes: string[]) {
+  return permissionCodes.map((permissionCode) => ({
+    permissionCode,
+    scopeRequired: true,
+    isGlobal: true,
+    scopes: [],
+  }));
+}
 
 const mocks = vi.hoisted(() => ({
   detail: null as UseKioskDetailResult | null,
@@ -13,22 +22,28 @@ const mocks = vi.hoisted(() => ({
     isSystemAdmin: true,
     roles: ["SystemAdmin"],
     permissionCodes: ["devices.manage", "program.read", "release.read", "package.read"],
+    permissionScopes: globalPermissionScopes([
+      "devices.manage",
+      "program.read",
+      "release.read",
+      "package.read",
+    ]),
     roleScopes: [],
     effectiveScope: { organizationIds: [], storeIds: [], kioskIds: [] },
   } as EffectiveAccessResult,
 }));
 
-vi.mock("@/hooks/use-auth", () => ({
+vi.mock("@/hooks/identity/use-auth", () => ({
   useAuth: () => ({
     effectiveAccess: mocks.access,
   }),
 }));
 
-vi.mock("@/hooks/use-kiosk-detail", () => ({
+vi.mock("@/hooks/kiosks/use-kiosk-detail", () => ({
   useKioskDetail: () => mocks.detail,
 }));
 
-vi.mock("@/components/features/kiosks/devices-table", () => ({
+vi.mock("@/components/features/kiosks/devices/devices-table", () => ({
   DevicesTable: ({ canManage }: { canManage: boolean }) => (
     <div data-testid="devices" data-can-manage={String(canManage)}>
       Danh sách thiết bị thử nghiệm
@@ -36,15 +51,15 @@ vi.mock("@/components/features/kiosks/devices-table", () => ({
   ),
 }));
 
-vi.mock("@/components/features/kiosks/execution-endpoints-table", () => ({
+vi.mock("@/components/features/kiosks/execution-endpoints/execution-endpoints-table", () => ({
   ExecutionEndpointsTable: () => <div>Điểm thực thi thử nghiệm</div>,
 }));
 
-vi.mock("@/components/features/kiosks/operation-logs-panel", () => ({
+vi.mock("@/components/features/kiosks/diagnostics/operation-logs-panel", () => ({
   OperationLogsPanel: () => <div>Nhật ký vận hành thử nghiệm</div>,
 }));
 
-vi.mock("@/components/features/kiosks/production-operations-panel", () => ({
+vi.mock("@/components/features/kiosks/deployments/production-operations-panel", () => ({
   ProductionOperationsPanel: () => <div>Cấu hình sản xuất thử nghiệm</div>,
 }));
 
@@ -88,6 +103,12 @@ describe("KioskDetailView tab persistence", () => {
       isSystemAdmin: true,
       roles: ["SystemAdmin"],
       permissionCodes: ["devices.manage", "program.read", "release.read", "package.read"],
+      permissionScopes: globalPermissionScopes([
+        "devices.manage",
+        "program.read",
+        "release.read",
+        "package.read",
+      ]),
       roleScopes: [],
       effectiveScope: { organizationIds: [], storeIds: [], kioskIds: [] },
     };
@@ -135,6 +156,14 @@ describe("KioskDetailView tab persistence", () => {
       isSystemAdmin: false,
       roles: ["Manager"],
       permissionCodes: ["devices.manage", "program.read", "release.read", "package.read"],
+      permissionScopes: [
+        {
+          permissionCode: "devices.manage",
+          scopeRequired: true,
+          isGlobal: false,
+          scopes: [{ organizationId: "org-2", storeId: null, kioskId: null }],
+        },
+      ],
       roleScopes: [
         {
           roleCode: "Manager",
@@ -163,6 +192,7 @@ describe("KioskDetailView tab persistence", () => {
     mocks.access = {
       ...mocks.access,
       permissionCodes: ["kiosks.manage"],
+      permissionScopes: globalPermissionScopes(["kiosks.manage"]),
     };
 
     const { rerender } = render(<KioskDetailView kioskId="kiosk-1" />);
@@ -173,6 +203,7 @@ describe("KioskDetailView tab persistence", () => {
     mocks.access = {
       ...mocks.access,
       permissionCodes: ["kiosks.update"],
+      permissionScopes: globalPermissionScopes(["kiosks.update"]),
     };
     rerender(<KioskDetailView kioskId="kiosk-1" />);
 

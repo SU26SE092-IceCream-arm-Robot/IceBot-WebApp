@@ -2,10 +2,10 @@
 
 import { RefreshCw, ShieldAlert } from "lucide-react";
 
-import { PermissionMatrixView } from "@/components/features/roles/permission-matrix-view";
-import { RolesTable } from "@/components/features/roles/roles-table";
+import { PermissionMatrixView } from "@/components/features/identity/roles/permission-matrix-view";
+import { RolesTable } from "@/components/features/identity/roles/roles-table";
 import { Button } from "@/components/ui/button";
-import { useRoles } from "@/hooks/use-roles";
+import { useRoles } from "@/hooks/identity/use-roles";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function RolesPage() {

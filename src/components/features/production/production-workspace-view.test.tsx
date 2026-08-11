@@ -3,11 +3,11 @@ import { describe, expect, it, vi } from "vitest";
 
 import { ProductionWorkspaceView } from "@/components/features/production/production-workspace-view";
 
-vi.mock("@/hooks/use-auth", () => ({
+vi.mock("@/hooks/identity/use-auth", () => ({
   useAuth: () => ({ effectiveAccess: null }),
 }));
 
-vi.mock("@/hooks/use-production-organization-scope", () => ({
+vi.mock("@/hooks/production/use-production-organization-scope", () => ({
   useProductionOrganizationScope: () => ({
     organizations: [],
     selectedOrganization: null,
