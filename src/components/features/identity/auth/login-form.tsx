@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
-import { GoogleLogin } from "@react-oauth/google";
+import { FirebaseError } from "firebase/app";
 import { LockKeyhole, UserRound } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -10,6 +10,11 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/identity/use-auth";
+import {
+  getFirebaseGoogleLoginErrorMessage,
+  isFirebaseGoogleLoginConfigured,
+  signInWithFirebaseGoogle,
+} from "@/lib/firebase-auth";
 import { getAuthErrorMessage } from "@/lib/services/identity/auth";
 
 export function LoginForm() {
@@ -49,16 +54,21 @@ export function LoginForm() {
     }
   }
 
-  async function handleGoogleLogin(idToken: string) {
+  async function handleGoogleLogin() {
     setErrorMessage(null);
     setIsSubmitting(true);
 
     try {
+      const idToken = await signInWithFirebaseGoogle();
       await googleLogin(idToken);
       toast.success("Đăng nhập thành công.");
       router.replace("/dashboard");
     } catch (error) {
-      setErrorMessage(getAuthErrorMessage(error));
+      setErrorMessage(
+        error instanceof FirebaseError
+          ? getFirebaseGoogleLoginErrorMessage(error)
+          : getAuthErrorMessage(error),
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -133,25 +143,22 @@ export function LoginForm() {
           Đăng nhập
         </Button>
 
-        {process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ? (
+        {isFirebaseGoogleLoginConfigured() ? (
           <div className="space-y-4">
             <div className="flex items-center gap-3 text-xs text-muted-foreground">
               <span className="h-px flex-1 bg-border" />
               hoặc
               <span className="h-px flex-1 bg-border" />
             </div>
-            <div className="flex justify-center">
-              <GoogleLogin
-                onSuccess={(credentialResponse) => {
-                  if (credentialResponse.credential) {
-                    void handleGoogleLogin(credentialResponse.credential);
-                  }
-                }}
-                onError={() => setErrorMessage("Không thể đăng nhập bằng Google.")}
-                text="signin_with"
-                width="320"
-              />
-            </div>
+            <Button
+              type="button"
+              variant="outline"
+              className="h-11 w-full"
+              disabled={isSubmitting}
+              onClick={() => void handleGoogleLogin()}
+            >
+              Đăng nhập bằng Google
+            </Button>
           </div>
         ) : null}
       </form>

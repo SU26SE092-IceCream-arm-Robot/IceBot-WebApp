@@ -78,8 +78,13 @@ Create `.env.local` without committing it:
 ```env
 NEXT_PUBLIC_API_URL=/api/backend
 ICEBOT_BACKEND_URL=http://localhost:5000
-# Optional: show Google login when the backend Google provider is configured.
-NEXT_PUBLIC_GOOGLE_CLIENT_ID=
+# Firebase Web configuration. Google login is shown only when all values exist.
+NEXT_PUBLIC_FIREBASE_API_KEY=
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
+NEXT_PUBLIC_FIREBASE_APP_ID=
 ```
 
 Start development:

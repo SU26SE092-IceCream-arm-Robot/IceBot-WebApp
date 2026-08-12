@@ -3,7 +3,6 @@ import { Plus_Jakarta_Sans } from "next/font/google";
 import { AuthProvider } from "@/hooks/identity/use-auth";
 import { QueryProvider } from "@/components/shared/query-provider";
 import { ThemeProvider } from "@/components/shared/theme-provider";
-import { GoogleAuthProvider } from "@/components/shared/google-auth-provider";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
@@ -30,9 +29,7 @@ export default function RootLayout({
       <body className="min-h-full bg-background text-foreground font-sans antialiased">
         <ThemeProvider>
           <QueryProvider>
-            <GoogleAuthProvider>
-              <AuthProvider>{children}</AuthProvider>
-            </GoogleAuthProvider>
+            <AuthProvider>{children}</AuthProvider>
           </QueryProvider>
           <Toaster richColors position="bottom-right" />
         </ThemeProvider>
