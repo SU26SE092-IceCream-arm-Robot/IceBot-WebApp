@@ -10,14 +10,14 @@ import {
   UserRound,
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 
 import { ThemeModeToggle } from "@/components/shared/theme-mode-toggle";
 import {
   DASHBOARD_NAVIGATION_GROUPS,
-  DASHBOARD_ROUTE_REGISTRY,
+  DASHBOARD_NAVIGATION_ITEMS,
 } from "@/lib/navigation/dashboard-routes";
-import { getVisibleRoutes } from "@/lib/rbac";
+import { getVisibleRoutes, hasPermission } from "@/lib/rbac";
 import { getRoleLabel } from "@/lib/role-labels";
 import type { DashboardUser } from "@/types";
 import type { EffectiveAccessResult } from "@/types/identity/accounts";
@@ -38,20 +38,23 @@ export function AppSidebar({
   onLogout,
 }: AppSidebarProps) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const accountAreaRef = useRef<HTMLDivElement>(null);
   const visibleRoutes = new Set(getVisibleRoutes(effectiveAccess));
   const groupedItems = DASHBOARD_NAVIGATION_GROUPS.map((group) => ({
     label: group.label,
-    items: DASHBOARD_ROUTE_REGISTRY.flatMap((route) => {
+    items: DASHBOARD_NAVIGATION_ITEMS.flatMap((item) => {
       if (
-        route.navigation?.group !== group.key ||
-        !visibleRoutes.has(route.path)
+        item.group !== group.key ||
+        !visibleRoutes.has(item.routePath) ||
+        (item.requiredPermission &&
+          !hasPermission(effectiveAccess, item.requiredPermission))
       ) {
         return [];
       }
 
-      return [{ path: route.path, ...route.navigation }];
+      return [item];
     }),
   })).filter((group) => group.items.length > 0);
 
@@ -122,13 +125,32 @@ export function AppSidebar({
               <div className="space-y-0.5">
                 {group.items.map((item) => {
                   const Icon = item.icon;
+                  const itemPath = item.href ?? item.routePath;
+                  const itemSearch = item.query
+                    ? new URLSearchParams(item.query).toString()
+                    : "";
+                  const href = itemSearch ? `${itemPath}?${itemSearch}` : itemPath;
+                  const matchesDefaultQuery =
+                    (item.routePath === "/transactions" &&
+                      item.query?.tab === "orders" &&
+                      searchParams.get("tab") === null) ||
+                    (item.routePath === "/production" &&
+                      item.query?.stage === "programs" &&
+                      searchParams.get("stage") === null);
                   const isActive =
-                    pathname === item.path || pathname.startsWith(`${item.path}/`);
+                    (pathname === item.routePath ||
+                      pathname.startsWith(`${item.routePath}/`)) &&
+                    (!item.query ||
+                      Object.entries(item.query).every(
+                        ([key, value]) =>
+                          searchParams.get(key) === value ||
+                          matchesDefaultQuery,
+                      ));
 
                   return (
                     <Link
-                      key={item.path}
-                      href={item.path}
+                      key={href}
+                      href={href}
                       title={collapsed ? item.label : undefined}
                       className={`flex w-full items-center gap-3 rounded-md text-sm font-medium transition-all duration-200 ease-out ${
                         collapsed ? "justify-center px-0 py-2.5" : "px-3 py-2"

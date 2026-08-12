@@ -12,6 +12,7 @@ import { useCallback, useEffect } from "react";
 
 import { RobotAuthoringImportsPanel } from "@/components/features/production/authoring-imports/robot-authoring-imports-panel";
 import { ProductionProgramBindingsPanel } from "@/components/features/production/bindings/production-program-bindings-panel";
+import { ProductionPackageCatalogPanel } from "@/components/features/production/packages/production-package-catalog-panel";
 import { ConfigurationReleasesPanel } from "@/components/features/production/releases/configuration-releases-panel";
 import { ProductionWorkflowStepper } from "@/components/features/production/production-workflow-stepper";
 import { Button } from "@/components/ui/button";
@@ -40,7 +41,7 @@ function organizationLabel(name: string, code: string) {
   return name ? `${name} — ${code}` : code || "Không xác định";
 }
 
-const PRODUCTION_STAGES = ["programs", "bindings", "releases"] as const;
+const PRODUCTION_STAGES = ["programs", "packages", "bindings", "releases"] as const;
 type ProductionStage = (typeof PRODUCTION_STAGES)[number];
 
 function isProductionStage(value: string | null): value is ProductionStage {
@@ -295,17 +296,11 @@ export function ProductionWorkspaceView() {
                 });
               }}
             >
-              <TabsList
-                variant="line"
-                aria-label="Các giai đoạn cấu hình sản xuất"
-              >
-                <TabsTrigger value="programs">1. Robot Programs</TabsTrigger>
-                <TabsTrigger value="bindings">
-                  2. Bind Configuration
-                </TabsTrigger>
-                <TabsTrigger value="releases">
-                  3. Phát hành cấu hình
-                </TabsTrigger>
+              <TabsList variant="line" aria-label="Các khu vực cấu hình sản xuất">
+                <TabsTrigger value="programs">Chương trình robot</TabsTrigger>
+                <TabsTrigger value="packages">Gói sản xuất</TabsTrigger>
+                <TabsTrigger value="bindings">Liên kết cấu hình</TabsTrigger>
+                <TabsTrigger value="releases">Bản phát hành</TabsTrigger>
               </TabsList>
               <TabsContent value="programs" className="pt-4">
                 <RobotAuthoringImportsPanel
@@ -321,6 +316,13 @@ export function ProductionWorkspaceView() {
                   onOpenBindings={() =>
                     updateLocation({ stage: "bindings", releaseId: null })
                   }
+                />
+              </TabsContent>
+              <TabsContent value="packages" className="pt-4">
+                <ProductionPackageCatalogPanel
+                  key={selected.id}
+                  organizationId={selected.id}
+                  canRead={canRead}
                 />
               </TabsContent>
               <TabsContent value="bindings" className="space-y-6 pt-4">

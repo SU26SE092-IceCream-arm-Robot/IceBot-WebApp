@@ -29,6 +29,7 @@ export type DashboardRoutePath =
   | "/readiness"
   | "/production"
   | "/organizations"
+  | "/stores"
   | "/kiosks"
   | "/inventory"
   | "/transactions"

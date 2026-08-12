@@ -50,6 +50,7 @@ import { useAuth } from "@/hooks/identity/use-auth";
 import { useTransactions } from "@/hooks/transactions/use-transactions";
 import { useOrderItemFulfillment } from "@/hooks/transactions/use-order-item-fulfillment";
 import { hasPermission } from "@/lib/rbac";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type {
   OrderStatus,
   OrderStatusFilter,
@@ -174,7 +175,9 @@ function TransactionsLoadingTable() {
 }
 
 export default function TransactionsPage() {
-  const [activeTab, setActiveTab] = useState<TransactionsTab>("orders");
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [isRequestRefundOpen, setIsRequestRefundOpen] = useState(false);
   const [isProcessRefundOpen, setIsProcessRefundOpen] = useState(false);
   const [isRejectRefundOpen, setIsRejectRefundOpen] = useState(false);
@@ -182,6 +185,20 @@ export default function TransactionsPage() {
   const { effectiveAccess } = useAuth();
   const canManageRefunds = hasPermission(effectiveAccess, "refunds.manage");
   const canManagePayments = hasPermission(effectiveAccess, "payments.manage");
+  const requestedTab = searchParams.get("tab");
+  const activeTab: TransactionsTab =
+    requestedTab === "refunds" && canManageRefunds
+      ? "refunds"
+      : requestedTab === "incidents"
+        ? "incidents"
+        : requestedTab === "payment-interventions" && canManagePayments
+          ? "payment-interventions"
+          : "orders";
+  const setActiveTab = (nextTab: TransactionsTab) => {
+    const next = new URLSearchParams(searchParams.toString());
+    next.set("tab", nextTab);
+    router.push(`${pathname}?${next.toString()}`, { scroll: false });
+  };
 
   const {
     orders,

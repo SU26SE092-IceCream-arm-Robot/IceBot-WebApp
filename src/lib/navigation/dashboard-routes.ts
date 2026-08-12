@@ -3,16 +3,19 @@ import {
   BarChart3,
   Bell,
   BookOpen,
+  Boxes,
   Building2,
   ClipboardCheck,
   CreditCard,
   Factory,
+  GitBranch,
   LayoutDashboard,
   Monitor,
   Package,
+  ReceiptText,
+  RefreshCcw,
   ShieldAlert,
   ShoppingBag,
-  ShoppingCart,
   Users,
   Wrench,
 } from "lucide-react";
@@ -22,35 +25,83 @@ import type { DashboardPermission, DashboardRoutePath } from "@/types";
 export interface DashboardRouteDefinition {
   path: DashboardRoutePath;
   permission: DashboardPermission;
-  navigation?: {
-    group: "operations" | "commerce" | "administration";
-    label: string;
-    icon: LucideIcon;
-  };
 }
 
+export type DashboardNavigationGroup =
+  | "overview"
+  | "operations"
+  | "commerce"
+  | "catalog"
+  | "production"
+  | "organization"
+  | "platform";
+
+export interface DashboardNavigationItem {
+  routePath: DashboardRoutePath;
+  requiredPermission?: DashboardPermission;
+  href?: string;
+  query?: Readonly<Record<string, string>>;
+  group: DashboardNavigationGroup;
+  label: string;
+  icon: LucideIcon;
+}
+
+// This registry owns route-level permission checks only. Navigation may expose
+// focused views of a route through query parameters without changing its guard.
 export const DASHBOARD_ROUTE_REGISTRY: readonly DashboardRouteDefinition[] = [
-  { path: "/dashboard", permission: "dashboard.view", navigation: { group: "operations", label: "Tổng quan", icon: LayoutDashboard } },
-  { path: "/readiness", permission: "dashboard.view", navigation: { group: "operations", label: "Kiểm tra thiết lập", icon: ClipboardCheck } },
-  { path: "/production", permission: "program.read", navigation: { group: "operations", label: "Cấu hình sản xuất", icon: Factory } },
-  { path: "/kiosks", permission: "kiosks.view", navigation: { group: "operations", label: "Quản lý Kiosk", icon: Monitor } },
-  { path: "/inventory", permission: "inventory.view", navigation: { group: "operations", label: "Tồn kho", icon: Package } },
-  { path: "/alerts", permission: "alerts.view", navigation: { group: "operations", label: "Cảnh báo", icon: Bell } },
-  { path: "/maintenance", permission: "maintenance.view", navigation: { group: "operations", label: "Bảo trì", icon: Wrench } },
-  { path: "/transactions", permission: "orders.view", navigation: { group: "commerce", label: "Giao dịch", icon: ShoppingCart } },
-  { path: "/products", permission: "products.manage", navigation: { group: "commerce", label: "Sản phẩm", icon: ShoppingBag } },
-  { path: "/menus", permission: "menus.manage", navigation: { group: "commerce", label: "Thực đơn", icon: BookOpen } },
-  { path: "/reports", permission: "reports.view", navigation: { group: "commerce", label: "Báo cáo", icon: BarChart3 } },
-  { path: "/organizations", permission: "organizations.view", navigation: { group: "administration", label: "Tổ chức & cửa hàng", icon: Building2 } },
-  { path: "/users", permission: "accounts.read", navigation: { group: "administration", label: "Tài khoản", icon: Users } },
-  { path: "/settings/payment-methods", permission: "payments.manage", navigation: { group: "administration", label: "Cấu hình thanh toán", icon: CreditCard } },
-  { path: "/platform/exceptions", permission: "sync-dead-letters.manage", navigation: { group: "administration", label: "Sự cố đồng bộ", icon: ShieldAlert } },
-  { path: "/menu", permission: "menus.manage" },
+  { path: "/dashboard", permission: "dashboard.view" },
+  { path: "/readiness", permission: "dashboard.view" },
+  { path: "/production", permission: "program.read" },
+  { path: "/organizations", permission: "organizations.view" },
+  { path: "/stores", permission: "stores.view" },
+  { path: "/kiosks", permission: "kiosks.view" },
+  { path: "/inventory", permission: "inventory.view" },
+  { path: "/transactions", permission: "orders.view" },
+  { path: "/products", permission: "products.manage" },
+  { path: "/menus", permission: "menus.manage" },
+  { path: "/reports", permission: "reports.view" },
+  { path: "/users", permission: "accounts.read" },
   { path: "/roles", permission: "permission-matrix.view" },
+  { path: "/maintenance", permission: "maintenance.view" },
+  { path: "/alerts", permission: "alerts.view" },
+  { path: "/platform/exceptions", permission: "sync-dead-letters.manage" },
+  { path: "/settings/payment-methods", permission: "payments.manage" },
+  { path: "/menu", permission: "menus.manage" },
 ] as const;
 
-export const DASHBOARD_NAVIGATION_GROUPS = [
+export const DASHBOARD_NAVIGATION_GROUPS: ReadonlyArray<{
+  key: DashboardNavigationGroup;
+  label: string;
+}> = [
+  { key: "overview", label: "Tổng quan" },
   { key: "operations", label: "Vận hành" },
   { key: "commerce", label: "Kinh doanh" },
-  { key: "administration", label: "Quản trị" },
+  { key: "catalog", label: "Danh mục" },
+  { key: "production", label: "Sản xuất" },
+  { key: "organization", label: "Tổ chức" },
+  { key: "platform", label: "Nền tảng" },
+];
+
+export const DASHBOARD_NAVIGATION_ITEMS: readonly DashboardNavigationItem[] = [
+  { routePath: "/dashboard", group: "overview", label: "Tổng quan", icon: LayoutDashboard },
+  { routePath: "/kiosks", group: "operations", label: "Quản lý Kiosk", icon: Monitor },
+  { routePath: "/inventory", group: "operations", label: "Tồn kho", icon: Package },
+  { routePath: "/maintenance", group: "operations", label: "Bảo trì", icon: Wrench },
+  { routePath: "/alerts", group: "operations", label: "Cảnh báo", icon: Bell },
+  { routePath: "/readiness", group: "operations", label: "Kiểm tra thiết lập", icon: ClipboardCheck },
+  { routePath: "/transactions", query: { tab: "orders" }, group: "commerce", label: "Đơn hàng & giao dịch", icon: ReceiptText },
+  { routePath: "/transactions", requiredPermission: "refunds.manage", query: { tab: "refunds" }, group: "commerce", label: "Hoàn tiền", icon: RefreshCcw },
+  { routePath: "/reports", group: "commerce", label: "Báo cáo", icon: BarChart3 },
+  { routePath: "/products", group: "catalog", label: "Sản phẩm", icon: ShoppingBag },
+  { routePath: "/menus", group: "catalog", label: "Thực đơn", icon: BookOpen },
+  { routePath: "/production", query: { stage: "programs" }, group: "production", label: "Chương trình robot", icon: Factory },
+  { routePath: "/production", query: { stage: "packages" }, group: "production", label: "Gói sản xuất", icon: Boxes },
+  { routePath: "/production", query: { stage: "releases" }, group: "production", label: "Bản phát hành", icon: Package },
+  { routePath: "/production", query: { stage: "bindings" }, group: "production", label: "Liên kết cấu hình", icon: GitBranch },
+  { routePath: "/organizations", group: "organization", label: "Tổ chức", icon: Building2 },
+  { routePath: "/stores", group: "organization", label: "Cửa hàng", icon: Building2 },
+  { routePath: "/users", group: "organization", label: "Tài khoản", icon: Users },
+  { routePath: "/roles", group: "organization", label: "Vai trò & quyền", icon: ShieldAlert },
+  { routePath: "/platform/exceptions", group: "platform", label: "Sự cố đồng bộ", icon: ShieldAlert },
+  { routePath: "/settings/payment-methods", group: "platform", label: "Phương thức thanh toán", icon: CreditCard },
 ] as const;
