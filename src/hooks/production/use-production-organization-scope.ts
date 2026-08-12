@@ -4,6 +4,7 @@ import axios from "axios";
 import { useCallback, useEffect, useState } from "react";
 
 import {
+  getManagementOrganizationById,
   getOrganizationsErrorMessage,
   listManagementOrganizations,
 } from "@/lib/services/tenants/organizations";
@@ -20,7 +21,9 @@ const EMPTY_PAGINATION: PaginationMeta = {
   hasPrevious: false,
 };
 
-export function useProductionOrganizationScope() {
+export function useProductionOrganizationScope(
+  requestedOrganizationId?: string | null,
+) {
   const [organizations, setOrganizations] = useState<OrganizationResult[]>([]);
   const [selectedOrganization, setSelectedOrganization] =
     useState<OrganizationResult | null>(null);
@@ -30,6 +33,9 @@ export function useProductionOrganizationScope() {
     useState<PaginationMeta>(EMPTY_PAGINATION);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [selectionErrorMessage, setSelectionErrorMessage] = useState<
+    string | null
+  >(null);
 
   const load = useCallback(
     async (signal?: AbortSignal) => {
@@ -80,6 +86,50 @@ export function useProductionOrganizationScope() {
     };
   }, [load, search]);
 
+  useEffect(() => {
+    if (
+      !requestedOrganizationId ||
+      selectedOrganization?.id === requestedOrganizationId
+    )
+      return;
+
+    const listedOrganization = organizations.find(
+      (organization) => organization.id === requestedOrganizationId,
+    );
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(async () => {
+      if (listedOrganization) {
+        setSelectedOrganization(listedOrganization);
+        setSelectionErrorMessage(null);
+        return;
+      }
+      try {
+        const organization = await getManagementOrganizationById(
+          requestedOrganizationId,
+          controller.signal,
+        );
+        if (!controller.signal.aborted) {
+          setSelectedOrganization(organization);
+          setSelectionErrorMessage(null);
+        }
+      } catch (error) {
+        if (controller.signal.aborted) return;
+        setSelectedOrganization(null);
+        setSelectionErrorMessage(
+          getOrganizationsErrorMessage(
+            error,
+            "Không thể khôi phục tổ chức từ đường dẫn hiện tại.",
+          ),
+        );
+      }
+    }, 0);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+      controller.abort();
+    };
+  }, [organizations, requestedOrganizationId, selectedOrganization?.id]);
+
   const setSearch = (value: string) => {
     setSearchValue(value);
     setPageNumber(1);
@@ -100,7 +150,7 @@ export function useProductionOrganizationScope() {
     pagination,
     selectOrganization,
     isLoading,
-    errorMessage,
+    errorMessage: selectionErrorMessage ?? errorMessage,
     refresh: load,
   };
 }

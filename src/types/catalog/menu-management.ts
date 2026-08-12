@@ -176,6 +176,8 @@ export interface ProductVariantResult {
   basePrice: number;
   currency: string;
   isAvailable: boolean;
+  recipeCount: number;
+  sellableRecipeCount: number;
   displayOrder: number;
   preparationTimeSeconds?: number | null;
   imageUrl?: string | null;

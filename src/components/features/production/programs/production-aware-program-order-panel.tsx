@@ -20,7 +20,7 @@ interface ProductionAwareProgramOrderPanelProps {
   organizationId: string;
   programId: string;
   canManage: boolean;
-  onOrderSaved: () => void;
+  onOrderSaved?: () => void;
 }
 
 function reorder<T>(items: T[], fromIndex: number, toIndex: number) {
@@ -113,7 +113,7 @@ export function ProductionAwareProgramOrderPanel({
       );
       setProgram(updated);
       setMovementNotice("Đã lưu thứ tự artifact.");
-      onOrderSaved();
+      onOrderSaved?.();
     } catch (cause) {
       setError(
         cause instanceof Error

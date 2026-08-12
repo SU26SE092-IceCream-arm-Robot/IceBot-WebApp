@@ -33,4 +33,21 @@ describe("KioskCard operational-state labels", () => {
     expect(screen.getByText(label)).toBeInTheDocument();
     expect(screen.getByText("Đã kích hoạt")).toBeInTheDocument();
   });
+
+  it("preserves the selected release in the deployment handoff", () => {
+    render(
+      <KioskCard
+        kiosk={baseKiosk}
+        canDeployConfiguration
+        deploymentReleaseId="release-12"
+      />,
+    );
+
+    expect(
+      screen.getByRole("link", { name: /Triển khai cấu hình/i }),
+    ).toHaveAttribute(
+      "href",
+      `/kiosks/${baseKiosk.managementId}?tab=deployments&releaseId=release-12`,
+    );
+  });
 });

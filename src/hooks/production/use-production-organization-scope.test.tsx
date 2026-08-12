@@ -2,13 +2,17 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useProductionOrganizationScope } from "@/hooks/production/use-production-organization-scope";
-import { listManagementOrganizations } from "@/lib/services/tenants/organizations";
+import {
+  getManagementOrganizationById,
+  listManagementOrganizations,
+} from "@/lib/services/tenants/organizations";
 import type { OrganizationResult } from "@/types/tenants/management";
 
 vi.mock("@/lib/services/tenants/organizations", () => ({
   getOrganizationsErrorMessage: vi.fn(
     (_: unknown, fallback: string) => fallback,
   ),
+  getManagementOrganizationById: vi.fn(),
   listManagementOrganizations: vi.fn(),
 }));
 
@@ -47,7 +51,10 @@ function page(
 }
 
 describe("useProductionOrganizationScope", () => {
-  beforeEach(() => vi.mocked(listManagementOrganizations).mockReset());
+  beforeEach(() => {
+    vi.mocked(getManagementOrganizationById).mockReset();
+    vi.mocked(listManagementOrganizations).mockReset();
+  });
 
   it("uses server search and a bounded page instead of a capped organization list", async () => {
     vi.mocked(listManagementOrganizations)
@@ -101,5 +108,25 @@ describe("useProductionOrganizationScope", () => {
     );
 
     expect(result.current.selectedOrganizationId).toBe("org-1");
+  });
+
+  it("restores an organization from the URL even when it is not on the current page", async () => {
+    const requested = organization("org-42", "FORTY-TWO");
+    vi.mocked(listManagementOrganizations).mockResolvedValue(
+      page([organization("org-1", "ONE")], { totalCount: 2 }),
+    );
+    vi.mocked(getManagementOrganizationById).mockResolvedValue(requested);
+
+    const { result } = renderHook(() =>
+      useProductionOrganizationScope(requested.id),
+    );
+
+    await waitFor(() =>
+      expect(result.current.selectedOrganizationId).toBe(requested.id),
+    );
+    expect(getManagementOrganizationById).toHaveBeenCalledWith(
+      requested.id,
+      expect.any(AbortSignal),
+    );
   });
 });

@@ -5,13 +5,9 @@ import {
   Boxes,
   CirclePause,
   CirclePlay,
-  FlaskConical,
-  PackageCheck,
-  PackageX,
   Pencil,
   Plus,
   ShoppingBasket,
-  SlidersHorizontal,
   Trash2,
 } from "lucide-react";
 
@@ -31,41 +27,8 @@ import type {
   MenuItemStatus,
   MenuResult,
   MenuStatus,
-  ProductCategoryResult,
-  ProductResult,
-  ProductVariantResult,
   TenantScopeType,
 } from "@/types/catalog/menu-management";
-
-interface ProductDetailDialogProps {
-  canManage: boolean;
-  categories: ProductCategoryResult[];
-  errorMessage: string | null;
-  isLoading: boolean;
-  open: boolean;
-  product: ProductResult | null;
-  productActionId: string | null;
-  variantActionId: string | null;
-  onOpenChange: (open: boolean) => void;
-  onToggleProduct: (product: ProductResult) => void;
-  onToggleVariant: (variant: ProductVariantResult) => void;
-  onEditProduct: (product: ProductResult) => void;
-  onDeleteProduct: (product: ProductResult) => void;
-  onCreateVariant: (product: ProductResult) => void;
-  onManageOptions: (product: ProductResult) => void;
-  onManageRecipes: (
-    product: ProductResult,
-    variant: ProductVariantResult,
-  ) => void;
-  onEditVariant: (
-    product: ProductResult,
-    variant: ProductVariantResult,
-  ) => void;
-  onDeleteVariant: (
-    product: ProductResult,
-    variant: ProductVariantResult,
-  ) => void;
-}
 
 interface MenuDetailDialogProps {
   canManage: boolean;
@@ -130,35 +93,6 @@ function getMenuStatusLabel(status: MenuStatus): string {
   }
 }
 
-function getFulfillmentTypeLabel(value: ProductVariantResult["fulfillmentType"]): string {
-  switch (value) {
-    case "MachineProduced":
-      return "Sản xuất bằng máy";
-    case "Manual":
-      return "Thủ công";
-    case "Packaged":
-    default:
-      return "Đóng gói sẵn";
-  }
-}
-
-function getProductTypeLabel(value: string | null | undefined): string {
-  switch (value?.toLowerCase()) {
-    case "icecream":
-      return "Kem";
-    default:
-      return value || "Chưa cập nhật";
-  }
-}
-
-function getVariantTypeLabel(value: string | null | undefined): string | null {
-  switch (value?.toLowerCase()) {
-    case "default":
-      return "Mặc định";
-    default:
-      return value || null;
-  }
-}
 
 function getMenuItemStatusLabel(status: MenuItemStatus): string {
   switch (status) {
@@ -231,214 +165,6 @@ function DetailField({
       <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
       <div className="text-sm text-foreground">{children}</div>
     </div>
-  );
-}
-
-function AvailabilityBadge({ isAvailable }: { isAvailable: boolean }) {
-  return isAvailable ? (
-    <Badge className="border-0 bg-success/10 text-success">Đang bán</Badge>
-  ) : (
-    <Badge className="border border-border bg-muted/20 text-muted-foreground">Ngừng bán</Badge>
-  );
-}
-
-export function ProductDetailDialog({
-  canManage,
-  categories,
-  errorMessage,
-  isLoading,
-  open,
-  product,
-  productActionId,
-  variantActionId,
-  onOpenChange,
-  onToggleProduct,
-  onToggleVariant,
-  onEditProduct,
-  onDeleteProduct,
-  onCreateVariant,
-  onManageOptions,
-  onManageRecipes,
-  onEditVariant,
-  onDeleteVariant,
-}: ProductDetailDialogProps) {
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>Chi tiết sản phẩm</DialogTitle>
-          <DialogDescription>
-            Thông tin danh mục và phiên bản sản phẩm.
-          </DialogDescription>
-        </DialogHeader>
-
-        {isLoading ? (
-          <DetailSkeleton />
-        ) : errorMessage ? (
-          <DetailError message={errorMessage} />
-        ) : product ? (
-          <div className="space-y-6 py-2">
-            <div className="grid gap-4 rounded-xl border border-border bg-muted/20 p-4 sm:grid-cols-2">
-              <DetailField label="Tên sản phẩm">
-                {product.displayName?.trim() || product.name || "Chưa cập nhật"}
-              </DetailField>
-              <DetailField label="Mã sản phẩm">
-                <span className="tabular-nums">{product.code || "Chưa cập nhật"}</span>
-              </DetailField>
-              <DetailField label="Trạng thái">
-                <AvailabilityBadge isAvailable={product.isAvailable} />
-              </DetailField>
-              <DetailField label="Giá cơ bản">
-                <span className="tabular-nums font-medium">
-                  {formatMoney(product.basePrice, product.currency)}
-                </span>
-              </DetailField>
-              <DetailField label="Phạm vi">
-                <Badge variant="outline">{getScopeLabel(product.scopeType)}</Badge>
-              </DetailField>
-              <DetailField label="Loại sản phẩm">
-                {getProductTypeLabel(product.productType)}
-              </DetailField>
-              <DetailField label="Danh mục sản phẩm">
-                {product.categoryId === null || product.categoryId === undefined
-                  ? "Chưa phân loại"
-                  : (() => {
-                      const category = categories.find((item) => item.id === product.categoryId);
-                      return category
-                        ? category.isActive
-                          ? category.name
-                          : `${category.name} (đã tắt)`
-                        : "Danh mục không còn khả dụng";
-                    })()}
-              </DetailField>
-              <div className="sm:col-span-2">
-                <DetailField label="Mô tả">
-                  {product.description?.trim() || "Chưa có mô tả."}
-                </DetailField>
-              </div>
-            </div>
-
-            <section className="space-y-3">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <h3 className="font-medium text-foreground">Phiên bản</h3>
-                  <p className="text-xs text-muted-foreground">
-                    Giá và trạng thái khả dụng của từng phiên bản.
-                  </p>
-                </div>
-                {canManage ? (
-                  <div className="flex flex-wrap gap-2">
-                    <Button variant="outline" size="sm" onClick={() => onEditProduct(product)}>
-                      <Pencil className="size-3.5" />Sửa sản phẩm
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => onManageOptions(product)}>
-                      <SlidersHorizontal className="size-3.5" />Tùy chọn
-                    </Button>
-                    <Button
-                      variant={product.isAvailable ? "outline" : "default"}
-                      size="sm"
-                      isLoading={productActionId === product.id}
-                      onClick={() => onToggleProduct(product)}
-                    >
-                      {product.isAvailable ? <PackageX className="size-3.5" /> : <PackageCheck className="size-3.5" />}
-                      {product.isAvailable ? "Tắt sản phẩm" : "Bật sản phẩm"}
-                    </Button>
-                    <Button size="sm" onClick={() => onCreateVariant(product)}>
-                      <Plus className="size-3.5" />Thêm phiên bản
-                    </Button>
-                  </div>
-                ) : null}
-              </div>
-
-              {product.variants.length === 0 ? (
-                <div className="rounded-lg border border-dashed border-border p-5 text-center text-sm text-muted-foreground">
-                  Sản phẩm chưa có phiên bản.
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {product.variants.map((variant) => (
-                    (() => {
-                      const variantTypeLabel = getVariantTypeLabel(variant.variantType);
-
-                      return (
-                        <div
-                          key={variant.id}
-                          className="flex flex-col gap-3 rounded-lg border border-border p-3 sm:flex-row sm:items-center sm:justify-between"
-                        >
-                          <div className="min-w-0 space-y-1">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <p className="font-medium text-foreground">
-                                {variant.displayName?.trim() || variant.name}
-                              </p>
-                              <AvailabilityBadge isAvailable={variant.isAvailable} />
-                            </div>
-                            <p className="text-xs text-muted-foreground">
-                              <span className="tabular-nums">{variant.code}</span>
-                              {variant.sizeCode ? ` · Kích cỡ ${variant.sizeCode}` : ""}
-                              {variantTypeLabel ? ` · ${variantTypeLabel}` : ""}
-                              {` · ${getFulfillmentTypeLabel(variant.fulfillmentType)}`}
-                            </p>
-                            <p className="tabular-nums text-sm font-medium text-foreground">
-                              {formatMoney(variant.basePrice, variant.currency)}
-                            </p>
-                          </div>
-                          {canManage ? (
-                            <div className="flex flex-wrap gap-1">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => onManageRecipes(product, variant)}
-                              >
-                                <FlaskConical className="size-3.5" />
-                                Công thức
-                              </Button>
-                              <Button variant="outline" size="sm" isLoading={variantActionId === variant.id} onClick={() => onToggleVariant(variant)}>
-                                {variant.isAvailable ? "Tắt phiên bản" : "Bật phiên bản"}
-                              </Button>
-                              <Button variant="ghost" size="icon-sm" title="Chỉnh sửa phiên bản" aria-label="Chỉnh sửa phiên bản" onClick={() => onEditVariant(product, variant)}>
-                                <Pencil className="size-4" />
-                              </Button>
-                              <Button variant="ghost" size="icon-sm" className="text-destructive hover:bg-destructive/10 hover:text-destructive" title="Xóa phiên bản" aria-label="Xóa phiên bản" onClick={() => onDeleteVariant(product, variant)}>
-                                <Trash2 className="size-4" />
-                              </Button>
-                            </div>
-                          ) : null}
-                        </div>
-                      );
-                    })()
-                  ))}
-                </div>
-              )}
-            </section>
-
-            {canManage ? (
-              <section className="rounded-xl border border-destructive/20 bg-destructive/5 p-4">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <h3 className="font-medium text-destructive">Thao tác khác</h3>
-                    <p className="text-xs text-muted-foreground">
-                      Xóa mềm sản phẩm khỏi danh mục quản lý.
-                    </p>
-                  </div>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    title="Xóa sản phẩm"
-                    aria-label="Xóa sản phẩm"
-                    onClick={() => onDeleteProduct(product)}
-                  >
-                    <Trash2 className="size-4" />
-                    Xóa sản phẩm
-                  </Button>
-                </div>
-              </section>
-            ) : null}
-          </div>
-        ) : null}
-
-        <DialogFooter showCloseButton />
-      </DialogContent>
-    </Dialog>
   );
 }
 

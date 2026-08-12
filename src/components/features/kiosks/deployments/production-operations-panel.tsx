@@ -14,6 +14,14 @@ import { useState } from "react";
 import { EdgeDeploymentArtifactsPanel } from "@/components/features/kiosks/deployments/edge-deployment-artifacts-panel";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -28,6 +36,7 @@ import { useKioskDeployments } from "@/hooks/kiosks/use-kiosk-deployments";
 interface ProductionOperationsPanelProps {
   organizationId: string;
   kioskId: string;
+  initialReleaseId?: string | null;
   canDeploy: boolean;
   canRollback: boolean;
 }
@@ -61,6 +70,16 @@ const readinessLabels: Record<string, string> = {
   NotReady: "Chưa sẵn sàng",
 };
 
+type PendingConfirmation =
+  | { kind: "deploy" }
+  | {
+      kind: "rollback";
+      deploymentId: string;
+      expectedActiveDeploymentId: string;
+      releaseNumber: number;
+      endpointCode: string;
+    };
+
 function StatusBadge({ status }: { status: string }) {
   const variant =
     status === "Failed"
@@ -89,10 +108,15 @@ export function ProductionOperationsPanel(
     organizationId: props.organizationId,
     kioskId: props.kioskId,
   });
-  const [selectedReleaseId, setSelectedReleaseId] = useState<string>("");
+  const [selectedReleaseId, setSelectedReleaseId] = useState<string>(
+    props.initialReleaseId ?? "",
+  );
   const [selectedEndpointId, setSelectedEndpointId] = useState<string>("");
   const [acknowledgeRisk, setAcknowledgeRisk] = useState(false);
   const [deploymentReason, setDeploymentReason] = useState("");
+  const [rollbackReason, setRollbackReason] = useState("");
+  const [pendingConfirmation, setPendingConfirmation] =
+    useState<PendingConfirmation | null>(null);
 
   const selectedRelease = state.releases.find(
     (item) => item.id === selectedReleaseId,
@@ -103,6 +127,29 @@ export function ProductionOperationsPanel(
   const eligibleEndpoint = state.deploymentPreview?.endpoints.find(
     (item) => item.kioskExecutionEndpointId === selectedEndpointId,
   );
+
+  const confirmOperation = async () => {
+    if (!pendingConfirmation) return;
+    if (
+      pendingConfirmation.kind === "deploy" &&
+      state.deploymentPreview &&
+      eligibleEndpoint
+    ) {
+      await state.deploy(
+        state.deploymentPreview,
+        eligibleEndpoint.kioskExecutionEndpointId,
+        true,
+        deploymentReason,
+      );
+    } else if (pendingConfirmation.kind === "rollback") {
+      await state.rollbackDeployment(
+        pendingConfirmation.deploymentId,
+        pendingConfirmation.expectedActiveDeploymentId,
+        rollbackReason,
+      );
+    }
+    setPendingConfirmation(null);
+  };
 
   if (state.isLoading) {
     return (
@@ -286,6 +333,20 @@ export function ProductionOperationsPanel(
                       ))}
                     </div>
                   ) : null}
+                  <div className="space-y-1.5">
+                    <Label htmlFor="deployment-reason">Lý do triển khai</Label>
+                    <Input
+                      id="deployment-reason"
+                      value={deploymentReason}
+                      minLength={3}
+                      maxLength={500}
+                      disabled={state.isMutating}
+                      onChange={(event) =>
+                        setDeploymentReason(event.target.value)
+                      }
+                      placeholder="Nhập từ 3 đến 500 ký tự để lưu nhật ký vận hành"
+                    />
+                  </div>
                   <label className="flex items-start gap-2 text-sm">
                     <input
                       type="checkbox"
@@ -306,21 +367,7 @@ export function ProductionOperationsPanel(
                       deploymentReason.trim().length < 3 ||
                       state.isMutating
                     }
-                    onClick={() => {
-                      if (
-                        state.deploymentPreview &&
-                        eligibleEndpoint &&
-                        window.confirm(
-                          "Triển khai cấu hình đã chọn tới điểm thực thi này?",
-                        )
-                      )
-                        void state.deploy(
-                          state.deploymentPreview,
-                          eligibleEndpoint.kioskExecutionEndpointId,
-                          true,
-                          deploymentReason,
-                        );
-                    }}
+                    onClick={() => setPendingConfirmation({ kind: "deploy" })}
                   >
                     <Rocket className="size-4" />
                     Triển khai
@@ -329,19 +376,17 @@ export function ProductionOperationsPanel(
               ) : null}
             </div>
           ) : null}
-          {props.canDeploy || props.canRollback ? (
+          {props.canRollback ? (
             <div className="space-y-1.5">
-              <Label htmlFor="deployment-reason">
-                Lý do triển khai hoặc rollback
-              </Label>
+              <Label htmlFor="rollback-reason">Lý do rollback</Label>
               <Input
-                id="deployment-reason"
-                value={deploymentReason}
+                id="rollback-reason"
+                value={rollbackReason}
                 minLength={3}
                 maxLength={500}
                 disabled={state.isMutating}
-                onChange={(event) => setDeploymentReason(event.target.value)}
-                placeholder="Nhập từ 3 đến 500 ký tự để lưu nhật ký vận hành"
+                onChange={(event) => setRollbackReason(event.target.value)}
+                placeholder="Nhập lý do trước khi chọn phiên bản cần khôi phục"
               />
             </div>
           ) : null}
@@ -391,20 +436,18 @@ export function ProductionOperationsPanel(
                         size="sm"
                         variant="destructive"
                         disabled={
-                          state.isMutating || deploymentReason.trim().length < 3
+                          state.isMutating || rollbackReason.trim().length < 3
                         }
                         onClick={() => {
-                          if (
-                            deployment.observedActiveDeploymentId &&
-                            window.confirm(
-                              "Rollback về cấu hình của lần triển khai này?",
-                            )
-                          )
-                            void state.rollbackDeployment(
-                              deployment.id,
+                          if (!deployment.observedActiveDeploymentId) return;
+                          setPendingConfirmation({
+                            kind: "rollback",
+                            deploymentId: deployment.id,
+                            expectedActiveDeploymentId:
                               deployment.observedActiveDeploymentId,
-                              deploymentReason,
-                            );
+                            releaseNumber: deployment.releaseNumber,
+                            endpointCode: deployment.endpointCode,
+                          });
                         }}
                       >
                         <RotateCcw className="size-4" />
@@ -426,6 +469,77 @@ export function ProductionOperationsPanel(
             deployments={state.deployments}
           />
       </div>
+      <Dialog
+        open={pendingConfirmation !== null}
+        onOpenChange={(open) => {
+          if (!open && !state.isMutating) setPendingConfirmation(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {pendingConfirmation?.kind === "rollback"
+                ? "Xác nhận rollback cấu hình"
+                : "Xác nhận triển khai cấu hình"}
+            </DialogTitle>
+            <DialogDescription>
+              Kiểm tra đúng đích vận hành trước khi gửi yêu cầu tới backend.
+            </DialogDescription>
+          </DialogHeader>
+          <dl className="grid gap-3 rounded-md border bg-muted/20 p-3 text-sm">
+            <div>
+              <dt className="text-xs text-muted-foreground">Kiosk</dt>
+              <dd className="font-mono">{props.kioskId}</dd>
+            </div>
+            <div>
+              <dt className="text-xs text-muted-foreground">Phiên bản</dt>
+              <dd className="font-medium">
+                {pendingConfirmation?.kind === "rollback"
+                  ? pendingConfirmation.releaseNumber
+                  : selectedRelease?.releaseNumber ?? "Chưa xác định"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs text-muted-foreground">Điểm thực thi</dt>
+              <dd className="font-medium">
+                {pendingConfirmation?.kind === "rollback"
+                  ? pendingConfirmation.endpointCode
+                  : eligibleEndpoint?.endpointCode ?? "Chưa xác định"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs text-muted-foreground">Lý do</dt>
+              <dd>
+                {pendingConfirmation?.kind === "rollback"
+                  ? rollbackReason
+                  : deploymentReason}
+              </dd>
+            </div>
+          </dl>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              disabled={state.isMutating}
+              onClick={() => setPendingConfirmation(null)}
+            >
+              Hủy
+            </Button>
+            <Button
+              variant={
+                pendingConfirmation?.kind === "rollback"
+                  ? "destructive"
+                  : "default"
+              }
+              disabled={state.isMutating}
+              onClick={() => void confirmOperation()}
+            >
+              {pendingConfirmation?.kind === "rollback"
+                ? "Xác nhận rollback"
+                : "Xác nhận triển khai"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }

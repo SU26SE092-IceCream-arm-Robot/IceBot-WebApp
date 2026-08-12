@@ -3,6 +3,12 @@ import { describe, expect, it, vi } from "vitest";
 
 import { ProductionWorkspaceView } from "@/components/features/production/production-workspace-view";
 
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/production",
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
+  useSearchParams: () => new URLSearchParams(),
+}));
+
 vi.mock("@/hooks/identity/use-auth", () => ({
   useAuth: () => ({ effectiveAccess: null }),
 }));

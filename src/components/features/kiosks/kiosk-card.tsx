@@ -25,6 +25,7 @@ import type {
 interface KioskCardProps {
   kiosk: KioskFleetItem;
   canDeployConfiguration?: boolean;
+  deploymentReleaseId?: string | null;
 }
 
 function formatTimestamp(value?: string | null): string {
@@ -86,7 +87,15 @@ function getOperationalVariant(
   return "secondary";
 }
 
-export function KioskCard({ kiosk, canDeployConfiguration = false }: KioskCardProps) {
+export function KioskCard({
+  kiosk,
+  canDeployConfiguration = false,
+  deploymentReleaseId,
+}: KioskCardProps) {
+  const deploymentQuery = new URLSearchParams({ tab: "deployments" });
+  if (deploymentReleaseId)
+    deploymentQuery.set("releaseId", deploymentReleaseId);
+
   return (
     <Card className="relative overflow-hidden border-border/80 shadow-none transition-colors hover:bg-secondary/15">
       <span
@@ -153,7 +162,7 @@ export function KioskCard({ kiosk, canDeployConfiguration = false }: KioskCardPr
         <div className="flex flex-col gap-2 border-t border-border pt-3">
           {canDeployConfiguration ? (
             <Link
-              href={`/kiosks/${encodeURIComponent(kiosk.managementId)}?tab=deployments`}
+              href={`/kiosks/${encodeURIComponent(kiosk.managementId)}?${deploymentQuery.toString()}`}
               className={cn(
                 buttonVariants({ variant: "outline", size: "sm" }),
                 "w-full justify-between",

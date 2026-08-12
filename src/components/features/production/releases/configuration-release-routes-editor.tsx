@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowDown, ArrowUp, Copy, Plus, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Copy, Plus, Trash2, X } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import {
@@ -11,14 +11,6 @@ import {
 } from "@/components/features/production/releases/configuration-release-routes";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -35,14 +27,14 @@ import type {
   ProductionProgramBindingResult,
 } from "@/types/production/operations";
 
-interface ConfigurationReleaseRoutesDialogProps {
+interface ConfigurationReleaseRoutesEditorProps {
   release: ConfigurationReleaseResult;
   options: ConfigurationReleaseAuthoringOptions | null;
   productionProgramBindings?: ProductionProgramBindingResult[];
   requireProductionBindings?: boolean;
   isSubmitting: boolean;
   errorMessage?: string | null;
-  onOpenChange: (open: boolean) => void;
+  onClose: () => void;
   onLoadOptions: () => Promise<unknown>;
   onSubmit: (routes: ConfigurationReleaseRouteRequest[]) => Promise<unknown>;
 }
@@ -55,17 +47,17 @@ function moveItem<T>(items: T[], from: number, to: number): T[] {
   return next;
 }
 
-export function ConfigurationReleaseRoutesDialog({
+export function ConfigurationReleaseRoutesEditor({
   release,
   options,
   productionProgramBindings,
   requireProductionBindings = false,
   isSubmitting,
   errorMessage,
-  onOpenChange,
+  onClose,
   onLoadOptions,
   onSubmit,
-}: ConfigurationReleaseRoutesDialogProps) {
+}: ConfigurationReleaseRoutesEditorProps) {
   const [routes, setRoutes] = useState(() =>
     createConfigurationReleaseRouteDrafts(release),
   );
@@ -284,7 +276,7 @@ export function ConfigurationReleaseRoutesDialog({
     ) {
       return;
     }
-    onOpenChange(false);
+    onClose();
   };
 
   const submit = async () => {
@@ -294,21 +286,37 @@ export function ConfigurationReleaseRoutesDialog({
       return;
     }
     const result = await onSubmit(toConfigurationReleaseRouteRequests(routes));
-    if (result) onOpenChange(false);
+    if (result) onClose();
   };
 
   return (
-    <Dialog open onOpenChange={(open) => !open && requestClose()}>
-      <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-5xl">
-        <DialogHeader>
-          <DialogTitle>
+    <section
+      className="space-y-5 rounded-lg border bg-card p-4 sm:p-5"
+      aria-labelledby="configuration-release-editor-title"
+    >
+      <header className="flex flex-col gap-3 border-b pb-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h3
+            id="configuration-release-editor-title"
+            className="font-semibold"
+          >
             Cấu hình món cho phiên bản nháp {release.releaseNumber}
-          </DialogTitle>
-          <DialogDescription>
+          </h3>
+          <p className="mt-1 text-sm text-muted-foreground">
             Chọn cấu hình sản xuất đã liên kết. Recipe, chương trình robot, yêu cầu
             thiết bị và tùy chọn sản xuất sẽ được lấy từ liên kết đó.
-          </DialogDescription>
-        </DialogHeader>
+          </p>
+        </div>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={requestClose}
+          disabled={isSubmitting}
+        >
+          <X className="size-4" />
+          Đóng trình soạn
+        </Button>
+      </header>
 
         {!options ? (
           <div className="space-y-3 rounded-md border border-dashed p-5 text-sm text-muted-foreground">
@@ -1193,7 +1201,7 @@ export function ConfigurationReleaseRoutesDialog({
             {validation || errorMessage}
           </p>
         ) : null}
-        <DialogFooter>
+        <footer className="flex flex-col-reverse gap-2 border-t pt-4 sm:flex-row sm:justify-end">
           <Button
             variant="outline"
             onClick={requestClose}
@@ -1207,8 +1215,7 @@ export function ConfigurationReleaseRoutesDialog({
           >
             {isSubmitting ? "Đang lưu..." : `Lưu ${routes.length} tuyến`}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </footer>
+    </section>
   );
 }

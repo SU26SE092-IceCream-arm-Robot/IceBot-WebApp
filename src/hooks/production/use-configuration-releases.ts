@@ -155,6 +155,9 @@ export function useConfigurationReleases(organizationId: string) {
     },
     [organizationId, queryClient],
   );
+  const cancelEditorLoad = useCallback(() => {
+    detailRequestRef.current += 1;
+  }, []);
 
   const authoringOptions = authoringOptionsQuery.data ?? null;
   const productionProgramBindings = (
@@ -177,9 +180,7 @@ export function useConfigurationReleases(organizationId: string) {
     refreshWarning,
     refresh,
     loadEditor,
-    cancelEditorLoad: () => {
-      detailRequestRef.current += 1;
-    },
+    cancelEditorLoad,
     createRelease: () =>
       runMutation(
         () => createConfigurationRelease(organizationId),

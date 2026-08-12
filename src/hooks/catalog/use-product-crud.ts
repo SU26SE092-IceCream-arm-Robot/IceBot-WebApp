@@ -32,6 +32,7 @@ export type ProductDeleteTarget =
 
 export interface ProductCrudChange {
   productId: string;
+  productCreated?: boolean;
   productDeleted?: boolean;
 }
 
@@ -105,7 +106,10 @@ export function useProductCrud({ organizationId, onChanged }: UseProductCrudOpti
 
       toast.success(`Đã tạo sản phẩm ${createdProduct.displayName || createdProduct.name}.`);
       setProductFormOpen(false);
-      await refreshRecovery.runRefresh({ productId: createdProduct.id });
+      await refreshRecovery.runRefresh({
+        productId: createdProduct.id,
+        productCreated: true,
+      });
       mutationRef.current = false;
       setIsSubmitting(false);
       return true;

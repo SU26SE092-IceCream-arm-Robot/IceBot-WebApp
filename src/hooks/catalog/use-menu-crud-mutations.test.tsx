@@ -131,7 +131,10 @@ describe("Product/Menu CRUD mutation refresh outcomes", () => {
       await result.current.submitProductCreate(productRequest);
     });
 
-    expect(onChanged).toHaveBeenCalledWith({ productId: product.id });
+    expect(onChanged).toHaveBeenCalledWith({
+      productId: product.id,
+      productCreated: true,
+    });
     expect(result.current.refreshWarningMessage).toBeNull();
   });
 

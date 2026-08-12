@@ -1,8 +1,9 @@
-import { CirclePause, CirclePlay, Eye, Layers3, Package2 } from "lucide-react";
+import { AlertTriangle, CheckCircle2, CirclePause, CirclePlay, Eye, Layers3, Package2 } from "lucide-react";
 
 import { getNextMenuStatus } from "@/components/features/catalog/shared/catalog-dialogs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { getProductReadinessIssues } from "@/lib/presenters/product-catalog";
 import {
   Table,
   TableBody,
@@ -258,18 +259,20 @@ export function ProductsTable({
     <Table className="min-w-[1160px] table-fixed">
       <TableHeader>
         <TableRow className="hover:bg-transparent">
-          <TableHead className="w-[24%] px-5">Sản phẩm</TableHead>
-          <TableHead className="w-[13%] text-center">Danh mục</TableHead>
-          <TableHead className="w-[12%] text-center">Khả dụng</TableHead>
-          <TableHead className="w-[11%] text-center">Phạm vi</TableHead>
-          <TableHead className="w-[22%] text-center">Phiên bản</TableHead>
+          <TableHead className="w-[21%] px-5">Sản phẩm</TableHead>
+          <TableHead className="w-[12%] text-center">Danh mục</TableHead>
+          <TableHead className="w-[10%] text-center">Khả dụng</TableHead>
+          <TableHead className="w-[10%] text-center">Phạm vi</TableHead>
+          <TableHead className="w-[18%] text-center">Phiên bản</TableHead>
+          <TableHead className="w-[11%] text-center">Thiết lập</TableHead>
           <TableHead className="w-[10%] text-right">Giá cơ bản</TableHead>
           <TableHead className="w-[8%] px-5 text-center">Thao tác</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
-        {products.map((product) => (
-          <TableRow key={product.id}>
+        {products.map((product) => {
+          const readinessIssues = getProductReadinessIssues(product);
+          return <TableRow key={product.id}>
             <TableCell className="px-5">
               <div className="flex items-start gap-3">
                 <span className="mt-0.5 flex size-9 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
@@ -342,6 +345,15 @@ export function ProductsTable({
                 </div>
               )}
             </TableCell>
+            <TableCell className="text-center">
+              <div className="flex justify-center">
+                {readinessIssues.length === 0 ? (
+                  <Badge className="gap-1 border-0 bg-success/10 text-success"><CheckCircle2 className="size-3" />Hoàn thiện</Badge>
+                ) : (
+                  <Badge className="gap-1 border-0 bg-warning/10 text-warning" title={readinessIssues.map((issue) => issue.message).join("\n")}><AlertTriangle className="size-3" />{readinessIssues.length} việc</Badge>
+                )}
+              </div>
+            </TableCell>
             <TableCell className="text-right">
               <span className="tabular-nums font-medium text-foreground">
                 {formatMoney(product.basePrice, product.currency)}
@@ -382,8 +394,8 @@ export function ProductsTable({
                 ) : null}
               </div>
             </TableCell>
-          </TableRow>
-        ))}
+          </TableRow>;
+        })}
       </TableBody>
     </Table>
   );

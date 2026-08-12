@@ -1,11 +1,12 @@
 "use client";
 
-import { FileStack, Plus, RefreshCw } from "lucide-react";
-import { useState } from "react";
+import { ArrowLeft, FileStack, Plus, RefreshCw, Rocket } from "lucide-react";
+import Link from "next/link";
+import { useEffect, useState } from "react";
 
-import { ConfigurationReleaseRoutesDialog } from "@/components/features/production/releases/configuration-release-routes-dialog";
+import { ConfigurationReleaseRoutesEditor } from "@/components/features/production/releases/configuration-release-routes-editor";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { useConfigurationReleases } from "@/hooks/production/use-configuration-releases";
 import type { ConfigurationReleaseResult } from "@/types/production/operations";
 
@@ -18,18 +19,91 @@ const statusLabels: Record<string, string> = {
 export function ConfigurationReleasesPanel({
   organizationId,
   canManage,
+  canDeploy,
+  selectedReleaseId,
+  onSelectedReleaseChange,
 }: {
   organizationId: string;
   canManage: boolean;
+  canDeploy: boolean;
+  selectedReleaseId?: string | null;
+  onSelectedReleaseChange: (releaseId: string | null) => void;
 }) {
   const state = useConfigurationReleases(organizationId);
+  const { cancelEditorLoad, loadEditor } = state;
   const [editorRelease, setEditorRelease] =
     useState<ConfigurationReleaseResult | null>(null);
+  const visibleEditorRelease =
+    editorRelease?.id === selectedReleaseId ? editorRelease : null;
 
-  const openEditor = async (releaseId: string) => {
-    const detail = await state.loadEditor(releaseId);
-    if (detail) setEditorRelease(detail);
-  };
+  useEffect(() => {
+    if (!selectedReleaseId) return;
+    if (editorRelease?.id === selectedReleaseId) return;
+
+    let cancelled = false;
+    const timeoutId = window.setTimeout(async () => {
+      const detail = await loadEditor(selectedReleaseId);
+      if (!cancelled && detail) setEditorRelease(detail);
+    }, 0);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeoutId);
+      cancelEditorLoad();
+    };
+  }, [
+    editorRelease?.id,
+    selectedReleaseId,
+    cancelEditorLoad,
+    loadEditor,
+  ]);
+
+  if (selectedReleaseId && !visibleEditorRelease) {
+    return (
+      <section className="space-y-4 rounded-lg border bg-card p-5">
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => onSelectedReleaseChange(null)}
+        >
+          <ArrowLeft className="size-4" />
+          Quay lại danh sách phiên bản
+        </Button>
+        {state.errorMessage ? (
+          <p
+            className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive"
+            role="alert"
+          >
+            {state.errorMessage}
+          </p>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            Đang tải trình soạn phiên bản cấu hình...
+          </p>
+        )}
+      </section>
+    );
+  }
+
+  if (visibleEditorRelease) {
+    return (
+      <ConfigurationReleaseRoutesEditor
+        release={visibleEditorRelease}
+        options={state.authoringOptions}
+        productionProgramBindings={state.productionProgramBindings}
+        requireProductionBindings
+        isSubmitting={state.isMutating}
+        errorMessage={state.errorMessage}
+        onClose={() => {
+          setEditorRelease(null);
+          onSelectedReleaseChange(null);
+        }}
+        onLoadOptions={() => state.loadEditor(visibleEditorRelease.id)}
+        onSubmit={(routes) =>
+          state.replaceRoutes(visibleEditorRelease, routes)
+        }
+      />
+    );
+  }
 
   return (
     <section className="rounded-lg border bg-card">
@@ -112,15 +186,15 @@ export function ConfigurationReleasesPanel({
                   {release.releaseChecksum ? "Sẵn sàng triển khai" : "Đang soạn"}
                 </p>
               </div>
-              {canManage ? (
+              {canManage || (canDeploy && release.status === "Published") ? (
                 <div className="flex flex-wrap gap-2">
-                  {release.status === "Draft" ? (
+                  {canManage && release.status === "Draft" ? (
                     <>
                       <Button
                         size="sm"
                         variant="outline"
                         disabled={state.isMutating}
-                        onClick={() => void openEditor(release.id)}
+                        onClick={() => onSelectedReleaseChange(release.id)}
                       >
                         Cấu hình món
                       </Button>
@@ -152,17 +226,34 @@ export function ConfigurationReleasesPanel({
                     </>
                   ) : null}
                   {release.status === "Published" ? (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={state.isMutating}
-                      onClick={() => {
-                        if (window.confirm("Ngừng sử dụng bản phát hành này?"))
-                          void state.retire(release.id);
-                      }}
-                    >
-                      Ngừng sử dụng
-                    </Button>
+                    <>
+                      {canDeploy ? (
+                        <Link
+                          href={`/kiosks?organizationId=${encodeURIComponent(organizationId)}&releaseId=${encodeURIComponent(release.id)}`}
+                          className={buttonVariants({ size: "sm" })}
+                        >
+                          <Rocket className="size-4" />
+                          Triển khai tới kiosk
+                        </Link>
+                      ) : null}
+                      {canManage ? (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={state.isMutating}
+                          onClick={() => {
+                            if (
+                              window.confirm(
+                                "Ngừng sử dụng bản phát hành này?",
+                              )
+                            )
+                              void state.retire(release.id);
+                          }}
+                        >
+                          Ngừng sử dụng
+                        </Button>
+                      ) : null}
+                    </>
                   ) : null}
                 </div>
               ) : null}
@@ -170,25 +261,6 @@ export function ConfigurationReleasesPanel({
           ))}
         </div>
       )}
-
-      {editorRelease ? (
-        <ConfigurationReleaseRoutesDialog
-          release={editorRelease}
-          options={state.authoringOptions}
-          productionProgramBindings={state.productionProgramBindings}
-          requireProductionBindings
-          isSubmitting={state.isMutating}
-          errorMessage={state.errorMessage}
-          onOpenChange={(open) => {
-            if (!open) {
-              state.cancelEditorLoad();
-              setEditorRelease(null);
-            }
-          }}
-          onLoadOptions={() => state.loadEditor(editorRelease.id)}
-          onSubmit={(routes) => state.replaceRoutes(editorRelease, routes)}
-        />
-      ) : null}
     </section>
   );
 }

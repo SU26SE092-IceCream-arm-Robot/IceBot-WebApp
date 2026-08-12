@@ -21,6 +21,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { ProductDeleteTarget } from "@/hooks/catalog/use-product-crud";
+import {
+  getProductTypeLabel,
+  getProductTypeOptions,
+} from "@/lib/presenters/product-catalog";
 import type {
   KioskResult,
   StoreResult,
@@ -68,10 +72,6 @@ function getFulfillmentTypeLabel(value: FulfillmentType): string {
     default:
       return "Đóng gói sẵn";
   }
-}
-
-function getProductTypeLabel(value: string): string {
-  return value.toLowerCase() === "icecream" ? "Kem" : value || "Không xác định";
 }
 
 function getVariantTypeLabel(value: string): string {
@@ -194,6 +194,10 @@ export function ProductFormDialog({
     product?.categoryId ? product.categoryId.toString() : NO_CATEGORY_VALUE,
   );
   const [validationMessage, setValidationMessage] = useState<string | null>(null);
+  const productTypeOptions = useMemo(
+    () => getProductTypeOptions(categories, productType),
+    [categories, productType],
+  );
   const currentCategoryId = product?.categoryId ?? null;
   const selectableCategories = useMemo(() => {
     const activeCategories = categories.filter((category) => category.isActive);
@@ -309,7 +313,7 @@ export function ProductFormDialog({
             <div className="space-y-1.5"><label htmlFor="product-code" className="text-sm font-medium">Mã sản phẩm <span className="text-destructive">*</span></label><Input id="product-code" value={code} disabled={isSubmitting} className="h-10 font-mono uppercase" onChange={(event) => setCode(event.target.value)} /></div>
             <div className="space-y-1.5"><label htmlFor="product-name" className="text-sm font-medium">Tên nội bộ <span className="text-destructive">*</span></label><Input id="product-name" value={name} disabled={isSubmitting} className="h-10" onChange={(event) => setName(event.target.value)} /></div>
             <div className="space-y-1.5"><label htmlFor="product-display" className="text-sm font-medium">Tên hiển thị</label><Input id="product-display" value={displayName} disabled={isSubmitting} className="h-10" onChange={(event) => setDisplayName(event.target.value)} /></div>
-            <div className="space-y-1.5"><label className="text-sm font-medium">Loại sản phẩm</label><Select value={productType} disabled={isSubmitting} onValueChange={(value) => setProductType(value || "IceCream")}><SelectTrigger className="h-10 w-full"><SelectValue>{getProductTypeLabel(productType)}</SelectValue></SelectTrigger><SelectContent>{productType !== "IceCream" ? <SelectItem value={productType}>{getProductTypeLabel(productType)}</SelectItem> : null}<SelectItem value="IceCream">Kem</SelectItem></SelectContent></Select></div>
+            <div className="space-y-1.5"><label className="text-sm font-medium">Loại sản phẩm</label><Select value={productType} disabled={isSubmitting} onValueChange={(value) => setProductType(value || "General")}><SelectTrigger className="h-10 w-full"><SelectValue>{getProductTypeLabel(productType)}</SelectValue></SelectTrigger><SelectContent>{productTypeOptions.map((value) => <SelectItem key={value} value={value}>{getProductTypeLabel(value)}</SelectItem>)}</SelectContent></Select></div>
             <div className="space-y-1.5"><label htmlFor="product-price" className="text-sm font-medium">Giá cơ bản <span className="text-destructive">*</span></label><Input id="product-price" type="number" min="0" step="any" value={basePrice} disabled={isSubmitting} className="h-10" onChange={(event) => setBasePrice(event.target.value)} /></div>
             <div className="space-y-1.5"><label htmlFor="product-currency" className="text-sm font-medium">Tiền tệ</label><Input id="product-currency" value={currency} disabled={isSubmitting} className="h-10 font-mono uppercase" onChange={(event) => setCurrency(event.target.value)} /></div>
             <div className="space-y-1.5"><label htmlFor="product-preparation" className="text-sm font-medium">Thời gian chuẩn bị (giây)</label><Input id="product-preparation" type="number" min="0" step="1" value={preparationTime} disabled={isSubmitting} className="h-10" onChange={(event) => setPreparationTime(event.target.value)} /></div>
@@ -429,7 +433,7 @@ export function VariantFormDialog({
             <div className="space-y-1.5"><label className="text-sm font-medium">Loại phiên bản</label><Select value={variantType} disabled={isSubmitting} onValueChange={(value) => setVariantType(value || "Default")}><SelectTrigger className="h-10 w-full"><SelectValue>{getVariantTypeLabel(variantType)}</SelectValue></SelectTrigger><SelectContent>{variantType !== "Default" ? <SelectItem value={variantType}>{getVariantTypeLabel(variantType)}</SelectItem> : null}<SelectItem value="Default">Mặc định</SelectItem></SelectContent></Select></div>
             <div className="space-y-1.5"><label className="text-sm font-medium">Cách thực hiện</label><Select value={fulfillmentType} disabled={isSubmitting} onValueChange={(value) => { if (["Packaged", "MachineProduced", "Manual"].includes(value ?? "")) setFulfillmentType(value as FulfillmentType); }}><SelectTrigger className="h-10 w-full"><SelectValue>{getFulfillmentTypeLabel(fulfillmentType)}</SelectValue></SelectTrigger><SelectContent><SelectItem value="Packaged">Đóng gói sẵn</SelectItem><SelectItem value="MachineProduced">Sản xuất bằng máy</SelectItem><SelectItem value="Manual">Thủ công</SelectItem></SelectContent></Select></div>
             <div className="space-y-1.5"><label htmlFor="variant-size" className="text-sm font-medium">Mã kích cỡ</label><Input id="variant-size" value={sizeCode} disabled={isSubmitting} className="h-10" onChange={(event) => setSizeCode(event.target.value)} /></div>
-            {fulfillmentType === "MachineProduced" ? <div className="sm:col-span-2 rounded-lg border border-warning/30 bg-warning/5 px-3 py-2.5 text-sm text-warning">Phiên bản sản xuất bằng máy không chứa công thức trực tiếp. Công thức được liên kết qua món trong thực đơn; màn hình này không tạo hoặc giả lập công thức.</div> : null}
+            {fulfillmentType === "MachineProduced" ? <div className="sm:col-span-2 rounded-lg border border-warning/30 bg-warning/5 px-3 py-2.5 text-sm text-warning">Sau khi lưu phiên bản, tạo và phát hành công thức từ chi tiết sản phẩm. Món trong thực đơn sẽ chọn công thức phù hợp khi được cấu hình.</div> : null}
             <div className="space-y-1.5"><label htmlFor="variant-price" className="text-sm font-medium">Giá <span className="text-destructive">*</span></label><Input id="variant-price" type="number" min="0" step="any" value={basePrice} disabled={isSubmitting} className="h-10" onChange={(event) => setBasePrice(event.target.value)} /></div>
             <div className="space-y-1.5"><p className="text-sm font-medium">Tiền tệ</p><p className="flex h-10 items-center font-mono text-sm text-muted-foreground">{product.currency}</p></div>
             <div className="space-y-1.5"><label htmlFor="variant-order" className="text-sm font-medium">Thứ tự hiển thị</label><Input id="variant-order" type="number" step="1" value={displayOrder} disabled={isSubmitting} className="h-10" onChange={(event) => setDisplayOrder(event.target.value)} /></div>

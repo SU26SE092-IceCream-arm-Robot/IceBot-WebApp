@@ -17,7 +17,7 @@ export interface CatalogOrganizationOption {
   code?: string;
 }
 
-export function useCatalogOrganization() {
+export function useCatalogOrganization(requestedOrganizationId?: string | null) {
   const { session, status } = useAuth();
   const [organizations, setOrganizations] = useState<CatalogOrganizationOption[]>([]);
   const [selectedOrganizationId, setSelectedOrganizationId] = useState<string | null>(null);
@@ -62,6 +62,12 @@ export function useCatalogOrganization() {
             }));
           setOrganizations(scopedOptions);
           setSelectedOrganizationId((current) => {
+            if (
+              requestedOrganizationId &&
+              scopedOptions.some((organization) => organization.id === requestedOrganizationId)
+            ) {
+              return requestedOrganizationId;
+            }
             if (current && scopedOptions.some((organization) => organization.id === current)) {
               return current;
             }
@@ -90,6 +96,12 @@ export function useCatalogOrganization() {
         if (signal?.aborted) return;
         setOrganizations(loaded);
         setSelectedOrganizationId((current) => {
+          if (
+            requestedOrganizationId &&
+            loaded.some((organization) => organization.id === requestedOrganizationId)
+          ) {
+            return requestedOrganizationId;
+          }
           if (current && loaded.some((organization) => organization.id === current)) {
             return current;
           }
@@ -109,7 +121,7 @@ export function useCatalogOrganization() {
         if (!signal?.aborted) setIsLoading(false);
       }
     },
-    [isSystemAdmin, scopedCatalogRole, scopedOrganizationIds, status],
+    [isSystemAdmin, requestedOrganizationId, scopedCatalogRole, scopedOrganizationIds, status],
   );
 
   useEffect(() => {

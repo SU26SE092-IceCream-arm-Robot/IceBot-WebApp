@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
 import {
   CircleCheckBig,
   ShoppingBag,
@@ -11,7 +12,7 @@ import {
   SlidersHorizontal,
 } from "lucide-react";
 
-import { CatalogActionDialog, ProductDetailDialog } from "@/components/features/catalog/shared/catalog-dialogs";
+import { CatalogActionDialog } from "@/components/features/catalog/shared/catalog-dialogs";
 import {
   CatalogOrganizationSelector,
   CatalogRefreshWarning,
@@ -24,6 +25,7 @@ import {
   ProductFormDialog,
   VariantFormDialog,
 } from "@/components/features/catalog/products/product-crud-dialogs";
+import { ProductDetailPanel } from "@/components/features/catalog/products/product-detail-panel";
 import { ProductCategoriesCatalogDialog } from "@/components/features/catalog/categories/product-categories-catalog-dialog";
 import { ProductOptionsCatalogDialog } from "@/components/features/catalog/options/product-options-catalog-dialog";
 import { ProductOptionAuthoringDialog } from "@/components/features/catalog/options/product-option-authoring-dialog";
@@ -42,6 +44,11 @@ import { hasPermission, hasScopedPermission } from "@/lib/rbac";
 import type { ProductResult, ProductVariantResult } from "@/types/catalog/menu-management";
 
 export function ProductsManagementView() {
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const requestedOrganizationId = searchParams.get("organizationId");
+  const requestedProductId = searchParams.get("productId");
   const [isProductOptionsOpen, setProductOptionsOpen] = useState(false);
   const [isProductCategoriesOpen, setProductCategoriesOpen] = useState(false);
   const [isOptionAuthoringOpen, setOptionAuthoringOpen] = useState(false);
@@ -57,7 +64,7 @@ export function ProductsManagementView() {
     setSelectedOrganizationId,
     isLoading: isOrganizationLoading,
     errorMessage: organizationError,
-  } = useCatalogOrganization();
+  } = useCatalogOrganization(requestedOrganizationId);
   const {
     searchTerm,
     products,
@@ -83,6 +90,16 @@ export function ProductsManagementView() {
     confirmAction,
   } = useMenuManagement(selectedOrganizationId, { includeMenus: false });
 
+  const replaceQuery = useCallback((changes: Record<string, string | null>) => {
+    const next = new URLSearchParams(searchParams.toString());
+    for (const [key, value] of Object.entries(changes)) {
+      if (value) next.set(key, value);
+      else next.delete(key);
+    }
+    const query = next.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  }, [pathname, router, searchParams]);
+
   const handleProductChanged = useCallback(
     async (change: ProductCrudChange) => {
       await refresh(true);
@@ -90,11 +107,23 @@ export function ProductsManagementView() {
         if (selectedProduct?.id === change.productId) setProductDetailOpen(false);
         return;
       }
+      if (change.productCreated) {
+        replaceQuery({ productId: change.productId });
+        await openProductDetail(change.productId, true);
+        return;
+      }
       if (isProductDetailOpen && selectedProduct?.id === change.productId) {
         await openProductDetail(change.productId, true);
       }
     },
-    [isProductDetailOpen, openProductDetail, refresh, selectedProduct?.id, setProductDetailOpen],
+    [
+      isProductDetailOpen,
+      openProductDetail,
+      refresh,
+      replaceQuery,
+      selectedProduct?.id,
+      setProductDetailOpen,
+    ],
   );
 
   const productCrud = useProductCrud({
@@ -115,9 +144,35 @@ export function ProductsManagementView() {
     open: isProductOptionsOpen,
     organizationId: selectedOrganizationId,
   });
-  const productCategories = useProductCategories(Boolean(selectedOrganizationId));
+  const productCategories = useProductCategories(true);
   const menuScopeOptions = useMenuScopeOptions(selectedOrganizationId);
   const availableProductsOnPage = products.data.filter((product) => product.isAvailable).length;
+
+  const handleOrganizationChange = useCallback((organizationId: string | null) => {
+    setSelectedOrganizationId(organizationId);
+    replaceQuery({ organizationId, productId: null });
+  }, [replaceQuery, setSelectedOrganizationId]);
+
+  const handleOpenProductDetail = useCallback((productId: string) => {
+    replaceQuery({ productId });
+    void openProductDetail(productId);
+  }, [openProductDetail, replaceQuery]);
+
+  const handleCloseProductDetail = useCallback(() => {
+    setProductDetailOpen(false);
+    replaceQuery({ productId: null });
+  }, [replaceQuery, setProductDetailOpen]);
+
+  useEffect(() => {
+    if (selectedOrganizationId && requestedOrganizationId !== selectedOrganizationId) {
+      replaceQuery({ organizationId: selectedOrganizationId });
+    }
+  }, [replaceQuery, requestedOrganizationId, selectedOrganizationId]);
+
+  useEffect(() => {
+    if (!selectedOrganizationId || !requestedProductId || isProductDetailOpen) return;
+    void openProductDetail(requestedProductId);
+  }, [isProductDetailOpen, openProductDetail, requestedProductId, selectedOrganizationId]);
 
   return (
     <div className="space-y-7">
@@ -132,7 +187,7 @@ export function ProductsManagementView() {
           <Button variant="outline" className="h-10" onClick={() => void refresh()} isLoading={products.isLoading}>
             <RefreshCw className="size-4" />Làm mới
           </Button>
-          <Button variant="outline" className="h-10" disabled={!selectedOrganizationId} onClick={() => setProductCategoriesOpen(true)}>
+          <Button variant="outline" className="h-10" onClick={() => setProductCategoriesOpen(true)}>
             <ListTree className="size-4" />Danh mục
           </Button>
           <Button variant="outline" className="h-10" disabled={!selectedOrganizationId} onClick={() => setProductOptionsOpen(true)}>
@@ -169,7 +224,7 @@ export function ProductsManagementView() {
         isLoading={isOrganizationLoading}
         errorMessage={organizationError}
         noun="Sản phẩm"
-        onChange={setSelectedOrganizationId}
+        onChange={handleOrganizationChange}
       />
 
       <section className="grid gap-4 sm:grid-cols-2">
@@ -192,30 +247,31 @@ export function ProductsManagementView() {
         onRetry={refresh}
         onPrevious={previousProductsPage}
         onNext={nextProductsPage}
-        onView={(productId) => void openProductDetail(productId)}
+        onView={handleOpenProductDetail}
         onToggleAvailability={requestProductAvailability}
       />
 
-      <ProductDetailDialog
-        canManage={canManage}
-        categories={productCategories.categories}
-        errorMessage={productDetailError}
-        isLoading={isProductDetailLoading}
-        open={isProductDetailOpen}
-        product={selectedProduct}
-        productActionId={productActionId}
-        variantActionId={variantActionId}
-        onOpenChange={setProductDetailOpen}
-        onToggleProduct={requestProductAvailability}
-        onToggleVariant={requestVariantAvailability}
-        onEditProduct={productCrud.openProductEdit}
-        onDeleteProduct={productCrud.requestProductDelete}
-        onCreateVariant={productCrud.openVariantCreate}
-        onManageOptions={() => setOptionAuthoringOpen(true)}
-        onManageRecipes={(product, variant) => setRecipeTarget({ product, variant })}
-        onEditVariant={productCrud.openVariantEdit}
-        onDeleteVariant={productCrud.requestVariantDelete}
-      />
+      {isProductDetailOpen ? (
+        <ProductDetailPanel
+          canManage={canManage}
+          categories={productCategories.categories}
+          errorMessage={productDetailError}
+          isLoading={isProductDetailLoading}
+          product={selectedProduct}
+          productActionId={productActionId}
+          variantActionId={variantActionId}
+          onClose={handleCloseProductDetail}
+          onToggleProduct={requestProductAvailability}
+          onToggleVariant={requestVariantAvailability}
+          onEditProduct={productCrud.openProductEdit}
+          onDeleteProduct={productCrud.requestProductDelete}
+          onCreateVariant={productCrud.openVariantCreate}
+          onManageOptions={() => setOptionAuthoringOpen(true)}
+          onManageRecipes={(product, variant) => setRecipeTarget({ product, variant })}
+          onEditVariant={productCrud.openVariantEdit}
+          onDeleteVariant={productCrud.requestVariantDelete}
+        />
+      ) : null}
 
       <CatalogActionDialog
         action={pendingAction}

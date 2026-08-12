@@ -60,7 +60,9 @@ function isStatusFilter(value: string | null): value is KioskStatusFilter {
   );
 }
 
-export function useKiosks(): UseKiosksResult {
+export function useKiosks(
+  scope: { organizationId?: string | null } = {},
+): UseKiosksResult {
   const { currentUser, effectiveAccess } = useAuth();
   const [filters, setFilters] = useState<KioskFilters>(INITIAL_FILTERS);
   const [scopedKiosks, setScopedKiosks] = useState<KioskFleetItem[]>([]);
@@ -91,7 +93,13 @@ export function useKiosks(): UseKiosksResult {
           return;
         }
 
-        setScopedKiosks(result.kiosks);
+        setScopedKiosks(
+          scope.organizationId
+            ? result.kiosks.filter(
+                (kiosk) => kiosk.organizationId === scope.organizationId,
+              )
+            : result.kiosks,
+        );
         setMetadataWarning(result.warning);
       } catch (error) {
         if (signal?.aborted) {
@@ -106,7 +114,7 @@ export function useKiosks(): UseKiosksResult {
         }
       }
     },
-    [currentUser, effectiveAccess],
+    [currentUser, effectiveAccess, scope.organizationId],
   );
 
   useEffect(() => {

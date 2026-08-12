@@ -6,19 +6,16 @@ import {
   FileArchive,
   LoaderCircle,
   RefreshCw,
-  Rocket,
   Search,
   XCircle,
 } from "lucide-react";
-import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 
 import { RobotAuthoringBundleUpload } from "@/components/features/production/authoring-imports/robot-authoring-bundle-upload";
 import { ProductionAwareProgramOrderPanel } from "@/components/features/production/programs/production-aware-program-order-panel";
 import { Badge } from "@/components/ui/badge";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -27,10 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useRobotAuthoringImports } from "@/hooks/production/use-robot-authoring-imports";
-import type {
-  RobotAuthoringCompositionPreview,
-  RobotAuthoringImportStatus,
-} from "@/types/production/operations";
+import type { RobotAuthoringImportStatus } from "@/types/production/operations";
 
 interface RobotAuthoringImportsPanelProps {
   organizationId: string;
@@ -39,7 +33,6 @@ interface RobotAuthoringImportsPanelProps {
   canUpload: boolean;
   canManagePrograms: boolean;
   onOpenBindings?: () => void;
-  mode?: "programs" | "bindings";
 }
 
 const STATUS_LABELS: Record<RobotAuthoringImportStatus, string> = {
@@ -91,90 +84,10 @@ function groupIssues<T extends { code: string; message: string }>(issues: T[]) {
   return [...grouped.values()];
 }
 
-function CompositionPreviewDetails({
-  preview,
-}: {
-  preview: RobotAuthoringCompositionPreview;
-}) {
-  return (
-    <div className="space-y-3 rounded-lg border p-4 text-sm">
-      <div>
-        <p className="font-semibold">Đối chiếu metadata do người tải lên khai báo</p>
-        <p className="mt-1 text-xs leading-5 text-muted-foreground">
-          Backend chỉ so sánh metadata với Recipe để hỗ trợ review. Hệ thống
-          không đọc Lua và không chứng minh artifact thực sự tạo đúng nguyên
-          liệu, topping hoặc định lượng.
-        </p>
-      </div>
-      <div className="overflow-x-auto rounded-md border">
-        <table className="w-full min-w-[560px] text-left text-xs">
-          <thead className="bg-muted/50 text-muted-foreground">
-            <tr>
-              <th className="px-3 py-2 font-medium">Yêu cầu</th>
-              <th className="px-3 py-2 font-medium">Trạng thái</th>
-              <th className="px-3 py-2 font-medium">Artifact có khai báo tương ứng</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y">
-            {preview.requirements.map((requirement) => (
-              <tr key={`${requirement.kind}-${requirement.code}`}>
-                <td className="px-3 py-2">
-                  <p className="font-medium text-foreground">
-                    {requirement.ingredientCode ??
-                      requirement.optionCode ??
-                      requirement.code}
-                  </p>
-                  <p className="text-muted-foreground">
-                    {requirement.kind}
-                    {requirement.quantity != null
-                      ? ` · ${requirement.quantity} ${requirement.unit ?? ""}`
-                      : ""}
-                  </p>
-                </td>
-                <td className="px-3 py-2">{requirement.status}</td>
-                <td className="px-3 py-2 font-mono text-muted-foreground">
-                  {requirement.candidateArtifactCodes.join(", ") || "Chưa có"}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <div className="overflow-x-auto rounded-md border">
-        <table className="w-full min-w-[560px] text-left text-xs">
-          <thead className="bg-muted/50 text-muted-foreground">
-            <tr>
-              <th className="px-3 py-2 font-medium">Thứ tự chạy</th>
-              <th className="px-3 py-2 font-medium">Artifact</th>
-              <th className="px-3 py-2 font-medium">Điều kiện tùy chọn</th>
-              <th className="px-3 py-2 font-medium">Effect khai báo</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y">
-            {preview.proposedArtifacts.map((artifact) => (
-              <tr key={artifact.robotArtifactId}>
-                <td className="px-3 py-2 font-mono">{artifact.runOrder}</td>
-                <td className="px-3 py-2 font-mono">{artifact.artifactCode}</td>
-                <td className="px-3 py-2">
-                  {artifact.requiredOptionCode ?? "Luôn chạy"}
-                </td>
-                <td className="px-3 py-2 font-mono text-muted-foreground">
-                  {artifact.effectCodes.join(", ") || "Chưa khai báo"}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
-
 export function RobotAuthoringImportsPanel(
   props: RobotAuthoringImportsPanelProps,
 ) {
   const state = useRobotAuthoringImports(props.organizationId);
-  const [recipeId, setRecipeId] = useState("");
   const selected = state.selectedImport;
   const availableActions = useMemo(
     () =>
@@ -186,52 +99,20 @@ export function RobotAuthoringImportsPanel(
       ),
     [selected?.nextActions, state.workspace?.actions],
   );
-  const recipes = state.authoringOptions?.recipes ?? [];
-  const currentRecipe = recipes.find((recipe) => recipe.id === recipeId);
-  const preview = state.compositionPreview;
   const canAuthorImport = props.canUpload && props.canManagePrograms;
-  const showPrograms = props.mode !== "bindings";
-  const showBindings = props.mode !== "programs";
-  const selectedOptionCodes = selected?.composedOptionCodes ?? [];
   const hasAction = (action: string) => availableActions.has(action);
   const hasMaterializedProgram = Boolean(selected?.materializedRobotProgramId);
-  const hasConfirmedComposition = Boolean(selected?.composedRecipeId);
   const hasPublishedResources = Boolean(selected?.publishedAt);
-  const publishedBeforeComposition =
-    hasPublishedResources && !hasConfirmedComposition;
   const canResumeImport =
     canAuthorImport &&
     !hasMaterializedProgram &&
     (selected?.status === "Uploaded" ||
       selected?.status === "Validated" ||
       selected?.status === "Failed");
-  useEffect(() => {
-    const resolution = state.workspace?.recipeResolution;
-    if (!(
-      !selected?.composedRecipeId &&
-      !recipeId &&
-      resolution?.status === "SingleMatch"
-    ))
-      return;
-
-    const timeoutId = window.setTimeout(() => {
-      setRecipeId(resolution.candidates[0]?.recipeId ?? "");
-    }, 0);
-    return () => window.clearTimeout(timeoutId);
-  }, [recipeId, selected?.composedRecipeId, state.workspace?.recipeResolution]);
-
   if (!props.canRead) return null;
 
   const selectImport = async (importId: string) => {
-    const detail = await state.selectImport(importId);
-    if (!detail) return;
-    setRecipeId(detail.composedRecipeId ?? "");
-    void state.loadAuthoringOptions();
-    if (detail.composedRecipeId)
-      void state.previewComposition(
-        detail.composedRecipeId,
-        detail.composedOptionCodes ?? [],
-      );
+    await state.selectImport(importId);
   };
 
   const upload = async (file: File) => {
@@ -247,7 +128,7 @@ export function RobotAuthoringImportsPanel(
         className="min-w-0 space-y-5"
         aria-label="Workspace cấu hình sản xuất"
       >
-        {showPrograms ? <div className="rounded-lg border bg-card p-4">
+        <div className="rounded-lg border bg-card p-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h2 className="flex items-center gap-2 text-base font-semibold">
@@ -277,7 +158,7 @@ export function RobotAuthoringImportsPanel(
               onUpload={upload}
             />
           </div>
-        </div> : null}
+        </div>
 
         {state.refreshWarning ? (
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-warning/30 bg-warning/5 px-4 py-3 text-sm text-warning">
@@ -573,172 +454,14 @@ export function RobotAuthoringImportsPanel(
                 ) : null}
               </div>
             </div>
-            {showPrograms && selected.materializedRobotProgramId &&
-            !selected.composedRecipeId &&
-            !selected.publishedAt ? (
+            {selected.materializedRobotProgramId && !selected.publishedAt ? (
               <ProductionAwareProgramOrderPanel
                 organizationId={props.organizationId}
                 programId={selected.materializedRobotProgramId}
                 canManage={canAuthorImport}
-                onOrderSaved={() => {
-                  state.clearCompositionPreview();
-                  if (recipeId)
-                    void state.previewComposition(
-                      recipeId,
-                      selectedOptionCodes,
-                    );
-                }}
               />
             ) : null}
-            {showBindings && hasMaterializedProgram && !publishedBeforeComposition ? (
-              <div className="space-y-4 rounded-lg border p-4">
-                <div>
-                  <p className="font-semibold">
-                    Bước 2: Chọn và xác nhận Recipe
-                  </p>
-                  <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                    Chọn Recipe và xem metadata khai báo để có thêm ngữ cảnh,
-                    sau đó xác nhận bằng trách nhiệm của người vận hành. Backend
-                    không chứng minh Lua khớp Recipe.
-                  </p>
-                </div>
-                <div className="space-y-2">
-                  <Label>Recipe</Label>
-                  <Select
-                    value={recipeId}
-                    onValueChange={(value) => setRecipeId(value ?? "")}
-                    disabled={state.isMutating || hasConfirmedComposition}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue>
-                        {currentRecipe
-                          ? `${currentRecipe.productName} / ${currentRecipe.productVariantName} — ${currentRecipe.name} v${currentRecipe.version}`
-                          : "Chọn Recipe"}
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {recipes.map((recipe) => (
-                        <SelectItem key={recipe.id} value={recipe.id}>
-                          {recipe.productName} / {recipe.productVariantName} —{" "}
-                          {recipe.name} v{recipe.version}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                {currentRecipe ? (
-                  <dl className="grid gap-2 rounded-md border bg-muted/20 p-3 text-sm sm:grid-cols-2">
-                    <div>
-                      <dt className="text-xs text-muted-foreground">
-                        Sản phẩm
-                      </dt>
-                      <dd className="font-medium">
-                        {currentRecipe.productName}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-xs text-muted-foreground">
-                        Biến thể
-                      </dt>
-                      <dd className="font-medium">
-                        {currentRecipe.productVariantName}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-xs text-muted-foreground">
-                        Công thức
-                      </dt>
-                      <dd className="font-medium">
-                        {currentRecipe.name} v{currentRecipe.version}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-xs text-muted-foreground">
-                        Chương trình Draft
-                      </dt>
-                      <dd className="font-medium">
-                        {selected.proposedProgramName}
-                      </dd>
-                    </div>
-                  </dl>
-                ) : null}
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={
-                      !recipeId ||
-                      state.isMutating ||
-                      !canAuthorImport ||
-                      hasConfirmedComposition
-                    }
-                    onClick={() =>
-                      void state.previewComposition(
-                        recipeId,
-                        selectedOptionCodes,
-                      )
-                    }
-                  >
-                      Xem đối chiếu khai báo
-                  </Button>
-                  {preview && !hasConfirmedComposition ? (
-                    <Button
-                      size="sm"
-                      disabled={
-                        !preview.canConfirm ||
-                        !recipeId ||
-                        state.isMutating ||
-                        !canAuthorImport
-                      }
-                      onClick={() =>
-                        void state.confirmComposition(
-                          recipeId,
-                          selectedOptionCodes,
-                          preview.previewChecksum,
-                        )
-                      }
-                    >
-                      Xác nhận liên kết Recipe
-                    </Button>
-                  ) : null}
-                </div>
-                {preview ? (
-                  <div
-                    className={`rounded-lg border p-3 text-sm ${preview.canConfirm ? "border-success/30 bg-success/5" : "border-warning/30 bg-warning/5"}`}
-                  >
-                    <p className="font-medium">
-                      {preview.canConfirm
-                          ? "Sẵn sàng để người vận hành xác nhận"
-                          : "Chưa thể xác nhận do tài nguyên hoặc trạng thái không hợp lệ"}
-                    </p>
-                    <p className="mt-1 text-muted-foreground">
-                      {preview.proposedArtifacts.length} artifact đề xuất ·{" "}
-                      {preview.suggestedCapabilityCodes.length} yêu cầu thiết bị lấy từ metadata do người tải lên khai báo.
-                    </p>
-                    {preview.blockers.map((item) => (
-                      <p
-                        key={`${item.code}-${item.message}`}
-                        className="mt-1 text-destructive"
-                      >
-                        {item.message}
-                      </p>
-                    ))}
-                    {preview.warnings.map((item) => (
-                      <p
-                        key={`${item.code}-${item.message}`}
-                        className="mt-1 text-warning"
-                      >
-                        {item.message}
-                      </p>
-                    ))}
-                  </div>
-                ) : null}
-                {preview ? (
-                  <CompositionPreviewDetails preview={preview} />
-                ) : null}
-              </div>
-            ) : null}
-            {showPrograms && hasMaterializedProgram && !hasPublishedResources ? (
+            {hasMaterializedProgram && !hasPublishedResources ? (
               <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-4">
                 <div>
                   <p className="font-semibold">Phát hành Robot Program</p>
@@ -761,32 +484,7 @@ export function RobotAuthoringImportsPanel(
                 ) : null}
               </div>
             ) : null}
-            {showPrograms && selected.linkedConfigurationReleaseId ? (
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-4 text-sm">
-                <div>
-                  <p className="font-semibold">Bản nháp đã liên kết</p>
-                  <p className="mt-1 text-muted-foreground">
-                    Bản nháp được tạo ở backend. Review route, phát hành và điều
-                    kiện triển khai trong ngữ cảnh kiosk.
-                  </p>
-                </div>
-                {selected.kioskId ? (
-                  <Link
-                    className={buttonVariants({ size: "sm" })}
-                    href={`/kiosks/${selected.kioskId}`}
-                  >
-                    <Rocket className="size-4" />
-                    Mở kiosk
-                  </Link>
-                ) : (
-                  <span className="text-muted-foreground">
-                    Import này chưa gắn kiosk.
-                  </span>
-                )}
-              </div>
-            ) : null}
-            {showPrograms && hasPublishedResources &&
-            !selected.linkedConfigurationReleaseId ? (
+            {hasPublishedResources ? (
               <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-4 text-sm">
                 <div>
                   <p className="font-semibold">

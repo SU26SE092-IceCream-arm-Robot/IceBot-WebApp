@@ -7,7 +7,8 @@ import {
   RefreshCw,
   Search,
 } from "lucide-react";
-import { useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect } from "react";
 
 import { RobotAuthoringImportsPanel } from "@/components/features/production/authoring-imports/robot-authoring-imports-panel";
 import { ProductionProgramBindingsPanel } from "@/components/features/production/bindings/production-program-bindings-panel";
@@ -37,6 +38,13 @@ import { hasScopedPermission } from "@/lib/rbac";
 
 function organizationLabel(name: string, code: string) {
   return name ? `${name} — ${code}` : code || "Không xác định";
+}
+
+const PRODUCTION_STAGES = ["programs", "bindings", "releases"] as const;
+type ProductionStage = (typeof PRODUCTION_STAGES)[number];
+
+function isProductionStage(value: string | null): value is ProductionStage {
+  return PRODUCTION_STAGES.some((stage) => stage === value);
 }
 
 function ProductionOrganizationSelector({
@@ -145,9 +153,43 @@ function ProductionOrganizationSelector({
 
 export function ProductionWorkspaceView() {
   const { effectiveAccess } = useAuth();
-  const scope = useProductionOrganizationScope();
-  const [activeStage, setActiveStage] = useState("programs");
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const requestedOrganizationId = searchParams.get("organizationId");
+  const requestedStage = searchParams.get("stage");
+  const activeStage: ProductionStage = isProductionStage(requestedStage)
+    ? requestedStage
+    : "programs";
+  const scope = useProductionOrganizationScope(requestedOrganizationId);
   const selected = scope.selectedOrganization;
+  const updateLocation = useCallback(
+    (
+      values: Partial<{
+        organizationId: string | null;
+        stage: ProductionStage;
+        releaseId: string | null;
+      }>,
+      mode: "push" | "replace" = "push",
+    ) => {
+      const next = new URLSearchParams(searchParams.toString());
+      for (const [key, value] of Object.entries(values)) {
+        if (value) next.set(key, value);
+        else next.delete(key);
+      }
+      const url = `${pathname}?${next.toString()}`;
+      router[mode](url, { scroll: false });
+    },
+    [pathname, router, searchParams],
+  );
+
+  useEffect(() => {
+    if (!selected || requestedOrganizationId === selected.id) return;
+    updateLocation(
+      { organizationId: selected.id, releaseId: null },
+      "replace",
+    );
+  }, [requestedOrganizationId, selected, updateLocation]);
   const organizationScope = selected
     ? { organizationId: selected.id, storeId: null, kioskId: null }
     : null;
@@ -162,6 +204,9 @@ export function ProductionWorkspaceView() {
     : false;
   const canManageReleases = organizationScope
     ? hasScopedPermission(effectiveAccess, "release.publish", organizationScope)
+    : false;
+  const canDeployReleases = organizationScope
+    ? hasScopedPermission(effectiveAccess, "release.deploy", organizationScope)
     : false;
   return (
     <div className="space-y-6">
@@ -242,7 +287,13 @@ export function ProductionWorkspaceView() {
           {canRead ? (
             <Tabs
               value={activeStage}
-              onValueChange={(value) => setActiveStage(value ?? "programs")}
+              onValueChange={(value) => {
+                const stage = isProductionStage(value) ? value : "programs";
+                updateLocation({
+                  stage,
+                  releaseId: stage === "releases" ? searchParams.get("releaseId") : null,
+                });
+              }}
             >
               <TabsList
                 variant="line"
@@ -267,8 +318,9 @@ export function ProductionWorkspaceView() {
                   canRead={canRead}
                   canUpload={canUpload}
                   canManagePrograms={canManagePrograms}
-                  onOpenBindings={() => setActiveStage("bindings")}
-                  mode="programs"
+                  onOpenBindings={() =>
+                    updateLocation({ stage: "bindings", releaseId: null })
+                  }
                 />
               </TabsContent>
               <TabsContent value="bindings" className="space-y-6 pt-4">
@@ -281,6 +333,14 @@ export function ProductionWorkspaceView() {
                 <ConfigurationReleasesPanel
                   organizationId={selected.id}
                   canManage={canManageReleases}
+                  canDeploy={canDeployReleases}
+                  selectedReleaseId={searchParams.get("releaseId")}
+                  onSelectedReleaseChange={(releaseId) =>
+                    updateLocation(
+                      { stage: "releases", releaseId },
+                      "replace",
+                    )
+                  }
                 />
               </TabsContent>
             </Tabs>

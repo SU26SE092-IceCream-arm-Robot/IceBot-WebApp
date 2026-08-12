@@ -25,6 +25,10 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
+  getProductTypeLabel,
+  getProductTypeOptions,
+} from "@/lib/presenters/product-catalog";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -45,15 +49,6 @@ function ProductCategoriesLoading() {
       ))}
     </div>
   );
-}
-
-function getProductTypeLabel(productType: string): string {
-  switch (productType.toLowerCase()) {
-    case "icecream":
-      return "Kem";
-    default:
-      return productType;
-  }
 }
 
 function ProductCategoryCard({
@@ -259,9 +254,7 @@ function ProductCategoryFormDialog({
     if (succeeded) onOpenChange(false);
   };
 
-  const productTypeOptions = Array.from(
-    new Set(["General", "IceCream", form.productType]),
-  ).filter(Boolean);
+  const productTypeOptions = getProductTypeOptions([], form.productType);
 
   return (
     <Dialog open={open} onOpenChange={(next) => !isSubmitting && onOpenChange(next)}>

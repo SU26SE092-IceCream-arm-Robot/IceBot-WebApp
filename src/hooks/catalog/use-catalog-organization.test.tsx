@@ -71,4 +71,33 @@ describe("useCatalogOrganization", () => {
       expect(mocks.listManagementOrganizations).not.toHaveBeenCalled();
     },
   );
+
+  it("restores an authorized organization requested by the page URL", async () => {
+    mocks.useAuth.mockReturnValue({
+      status: "authenticated",
+      session: {
+        account: {
+          roles: [
+            { roleCode: "OrgAdmin", organizationId: "org-1" },
+            { roleCode: "OrgAdmin", organizationId: "org-2" },
+          ],
+        },
+      },
+    });
+    mocks.getRoleScopeOptions.mockResolvedValue({
+      roleCode: "OrgAdmin",
+      allowedScopeTypes: ["Organization"],
+      requiresScope: true,
+      organizations: [
+        { id: "org-1", code: "ORG-1", name: "Organization 1", stores: [] },
+        { id: "org-2", code: "ORG-2", name: "Organization 2", stores: [] },
+      ],
+    });
+
+    const { result } = renderHook(() => useCatalogOrganization("org-2"));
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    expect(result.current.selectedOrganizationId).toBe("org-2");
+  });
 });

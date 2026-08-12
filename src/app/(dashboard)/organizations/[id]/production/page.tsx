@@ -1,10 +1,10 @@
-"use client";
+import { redirect } from "next/navigation";
 
-import { useParams } from "next/navigation";
-
-import { OrganizationProductionWorkspace } from "@/components/features/tenants/organizations/organization-production-workspace";
-
-export default function OrganizationProductionPage() {
-  const params = useParams<{ id: string }>();
-  return <OrganizationProductionWorkspace organizationId={params.id} />;
+export default async function OrganizationProductionPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  redirect(`/production?organizationId=${encodeURIComponent(id)}`);
 }

@@ -14,6 +14,7 @@ import {
   Wrench,
   type LucideIcon,
 } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 
 import { DeviceCatalogDialog } from "@/components/features/kiosks/catalog/device-catalog-dialog";
 import { KioskCreateDialog } from "@/components/features/kiosks/management/kiosk-create-dialog";
@@ -113,6 +114,9 @@ function StatusLegend({
 }
 
 export default function KiosksPage() {
+  const searchParams = useSearchParams();
+  const organizationId = searchParams.get("organizationId");
+  const deploymentReleaseId = searchParams.get("releaseId");
   const [isDeviceCatalogOpen, setIsDeviceCatalogOpen] = useState(false);
   const {
     kiosks,
@@ -129,7 +133,7 @@ export default function KiosksPage() {
     setLocationFilter,
     clearFilters,
     refresh,
-  } = useKiosks();
+  } = useKiosks({ organizationId });
   const createKiosk = useCreateKiosk({ onCreated: refresh });
   const canCreateKiosk = hasPermission(effectiveAccess, "kiosks.manage");
   const canManageDeviceCatalog = hasPermission(
@@ -205,6 +209,13 @@ export default function KiosksPage() {
             <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" />
             <p className="text-xs font-medium text-warning">{metadataWarning}</p>
           </div>
+        </div>
+      ) : null}
+
+      {organizationId ? (
+        <div className="rounded-lg border border-primary/20 bg-primary/5 px-4 py-3 text-sm">
+          Danh sách đang giới hạn trong tổ chức của bản phát hành đã chọn. Chọn
+          một kiosk để tiếp tục triển khai.
         </div>
       ) : null}
 
@@ -358,6 +369,7 @@ export default function KiosksPage() {
               <KioskCard
                 key={kiosk.kioskId}
                 kiosk={kiosk}
+                deploymentReleaseId={deploymentReleaseId}
                 canDeployConfiguration={hasScopedPermission(
                   effectiveAccess,
                   "release.deploy",

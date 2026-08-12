@@ -3,10 +3,10 @@
 import {
   Check,
   Circle,
-  Eye,
-  Factory,
+  Link2,
   ListTree,
-  PackageCheck,
+  Rocket,
+  Send,
   Upload,
 } from "lucide-react";
 import { useState } from "react";
@@ -20,55 +20,32 @@ interface ProductionWorkflowStepperProps {
   currentStep: ProductionWorkflowStep | null;
   completedSteps: ProductionWorkflowStep[];
   organizationName?: string | null;
-  workflow?: "setup" | "authoring";
 }
 
 const STEPS = [
   {
     number: 1 as const,
-    title: "Chọn tổ chức",
-    description: "Xác định phạm vi sở hữu bundle.",
-    icon: Factory,
-  },
-  {
-    number: 2 as const,
-    title: "Nhập gói cấu hình",
-    description: "Tải bundle .zip được xuất từ Fairino.",
+    title: "Robot Programs",
+    description: "Nhập bundle, tạo program, sắp thứ tự và phát hành tài nguyên.",
     icon: Upload,
   },
   {
+    number: 2 as const,
+    title: "Bind Configuration",
+    description: "Xác nhận Recipe sử dụng Robot Program đã phát hành.",
+    icon: Link2,
+  },
+  {
     number: 3 as const,
-    title: "Kiểm tra và liên kết",
-    description: "Review nội dung, Recipe và cấu thành.",
-    icon: Eye,
+    title: "Phát hành cấu hình",
+    description: "Snapshot các liên kết đã chọn thành một phiên bản bất biến.",
+    icon: Send,
   },
   {
     number: 4 as const,
-    title: "Hoàn tất",
-    description: "Tạo bản nháp cấu hình từ dữ liệu đã xác nhận.",
-    icon: PackageCheck,
-  },
-];
-
-const AUTHORING_STEPS = [
-  {
-    number: 1 as const,
-    title: "Nhập và tạo tài nguyên",
-    description: "Tải bundle, kiểm tra và tạo bản nháp artifact/program.",
-    icon: Upload,
-  },
-  {
-    number: 2 as const,
-    title: "Xác nhận cấu thành",
-    description: "Chọn Recipe, kiểm tra artifact và xác nhận liên kết.",
-    icon: Eye,
-  },
-  {
-    number: 3 as const,
-    title: "Phát hành tài nguyên",
-    description:
-      "Phát hành artifact/program sau khi cấu thành đã được xác nhận.",
-    icon: PackageCheck,
+    title: "Triển khai Kiosk",
+    description: "Chuyển sang Kiosk, kiểm tra endpoint và triển khai phiên bản.",
+    icon: Rocket,
   },
 ];
 
@@ -76,7 +53,6 @@ export function ProductionWorkflowStepper({
   currentStep,
   completedSteps,
   organizationName,
-  workflow = "setup",
 }: ProductionWorkflowStepperProps) {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -106,13 +82,9 @@ export function ProductionWorkflowStepper({
             </p>
           </div>
           <ol
-            className={cn(
-              "grid gap-2 sm:grid-cols-2",
-              workflow === "authoring" ? "xl:grid-cols-3" : "xl:grid-cols-4",
-            )}
+            className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4"
           >
-            {(workflow === "authoring" ? AUTHORING_STEPS : STEPS).map(
-              (step) => {
+            {STEPS.map((step) => {
                 const isComplete = completedSteps.includes(step.number);
                 const isCurrent = currentStep === step.number;
                 const Icon = step.icon;
@@ -160,8 +132,7 @@ export function ProductionWorkflowStepper({
                     </div>
                   </li>
                 );
-              },
-            )}
+              })}
           </ol>
         </div>
       ) : null}
