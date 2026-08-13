@@ -38,6 +38,7 @@ import { DevicesTable } from "@/components/features/kiosks/devices/devices-table
 import { ExecutionEndpointsTable } from "@/components/features/kiosks/execution-endpoints/execution-endpoints-table";
 import { OperationLogsPanel } from "@/components/features/kiosks/diagnostics/operation-logs-panel";
 import { ProductionOperationsPanel } from "@/components/features/kiosks/deployments/production-operations-panel";
+import { MenuItemAvailabilityPanel } from "@/components/features/kiosks/menu-item-availability-panel";
 import { useAuth } from "@/hooks/identity/use-auth";
 import type { KioskEvidenceState } from "@/hooks/kiosks/use-kiosk-detail";
 import { useKioskDetail } from "@/hooks/kiosks/use-kiosk-detail";
@@ -666,6 +667,11 @@ export function KioskDetailView({ kioskId }: KioskDetailViewProps) {
   };
   const canManageOperationalState = hasScopedPermission(effectiveAccess, "kiosks.manage", scope);
   const canManageDevices = hasScopedPermission(effectiveAccess, "devices.manage", scope);
+  const canManageMenuAvailability = hasScopedPermission(
+    effectiveAccess,
+    "menu-items.availability.manage",
+    scope,
+  );
   const canDeploy = hasScopedPermission(effectiveAccess, "release.deploy", scope);
   const canRollbackDeployments = hasScopedPermission(effectiveAccess, "release.rollback", scope);
   const canViewDeployments =
@@ -697,11 +703,14 @@ export function KioskDetailView({ kioskId }: KioskDetailViewProps) {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full space-y-6">
         <TabsList
-          className={`grid w-full grid-cols-2 ${canViewDeployments ? "lg:grid-cols-5" : "lg:grid-cols-4"} lg:w-auto lg:inline-flex`}
+          className="grid w-full grid-cols-2 lg:w-auto lg:inline-flex"
         >
           <TabsTrigger value="overview">Tổng quan</TabsTrigger>
           <TabsTrigger value="heartbeats">Kết nối</TabsTrigger>
           <TabsTrigger value="events">Sự kiện</TabsTrigger>
+          {canManageMenuAvailability ? (
+            <TabsTrigger value="availability">Món đang bán</TabsTrigger>
+          ) : null}
           <TabsTrigger value="devices">Vận hành kỹ thuật</TabsTrigger>
           {canViewDeployments ? (
             <TabsTrigger value="deployments">Triển khai</TabsTrigger>
@@ -721,6 +730,14 @@ export function KioskDetailView({ kioskId }: KioskDetailViewProps) {
         <TabsContent value="events">
           <EventsTable state={events} />
         </TabsContent>
+
+        {canManageMenuAvailability ? (
+          <TabsContent value="availability">
+            {activeTab === "availability" ? (
+              <MenuItemAvailabilityPanel kioskId={kiosk.managementId} />
+            ) : null}
+          </TabsContent>
+        ) : null}
 
         <TabsContent value="devices">
           <div className="space-y-4">
