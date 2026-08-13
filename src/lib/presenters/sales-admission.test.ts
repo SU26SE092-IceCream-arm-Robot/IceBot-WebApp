@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { getStoreOpeningState } from "@/lib/presenters/sales-admission";
+import {
+  formatOpeningHoursRange,
+  getStoreOpeningState,
+  isValidOpeningHoursRange,
+} from "@/lib/presenters/sales-admission";
 import type { StoreResult } from "@/types/kiosks/management";
 
 const baseStore: Pick<StoreResult, "openingHours" | "timeZone"> = {
@@ -44,6 +48,27 @@ describe("store opening-hours presentation", () => {
         new Date("2026-07-27T18:00:00Z"),
       ),
     ).toBe("OPEN");
+  });
+
+  it("accepts and labels an overnight opening-hours range", () => {
+    const overnight = {
+      isClosed: false,
+      opensAt: "22:00:00",
+      closesAt: "02:00:00",
+    };
+
+    expect(isValidOpeningHoursRange(overnight)).toBe(true);
+    expect(formatOpeningHoursRange(overnight)).toBe("22:00–02:00 (+1 ngày)");
+  });
+
+  it("rejects equal opening and closing times", () => {
+    expect(
+      isValidOpeningHoursRange({
+        isClosed: false,
+        opensAt: "08:00",
+        closesAt: "08:00",
+      }),
+    ).toBe(false);
   });
 
   it("keeps an empty schedule distinct from a closed Store", () => {

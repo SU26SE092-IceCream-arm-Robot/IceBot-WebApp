@@ -13,6 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { isValidOpeningHoursRange } from "@/lib/presenters/sales-admission";
 import { hasDuplicateStoreName } from "@/lib/tenant-identity";
 import type { StoreResult } from "@/types/kiosks/management";
 import type {
@@ -306,16 +307,14 @@ export function StoreFormDialog({
 
     if (usesOpeningHours) {
       const invalidDay = openingHours.find(
-        (day) =>
-          !day.isClosed &&
-          (!day.opensAt || !day.closesAt || day.opensAt >= day.closesAt),
+        (day) => !isValidOpeningHoursRange(day),
       );
       if (invalidDay) {
         const dayLabel = STORE_DAYS.find(
           (day) => day.value === invalidDay.dayOfWeek,
         )?.label;
         setValidationMessage(
-          `${dayLabel ?? invalidDay.dayOfWeek}: giờ mở cửa phải có đủ thời gian và sớm hơn giờ đóng cửa.`,
+          `${dayLabel ?? invalidDay.dayOfWeek}: cần nhập đủ giờ mở, giờ đóng và hai thời điểm phải khác nhau.`,
         );
         return;
       }
@@ -382,7 +381,7 @@ export function StoreFormDialog({
               <div className="flex flex-col gap-2 rounded-lg border border-border bg-muted/15 p-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p className="text-sm font-medium">Lịch mở cửa</p>
-                  <p className="text-xs text-muted-foreground">Tắt lịch để không giới hạn thời gian bán theo ngày.</p>
+                  <p className="text-xs text-muted-foreground">Tắt lịch để không giới hạn thời gian bán theo ngày. Giờ đóng sớm hơn giờ mở được hiểu là đóng vào ngày hôm sau.</p>
                 </div>
                 <label className="flex items-center gap-2 text-sm font-medium">
                   <input

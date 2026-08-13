@@ -44,7 +44,10 @@ import {
 import { useAuth } from "@/hooks/identity/use-auth";
 import { useTenantMutationRefresh } from "@/hooks/tenants/use-tenant-mutation-refresh";
 import { hasScopedPermission } from "@/lib/rbac";
-import { getStoreOpeningState } from "@/lib/presenters/sales-admission";
+import {
+  formatOpeningHoursRange,
+  getStoreOpeningState,
+} from "@/lib/presenters/sales-admission";
 import {
   getKioskLifecycleLabel,
   getKioskOperationalLabel,
@@ -100,10 +103,9 @@ const STORE_DAY_LABELS: Record<StoreDayOfWeek, string> = {
 function formatOpeningHours(store: StoreResult): string {
   if (store.openingHours.length === 0) return "Không giới hạn theo lịch";
   return store.openingHours
-    .map((day) =>
-      day.isClosed
-        ? `${STORE_DAY_LABELS[day.dayOfWeek]}: Đóng cửa`
-        : `${STORE_DAY_LABELS[day.dayOfWeek]}: ${day.opensAt?.slice(0, 5)}–${day.closesAt?.slice(0, 5)}`,
+    .map(
+      (day) =>
+        `${STORE_DAY_LABELS[day.dayOfWeek]}: ${formatOpeningHoursRange(day)}`,
     )
     .join("; ");
 }

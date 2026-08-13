@@ -3,6 +3,12 @@ import type { StoreDayOfWeek } from "@/types/tenants/management";
 
 export type StoreOpeningState = "OPEN" | "CLOSED" | "UNRESTRICTED" | "UNKNOWN";
 
+interface OpeningHoursRange {
+  isClosed: boolean;
+  opensAt?: string | null;
+  closesAt?: string | null;
+}
+
 const DAY_BY_ENGLISH_NAME: Record<string, StoreDayOfWeek> = {
   Sunday: "Sunday",
   Monday: "Monday",
@@ -29,6 +35,27 @@ function toMinute(value?: string | null): number | null {
   return Number.isInteger(hour) && Number.isInteger(minute)
     ? hour * 60 + minute
     : null;
+}
+
+export function isValidOpeningHoursRange(day: OpeningHoursRange): boolean {
+  if (day.isClosed) return true;
+
+  return Boolean(
+    day.opensAt &&
+      day.closesAt &&
+      day.opensAt.slice(0, 5) !== day.closesAt.slice(0, 5),
+  );
+}
+
+export function formatOpeningHoursRange(day: OpeningHoursRange): string {
+  if (day.isClosed) return "Đóng cửa";
+
+  const opensAt = day.opensAt?.slice(0, 5);
+  const closesAt = day.closesAt?.slice(0, 5);
+  if (!opensAt || !closesAt) return "Chưa cấu hình";
+
+  const nextDay = opensAt > closesAt ? " (+1 ngày)" : "";
+  return `${opensAt}–${closesAt}${nextDay}`;
 }
 
 function localClock(observedAt: Date, timeZone: string) {
