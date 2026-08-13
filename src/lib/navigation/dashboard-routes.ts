@@ -16,6 +16,7 @@ import {
   ReceiptText,
   RefreshCcw,
   ShieldAlert,
+  SlidersHorizontal,
   ShoppingBag,
   Users,
   Wrench,
@@ -56,6 +57,7 @@ export const DASHBOARD_ROUTE_REGISTRY: readonly DashboardRouteDefinition[] = [
   { path: "/organizations", permission: "organizations.view" },
   { path: "/stores", permission: "stores.view" },
   { path: "/kiosks", permission: "kiosks.view" },
+  { path: "/menu-availability", permission: "menu-items.availability.manage" },
   { path: "/inventory", permission: "inventory.view" },
   { path: "/transactions", permission: "orders.view" },
   { path: "/products", permission: "products.manage" },
@@ -89,6 +91,7 @@ export const DASHBOARD_NAVIGATION_GROUPS: ReadonlyArray<{
 export const DASHBOARD_NAVIGATION_ITEMS: readonly DashboardNavigationItem[] = [
   { routePath: "/dashboard", group: "overview", label: "Tổng quan", icon: LayoutDashboard },
   { routePath: "/kiosks", group: "operations", label: "Quản lý Kiosk", icon: Monitor },
+  { routePath: "/menu-availability", group: "operations", label: "Tình trạng bán món", icon: SlidersHorizontal },
   { routePath: "/inventory", group: "operations", label: "Tồn kho", icon: Package },
   { routePath: "/maintenance", group: "operations", label: "Bảo trì", icon: Wrench },
   { routePath: "/alerts", group: "operations", label: "Cảnh báo", icon: Bell },
