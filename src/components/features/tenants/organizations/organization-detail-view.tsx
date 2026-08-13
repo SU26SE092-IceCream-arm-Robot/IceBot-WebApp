@@ -16,6 +16,13 @@ import {
 } from "lucide-react";
 
 import {
+  getOrganizationLifecycleActionLabel,
+  getOrganizationLifecycleActions,
+  OrganizationLifecycleDialog,
+  OrganizationStatusHistory,
+} from "@/components/features/tenants/organizations/organization-lifecycle";
+
+import {
   LifecycleConfirmDialog,
   OrganizationFormDialog,
   StoreFormDialog,
@@ -41,13 +48,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useAuth } from "@/hooks/identity/use-auth";
+import { useOrganizationStatusHistory } from "@/hooks/tenants/use-organization-status-history";
 import { useTenantMutationRefresh } from "@/hooks/tenants/use-tenant-mutation-refresh";
 import { hasScopedPermission } from "@/lib/rbac";
 import {
   getManagementOrganizationById,
   getOrganizationsErrorMessage,
   listAllManagementOrganizations,
-  setManagementOrganizationActive,
+  transitionManagementOrganizationLifecycle,
   updateManagementOrganization,
 } from "@/lib/services/tenants/organizations";
 import { findOrganizationIdentityConflict } from "@/lib/tenant-identity";
@@ -61,6 +69,8 @@ import { cn } from "@/lib/utils";
 import type { StoreResult } from "@/types/kiosks/management";
 import type {
   CreateStoreRequest,
+  OrganizationLifecycleAction,
+  OrganizationLifecycleTransitionRequest,
   OrganizationResult,
   UpdateOrganizationRequest,
 } from "@/types/tenants/management";
@@ -69,9 +79,7 @@ interface OrganizationDetailViewProps {
   organizationId: string;
 }
 
-type LifecycleTarget =
-  | { kind: "organization"; activate: boolean }
-  | { kind: "store"; store: StoreResult; activate: boolean };
+type LifecycleTarget = { kind: "store"; store: StoreResult; activate: boolean };
 
 function DetailField({ label, value }: { label: string; value: string }) {
   return (
@@ -94,10 +102,13 @@ export function OrganizationDetailView({ organizationId }: OrganizationDetailVie
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [organizationFormOpen, setOrganizationFormOpen] = useState(false);
   const [storeFormOpen, setStoreFormOpen] = useState(false);
+  const [organizationLifecycleOpen, setOrganizationLifecycleOpen] = useState(false);
   const [lifecycleTarget, setLifecycleTarget] = useState<LifecycleTarget | null>(null);
 
   const organizationScope = { organizationId, storeId: null, kioskId: null };
-  const canManageOrganization = hasScopedPermission(effectiveAccess, "organizations.manage", organizationScope);
+  const canManageOrganization =
+    effectiveAccess?.isSystemAdmin === true &&
+    hasScopedPermission(effectiveAccess, "organizations.manage", organizationScope);
   const canEditOrganization = hasScopedPermission(effectiveAccess, "organizations.update", organizationScope);
   const canManageStores = hasScopedPermission(effectiveAccess, "stores.manage", organizationScope);
   const canReadAuthoringImports = hasScopedPermission(effectiveAccess, "program.read", organizationScope);
@@ -109,6 +120,10 @@ export function OrganizationDetailView({ organizationId }: OrganizationDetailVie
   const canManageNotifications =
     canViewNotificationDeliveries &&
     hasScopedPermission(effectiveAccess, "notifications.manage", organizationScope);
+  const statusHistory = useOrganizationStatusHistory(
+    organizationId,
+    canManageOrganization,
+  );
 
   const loadData = useCallback(async (
     signal?: AbortSignal,
@@ -225,22 +240,39 @@ export function OrganizationDetailView({ organizationId }: OrganizationDetailVie
     }
   };
 
-  const confirmLifecycle = async () => {
-    if (!organization || !lifecycleTarget) return false;
+  const confirmOrganizationLifecycle = async (
+    action: OrganizationLifecycleAction,
+    request: OrganizationLifecycleTransitionRequest,
+  ) => {
+    if (!organization) return false;
+    return mutationState.runMutation({
+      mutation: () =>
+        transitionManagementOrganizationLifecycle(
+          organization.id,
+          action,
+          request,
+        ),
+      refreshContext: { organizationId },
+      successMessage: `Đã ${getOrganizationLifecycleActionLabel(action)} ${organization.name}.`,
+      getErrorMessage: getOrganizationsErrorMessage,
+      tone: action === "resume" || action === "reactivate" ? "success" : "warning",
+      onMutationSuccess: () => {
+        setOrganizationLifecycleOpen(false);
+        void statusHistory.refresh();
+      },
+    });
+  };
+
+  const confirmStoreLifecycle = async () => {
+    if (!lifecycleTarget) return false;
     const target = lifecycleTarget;
     return mutationState.runMutation({
-      mutation: async () =>
-        target.kind === "organization"
-          ? await setManagementOrganizationActive(organization.id, target.activate)
-          : await setManagementStoreActive(target.store.id, target.activate),
+      mutation: () => setManagementStoreActive(target.store.id, target.activate),
       refreshContext: { organizationId },
       successMessage: `Đã ${target.activate ? "kích hoạt" : "vô hiệu hóa"} ${
-        target.kind === "organization" ? organization.name : target.store.name
+        target.store.name
       }.`,
-      getErrorMessage:
-        target.kind === "store"
-          ? getStoresErrorMessage
-          : getOrganizationsErrorMessage,
+      getErrorMessage: getStoresErrorMessage,
       tone: target.activate ? "success" : "warning",
       onMutationSuccess: () => setLifecycleTarget(null),
     });
@@ -262,10 +294,19 @@ export function OrganizationDetailView({ organizationId }: OrganizationDetailVie
 
       <section className="flex flex-col gap-4 border-b border-border pb-6 lg:flex-row lg:items-end lg:justify-between">
         <div className="space-y-3"><Link href="/organizations" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="size-4" />Tổ chức & cửa hàng</Link><div className="flex flex-wrap items-center gap-3"><h1 className="text-3xl font-semibold tracking-tight">{organization.name}</h1><TenantStatusBadge status={organization.status} /></div><p className="font-mono text-sm text-muted-foreground">{organization.code}</p></div>
-        <div className="flex flex-wrap gap-2">{canReadAuthoringImports ? <Link href={`/production?organizationId=${encodeURIComponent(organization.id)}`} className={buttonVariants({ variant: "outline" })}><Workflow className="size-4" />Cấu hình sản xuất</Link> : null}{canEditOrganization ? <Button variant="outline" onClick={() => { mutationState.clearError(); setOrganizationFormOpen(true); }}><Pencil className="size-4" />Chỉnh sửa</Button> : null}{canManageOrganization ? <Button variant={organization.status === "Active" ? "destructive" : "default"} onClick={() => { mutationState.clearError(); setLifecycleTarget({ kind: "organization", activate: organization.status !== "Active" }); }}>{organization.status === "Active" ? <PowerOff className="size-4" /> : <Power className="size-4" />}{organization.status === "Active" ? "Vô hiệu hóa" : "Kích hoạt"}</Button> : null}<Button variant="outline" isLoading={isLoading} onClick={() => void loadData()}><RefreshCw className="size-4" />Làm mới</Button></div>
+        <div className="flex flex-wrap gap-2">{canReadAuthoringImports ? <Link href={`/production?organizationId=${encodeURIComponent(organization.id)}`} className={buttonVariants({ variant: "outline" })}><Workflow className="size-4" />Cấu hình sản xuất</Link> : null}{canEditOrganization ? <Button variant="outline" onClick={() => { mutationState.clearError(); setOrganizationFormOpen(true); }}><Pencil className="size-4" />Chỉnh sửa</Button> : null}{canManageOrganization && getOrganizationLifecycleActions(organization.status).length > 0 ? <Button variant="outline" onClick={() => { mutationState.clearError(); setOrganizationLifecycleOpen(true); }}><RefreshCw className="size-4" />Trạng thái tổ chức</Button> : null}<Button variant="outline" isLoading={isLoading} onClick={() => void loadData()}><RefreshCw className="size-4" />Làm mới</Button></div>
       </section>
 
       <Card className="rounded-xl border border-border/80 shadow-none"><CardHeader className="border-b border-border px-5 py-4"><div className="flex items-center gap-3"><span className="flex size-10 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary"><Building2 className="size-5" /></span><CardTitle className="text-base font-semibold">Thông tin tổ chức</CardTitle></div></CardHeader><CardContent className="grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-3"><DetailField label="Tên pháp lý" value={organization.legalName || "Chưa có"} /><DetailField label="Mã số thuế" value={organization.taxCode || "Chưa có"} /><DetailField label="Email" value={organization.email || "Chưa có"} /><DetailField label="Số điện thoại" value={organization.phoneNumber || "Chưa có"} /><DetailField label="Địa chỉ" value={organization.address || "Chưa có"} /><DetailField label="Cập nhật" value={formatTenantDate(organization.updatedAt ?? organization.createdAt)} /></CardContent></Card>
+
+      {canManageOrganization ? (
+        <OrganizationStatusHistory
+          history={statusHistory.history}
+          isLoading={statusHistory.isLoading}
+          errorMessage={statusHistory.errorMessage}
+          onRetry={() => void statusHistory.refresh()}
+        />
+      ) : null}
 
       <Card className="gap-0 rounded-xl border border-border/80 bg-card py-0 shadow-none"><CardHeader className="border-b border-border px-5 py-4"><div className="flex items-center justify-between gap-3"><div className="flex items-center gap-3"><span className="flex size-10 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary"><StoreIcon className="size-5" /></span><div><CardTitle className="text-base font-semibold">Cửa hàng trực thuộc</CardTitle><p className="mt-0.5 text-xs text-muted-foreground">{stores.length} cửa hàng</p></div></div>{canManageStores && organization.status === "Active" ? <Button size="sm" onClick={() => { mutationState.clearError(); setStoreFormOpen(true); }}><Plus className="size-4" />Tạo cửa hàng</Button> : null}</div></CardHeader>
         {stores.length === 0 ? <TenantEmptyState title="Chưa có cửa hàng" description="Tổ chức này chưa có cửa hàng trực thuộc." /> : <Table className="min-w-[850px] table-fixed"><TableHeader><TableRow className="hover:bg-transparent"><TableHead className="w-[28%] px-5 text-xs">Cửa hàng</TableHead><TableHead className="w-[24%] text-xs">Địa điểm</TableHead><TableHead className="w-[18%] text-center text-xs">Trạng thái</TableHead><TableHead className="w-[16%] text-center text-xs">Múi giờ</TableHead><TableHead className="w-[14%] px-5 text-center text-xs">Thao tác</TableHead></TableRow></TableHeader><TableBody>{stores.map((store) => <TableRow key={store.id} className="hover:bg-muted/40"><TableCell className="px-5 py-3"><p className="font-medium text-foreground">{store.name}</p><p className="font-mono text-xs text-muted-foreground">{store.code}</p></TableCell><TableCell><p className="truncate text-sm">{store.address || "Chưa có địa chỉ"}</p><p className="text-xs text-muted-foreground">{[store.city, store.province].filter(Boolean).join(", ") || "Chưa có địa phương"}</p></TableCell><TableCell><div className="flex justify-center"><TenantStatusBadge status={store.status} /></div></TableCell><TableCell className="text-center font-mono text-xs text-muted-foreground">{store.timeZone}</TableCell><TableCell className="px-5"><div className="flex justify-center gap-1.5"><Link href={`/stores/${store.id}`} className={cn(buttonVariants({ variant: "ghost", size: "icon-sm" }), "rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground")} title="Xem cửa hàng" aria-label={`Xem cửa hàng ${store.name}`}><Eye className="size-4" /></Link>{canManageStores ? <Button variant="ghost" size="icon-sm" className={cn("rounded-lg", store.status === "Active" ? "text-destructive hover:bg-destructive/10 hover:text-destructive" : "text-success hover:bg-success/10 hover:text-success")} title={store.status === "Active" ? "Vô hiệu hóa" : "Kích hoạt"} aria-label={`${store.status === "Active" ? "Vô hiệu hóa" : "Kích hoạt"} ${store.name}`} onClick={() => { mutationState.clearError(); setLifecycleTarget({ kind: "store", store, activate: store.status !== "Active" }); }}>{store.status === "Active" ? <PowerOff className="size-4" /> : <Power className="size-4" />}</Button> : null}</div></TableCell></TableRow>)}</TableBody></Table>}
@@ -284,7 +325,8 @@ export function OrganizationDetailView({ organizationId }: OrganizationDetailVie
 
       {organizationFormOpen ? <OrganizationFormDialog organization={organization} open isSubmitting={mutationState.isSubmitting} errorMessage={mutationState.errorMessage} onOpenChange={(open) => { if (!mutationState.mutationRef.current) setOrganizationFormOpen(open); }} onCreate={async () => false} onUpdate={submitOrganizationUpdate} onCheckIdentity={checkOrganizationIdentity} /> : null}
       {storeFormOpen ? <StoreFormDialog organizationName={organization.name} store={null} open isSubmitting={mutationState.isSubmitting} errorMessage={mutationState.errorMessage} onOpenChange={(open) => { if (!mutationState.mutationRef.current) setStoreFormOpen(open); }} onCreate={submitStoreCreate} onUpdate={async () => false} existingStores={stores} /> : null}
-      {lifecycleTarget ? <LifecycleConfirmDialog entityLabel={lifecycleTarget.kind === "organization" ? "tổ chức" : "cửa hàng"} entityName={lifecycleTarget.kind === "organization" ? organization.name : lifecycleTarget.store.name} activate={lifecycleTarget.activate} open isSubmitting={mutationState.isSubmitting} errorMessage={mutationState.errorMessage} onOpenChange={(open) => { if (!open && !mutationState.mutationRef.current) setLifecycleTarget(null); }} onConfirm={confirmLifecycle} /> : null}
+      {organizationLifecycleOpen ? <OrganizationLifecycleDialog key={`${organization.id}-${organization.statusRevision}`} organization={organization} open isSubmitting={mutationState.isSubmitting} errorMessage={mutationState.errorMessage} onOpenChange={(open) => { if (!mutationState.mutationRef.current) setOrganizationLifecycleOpen(open); }} onConfirm={confirmOrganizationLifecycle} /> : null}
+      {lifecycleTarget ? <LifecycleConfirmDialog entityLabel="cửa hàng" entityName={lifecycleTarget.store.name} activate={lifecycleTarget.activate} open isSubmitting={mutationState.isSubmitting} errorMessage={mutationState.errorMessage} onOpenChange={(open) => { if (!open && !mutationState.mutationRef.current) setLifecycleTarget(null); }} onConfirm={confirmStoreLifecycle} /> : null}
     </div>
   );
 }

@@ -4,8 +4,11 @@ import axiosClient from "@/lib/axios-client";
 import type { ApiResult } from "@/types";
 import type {
   CreateOrganizationRequest,
+  OrganizationLifecycleAction,
+  OrganizationLifecycleTransitionRequest,
   OrganizationPagedResult,
   OrganizationResult,
+  OrganizationStatusTransitionResult,
   OrganizationsQuery,
   UpdateOrganizationRequest,
 } from "@/types/tenants/management";
@@ -100,18 +103,32 @@ export async function updateManagementOrganization(
   return requireData(response.data, "Không thể cập nhật tổ chức.");
 }
 
-export async function setManagementOrganizationActive(
+export async function transitionManagementOrganizationLifecycle(
   organizationId: string,
-  active: boolean,
+  action: OrganizationLifecycleAction,
+  request: OrganizationLifecycleTransitionRequest,
 ): Promise<OrganizationResult> {
-  const action = active ? "activate" : "disable";
-  const response = await axiosClient.patch<ApiResult<OrganizationResult>>(
+  const response = await axiosClient.post<ApiResult<OrganizationResult>>(
     `/api/v1/management/organizations/${encodeURIComponent(organizationId)}/${action}`,
+    request,
   );
   return requireData(
     response.data,
-    active ? "Không thể kích hoạt tổ chức." : "Không thể vô hiệu hóa tổ chức.",
+    "Không thể thay đổi trạng thái vận hành của tổ chức.",
   );
+}
+
+export async function listManagementOrganizationStatusHistory(
+  organizationId: string,
+  signal?: AbortSignal,
+): Promise<OrganizationStatusTransitionResult[]> {
+  const response = await axiosClient.get<
+    ApiResult<OrganizationStatusTransitionResult[]>
+  >(
+    `/api/v1/management/organizations/${encodeURIComponent(organizationId)}/status-history`,
+    { signal },
+  );
+  return requireData(response.data, "Không thể tải lịch sử trạng thái tổ chức.");
 }
 
 export function getOrganizationsErrorMessage(

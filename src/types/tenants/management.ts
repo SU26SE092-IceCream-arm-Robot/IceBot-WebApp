@@ -35,9 +35,41 @@ export interface OrganizationResult {
   phoneNumber?: string | null;
   address?: string | null;
   status: TenantEntityStatus;
+  statusRevision: number;
+  suspensionReasonCode?: string | null;
+  suspensionReason?: string | null;
+  suspendedAt?: string | null;
+  deactivatedAt?: string | null;
+  reactivatedAt?: string | null;
   metadataJson?: string | null;
   createdAt: string;
   updatedAt?: string | null;
+}
+
+export type OrganizationLifecycleAction =
+  | "suspend"
+  | "resume"
+  | "deactivate"
+  | "reactivate";
+
+export interface OrganizationLifecycleTransitionRequest {
+  reasonCode?: string | null;
+  reason: string;
+  expectedRevision: number;
+  idempotencyKey?: string | null;
+  readinessConfirmed: boolean;
+}
+
+export interface OrganizationStatusTransitionResult {
+  id: string;
+  fromStatus: TenantEntityStatus;
+  toStatus: TenantEntityStatus;
+  reasonCode?: string | null;
+  reason: string;
+  changedByAccountId: string;
+  changedAt: string;
+  organizationStatusRevision: number;
+  readinessConfirmed?: boolean | null;
 }
 
 export interface OrganizationsQuery {

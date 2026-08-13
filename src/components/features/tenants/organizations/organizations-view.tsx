@@ -9,14 +9,18 @@ import {
   Eye,
   Pencil,
   Plus,
-  Power,
-  PowerOff,
   RefreshCw,
   Search,
+  Settings2,
 } from "lucide-react";
 
 import {
-  LifecycleConfirmDialog,
+  getOrganizationLifecycleActionLabel,
+  getOrganizationLifecycleActions,
+  OrganizationLifecycleDialog,
+} from "@/components/features/tenants/organizations/organization-lifecycle";
+
+import {
   OrganizationFormDialog,
 } from "@/components/features/tenants/shared/tenant-management-dialogs";
 import { TenantRefreshWarning } from "@/components/features/tenants/shared/tenant-refresh-warning";
@@ -53,13 +57,15 @@ import {
   getOrganizationsErrorMessage,
   listAllManagementOrganizations,
   listManagementOrganizations,
-  setManagementOrganizationActive,
+  transitionManagementOrganizationLifecycle,
   updateManagementOrganization,
 } from "@/lib/services/tenants/organizations";
 import { findOrganizationIdentityConflict } from "@/lib/tenant-identity";
 import { cn } from "@/lib/utils";
 import type {
   CreateOrganizationRequest,
+  OrganizationLifecycleAction,
+  OrganizationLifecycleTransitionRequest,
   OrganizationResult,
   TenantEntityStatus,
   TenantStatusFilter,
@@ -109,7 +115,6 @@ export function OrganizationsView() {
     useState<OrganizationResult | null>(null);
   const [lifecycleTarget, setLifecycleTarget] = useState<{
     organization: OrganizationResult;
-    activate: boolean;
   } | null>(null);
   const currentListContext = useMemo(
     () => ({ page, search, status }),
@@ -120,7 +125,9 @@ export function OrganizationsView() {
     currentListContextRef.current = currentListContext;
   }, [currentListContext]);
 
-  const canManageOrganizations = hasPermission(effectiveAccess, "organizations.manage");
+  const canManageOrganizations =
+    effectiveAccess?.isSystemAdmin === true &&
+    hasPermission(effectiveAccess, "organizations.manage");
   const canEdit = hasPermission(effectiveAccess, "organizations.update");
 
   const fetchOrganizations = useCallback(async (
@@ -244,20 +251,24 @@ export function OrganizationsView() {
     }
   };
 
-  const confirmLifecycle = async () => {
+  const confirmLifecycle = async (
+    action: OrganizationLifecycleAction,
+    request: OrganizationLifecycleTransitionRequest,
+  ) => {
     if (!lifecycleTarget) return false;
     const target = lifecycleTarget;
     return mutationState.runMutation({
       mutation: () =>
-        setManagementOrganizationActive(
+        transitionManagementOrganizationLifecycle(
           target.organization.id,
-          target.activate,
+          action,
+          request,
         ),
       refreshContext: currentListContext,
       successMessage: (organization) =>
-        `Đã ${target.activate ? "kích hoạt" : "vô hiệu hóa"} ${organization.name}.`,
+        `Đã ${getOrganizationLifecycleActionLabel(action)} ${organization.name}.`,
       getErrorMessage: getOrganizationsErrorMessage,
-      tone: target.activate ? "success" : "warning",
+      tone: action === "resume" || action === "reactivate" ? "success" : "warning",
       onMutationSuccess: () => setLifecycleTarget(null),
     });
   };
@@ -288,13 +299,13 @@ export function OrganizationsView() {
           </div>
         </div></CardHeader>
         {isLoading ? <TenantLoadingState label="Đang tải tổ chức..." /> : errorMessage ? <TenantErrorState message={errorMessage} onRetry={() => void fetchOrganizations(currentListContext)} /> : organizations.length === 0 ? <TenantEmptyState title="Chưa có tổ chức phù hợp" description="Thử thay đổi bộ lọc hoặc tạo tổ chức mới." /> : (
-          <Table className="min-w-[900px] table-fixed"><TableHeader><TableRow className="hover:bg-transparent"><TableHead className="w-[28%] px-4 text-xs">Tổ chức</TableHead><TableHead className="w-[24%] text-xs">Liên hệ</TableHead><TableHead className="w-[16%] text-center text-xs">Trạng thái</TableHead><TableHead className="w-[18%] text-center text-xs">Cập nhật</TableHead><TableHead className="w-[14%] px-4 text-center text-xs">Thao tác</TableHead></TableRow></TableHeader><TableBody>{organizations.map((organization) => <TableRow key={organization.id} className="hover:bg-muted/40"><TableCell className="px-4 py-3"><p className="font-medium text-foreground">{organization.name}</p><p className="font-mono text-xs text-muted-foreground">{organization.code}</p></TableCell><TableCell><p className="truncate text-sm">{organization.email || "Chưa có email"}</p><p className="text-xs text-muted-foreground">{organization.phoneNumber || "Chưa có số điện thoại"}</p></TableCell><TableCell className="text-center"><div className="flex justify-center"><TenantStatusBadge status={organization.status} /></div></TableCell><TableCell className="text-center text-xs tabular-nums text-muted-foreground">{formatTenantDate(organization.updatedAt ?? organization.createdAt)}</TableCell><TableCell className="px-4"><div className="flex justify-center gap-1.5"><Link href={`/organizations/${organization.id}`} className={cn(buttonVariants({ variant: "ghost", size: "icon-sm" }), "rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground")} title="Xem chi tiết" aria-label={`Xem chi tiết ${organization.name}`}><Eye className="size-4" /></Link>{canEdit ? <Button variant="ghost" size="icon-sm" className="rounded-lg text-primary hover:bg-primary/10 hover:text-primary" title="Chỉnh sửa" aria-label={`Chỉnh sửa ${organization.name}`} onClick={() => { setEditingOrganization(organization); mutationState.clearError(); setFormOpen(true); }}><Pencil className="size-4" /></Button> : null}{canManageOrganizations ? <Button variant="ghost" size="icon-sm" className={cn("rounded-lg", organization.status === "Active" ? "text-destructive hover:bg-destructive/10 hover:text-destructive" : "text-success hover:bg-success/10 hover:text-success")} title={organization.status === "Active" ? "Vô hiệu hóa" : "Kích hoạt"} aria-label={`${organization.status === "Active" ? "Vô hiệu hóa" : "Kích hoạt"} ${organization.name}`} onClick={() => { mutationState.clearError(); setLifecycleTarget({ organization, activate: organization.status !== "Active" }); }}>{organization.status === "Active" ? <PowerOff className="size-4" /> : <Power className="size-4" />}</Button> : null}</div></TableCell></TableRow>)}</TableBody></Table>
+          <Table className="min-w-[900px] table-fixed"><TableHeader><TableRow className="hover:bg-transparent"><TableHead className="w-[28%] px-4 text-xs">Tổ chức</TableHead><TableHead className="w-[24%] text-xs">Liên hệ</TableHead><TableHead className="w-[16%] text-center text-xs">Trạng thái</TableHead><TableHead className="w-[18%] text-center text-xs">Cập nhật</TableHead><TableHead className="w-[14%] px-4 text-center text-xs">Thao tác</TableHead></TableRow></TableHeader><TableBody>{organizations.map((organization) => <TableRow key={organization.id} className="hover:bg-muted/40"><TableCell className="px-4 py-3"><p className="font-medium text-foreground">{organization.name}</p><p className="font-mono text-xs text-muted-foreground">{organization.code}</p></TableCell><TableCell><p className="truncate text-sm">{organization.email || "Chưa có email"}</p><p className="text-xs text-muted-foreground">{organization.phoneNumber || "Chưa có số điện thoại"}</p></TableCell><TableCell className="text-center"><div className="flex justify-center"><TenantStatusBadge status={organization.status} /></div></TableCell><TableCell className="text-center text-xs tabular-nums text-muted-foreground">{formatTenantDate(organization.updatedAt ?? organization.createdAt)}</TableCell><TableCell className="px-4"><div className="flex justify-center gap-1.5"><Link href={`/organizations/${organization.id}`} className={cn(buttonVariants({ variant: "ghost", size: "icon-sm" }), "rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground")} title="Xem chi tiết" aria-label={`Xem chi tiết ${organization.name}`}><Eye className="size-4" /></Link>{canEdit ? <Button variant="ghost" size="icon-sm" className="rounded-lg text-primary hover:bg-primary/10 hover:text-primary" title="Chỉnh sửa" aria-label={`Chỉnh sửa ${organization.name}`} onClick={() => { setEditingOrganization(organization); mutationState.clearError(); setFormOpen(true); }}><Pencil className="size-4" /></Button> : null}{canManageOrganizations && getOrganizationLifecycleActions(organization.status).length > 0 ? <Button variant="ghost" size="icon-sm" className="rounded-lg text-warning hover:bg-warning/10 hover:text-warning" title="Thay đổi trạng thái" aria-label={`Thay đổi trạng thái ${organization.name}`} onClick={() => { mutationState.clearError(); setLifecycleTarget({ organization }); }}><Settings2 className="size-4" /></Button> : null}</div></TableCell></TableRow>)}</TableBody></Table>
         )}
         <div className="flex items-center justify-between border-t border-border px-5 py-4 text-sm"><p className="text-muted-foreground">Trang <span className="font-medium tabular-nums text-foreground">{page}</span> / <span className="font-medium tabular-nums text-foreground">{Math.max(totalPages, 1)}</span> · <span className="font-medium tabular-nums text-foreground">{totalCount}</span> tổ chức</p><div className="flex gap-2"><Button variant="outline" size="sm" disabled={page <= 1 || isLoading} onClick={() => setPage((value) => Math.max(1, value - 1))}><ChevronLeft className="size-4" />Trước</Button><Button variant="outline" size="sm" disabled={page >= totalPages || isLoading} onClick={() => setPage((value) => value + 1)}>Sau<ChevronRight className="size-4" /></Button></div></div>
       </Card>
 
       {formOpen ? <OrganizationFormDialog key={editingOrganization?.id ?? "create"} organization={editingOrganization} open={formOpen} isSubmitting={mutationState.isSubmitting} errorMessage={mutationState.errorMessage} onOpenChange={(open) => { if (mutationState.mutationRef.current) return; setFormOpen(open); if (!open) setEditingOrganization(null); }} onCreate={submitCreate} onUpdate={submitUpdate} onCheckIdentity={checkOrganizationIdentity} /> : null}
-      {lifecycleTarget ? <LifecycleConfirmDialog entityLabel="tổ chức" entityName={lifecycleTarget.organization.name} activate={lifecycleTarget.activate} open isSubmitting={mutationState.isSubmitting} errorMessage={mutationState.errorMessage} onOpenChange={(open) => { if (!open && !mutationState.mutationRef.current) setLifecycleTarget(null); }} onConfirm={confirmLifecycle} /> : null}
+      {lifecycleTarget ? <OrganizationLifecycleDialog key={`${lifecycleTarget.organization.id}-${lifecycleTarget.organization.statusRevision}`} organization={lifecycleTarget.organization} open isSubmitting={mutationState.isSubmitting} errorMessage={mutationState.errorMessage} onOpenChange={(open) => { if (!open && !mutationState.mutationRef.current) setLifecycleTarget(null); }} onConfirm={confirmLifecycle} /> : null}
     </div>
   );
 }
