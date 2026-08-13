@@ -38,10 +38,13 @@ export type DashboardRoutePath =
   | "/menus"
   | "/reports"
   | "/users"
+  | "/staff"
   | "/roles"
   | "/maintenance"
   | "/alerts"
   | "/platform/exceptions"
+  | "/platform/lua-templates"
+  | "/platform/organization-sales"
   | "/settings/payment-methods";
 
 export type DashboardPermission =
@@ -76,6 +79,8 @@ export type DashboardPermission =
   | "reports.view"
   | "accounts.read"
   | "accounts.manage"
+  | "workforce.staff.read"
+  | "workforce.staff.manage"
   | "permission-matrix.view"
   | "tenant-tree.view"
   | "maintenance.view"
@@ -85,6 +90,7 @@ export type DashboardPermission =
   | "alerts.manage"
   | "payments.manage"
   | "payment-methods.manage"
+  | "platform.organization-sales.view"
   | "operations.view"
   | "operations.diagnostics"
   | "notifications.view"
@@ -92,6 +98,7 @@ export type DashboardPermission =
   | "artifact.read"
   | "artifact.upload"
   | "artifact-template.read"
+  | "artifact-template.manage"
   | "program.read"
   | "program.manage"
   | "release.read"
@@ -101,7 +108,8 @@ export type DashboardPermission =
   | "deployment.read"
   | "package.read"
   | "package.install"
-  | "package.fork";
+  | "package.fork"
+  | "menu-items.availability.manage";
 
 export interface DashboardUser {
   id: string;
