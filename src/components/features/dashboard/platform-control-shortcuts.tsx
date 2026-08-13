@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import {
+  BarChart3,
   Building2,
   CreditCard,
   ShoppingBag,
@@ -23,9 +24,15 @@ const PLATFORM_SHORTCUTS: Array<{
   description: string;
 }> = [
   {
+    href: "/platform/organization-sales",
+    icon: BarChart3,
+    label: "Doanh thu tổ chức",
+    description: "Số liệu đã tổng hợp theo từng tổ chức",
+  },
+  {
     href: "/organizations",
     icon: Building2,
-    label: "Tổ chức & cửa hàng",
+    label: "Tổ chức",
     description: "Vòng đời tenant và cấu trúc vận hành",
   },
   {

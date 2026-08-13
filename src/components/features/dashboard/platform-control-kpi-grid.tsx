@@ -1,4 +1,4 @@
-import { Building2, CircleCheck, Monitor, Store } from "lucide-react";
+import { Building2, Monitor, Store, WifiOff } from "lucide-react";
 
 import { DashboardKpiCard } from "@/components/features/dashboard/dashboard-kpi-card";
 import type { DashboardMetrics } from "@/types/dashboard/overview";
@@ -17,6 +17,8 @@ export function PlatformControlKpiGrid({
     metrics && visibleRoutes.has("/organizations")
       ? "/organizations"
       : undefined;
+  const storeHref =
+    metrics && visibleRoutes.has("/stores") ? "/stores" : undefined;
   const kioskHref =
     metrics && visibleRoutes.has("/kiosks") ? "/kiosks" : undefined;
 
@@ -42,7 +44,7 @@ export function PlatformControlKpiGrid({
             ? "Cửa hàng thuộc các tổ chức"
             : "Nguồn dữ liệu chưa tải được"
         }
-        href={organizationHref}
+        href={storeHref}
       />
       <DashboardKpiCard
         icon={Monitor}
@@ -56,16 +58,16 @@ export function PlatformControlKpiGrid({
         href={kioskHref}
       />
       <DashboardKpiCard
-        icon={CircleCheck}
-        label="Kiosk đã kích hoạt"
-        value={metrics?.activeKioskCount ?? null}
+        icon={WifiOff}
+        label="Kiosk mất kết nối"
+        value={metrics?.offlineKioskCount ?? null}
         description={
           metrics
-            ? "Kiosk có vòng đời đang hoạt động"
+            ? "Kiosk có trạng thái kết nối không thể truy cập"
             : "Nguồn dữ liệu chưa tải được"
         }
         href={kioskHref}
-        tone="primary"
+        tone={metrics?.offlineKioskCount ? "destructive" : "neutral"}
       />
     </section>
   );

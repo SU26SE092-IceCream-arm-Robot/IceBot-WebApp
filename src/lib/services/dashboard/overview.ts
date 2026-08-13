@@ -7,62 +7,64 @@ import type {
   GraphQLResponse,
 } from "@/types/dashboard/overview";
 
-const DASHBOARD_OVERVIEW_QUERY = `
-  query DashboardOverview($orderTake: Int!) {
-    dashboard {
-      organizationCount
-      storeCount
-      kioskCount
-      activeKioskCount
-      offlineKioskCount
-      maintenanceKioskCount
-      pendingOrderCount
-      paidOrderCount
-      refundRequiredOrderCount
-      lowStockDispenserCount
-      latestDeviceEventCount
+const DASHBOARD_CORE_SELECTION = `
+  dashboard {
+    organizationCount
+    storeCount
+    kioskCount
+    activeKioskCount
+    offlineKioskCount
+    maintenanceKioskCount
+    pendingOrderCount
+    paidOrderCount
+    refundRequiredOrderCount
+    lowStockDispenserCount
+    latestDeviceEventCount
+  }
+  kioskStatusOverview {
+    totalCount
+    byLifecycleStatus {
+      status
+      count
     }
-    kioskStatusOverview {
-      totalCount
-      byLifecycleStatus {
-        status
-        count
-      }
-      byConnectivityStatus {
-        status
-        count
-      }
-      items {
-        kioskId
-        kioskCode
-        kioskName
-        organizationId
-        storeId
-        storeName
-        lifecycleStatus
-        connectivityStatus
-        lastHeartbeatAt
-        lastEventSeverity
-        lastEventAt
-      }
+    byConnectivityStatus {
+      status
+      count
     }
-    inventorySummary {
-      totalDispenserCount
-      lowStockCount
-      emptyCount
-      items {
-        dispenserStateId
-        kioskId
-        kioskCode
-        ingredientName
-        estimatedQuantity
-        capacity
-        unit
-        status
-        updatedAt
-      }
+    items {
+      kioskId
+      kioskCode
+      kioskName
+      organizationId
+      storeId
+      storeName
+      lifecycleStatus
+      connectivityStatus
+      lastHeartbeatAt
+      lastEventSeverity
+      lastEventAt
     }
-    orderOverview(take: $orderTake) {
+  }
+  inventorySummary {
+    totalDispenserCount
+    lowStockCount
+    emptyCount
+    items {
+      dispenserStateId
+      kioskId
+      kioskCode
+      ingredientName
+      estimatedQuantity
+      capacity
+      unit
+      status
+      updatedAt
+    }
+  }
+`;
+
+const ORDER_OVERVIEW_SELECTION = `
+  orderOverview(take: $orderTake) {
       totalCount
       byStatus {
         status
@@ -81,18 +83,27 @@ const DASHBOARD_OVERVIEW_QUERY = `
         customerStatusMessage
         requiresStaffSupport
       }
-    }
+`;
+
+function buildDashboardOverviewQuery(includeOrderOverview: boolean): string {
+  return `
+  query DashboardOverview${includeOrderOverview ? "($orderTake: Int!)" : ""} {
+${DASHBOARD_CORE_SELECTION}
+${includeOrderOverview ? ORDER_OVERVIEW_SELECTION : ""}
   }
 `;
+}
 
 export async function getDashboardOverview(
   signal?: AbortSignal,
+  options: { includeOrderOverview?: boolean } = {},
 ): Promise<DashboardOverviewResult> {
+  const includeOrderOverview = options.includeOrderOverview ?? false;
   const response = await axiosClient.post<GraphQLResponse<DashboardOverviewData>>(
     "/graphql",
     {
-      query: DASHBOARD_OVERVIEW_QUERY,
-      variables: { orderTake: 8 },
+      query: buildDashboardOverviewQuery(includeOrderOverview),
+      variables: includeOrderOverview ? { orderTake: 8 } : {},
     },
     { signal },
   );

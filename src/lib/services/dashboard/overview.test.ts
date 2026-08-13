@@ -90,4 +90,34 @@ describe("dashboard GraphQL partial-root contract", () => {
       "Không thể tải tổng quan.",
     );
   });
+
+  it("does not request order overview when the account lacks orders.view", async () => {
+    vi.mocked(axiosClient.post).mockResolvedValue(
+      graphQlResponse({ data: { dashboard: metrics } }),
+    );
+
+    await getDashboardOverview(undefined, { includeOrderOverview: false });
+
+    const payload = vi.mocked(axiosClient.post).mock.calls[0]?.[1] as {
+      query: string;
+      variables: Record<string, unknown>;
+    };
+    expect(payload.query).not.toContain("orderOverview");
+    expect(payload.variables).toEqual({});
+  });
+
+  it("requests order overview only when explicitly authorized", async () => {
+    vi.mocked(axiosClient.post).mockResolvedValue(
+      graphQlResponse({ data: { dashboard: metrics, orderOverview: null } }),
+    );
+
+    await getDashboardOverview(undefined, { includeOrderOverview: true });
+
+    const payload = vi.mocked(axiosClient.post).mock.calls[0]?.[1] as {
+      query: string;
+      variables: Record<string, unknown>;
+    };
+    expect(payload.query).toContain("orderOverview(take: $orderTake)");
+    expect(payload.variables).toEqual({ orderTake: 8 });
+  });
 });

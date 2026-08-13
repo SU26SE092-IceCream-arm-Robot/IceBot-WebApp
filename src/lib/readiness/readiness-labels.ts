@@ -15,15 +15,15 @@ export const READINESS_GROUP_LABELS: Record<ReadinessCheckGroup, string> = {
 
 export const READINESS_STATUS_LABELS: Record<ReadinessStatus, string> = {
   complete: "Hoàn tất",
-  warning: "Cần hoàn thiện",
-  missing: "Còn thiếu",
+  warning: "Đã có, cần kích hoạt",
+  missing: "Chưa có",
   unknown: "Không thể kiểm tra",
 };
 
 export const READINESS_OVERALL_LABELS: Record<ReadinessOverallStatus, string> = {
   complete: "Đã hoàn tất thiết lập cơ bản",
-  needs_attention: "Cần hoàn thiện",
-  missing_configuration: "Chưa hoàn tất thiết lập",
+  needs_attention: "Có cấu hình cần kích hoạt",
+  missing_configuration: "Thiếu cấu hình bắt buộc",
   unknown: "Không thể xác định",
 };
 

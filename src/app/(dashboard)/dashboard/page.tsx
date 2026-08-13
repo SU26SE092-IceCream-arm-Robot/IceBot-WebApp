@@ -20,10 +20,11 @@ import { PlatformControlShortcuts } from "@/components/features/dashboard/platfo
 import { PlatformInterventionList } from "@/components/features/dashboard/platform-intervention-list";
 import { useDashboardOverview } from "@/hooks/dashboard/use-dashboard-overview";
 import { useAuth } from "@/hooks/identity/use-auth";
-import { getVisibleRoutes } from "@/lib/rbac";
+import { getVisibleRoutes, hasPermission } from "@/lib/rbac";
 
 export default function DashboardPage() {
   const { effectiveAccess } = useAuth();
+  const canViewOrders = hasPermission(effectiveAccess, "orders.view");
   const {
     data,
     warnings,
@@ -32,14 +33,14 @@ export default function DashboardPage() {
     isRefreshing,
     errorMessage,
     refresh,
-  } = useDashboardOverview();
+  } = useDashboardOverview({ includeOrderOverview: canViewOrders });
   const visibleRoutes = new Set(getVisibleRoutes(effectiveAccess));
   const isSystemAdmin = effectiveAccess?.isSystemAdmin ?? false;
   const hasAllRoots = Boolean(
-    data?.dashboard &&
+      data?.dashboard &&
       data.kioskStatusOverview &&
       data.inventorySummary &&
-      data.orderOverview,
+      (!canViewOrders || data.orderOverview),
   );
 
   const isEmpty = hasAllRoots &&
@@ -50,7 +51,7 @@ export default function DashboardPage() {
       : data?.dashboard?.organizationCount === 0 &&
         data?.dashboard?.storeCount === 0 &&
         data?.dashboard?.kioskCount === 0 &&
-        data.orderOverview?.totalCount === 0 &&
+        (!canViewOrders || data.orderOverview?.totalCount === 0) &&
         data.inventorySummary?.totalDispenserCount === 0);
 
   return (
@@ -168,7 +169,7 @@ export default function DashboardPage() {
             ) : (
               <DashboardSectionUnavailable label="Trạng thái kiosk" />
             )}
-            {!isSystemAdmin && data.orderOverview ? (
+            {canViewOrders && data.orderOverview ? (
               <DashboardStatusDistribution
                 title="Phân bố trạng thái đơn hàng"
                 description="Tỷ lệ được tính từ tổng số đơn hàng hiện có."
@@ -177,12 +178,12 @@ export default function DashboardPage() {
                 total={data.orderOverview.totalCount}
                 emptyMessage="Chưa có đơn hàng để phân bố trạng thái."
               />
-            ) : !isSystemAdmin ? (
+            ) : canViewOrders ? (
               <DashboardSectionUnavailable label="Trạng thái đơn hàng" />
             ) : null}
           </section>
 
-          {!isSystemAdmin ? (
+          {canViewOrders ? (
             data.orderOverview ? (
               <DashboardRecentOrders orders={data.orderOverview.recentOrders} />
             ) : (

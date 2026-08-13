@@ -98,13 +98,13 @@ export function ReadinessSummaryCard({ summary }: ReadinessSummaryCardProps) {
 
         <div className="grid gap-3">
           <div className="rounded-lg border border-border bg-background p-3">
-            <p className="text-xs text-muted-foreground">Còn thiếu</p>
+            <p className="text-xs text-muted-foreground">Chưa có cấu hình</p>
             <p className="text-2xl font-semibold text-foreground">
               {summary.missingCount}
             </p>
           </div>
           <div className="rounded-lg border border-border bg-background p-3">
-            <p className="text-xs text-muted-foreground">Cần hoàn thiện</p>
+            <p className="text-xs text-muted-foreground">Đã có, cần kích hoạt</p>
             <p className="text-2xl font-semibold text-foreground">
               {summary.warningCount}
             </p>

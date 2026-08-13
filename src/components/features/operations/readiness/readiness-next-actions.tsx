@@ -23,6 +23,21 @@ const ACTION_COPY: Record<ReadinessCheck["id"], string> = {
   PAYMENT_ACTIVE: "Hoàn tất phương thức thanh toán",
 };
 
+const WARNING_ACTION_COPY: Partial<Record<ReadinessCheck["id"], string>> = {
+  ORG_ACTIVE: "Kích hoạt tổ chức",
+  STORE_ACTIVE: "Kích hoạt cửa hàng",
+  MENU_EXISTS: "Kích hoạt thực đơn",
+  MENU_ITEM_EXISTS: "Kích hoạt món trong thực đơn",
+};
+
+function getActionCopy(check: ReadinessCheck) {
+  if (check.status === "warning") {
+    return WARNING_ACTION_COPY[check.id] ?? ACTION_COPY[check.id];
+  }
+
+  return ACTION_COPY[check.id];
+}
+
 const ACTION_BADGE: Record<
   ReadinessCheck["status"],
   { label: string; className: string }
@@ -36,7 +51,7 @@ const ACTION_BADGE: Record<
     className: "bg-destructive/10 text-destructive",
   },
   warning: {
-    label: "Cần hoàn thiện",
+    label: "Cần kích hoạt",
     className: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
   },
   unknown: {
@@ -74,7 +89,7 @@ export function ReadinessNextActions({ actions }: ReadinessNextActionsProps) {
                 <div className="min-w-0 space-y-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="text-sm font-semibold text-foreground">
-                      {ACTION_COPY[check.id]}
+                      {getActionCopy(check)}
                     </p>
                     <Badge className={ACTION_BADGE[check.status].className}>
                       {ACTION_BADGE[check.status].label}

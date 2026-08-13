@@ -4,7 +4,6 @@ import {
   Boxes,
   CheckCircle2,
   MonitorOff,
-  RotateCcw,
   Wrench,
   type LucideIcon,
 } from "lucide-react";
@@ -59,14 +58,6 @@ export function PlatformInterventionList({
       href: "/kiosks",
       icon: Wrench,
       tone: "warning",
-    },
-    {
-      label: "Đơn cần hoàn tiền",
-      description: "Can thiệp tài chính đang chờ xử lý.",
-      count: metrics?.refundRequiredOrderCount ?? 0,
-      href: "/transactions",
-      icon: RotateCcw,
-      tone: "destructive",
     },
     {
       label: "Bộ phân phối sắp hết",

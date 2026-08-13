@@ -276,7 +276,7 @@ export function OrganizationsView() {
   return (
     <div className="space-y-7">
       <section className="flex flex-col gap-4 border-b border-border pb-6 lg:flex-row lg:items-end lg:justify-between">
-        <div className="max-w-2xl space-y-2"><h1 className="text-3xl font-semibold tracking-tight text-foreground">Tổ chức & cửa hàng</h1><p className="text-sm leading-6 text-muted-foreground">Quản lý cấu trúc tổ chức, cửa hàng và phạm vi vận hành của IceBot.</p></div>
+        <div className="max-w-2xl space-y-2"><h1 className="text-3xl font-semibold tracking-tight text-foreground">Tổ chức</h1><p className="text-sm leading-6 text-muted-foreground">Quản lý cấu trúc tổ chức, cửa hàng và phạm vi vận hành của IceBot.</p></div>
         <div className="flex gap-2">{canManageOrganizations ? <Button onClick={() => { setEditingOrganization(null); mutationState.clearError(); setFormOpen(true); }}><Plus className="size-4" />Tạo tổ chức</Button> : null}<Button variant="outline" isLoading={isLoading} onClick={() => void fetchOrganizations(currentListContext)}><RefreshCw className="size-4" />Làm mới</Button></div>
       </section>
 

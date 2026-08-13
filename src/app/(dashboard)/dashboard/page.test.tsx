@@ -70,7 +70,7 @@ describe("DashboardPage partial data", () => {
   beforeEach(() => {
     authState.isSystemAdmin = false;
     authState.roles = ["Manager"];
-    authState.permissionCodes = ["dashboard.view"];
+    authState.permissionCodes = ["dashboard.view", "orders.view"];
   });
 
   it("keeps usable roots visible and marks unavailable roots independently", () => {
@@ -94,11 +94,10 @@ describe("DashboardPage partial data", () => {
     authState.roles = ["SystemAdmin"];
     authState.permissionCodes = [
       "dashboard.view",
-      "organizations.read",
-      "kiosks.read",
-      "devices.read",
-      "orders.read",
-      "inventory.read",
+      "organizations.view",
+      "kiosks.view",
+      "inventory.view",
+      "platform.organization-sales.view",
     ];
 
     render(<DashboardPage />);
@@ -108,6 +107,7 @@ describe("DashboardPage partial data", () => {
     expect(screen.getAllByText("Kiosk đã kích hoạt").length).toBeGreaterThan(0);
     expect(screen.getByText("Can thiệp cấp nền tảng")).toBeInTheDocument();
     expect(screen.getByText("Quản trị nền tảng")).toBeInTheDocument();
+    expect(screen.getByText("Doanh thu tổ chức")).toBeInTheDocument();
     expect(screen.queryByText("Đơn hàng gần đây chưa tải được")).not.toBeInTheDocument();
     expect(screen.queryByText("Trạng thái đơn hàng chưa tải được")).not.toBeInTheDocument();
   });

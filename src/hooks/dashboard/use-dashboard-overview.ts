@@ -18,7 +18,14 @@ export interface UseDashboardOverviewResult {
   refresh: () => Promise<void>;
 }
 
-export function useDashboardOverview(): UseDashboardOverviewResult {
+interface UseDashboardOverviewOptions {
+  includeOrderOverview?: boolean;
+}
+
+export function useDashboardOverview(
+  options: UseDashboardOverviewOptions = {},
+): UseDashboardOverviewResult {
+  const includeOrderOverview = options.includeOrderOverview ?? false;
   const [data, setData] = useState<DashboardOverviewData | null>(null);
   const [warnings, setWarnings] = useState<string[]>([]);
   const [lastUpdatedAt, setLastUpdatedAt] = useState<Date | null>(null);
@@ -31,7 +38,7 @@ export function useDashboardOverview(): UseDashboardOverviewResult {
     setIsRefreshing(true);
 
     try {
-      const result = await getDashboardOverview(signal);
+      const result = await getDashboardOverview(signal, { includeOrderOverview });
       if (signal?.aborted) {
         return;
       }
@@ -53,7 +60,7 @@ export function useDashboardOverview(): UseDashboardOverviewResult {
         setIsRefreshing(false);
       }
     }
-  }, []);
+  }, [includeOrderOverview]);
 
   useEffect(() => {
     const controller = new AbortController();
