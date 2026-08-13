@@ -34,12 +34,13 @@ const REASONS: Array<{ value: MenuItemOperationalAvailabilityReasonCode; label: 
   { value: "Other", label: "Lý do khác" },
 ];
 
-export function MenuItemAvailabilityPanel({ kioskId }: { kioskId: string }) {
+export function MenuItemAvailabilityPanel({ kioskId, kioskName }: { kioskId: string; kioskName?: string }) {
   const availability = useMenuItemAvailability(kioskId, true);
   const [pendingItem, setPendingItem] = useState<KioskMenuItemAvailabilityResult | null>(null);
   const [reasonCode, setReasonCode] = useState<MenuItemOperationalAvailabilityReasonCode>("ManualPause");
   const [reason, setReason] = useState("");
   const isPausing = pendingItem?.state === "Available";
+  const selectedReasonLabel = REASONS.find((option) => option.value === reasonCode)?.label;
 
   async function confirmChange() {
     if (!pendingItem) return;
@@ -66,7 +67,9 @@ export function MenuItemAvailabilityPanel({ kioskId }: { kioskId: string }) {
                 <Utensils className="size-5" />
               </span>
               <div>
-                <CardTitle className="text-base">Món đang bán tại kiosk</CardTitle>
+                <CardTitle className="text-base">
+                  {kioskName ? `Món tại ${kioskName}` : "Món đang bán tại kiosk"}
+                </CardTitle>
                 <p className="mt-1 text-sm text-muted-foreground">
                   Tạm dừng hoặc mở bán lại một món mà không thay đổi thực đơn dùng chung.
                 </p>
@@ -104,8 +107,12 @@ export function MenuItemAvailabilityPanel({ kioskId }: { kioskId: string }) {
               ))}
             </div>
           ) : availability.items.length === 0 ? (
-            <div className="p-10 text-center text-sm text-muted-foreground">
-              Kiosk chưa có món đang hiệu lực trong thực đơn.
+            <div className="space-y-2 p-10 text-center">
+              <Utensils className="mx-auto size-8 text-muted-foreground" />
+              <p className="font-medium">Chưa có món đang mở bán tại kiosk</p>
+              <p className="text-sm text-muted-foreground">
+                Hãy kiểm tra thực đơn đã được kích hoạt, còn hiệu lực và được áp dụng đúng cho cửa hàng hoặc kiosk này.
+              </p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -175,7 +182,9 @@ export function MenuItemAvailabilityPanel({ kioskId }: { kioskId: string }) {
               <div className="space-y-2">
                 <Label>Lý do</Label>
                 <Select value={reasonCode} onValueChange={(value) => setReasonCode(value as MenuItemOperationalAvailabilityReasonCode)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Chọn lý do">{selectedReasonLabel}</SelectValue>
+                  </SelectTrigger>
                   <SelectContent>
                     {REASONS.map((option) => <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>)}
                   </SelectContent>

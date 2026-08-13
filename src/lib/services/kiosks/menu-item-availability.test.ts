@@ -1,8 +1,13 @@
 import type { AxiosResponse } from "axios";
+import axios from "axios";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import axiosClient from "@/lib/axios-client";
-import { listKioskMenuItemAvailability, setKioskMenuItemAvailability } from "@/lib/services/kiosks/menu-item-availability";
+import {
+  getMenuItemAvailabilityErrorMessage,
+  listKioskMenuItemAvailability,
+  setKioskMenuItemAvailability,
+} from "@/lib/services/kiosks/menu-item-availability";
 import type { ApiResult } from "@/types";
 import type { KioskMenuItemAvailabilityResult } from "@/types/kiosks/menu-item-availability";
 
@@ -39,5 +44,19 @@ describe("kiosk menu-item availability contracts", () => {
   it("surfaces backend conflicts instead of reporting success", async () => {
     vi.mocked(axiosClient.put).mockResolvedValue(response({ succeeded: false, statusCode: 409, message: "Availability changed by another operator." }));
     await expect(setKioskMenuItemAvailability("kiosk-1", "item-1", { state: "Paused", reasonCode: "Other", expectedRevision: 1 })).rejects.toThrow("Availability changed by another operator.");
+  });
+
+  it("presents concurrency conflicts in Vietnamese", () => {
+    const error = new axios.AxiosError(
+      "Conflict",
+      "ERR_BAD_RESPONSE",
+      undefined,
+      undefined,
+      { status: 409, data: {}, statusText: "Conflict", headers: {}, config: { headers: {} } },
+    );
+
+    expect(getMenuItemAvailabilityErrorMessage(error)).toBe(
+      "Trạng thái món vừa được người khác cập nhật. Hãy tải lại và thử lại.",
+    );
   });
 });

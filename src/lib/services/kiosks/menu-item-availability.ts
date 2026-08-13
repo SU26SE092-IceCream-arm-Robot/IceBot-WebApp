@@ -49,6 +49,12 @@ export function getMenuItemAvailabilityErrorMessage(
     if (error.response?.status === 403) {
       return "Bạn không có quyền thay đổi trạng thái bán tại kiosk này.";
     }
+    if (error.response?.status === 404) {
+      return "Không tìm thấy kiosk hoặc món trong phạm vi được cấp quyền.";
+    }
+    if (error.response?.status === 409) {
+      return "Trạng thái món vừa được người khác cập nhật. Hãy tải lại và thử lại.";
+    }
     return getApiResultMessage(error.response?.data, fallbackMessage);
   }
   return error instanceof Error ? error.message : fallbackMessage;
