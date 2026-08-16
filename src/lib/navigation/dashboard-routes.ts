@@ -91,7 +91,7 @@ export const DASHBOARD_NAVIGATION_GROUPS: ReadonlyArray<{
 export const DASHBOARD_NAVIGATION_ITEMS: readonly DashboardNavigationItem[] = [
   { routePath: "/dashboard", group: "overview", label: "Tổng quan", icon: LayoutDashboard },
   { routePath: "/kiosks", group: "operations", label: "Quản lý Kiosk", icon: Monitor },
-  { routePath: "/menu-availability", group: "operations", label: "Tình trạng bán món", icon: SlidersHorizontal },
+  { routePath: "/menu-availability", group: "operations", label: "Đơn hàng", icon: SlidersHorizontal },
   { routePath: "/inventory", group: "operations", label: "Tồn kho", icon: Package },
   { routePath: "/maintenance", group: "operations", label: "Bảo trì", icon: Wrench },
   { routePath: "/alerts", group: "operations", label: "Cảnh báo", icon: Bell },

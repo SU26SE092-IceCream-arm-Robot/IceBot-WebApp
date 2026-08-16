@@ -1,5 +1,6 @@
 import axios from "axios";
 
+import { getApiResultMessage } from "@/lib/api/result";
 import {
   API_BASE_URL,
   normalizeApiRequestPath,
@@ -47,7 +48,11 @@ function requireData<T>(result: ApiResult<T>): T {
 
 export function getAuthErrorMessage(error: unknown): string {
   if (axios.isAxiosError<ApiResult<unknown>>(error)) {
-    return error.response?.data?.message || "Không thể xác thực tài khoản.";
+    const message = getApiResultMessage(error.response?.data, "Không thể xác thực tài khoản.");
+    if (message.toLowerCase().includes("invalid credential") || error.response?.status === 401) {
+      return "Tên đăng nhập hoặc mật khẩu không chính xác.";
+    }
+    return message;
   }
 
   return error instanceof Error ? error.message : "Không thể xác thực tài khoản.";

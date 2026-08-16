@@ -19,7 +19,7 @@ export default function MenuAvailabilityPage() {
     <div className="space-y-6">
       <section className="flex flex-col gap-3 border-b border-border pb-6 sm:flex-row sm:items-end sm:justify-between">
         <div className="space-y-1.5">
-          <h1 className="text-3xl font-semibold tracking-tight">Tình trạng bán món</h1>
+          <h1 className="text-3xl font-semibold tracking-tight">Đơn hàng</h1>
           <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
             Tạm ngừng hoặc mở bán lại từng món tại kiosk mà không thay đổi thực đơn dùng chung.
           </p>
