@@ -608,8 +608,9 @@ function EventsTable({
 
 export function KioskDetailView({ kioskId }: KioskDetailViewProps) {
   const searchParams = useSearchParams();
+  const requestedTab = searchParams?.get("tab");
   const initialTab =
-    searchParams?.get("tab") === "deployments" ? "deployments" : "overview";
+    requestedTab === "deployments" || requestedTab === "devices" ? "devices" : "overview";
   const { effectiveAccess } = useAuth();
   const [operationalStateOpen, setOperationalStateOpen] = useState(false);
   const [activeTab, setActiveTab] = useState(initialTab);
@@ -711,10 +712,7 @@ export function KioskDetailView({ kioskId }: KioskDetailViewProps) {
           {canManageMenuAvailability ? (
             <TabsTrigger value="availability">Món đang bán</TabsTrigger>
           ) : null}
-          <TabsTrigger value="devices">Vận hành kỹ thuật</TabsTrigger>
-          {canViewDeployments ? (
-            <TabsTrigger value="deployments">Triển khai</TabsTrigger>
-          ) : null}
+          <TabsTrigger value="devices">Thiết bị &amp; Edge</TabsTrigger>
         </TabsList>
         <TabsContent value="overview" className="space-y-6">
           <div className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
@@ -740,19 +738,30 @@ export function KioskDetailView({ kioskId }: KioskDetailViewProps) {
         ) : null}
 
         <TabsContent value="devices">
-          <div className="space-y-4">
+          <div className="space-y-6">
             <div className="rounded-lg border border-warning/30 bg-warning/5 px-4 py-3 text-sm text-warning">
               Khu vực này chỉ hiển thị thông tin kỹ thuật đã giới hạn và bằng chứng từ điểm thực thi. Thông tin kết nối bí mật và lệnh trực tiếp không được hiển thị.
             </div>
-            <DevicesTable kioskId={kioskId} canManage={canManageDevices} />
-            <ExecutionEndpointsTable kioskId={kioskId} canManage={canManageDevices} />
-            <OperationLogsPanel kioskId={kioskId} />
-          </div>
-        </TabsContent>
 
-        {canViewDeployments ? (
-          <TabsContent value="deployments">
-            {activeTab === "deployments" ? (
+            <section className="space-y-3" aria-labelledby="kiosk-devices-heading">
+              <div>
+                <h2 id="kiosk-devices-heading" className="text-base font-semibold">Thiết bị tại kiosk</h2>
+                <p className="text-sm text-muted-foreground">
+                  Quản lý máy, hopper và cảm biến được gắn với kiosk này.
+                </p>
+              </div>
+              <DevicesTable kioskId={kioskId} canManage={canManageDevices} />
+            </section>
+
+            <section className="space-y-3" aria-labelledby="edge-execution-heading">
+              <div>
+                <h2 id="edge-execution-heading" className="text-base font-semibold">Điểm thực thi Edge</h2>
+                <p className="text-sm text-muted-foreground">
+                  Theo dõi identity, readiness, hardware report và triển khai cấu hình tới Edge của kiosk.
+                </p>
+              </div>
+              <ExecutionEndpointsTable kioskId={kioskId} canManage={canManageDevices} />
+              {canViewDeployments ? (
               <ProductionOperationsPanel
                 organizationId={kiosk.organizationId}
                 kioskId={kiosk.managementId}
@@ -760,9 +769,11 @@ export function KioskDetailView({ kioskId }: KioskDetailViewProps) {
                 canDeploy={canDeploy}
                 canRollback={canRollbackDeployments}
               />
-            ) : null}
-          </TabsContent>
-        ) : null}
+              ) : null}
+              <OperationLogsPanel kioskId={kioskId} />
+            </section>
+          </div>
+        </TabsContent>
       </Tabs>
 
       {operationalStateOpen ? (
