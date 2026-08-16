@@ -7,16 +7,11 @@ import {
   createExecutionEndpoint,
   getExecutionEndpointsErrorMessage,
   listExecutionEndpointsByKiosk,
-  rotateExecutionEndpointCredential,
-  provisionExecutionEndpoint,
-  replaceExecutionEndpointRobotTargets,
   setExecutionEndpointLifecycle,
 } from "@/lib/services/kiosks/execution-endpoints";
 import type {
   CreateExecutionEndpointRequest,
   ExecutionEndpointResult,
-  ProvisionExecutionEndpointRequest,
-  ReplaceExecutionEndpointRobotTargetsRequest,
 } from "@/types/kiosks/execution-endpoints";
 
 export function useExecutionEndpoints(kioskId: string) {
@@ -111,51 +106,6 @@ export function useExecutionEndpoints(kioskId: string) {
     [kioskId, runMutation],
   );
 
-  const replaceRobotTargets = useCallback(
-    (endpointId: string, request: ReplaceExecutionEndpointRobotTargetsRequest) =>
-      runMutation(
-        () => replaceExecutionEndpointRobotTargets(kioskId, endpointId, request),
-        "Đã cập nhật đích robot được hỗ trợ.",
-      ),
-    [kioskId, runMutation],
-  );
-
-  const provisionEndpoint = useCallback(
-    (endpointId: string, request: ProvisionExecutionEndpointRequest) =>
-      runMutation(
-        () => provisionExecutionEndpoint(kioskId, endpointId, request),
-        "Đã cấu hình và kích hoạt điểm thực thi.",
-      ),
-    [kioskId, runMutation],
-  );
-
-  const rotateCredential = useCallback(async (
-    endpointId: string,
-    request: Omit<ProvisionExecutionEndpointRequest, "profileIdentity">,
-  ) => {
-    if (mutationInFlightRef.current) return null;
-    mutationInFlightRef.current = true;
-    setIsMutating(true);
-    setMutationErrorMessage(null);
-    try {
-      const result = await rotateExecutionEndpointCredential(kioskId, endpointId, request);
-      await load();
-      toast.success("Đã thay thông tin xác thực công khai của điểm thực thi.");
-      return result;
-    } catch (error) {
-      const message = getExecutionEndpointsErrorMessage(
-        error,
-        "Không thể thay thông tin xác thực công khai của điểm thực thi.",
-      );
-      setMutationErrorMessage(message);
-      toast.error(message);
-      return null;
-    } finally {
-      mutationInFlightRef.current = false;
-      setIsMutating(false);
-    }
-  }, [kioskId, load]);
-
   return {
     items,
     isLoading,
@@ -164,9 +114,6 @@ export function useExecutionEndpoints(kioskId: string) {
     isMutating,
     createEndpoint,
     setLifecycle,
-    replaceRobotTargets,
-    provisionEndpoint,
-    rotateCredential,
     clearMutationError: () => setMutationErrorMessage(null),
     refresh: () => load(),
   };

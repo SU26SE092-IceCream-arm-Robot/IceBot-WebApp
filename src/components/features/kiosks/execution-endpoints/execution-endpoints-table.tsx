@@ -9,9 +9,14 @@ import {
 } from "@/components/features/kiosks/devices/device-management-dialogs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -24,86 +29,38 @@ import {
 import { useExecutionEndpoints } from "@/hooks/kiosks/use-execution-endpoints";
 import type { ExecutionEndpointResult } from "@/types/kiosks/execution-endpoints";
 
-function EndpointProvisionDialog({
+function EndpointConnectionDialog({
   endpoint,
-  isSubmitting,
-  errorMessage,
   onOpenChange,
-  onReplaceTargets,
-  onProvision,
 }: {
   endpoint: ExecutionEndpointResult;
-  isSubmitting: boolean;
-  errorMessage?: string | null;
   onOpenChange: (open: boolean) => void;
-  onReplaceTargets: (request: { targets: Array<{ runtimeTargetCode: string; machineModelCode: string; deviceId?: string | null }> }) => Promise<unknown>;
-  onProvision: (request: { profileIdentity: string; clientCertificateSha256Fingerprint?: string | null; ecdsaPublicKeyPem?: string | null }) => Promise<unknown>;
 }) {
-  const target = endpoint.supportedRobotTargets[0];
-  const [runtimeTargetCode, setRuntimeTargetCode] = useState(target?.runtimeTargetCode ?? "");
-  const [machineModelCode, setMachineModelCode] = useState(target?.machineModelCode ?? "");
-  const [deviceId, setDeviceId] = useState(target?.deviceId ?? "");
-  const [profileIdentity, setProfileIdentity] = useState("");
-  const [credential, setCredential] = useState("");
-  const [validation, setValidation] = useState<string | null>(null);
-  const credentialLabel = endpoint.authenticationMode === "MutualTls"
-    ? "Dấu vân tay chứng chỉ SHA-256"
-    : "Khóa công khai ECDSA (PEM)";
-
-  const provision = async () => {
-    if (!runtimeTargetCode.trim() || !machineModelCode.trim() || !profileIdentity.trim() || !credential.trim()) {
-      setValidation("Đích chạy, mẫu máy, định danh hồ sơ và thông tin xác thực công khai là bắt buộc.");
-      return;
-    }
-    const targetsUpdated = await onReplaceTargets({
-      targets: [
-        { runtimeTargetCode: runtimeTargetCode.trim(), machineModelCode: machineModelCode.trim(), deviceId: deviceId.trim() || null },
-        ...endpoint.supportedRobotTargets.slice(1).map((item) => ({
-          runtimeTargetCode: item.runtimeTargetCode,
-          machineModelCode: item.machineModelCode,
-          deviceId: item.deviceId ?? null,
-        })),
-      ],
-    });
-    if (!targetsUpdated) return;
-    const provisioned = await onProvision(endpoint.authenticationMode === "MutualTls"
-      ? { profileIdentity: profileIdentity.trim(), clientCertificateSha256Fingerprint: credential.trim() }
-      : { profileIdentity: profileIdentity.trim(), ecdsaPublicKeyPem: credential.trim() });
-    if (provisioned) onOpenChange(false);
-  };
-
-  return <Dialog open onOpenChange={onOpenChange}><DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl"><DialogHeader><DialogTitle>Cấu hình {endpoint.endpointCode}</DialogTitle><DialogDescription>Thiết lập đích robot trước, sau đó gắn định danh và thông tin xác thực công khai. Mật khẩu, thông tin MQTT và khóa bí mật không được nhập hoặc hiển thị ở đây.</DialogDescription></DialogHeader><div className="space-y-4"><div className="grid gap-4 sm:grid-cols-2"><div className="space-y-1.5"><Label htmlFor="endpoint-runtime-target">Đích chạy</Label><Input id="endpoint-runtime-target" maxLength={100} value={runtimeTargetCode} onChange={(event) => setRuntimeTargetCode(event.target.value)} disabled={isSubmitting} /></div><div className="space-y-1.5"><Label htmlFor="endpoint-machine-model">Mẫu máy</Label><Input id="endpoint-machine-model" maxLength={100} value={machineModelCode} onChange={(event) => setMachineModelCode(event.target.value)} disabled={isSubmitting} /></div></div><div className="space-y-1.5"><Label htmlFor="endpoint-device-id">Thiết bị (tùy chọn)</Label><Input id="endpoint-device-id" value={deviceId} onChange={(event) => setDeviceId(event.target.value)} disabled={isSubmitting} /></div><div className="space-y-1.5"><Label htmlFor="endpoint-profile-identity">Định danh hồ sơ</Label><Input id="endpoint-profile-identity" value={profileIdentity} onChange={(event) => setProfileIdentity(event.target.value)} disabled={isSubmitting} /></div><div className="space-y-1.5"><Label htmlFor="endpoint-credential">{credentialLabel}</Label>{endpoint.authenticationMode === "MutualTls" ? <Input id="endpoint-credential" value={credential} onChange={(event) => setCredential(event.target.value)} disabled={isSubmitting} /> : <textarea id="endpoint-credential" className="min-h-28 w-full rounded-md border border-input bg-transparent px-3 py-2 font-mono text-xs shadow-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50" value={credential} onChange={(event) => setCredential(event.target.value)} disabled={isSubmitting} />}</div></div>{validation || errorMessage ? <p className="text-sm text-destructive" role="alert">{validation || errorMessage}</p> : null}<DialogFooter><Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>Hủy</Button><Button onClick={() => void provision()} disabled={isSubmitting}>Cấu hình và kích hoạt</Button></DialogFooter></DialogContent></Dialog>;
-}
-
-function EndpointCredentialRotationDialog({
-  endpoint,
-  isSubmitting,
-  errorMessage,
-  onOpenChange,
-  onSubmit,
-}: {
-  endpoint: ExecutionEndpointResult;
-  isSubmitting: boolean;
-  errorMessage?: string | null;
-  onOpenChange: (open: boolean) => void;
-  onSubmit: (request: { clientCertificateSha256Fingerprint?: string | null; ecdsaPublicKeyPem?: string | null }) => Promise<unknown>;
-}) {
-  const [credential, setCredential] = useState("");
-  const [validation, setValidation] = useState<string | null>(null);
-  const label = endpoint.authenticationMode === "MutualTls"
-    ? "Dấu vân tay chứng chỉ SHA-256"
-    : "Khóa công khai ECDSA (PEM)";
-  const submit = async () => {
-    if (!credential.trim()) {
-      setValidation("Thông tin xác thực công khai mới là bắt buộc.");
-      return;
-    }
-    const result = await onSubmit(endpoint.authenticationMode === "MutualTls"
-      ? { clientCertificateSha256Fingerprint: credential.trim() }
-      : { ecdsaPublicKeyPem: credential.trim() });
-    if (result) onOpenChange(false);
-  };
-  return <Dialog open onOpenChange={onOpenChange}><DialogContent className="sm:max-w-xl"><DialogHeader><DialogTitle>Thay thông tin xác thực {endpoint.endpointCode}</DialogTitle><DialogDescription>Chỉ gửi dấu vân tay chứng chỉ hoặc khóa công khai mới. Khóa bí mật, mật khẩu và thông tin MQTT không đi qua thao tác này.</DialogDescription></DialogHeader><div className="space-y-1.5"><Label htmlFor="endpoint-rotated-credential">{label}</Label>{endpoint.authenticationMode === "MutualTls" ? <Input id="endpoint-rotated-credential" value={credential} onChange={(event) => setCredential(event.target.value)} disabled={isSubmitting} /> : <textarea id="endpoint-rotated-credential" className="min-h-28 w-full rounded-md border border-input bg-transparent px-3 py-2 font-mono text-xs shadow-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50" value={credential} onChange={(event) => setCredential(event.target.value)} disabled={isSubmitting} />}</div>{validation || errorMessage ? <p className="text-sm text-destructive" role="alert">{validation || errorMessage}</p> : null}<DialogFooter><Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>Hủy</Button><Button onClick={() => void submit()} disabled={isSubmitting}>Thay thông tin xác thực</Button></DialogFooter></DialogContent></Dialog>;
+  return (
+    <Dialog open onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Kết nối {endpoint.endpointCode}</DialogTitle>
+          <DialogDescription>
+            Thực hiện trên máy Edge. Chứng chỉ mTLS và thông tin phần cứng được IOT tự tạo, giữ tại máy Edge và báo về Backend.
+          </DialogDescription>
+        </DialogHeader>
+        <ol className="list-decimal space-y-3 pl-5 text-sm">
+          <li>Mở <span className="font-medium">InitIceBot.exe</span> trên máy Edge và đăng nhập tài khoản của tổ chức.</li>
+          <li>Chọn <span className="font-medium">Cấu hình → Khởi tạo Edge mới</span>.</li>
+          <li>Nhập mã kiosk <code className="rounded bg-muted px-1.5 py-0.5">{endpoint.kioskCode}</code>.</li>
+          <li>Nhập NetBird setup key. IOT tự nhận endpoint này, tạo chứng chỉ và gửi heartbeat.</li>
+        </ol>
+        <div className="rounded-md border bg-muted/40 p-3 text-sm">
+          <p className="font-medium">Điểm thực thi sẽ được dùng</p>
+          <p className="mt-1 font-mono text-xs text-muted-foreground">{endpoint.endpointCode}</p>
+        </div>
+        <DialogFooter>
+          <Button onClick={() => onOpenChange(false)}>Đã hiểu</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
 }
 
 function formatTimestamp(value?: string | null) {
@@ -135,8 +92,7 @@ export function ExecutionEndpointsTable({ kioskId, canManage }: { kioskId: strin
     endpoint: ExecutionEndpointResult;
     action: "disable" | "reactivate" | "retire";
   } | null>(null);
-  const [provisionEndpoint, setProvisionEndpoint] = useState<ExecutionEndpointResult | null>(null);
-  const [rotateCredentialEndpoint, setRotateCredentialEndpoint] = useState<ExecutionEndpointResult | null>(null);
+  const [connectionEndpoint, setConnectionEndpoint] = useState<ExecutionEndpointResult | null>(null);
   const management = useExecutionEndpoints(kioskId);
   const { items, isLoading, errorMessage, refresh } = management;
 
@@ -150,7 +106,7 @@ export function ExecutionEndpointsTable({ kioskId, canManage }: { kioskId: strin
               Điểm thực thi
             </CardTitle>
             <p className="text-xs text-muted-foreground">
-              Chỉ hiển thị trạng thái và bằng chứng sẵn sàng; không hiển thị thông tin xác thực.
+              Hiển thị trạng thái và bằng chứng sẵn sàng do Edge báo về; không hiển thị thông tin xác thực.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -164,21 +120,15 @@ export function ExecutionEndpointsTable({ kioskId, canManage }: { kioskId: strin
       </CardHeader>
       <CardContent className="p-0">
         {isLoading ? (
-          <p className="px-6 py-12 text-center text-sm text-muted-foreground">
-            Đang tải điểm thực thi...
-          </p>
+          <p className="px-6 py-12 text-center text-sm text-muted-foreground">Đang tải điểm thực thi...</p>
         ) : errorMessage ? (
           <div className="flex flex-col items-center gap-3 px-6 py-12 text-center">
             <AlertTriangle className="size-6 text-destructive" />
             <p className="text-sm text-destructive">{errorMessage}</p>
-            <Button variant="outline" size="sm" onClick={() => void refresh()}>
-              Thử lại
-            </Button>
+            <Button variant="outline" size="sm" onClick={() => void refresh()}>Thử lại</Button>
           </div>
         ) : items.length === 0 ? (
-          <p className="px-6 py-12 text-center text-sm text-muted-foreground">
-            Kiosk chưa có điểm thực thi.
-          </p>
+          <p className="px-6 py-12 text-center text-sm text-muted-foreground">Kiosk chưa có điểm thực thi.</p>
         ) : (
           <div className="overflow-x-auto">
             <Table className="min-w-[920px]">
@@ -197,33 +147,20 @@ export function ExecutionEndpointsTable({ kioskId, canManage }: { kioskId: strin
               <TableBody>
                 {items.map((item) => (
                   <TableRow key={item.id}>
-                    <TableCell className="pl-5 font-mono text-xs font-medium">
-                      {item.endpointCode}
-                    </TableCell>
+                    <TableCell className="pl-5 font-mono text-xs font-medium">{item.endpointCode}</TableCell>
                     <TableCell className="text-center">{item.executionProfile}</TableCell>
-                    <TableCell className="text-center">
-                      <Badge variant="outline">{getEndpointStatusLabel(item.status)}</Badge>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      {item.readiness?.readiness ?? "Chưa có"}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      {item.readiness?.activity ?? "Chưa có"}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      {item.readiness?.safety ?? "Chưa có"}
-                    </TableCell>
-                    <TableCell className="pr-5 text-right text-xs text-muted-foreground">
-                      {formatTimestamp(item.readiness?.executorReportedAt)}
-                    </TableCell>
+                    <TableCell className="text-center"><Badge variant="outline">{getEndpointStatusLabel(item.status)}</Badge></TableCell>
+                    <TableCell className="text-center">{item.readiness?.readiness ?? "Chưa có"}</TableCell>
+                    <TableCell className="text-center">{item.readiness?.activity ?? "Chưa có"}</TableCell>
+                    <TableCell className="text-center">{item.readiness?.safety ?? "Chưa có"}</TableCell>
+                    <TableCell className="pr-5 text-right text-xs text-muted-foreground">{formatTimestamp(item.readiness?.executorReportedAt)}</TableCell>
                     {canManage ? (
                       <TableCell className="pr-5">
                         <div className="flex justify-end gap-1">
                           {item.status === "Active" ? <Button size="sm" variant="outline" disabled={management.isMutating} onClick={() => { management.clearMutationError(); setLifecycleAction({ endpoint: item, action: "disable" }); }}>Vô hiệu hóa</Button> : null}
                           {item.status === "Disabled" ? <Button size="sm" variant="outline" disabled={management.isMutating} onClick={() => { management.clearMutationError(); setLifecycleAction({ endpoint: item, action: "reactivate" }); }}>Kích hoạt lại</Button> : null}
                           {item.status === "Provisioning" || item.status === "Disabled" ? <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" disabled={management.isMutating} onClick={() => { management.clearMutationError(); setLifecycleAction({ endpoint: item, action: "retire" }); }}>Ngừng sử dụng</Button> : null}
-                          {item.status === "Provisioning" ? <Button size="sm" variant="outline" disabled={management.isMutating} onClick={() => { management.clearMutationError(); setProvisionEndpoint(item); }}>Cấu hình</Button> : null}
-                          {item.status === "Active" || item.status === "Disabled" ? <Button size="sm" variant="outline" disabled={management.isMutating} onClick={() => { management.clearMutationError(); setRotateCredentialEndpoint(item); }}>Thay thông tin xác thực</Button> : null}
+                          {item.status === "Provisioning" ? <Button size="sm" variant="outline" onClick={() => setConnectionEndpoint(item)}>Kết nối Edge</Button> : null}
                         </div>
                       </TableCell>
                     ) : null}
@@ -254,8 +191,7 @@ export function ExecutionEndpointsTable({ kioskId, canManage }: { kioskId: strin
           onSubmit={() => management.setLifecycle(lifecycleAction.endpoint.id, lifecycleAction.action)}
         />
       ) : null}
-      {provisionEndpoint ? <EndpointProvisionDialog endpoint={provisionEndpoint} isSubmitting={management.isMutating} errorMessage={management.mutationErrorMessage} onOpenChange={(open) => { if (!open && !management.isMutating) setProvisionEndpoint(null); }} onReplaceTargets={(request) => management.replaceRobotTargets(provisionEndpoint.id, request)} onProvision={(request) => management.provisionEndpoint(provisionEndpoint.id, request)} /> : null}
-      {rotateCredentialEndpoint ? <EndpointCredentialRotationDialog endpoint={rotateCredentialEndpoint} isSubmitting={management.isMutating} errorMessage={management.mutationErrorMessage} onOpenChange={(open) => { if (!open && !management.isMutating) setRotateCredentialEndpoint(null); }} onSubmit={(request) => management.rotateCredential(rotateCredentialEndpoint.id, request)} /> : null}
+      {connectionEndpoint ? <EndpointConnectionDialog endpoint={connectionEndpoint} onOpenChange={(open) => { if (!open) setConnectionEndpoint(null); }} /> : null}
     </Card>
   );
 }
