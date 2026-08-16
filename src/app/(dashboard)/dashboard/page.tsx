@@ -20,11 +20,11 @@ import { PlatformControlShortcuts } from "@/components/features/dashboard/platfo
 import { PlatformInterventionList } from "@/components/features/dashboard/platform-intervention-list";
 import { useDashboardOverview } from "@/hooks/dashboard/use-dashboard-overview";
 import { useAuth } from "@/hooks/identity/use-auth";
-import { getVisibleRoutes, hasPermission } from "@/lib/rbac";
+import { canAccessRoute, getVisibleRoutes } from "@/lib/rbac";
 
 export default function DashboardPage() {
   const { effectiveAccess } = useAuth();
-  const canViewOrders = hasPermission(effectiveAccess, "orders.view");
+  const canViewOrders = canAccessRoute(effectiveAccess, "/transactions");
   const {
     data,
     warnings,

@@ -70,6 +70,39 @@ describe("permission-code access", () => {
     expect(getVisibleRoutes(access)).toContain("/products");
     expect(getVisibleRoutes(access)).not.toContain("/users");
   });
+
+  it("forbids SystemAdmin from accessing organization-specific routes (products, menus, inventory, transactions, menu-availability)", () => {
+    const systemAdminAccess: EffectiveAccessResult = {
+      ...accessFor([
+        "products.manage",
+        "menus.manage",
+        "inventory.view",
+        "orders.view",
+        "menu-items.availability.manage",
+        "organizations.view",
+        "platform.organization-sales.view",
+      ]),
+      isSystemAdmin: true,
+      roles: ["SystemAdmin"],
+    };
+
+    expect(canAccessRoute(systemAdminAccess, "/products")).toBe(false);
+    expect(canAccessRoute(systemAdminAccess, "/menus")).toBe(false);
+    expect(canAccessRoute(systemAdminAccess, "/inventory")).toBe(false);
+    expect(canAccessRoute(systemAdminAccess, "/transactions")).toBe(false);
+    expect(canAccessRoute(systemAdminAccess, "/menu-availability")).toBe(false);
+    expect(canAccessRoute(systemAdminAccess, "/organizations")).toBe(true);
+    expect(canAccessRoute(systemAdminAccess, "/platform/organization-sales")).toBe(true);
+
+    const visible = getVisibleRoutes(systemAdminAccess);
+    expect(visible).not.toContain("/products");
+    expect(visible).not.toContain("/menus");
+    expect(visible).not.toContain("/inventory");
+    expect(visible).not.toContain("/transactions");
+    expect(visible).not.toContain("/menu-availability");
+    expect(visible).toContain("/organizations");
+    expect(visible).toContain("/platform/organization-sales");
+  });
 });
 
 describe("permission-scope access", () => {

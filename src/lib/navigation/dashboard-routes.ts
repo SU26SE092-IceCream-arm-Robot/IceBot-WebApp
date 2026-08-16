@@ -83,7 +83,8 @@ export const DASHBOARD_NAVIGATION_GROUPS: ReadonlyArray<{
   { key: "operations", label: "Vận hành" },
   { key: "commerce", label: "Kinh doanh" },
   { key: "catalog", label: "Danh mục" },
-  { key: "production", label: "Sản xuất" },
+  // Temporarily hidden from sidebar: uncomment line below to re-enable 'Sản xuất' group
+  // { key: "production", label: "Sản xuất" },
   { key: "organization", label: "Tổ chức" },
   { key: "platform", label: "Nền tảng" },
 ];

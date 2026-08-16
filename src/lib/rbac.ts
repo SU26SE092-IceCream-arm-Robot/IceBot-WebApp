@@ -100,10 +100,29 @@ export function hasPermission(
 
 export const hasEffectivePermission = hasPermission;
 
+// Organization-specific operational routes forbidden for SystemAdmin:
+// SystemAdmin is a platform-level role and does not manage organization orders, products, menus, or inventory.
+const FORBIDDEN_SYSTEM_ADMIN_ROUTES: ReadonlySet<DashboardRoutePath> = new Set([
+  "/transactions",
+  "/menu-availability",
+  "/inventory",
+  "/products",
+  "/menus",
+  "/menu",
+]);
+
 export function canAccessRoute(
   access: EffectiveAccessResult | null,
   routePath: DashboardRoutePath,
 ): boolean {
+  if (!access) {
+    return false;
+  }
+
+  if (access.isSystemAdmin && FORBIDDEN_SYSTEM_ADMIN_ROUTES.has(routePath)) {
+    return false;
+  }
+
   return hasPermission(access, ROUTE_PERMISSIONS[routePath]);
 }
 
