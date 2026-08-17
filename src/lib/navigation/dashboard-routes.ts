@@ -71,6 +71,7 @@ export const DASHBOARD_ROUTE_REGISTRY: readonly DashboardRouteDefinition[] = [
   { path: "/platform/exceptions", permission: "sync-dead-letters.manage" },
   { path: "/platform/lua-templates", permission: "artifact-template.read" },
   { path: "/platform/organization-sales", permission: "platform.organization-sales.view" },
+  { path: "/platform/service-registrations", permission: "service-registrations.read" },
   { path: "/settings/payment-methods", permission: "payment-methods.manage" },
   { path: "/menu", permission: "menus.manage" },
 ] as const;
@@ -111,6 +112,7 @@ export const DASHBOARD_NAVIGATION_ITEMS: readonly DashboardNavigationItem[] = [
   { routePath: "/users", group: "organization", label: "Tài khoản", icon: Users },
   { routePath: "/staff", group: "organization", label: "Nhân viên", icon: Users },
   { routePath: "/roles", group: "organization", label: "Vai trò & quyền", icon: ShieldAlert },
+  { routePath: "/platform/service-registrations", group: "platform", label: "Đơn đăng ký dịch vụ", icon: ClipboardCheck },
   { routePath: "/platform/exceptions", group: "platform", label: "Sự cố đồng bộ", icon: ShieldAlert },
   { routePath: "/platform/lua-templates", group: "platform", label: "Mẫu LUA hệ thống", icon: FileCode2 },
   { routePath: "/platform/organization-sales", group: "platform", label: "Doanh thu tổ chức", icon: BarChart3 },
