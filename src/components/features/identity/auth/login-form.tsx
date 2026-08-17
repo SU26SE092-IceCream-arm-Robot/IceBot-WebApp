@@ -102,7 +102,7 @@ export function LoginForm() {
               value={emailOrUsername}
               onChange={(event) => setEmailOrUsername(event.target.value)}
               className="h-11 pl-10"
-              placeholder="admin@icebot.vn"
+              placeholder="Nhập email hoặc tên đăng nhập"
               required
             />
           </div>
