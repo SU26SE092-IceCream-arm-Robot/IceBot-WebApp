@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
-import { Building2, CheckCircle, Mail, Shield, User } from "lucide-react";
+import { Building2, CheckCircle, Shield, User } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -65,7 +65,6 @@ export function ServiceRegistrationApproveDialog({
   const [organizationName, setOrganizationName] = useState("");
   const [adminUserName, setAdminUserName] = useState("");
   const [adminEmail, setAdminEmail] = useState("");
-  const [localLoginEnabled, setLocalLoginEnabled] = useState(true);
   const [googleLoginEnabled, setGoogleLoginEnabled] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -75,7 +74,6 @@ export function ServiceRegistrationApproveDialog({
       setOrganizationName(item.businessName || "");
       setAdminUserName(generateAdminUsername(item.email, item.contactName));
       setAdminEmail(item.email || "");
-      setLocalLoginEnabled(true);
       setGoogleLoginEnabled(true);
       setError(null);
     }
@@ -110,11 +108,12 @@ export function ServiceRegistrationApproveDialog({
         organizationName: organizationName.trim(),
         adminUserName: adminUserName.trim(),
         adminEmail: adminEmail.trim(),
-        localLoginEnabled,
+        // Temporary demo flow: Backend generates a password and emails credentials.
+        localLoginEnabled: true,
         googleLoginEnabled,
         expectedRevision: item.revision,
       });
-    } catch (submitError) {
+    } catch {
       // Error handled by parent toast, error remains visible
     }
   }
@@ -131,8 +130,8 @@ export function ServiceRegistrationApproveDialog({
               Phê duyệt Đơn đăng ký & Cấp phát
             </DialogTitle>
             <DialogDescription>
-              Hệ thống sẽ tự động tạo Tổ chức mới (Organization), tài khoản OrgAdmin và gửi thư mời
-              đăng nhập cho đối tác.
+              Hệ thống sẽ tự động tạo Tổ chức mới (Organization), tài khoản OrgAdmin và gửi
+              thông tin đăng nhập tới email đối tác.
             </DialogDescription>
           </DialogHeader>
 
@@ -233,15 +232,7 @@ export function ServiceRegistrationApproveDialog({
                 Phương thức đăng nhập cho phép
               </div>
               <div className="flex flex-wrap gap-5 text-sm">
-                <label className="flex items-center gap-2 cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={localLoginEnabled}
-                    onChange={(e) => setLocalLoginEnabled(e.target.checked)}
-                    className="size-4 rounded border-gray-300 text-primary"
-                  />
-                  <span>Mật khẩu nội bộ (Local Login)</span>
-                </label>
+                <span className="text-muted-foreground">Mật khẩu nội bộ luôn bật; mật khẩu tạm được gửi qua email.</span>
                 <label className="flex items-center gap-2 cursor-pointer select-none">
                   <input
                     type="checkbox"

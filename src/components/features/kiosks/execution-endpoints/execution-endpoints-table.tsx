@@ -42,14 +42,14 @@ function EndpointConnectionDialog({
         <DialogHeader>
           <DialogTitle>Kết nối {endpoint.endpointCode}</DialogTitle>
           <DialogDescription>
-            Thực hiện trên máy Edge. Chứng chỉ mTLS và thông tin phần cứng được IOT tự tạo, giữ tại máy Edge và báo về Backend.
+            Thực hiện trên máy Edge. IOT tạo và giữ PFX/private key tại Edge, chỉ gửi fingerprint để Backend provision endpoint; hardware và readiness được Edge báo về Backend.
           </DialogDescription>
         </DialogHeader>
         <ol className="list-decimal space-y-3 pl-5 text-sm">
           <li>Mở <span className="font-medium">InitIceBot.exe</span> trên máy Edge và đăng nhập tài khoản của tổ chức.</li>
           <li>Chọn <span className="font-medium">Cấu hình → Khởi tạo Edge mới</span>.</li>
           <li>Nhập mã kiosk <code className="rounded bg-muted px-1.5 py-0.5">{endpoint.kioskCode}</code>.</li>
-          <li>Nhập NetBird setup key. IOT tự nhận endpoint này, tạo chứng chỉ và gửi heartbeat.</li>
+          <li>Nhập NetBird setup key. IOT nhận endpoint này, tạo hoặc tái sử dụng PFX đã provision, rồi gửi hardware report, readiness và heartbeat.</li>
         </ol>
         <div className="rounded-md border bg-muted/40 p-3 text-sm">
           <p className="font-medium">Điểm thực thi sẽ được dùng</p>
