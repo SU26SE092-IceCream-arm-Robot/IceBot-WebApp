@@ -10,6 +10,7 @@ import {
   Factory,
   GitBranch,
   FileCode2,
+  FileText,
   LayoutDashboard,
   Monitor,
   Package,
@@ -72,6 +73,7 @@ export const DASHBOARD_ROUTE_REGISTRY: readonly DashboardRouteDefinition[] = [
   { path: "/platform/lua-templates", permission: "artifact-template.read" },
   { path: "/platform/organization-sales", permission: "platform.organization-sales.view" },
   { path: "/platform/service-registrations", permission: "service-registrations.read" },
+  { path: "/platform/content-pages", permission: "content-pages.read" },
   { path: "/settings/payment-methods", permission: "payment-methods.manage" },
   { path: "/menu", permission: "menus.manage" },
 ] as const;
@@ -115,5 +117,6 @@ export const DASHBOARD_NAVIGATION_ITEMS: readonly DashboardNavigationItem[] = [
   { routePath: "/platform/exceptions", group: "platform", label: "Sự cố đồng bộ", icon: ShieldAlert },
   { routePath: "/platform/lua-templates", group: "platform", label: "Mẫu LUA hệ thống", icon: FileCode2 },
   { routePath: "/platform/organization-sales", group: "platform", label: "Doanh thu tổ chức", icon: BarChart3 },
+  { routePath: "/platform/content-pages", group: "platform", label: "Trang nội dung tĩnh", icon: FileText },
   { routePath: "/settings/payment-methods", group: "platform", label: "Phương thức thanh toán", icon: CreditCard },
 ] as const;

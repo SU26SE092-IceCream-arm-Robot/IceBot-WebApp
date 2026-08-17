@@ -47,6 +47,7 @@ export type DashboardRoutePath =
   | "/platform/lua-templates"
   | "/platform/organization-sales"
   | "/platform/service-registrations"
+  | "/platform/content-pages"
   | "/settings/payment-methods";
 
 export type DashboardPermission =
@@ -78,6 +79,8 @@ export type DashboardPermission =
   | "sync-dead-letters.manage"
   | "service-registrations.read"
   | "service-registrations.manage"
+  | "content-pages.read"
+  | "content-pages.manage"
   | "menus.manage"
   | "menu-items.availability.manage"
   | "ingredients.read"
