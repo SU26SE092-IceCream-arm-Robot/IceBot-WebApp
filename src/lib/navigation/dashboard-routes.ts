@@ -84,8 +84,7 @@ export const DASHBOARD_NAVIGATION_GROUPS: ReadonlyArray<{
   { key: "operations", label: "Vận hành" },
   { key: "commerce", label: "Kinh doanh" },
   { key: "catalog", label: "Danh mục" },
-  // Temporarily hidden from sidebar: uncomment line below to re-enable 'Sản xuất' group
-  // { key: "production", label: "Sản xuất" },
+  { key: "production", label: "Sản xuất" },
   { key: "organization", label: "Tổ chức" },
   { key: "platform", label: "Nền tảng" },
 ];
@@ -104,9 +103,9 @@ export const DASHBOARD_NAVIGATION_ITEMS: readonly DashboardNavigationItem[] = [
   { routePath: "/products", group: "catalog", label: "Sản phẩm", icon: ShoppingBag },
   { routePath: "/menus", group: "catalog", label: "Thực đơn", icon: BookOpen },
   { routePath: "/production", query: { stage: "programs" }, group: "production", label: "Chương trình robot", icon: Factory },
-  { routePath: "/production", query: { stage: "packages" }, group: "production", label: "Gói sản xuất", icon: Boxes },
-  { routePath: "/production", query: { stage: "releases" }, group: "production", label: "Bản phát hành", icon: Package },
-  { routePath: "/production", query: { stage: "bindings" }, group: "production", label: "Liên kết cấu hình", icon: GitBranch },
+  // { routePath: "/production", query: { stage: "packages" }, group: "production", label: "Gói sản xuất", icon: Boxes },
+  // { routePath: "/production", query: { stage: "releases" }, group: "production", label: "Bản phát hành", icon: Package },
+  // { routePath: "/production", query: { stage: "bindings" }, group: "production", label: "Liên kết cấu hình", icon: GitBranch },
   { routePath: "/organizations", group: "organization", label: "Tổ chức", icon: Building2 },
   { routePath: "/stores", group: "organization", label: "Cửa hàng", icon: Building2 },
   { routePath: "/users", group: "organization", label: "Tài khoản", icon: Users },

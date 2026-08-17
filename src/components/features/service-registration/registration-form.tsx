@@ -33,10 +33,10 @@ import type {
 // Default published revision GUID (can be overridden by NEXT_PUBLIC_PRIVACY_POLICY_REVISION_ID)
 const DEFAULT_PRIVACY_POLICY_REVISION_ID =
   process.env.NEXT_PUBLIC_PRIVACY_POLICY_REVISION_ID?.trim() ||
-  "b8387063-e4d0-4d51-aefc-f1797cfae4f2";
+  "01a00de2-0a3b-7d80-93aa-2d1828e193df";
 
 const GUID_REGEX =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const EMPTY_GUID = "00000000-0000-0000-0000-000000000000";
 
 interface FormState {
