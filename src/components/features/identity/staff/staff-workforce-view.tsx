@@ -119,7 +119,6 @@ export function StaffWorkforceView() {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [googleLoginEnabled, setGoogleLoginEnabled] = useState(false);
   const [googleEmail, setGoogleEmail] = useState("");
-  const [sendInvitationEmail, setSendInvitationEmail] = useState(true);
   const [scopes, setScopes] = useState<StaffWorkforceScopeRequest[]>([{ storeId: null, kioskId: null }]);
   const [lifecycleReason, setLifecycleReason] = useState("");
   const workforce = useStaffWorkforce(organizationId);
@@ -148,7 +147,7 @@ export function StaffWorkforceView() {
 
   function resetCreateForm() {
     setUserName(""); setEmail(""); setFullName(""); setPhoneNumber("");
-    setGoogleLoginEnabled(false); setGoogleEmail(""); setSendInvitationEmail(true);
+    setGoogleLoginEnabled(false); setGoogleEmail("");
     setScopes([{ storeId: null, kioskId: null }]);
     workforce.clearMutationError();
   }
@@ -163,10 +162,11 @@ export function StaffWorkforceView() {
       userName: userName.trim(), email: email.trim(), fullName: fullName.trim() || null,
       phoneNumber: phoneNumber.trim() || null, localLoginEnabled: true,
       googleLoginEnabled, googleEmail: googleLoginEnabled ? googleEmail.trim() : null,
-      sendInvitationEmail, staffScopes: scopes,
+      // Temporary demo flow: Backend generates a password and emails credentials.
+      sendInvitationEmail: false, staffScopes: scopes,
     });
     if (result) {
-      toast.success("Đã tạo tài khoản nhân viên và phạm vi làm việc.");
+      toast.success("Đã tạo tài khoản nhân viên và gửi thông tin đăng nhập qua email.");
       setCreateOpen(false);
       resetCreateForm();
     }
@@ -241,7 +241,7 @@ export function StaffWorkforceView() {
           <div className="space-y-3 rounded-lg border border-border p-4">
             <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={googleLoginEnabled} onChange={(event) => setGoogleLoginEnabled(event.target.checked)} />Cho phép đăng nhập Google</label>
             {googleLoginEnabled ? <div className="space-y-2"><Label htmlFor="staff-google-email">Email Google *</Label><Input id="staff-google-email" type="email" value={googleEmail} onChange={(event) => setGoogleEmail(event.target.value)} /></div> : null}
-            <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={sendInvitationEmail} onChange={(event) => setSendInvitationEmail(event.target.checked)} />Gửi email lời mời</label>
+            <p className="text-sm text-muted-foreground">Mật khẩu tạm sẽ được hệ thống gửi tới email nhân viên.</p>
           </div>
           {scopeOptions.errorMessage || workforce.mutationError ? <p className="text-sm text-destructive">{scopeOptions.errorMessage || workforce.mutationError}</p> : null}
           <DialogFooter><Button variant="outline" disabled={workforce.isSubmitting} onClick={() => setCreateOpen(false)}>Hủy</Button><Button disabled={!userName.trim() || !email.trim() || !validScopes() || (googleLoginEnabled && !googleEmail.trim())} isLoading={workforce.isSubmitting} onClick={() => void submitCreate()}>Tạo nhân viên</Button></DialogFooter>
@@ -297,7 +297,7 @@ function StaffDetailForm({ staff, stores, kiosks, canManage, isSubmitting, mutat
     <div className="rounded-lg border border-border p-3 text-sm"><p className="font-medium">{staff.userName}</p><p className="text-muted-foreground">{staff.email}</p><p className="mt-2">Trạng thái: {statusLabel(staff.status)}</p></div>
     <ScopeEditor scopes={detailScopes} onChange={setDetailScopes} stores={stores} kiosks={kiosks} disabled={!canManage || isSubmitting} />
     {mutationError ? <p className="text-sm text-destructive">{mutationError}</p> : null}
-    {canManage ? <div className="flex flex-wrap gap-2"><Button variant="outline" disabled={isSubmitting} onClick={() => void onUpdateProfile({ fullName: name.trim() || null, phoneNumber: phone.trim() || null })}>Lưu hồ sơ</Button><Button variant="outline" disabled={isSubmitting || detailScopes.some((scope) => !scope.storeId)} onClick={() => void onUpdateScopes(detailScopes)}>Lưu phạm vi</Button><Button variant="outline" disabled={isSubmitting} onClick={() => void onInvite()}>Gửi lại lời mời</Button></div> : null}
+    {canManage ? <div className="flex flex-wrap gap-2"><Button variant="outline" disabled={isSubmitting} onClick={() => void onUpdateProfile({ fullName: name.trim() || null, phoneNumber: phone.trim() || null })}>Lưu hồ sơ</Button><Button variant="outline" disabled={isSubmitting || detailScopes.some((scope) => !scope.storeId)} onClick={() => void onUpdateScopes(detailScopes)}>Lưu phạm vi</Button>{staff.status === "Invited" ? <Button variant="outline" disabled={isSubmitting} onClick={() => void onInvite()}>Gửi lại lời mời</Button> : null}</div> : null}
     {canManage ? <div className="space-y-2 border-t border-border pt-4"><Label htmlFor="staff-lifecycle-reason">Lý do thay đổi trạng thái</Label><Input id="staff-lifecycle-reason" value={lifecycleReason} onChange={(event) => onLifecycleReasonChange(event.target.value)} placeholder="Nhập lý do để lưu bằng chứng vận hành" /><Button variant={staff.status === "Disabled" ? "default" : "destructive"} disabled={isSubmitting || !lifecycleReason.trim()} onClick={() => void onLifecycle(staff.status === "Disabled" ? "reactivate" : "deactivate")}>{staff.status === "Disabled" ? "Kích hoạt lại" : "Vô hiệu hóa"}</Button></div> : null}
   </div>;
 }

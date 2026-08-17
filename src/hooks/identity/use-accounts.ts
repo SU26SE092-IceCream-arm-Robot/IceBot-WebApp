@@ -531,13 +531,6 @@ export function useAccounts(organizationId: string | null): UseAccountsResult {
 
       try {
         const createdAccount = await createAccount(organizationId, request);
-        const createdInvitation = createdAccount.invitation
-          ? {
-              accountId: createdAccount.id,
-              ...createdAccount.invitation,
-            }
-          : null;
-
         setAccounts((current) => [
           createdAccount,
           ...current.filter((account) => account.id !== createdAccount.id),
@@ -551,15 +544,9 @@ export function useAccounts(organizationId: string | null): UseAccountsResult {
           ),
         }));
         setIsCreateOpen(false);
-        setInvitationAccount(createdAccount);
-        setInvitationResult(createdInvitation);
-        setInvitationResultMode("created");
-        setIsInvitationResultOpen(Boolean(createdInvitation));
-        if (!createdInvitation) {
-          setSuccessMessage(
-            `Đã tạo tài khoản ${createdAccount.fullName?.trim() || createdAccount.userName}.`
-          );
-        }
+        setSuccessMessage(
+          `Đã tạo tài khoản ${createdAccount.fullName?.trim() || createdAccount.userName}. Thông tin đăng nhập đã được gửi qua email.`
+        );
         return true;
       } catch (error) {
         setCreateErrorMessage(

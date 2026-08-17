@@ -201,10 +201,8 @@ export function CreateAccountDialog({
   const [organizationId, setOrganizationId] = useState("");
   const [storeId, setStoreId] = useState("");
   const [kioskId, setKioskId] = useState("");
-  const [localLoginEnabled, setLocalLoginEnabled] = useState(true);
   const [googleLoginEnabled, setGoogleLoginEnabled] = useState(false);
   const [googleEmail, setGoogleEmail] = useState("");
-  const [sendInvitationEmail, setSendInvitationEmail] = useState(true);
   const [validationMessage, setValidationMessage] = useState<string | null>(null);
 
   const selectedRole =
@@ -259,10 +257,8 @@ export function CreateAccountDialog({
     setOrganizationId("");
     setStoreId("");
     setKioskId("");
-    setLocalLoginEnabled(true);
     setGoogleLoginEnabled(false);
     setGoogleEmail("");
-    setSendInvitationEmail(true);
     setValidationMessage(null);
   }
 
@@ -283,11 +279,6 @@ export function CreateAccountDialog({
     }
     if (!isValidEmail(email)) {
       setValidationMessage("Email không đúng định dạng.");
-      return;
-    }
-
-    if (!localLoginEnabled && !googleLoginEnabled) {
-      setValidationMessage("Cần bật ít nhất một phương thức đăng nhập.");
       return;
     }
 
@@ -343,12 +334,13 @@ export function CreateAccountDialog({
       email: email.trim(),
       fullName: fullName.trim(),
       gender: "Other",
-      localLoginEnabled,
+      // Temporary demo flow: Backend generates a password and emails credentials.
+      localLoginEnabled: true,
       initialPassword: null,
       googleLoginEnabled,
       googleEmail: googleLoginEnabled ? googleEmail.trim() : null,
-      createInvitation: true,
-      sendInvitationEmail,
+      createInvitation: false,
+      sendInvitationEmail: false,
       roles: [
         {
           roleCode,
@@ -378,9 +370,9 @@ export function CreateAccountDialog({
           <span className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
             <UserPlus className="size-5" />
           </span>
-          <DialogTitle>Tạo tài khoản bằng lời mời</DialogTitle>
+          <DialogTitle>Tạo tài khoản</DialogTitle>
           <DialogDescription>
-            Tài khoản sẽ ở trạng thái Đã mời. Người dùng tự đặt mật khẩu qua liên kết lời mời.
+            Hệ thống tạo mật khẩu tạm và gửi thông tin đăng nhập tới email người dùng. Người dùng có thể đổi mật khẩu sau khi đăng nhập.
           </DialogDescription>
         </DialogHeader>
 
@@ -598,14 +590,9 @@ export function CreateAccountDialog({
           ) : null}
 
           <div className="space-y-3 sm:col-span-2">
-            <CheckboxField
-              id="localLoginEnabled"
-              checked={localLoginEnabled}
-              disabled={isSubmitting}
-              label="Đăng nhập bằng mật khẩu"
-              description="Mặc định bật. Người dùng sẽ tự đặt mật khẩu khi chấp nhận lời mời."
-              onChange={setLocalLoginEnabled}
-            />
+            <div className="rounded-lg border border-border bg-muted/20 p-3 text-sm text-muted-foreground">
+              Đăng nhập bằng mật khẩu luôn được bật. Mật khẩu tạm sẽ được gửi tới email đã nhập.
+            </div>
             <CheckboxField
               id="googleLoginEnabled"
               checked={googleLoginEnabled}
@@ -627,14 +614,6 @@ export function CreateAccountDialog({
                 />
               </FormField>
             ) : null}
-            <CheckboxField
-              id="sendInvitationEmail"
-              checked={sendInvitationEmail}
-              disabled={isSubmitting}
-              label="Gửi lời mời qua email"
-              description="Nếu email không gửi được, hệ thống vẫn hiển thị liên kết để gửi thủ công."
-              onChange={setSendInvitationEmail}
-            />
           </div>
 
           {validationMessage ||
