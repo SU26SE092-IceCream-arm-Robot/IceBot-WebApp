@@ -4,6 +4,7 @@ import axios from "axios";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { useOrderRealtime } from "@/hooks/realtime/use-order-realtime";
 import {
   cancelManagementOrder,
   getManagementRefundById,
@@ -555,6 +556,33 @@ export function useTransactions(
     },
     [],
   );
+
+  useOrderRealtime({
+    orderId: selectedOrderId,
+    enabled: Boolean(selectedOrderId && isDetailOpen),
+    onOrderStatusChanged: () => {
+      if (selectedOrderIdRef.current) {
+        void openOrderDetail(selectedOrderIdRef.current);
+      }
+      void fetchOrders();
+    },
+    onPaymentStatusChanged: () => {
+      if (selectedOrderIdRef.current) {
+        void openOrderDetail(selectedOrderIdRef.current);
+      }
+      void fetchOrders();
+    },
+    onOrderItemFulfillmentChanged: () => {
+      if (selectedOrderIdRef.current) {
+        void openOrderDetail(selectedOrderIdRef.current);
+      }
+    },
+    onOrderExecutionObservationChanged: () => {
+      if (selectedOrderIdRef.current) {
+        void openOrderDetail(selectedOrderIdRef.current);
+      }
+    },
+  });
 
   const openRefundDetail = useCallback(async (refundId: string) => {
     refundDetailAbortRef.current?.abort();

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { useAuth } from "@/hooks/identity/use-auth";
+import { useKioskOperationsRealtime } from "@/hooks/kiosks/use-kiosk-operations-realtime";
 import { getKioskDetail } from "@/lib/services/kiosks/detail";
 import {
   getKioskManagementErrorMessage,
@@ -173,6 +174,34 @@ export function useKioskDetail(kioskId: string): UseKioskDetailResult {
       controller.abort();
     };
   }, [fetchKiosk]);
+
+  useKioskOperationsRealtime({
+    kioskIds: kioskId ? [kioskId] : [],
+    enabled: state === "READY",
+    onKioskStatusChanged: (event) => {
+      setKiosk((current) => {
+        if (!current || current.managementId !== event?.kioskId) return current;
+        return {
+          ...current,
+          lifecycleStatus: (event.newLifecycleStatus as KioskManagementDetail["lifecycleStatus"]) ?? current.lifecycleStatus,
+        };
+      });
+    },
+    onOperationalStateChanged: (event) => {
+      setKiosk((current) => {
+        if (!current || current.managementId !== event?.kioskId) return current;
+        return {
+          ...current,
+          operationalState: (event.newState as KioskManagementDetail["operationalState"]) ?? current.operationalState,
+          operationalStateReason: event.reason ?? current.operationalStateReason,
+          operationalStateChangedAt: event.occurredAt ?? current.operationalStateChangedAt,
+        };
+      });
+    },
+    onDeviceEventCreated: () => {
+      void fetchKiosk();
+    },
+  });
 
   const setOperationalState = useCallback(
     async (request: SetKioskOperationalStateRequest) => {

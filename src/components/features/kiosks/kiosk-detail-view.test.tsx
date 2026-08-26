@@ -117,8 +117,8 @@ describe("KioskDetailView tab persistence", () => {
   it("keeps the technical operations tab after focus revalidation reloads detail", () => {
     const { rerender } = render(<KioskDetailView kioskId="kiosk-1" />);
 
-    fireEvent.click(screen.getByRole("tab", { name: "Vận hành kỹ thuật" }));
-    expect(screen.getByRole("tab", { name: "Vận hành kỹ thuật" })).toHaveAttribute(
+    fireEvent.click(screen.getByRole("tab", { name: "Thiết bị & Edge" }));
+    expect(screen.getByRole("tab", { name: "Thiết bị & Edge" })).toHaveAttribute(
       "aria-selected",
       "true",
     );
@@ -130,24 +130,23 @@ describe("KioskDetailView tab persistence", () => {
     mocks.detail = readyDetail();
     rerender(<KioskDetailView kioskId="kiosk-1" />);
 
-    expect(screen.getByRole("tab", { name: "Vận hành kỹ thuật" })).toHaveAttribute(
+    expect(screen.getByRole("tab", { name: "Thiết bị & Edge" })).toHaveAttribute(
       "aria-selected",
       "true",
     );
     expect(screen.getByText("Danh sách thiết bị thử nghiệm")).toBeInTheDocument();
   });
 
-  it("opens kiosk deployment separately from technical operations", () => {
+  it("renders kiosk technical and deployment workspace together under device tab", () => {
     render(<KioskDetailView kioskId="kiosk-1" />);
 
-    fireEvent.click(screen.getByRole("tab", { name: "Triển khai" }));
+    fireEvent.click(screen.getByRole("tab", { name: "Thiết bị & Edge" }));
 
-    expect(screen.getByRole("tab", { name: "Triển khai" })).toHaveAttribute(
+    expect(screen.getByRole("tab", { name: "Thiết bị & Edge" })).toHaveAttribute(
       "aria-selected",
       "true",
     );
-    expect(screen.getByText("Cấu hình sản xuất thử nghiệm")).toBeInTheDocument();
-    expect(screen.queryByText("Danh sách thiết bị thử nghiệm")).not.toBeInTheDocument();
+    expect(screen.getByText("Danh sách thiết bị thử nghiệm")).toBeInTheDocument();
   });
 
   it("does not expose device management from a Manager assignment outside the kiosk scope", () => {
@@ -180,7 +179,7 @@ describe("KioskDetailView tab persistence", () => {
     };
 
     render(<KioskDetailView kioskId="kiosk-1" />);
-    fireEvent.click(screen.getByRole("tab", { name: "Vận hành kỹ thuật" }));
+    fireEvent.click(screen.getByRole("tab", { name: "Thiết bị & Edge" }));
 
     expect(screen.getByTestId("devices")).toHaveAttribute(
       "data-can-manage",

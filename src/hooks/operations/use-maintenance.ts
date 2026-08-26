@@ -3,6 +3,7 @@
 import axios from "axios";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { useKioskOperationsRealtime } from "@/hooks/kiosks/use-kiosk-operations-realtime";
 import { useMutationRefreshRecovery } from "@/hooks/shared/use-mutation-refresh-recovery";
 import {
   getKioskManagementErrorMessage,
@@ -260,6 +261,16 @@ export function useMaintenance(): UseMaintenanceResult {
       controller.abort();
     };
   }, [loadLookups]);
+
+  useKioskOperationsRealtime({
+    kioskIds: [],
+    onMaintenanceTicketChanged: () => {
+      void fetchTickets();
+      if (selectedTicketIdRef.current) {
+        void refreshDetailIfSelected(selectedTicketIdRef.current);
+      }
+    },
+  });
 
   const visibleTickets = useMemo(
     () => tickets.data.filter((ticket) => matchesSearch(ticket, filters.searchTerm)),

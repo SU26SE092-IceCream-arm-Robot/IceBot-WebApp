@@ -20,7 +20,9 @@ import { PlatformControlShortcuts } from "@/components/features/dashboard/platfo
 import { PlatformInterventionList } from "@/components/features/dashboard/platform-intervention-list";
 import { useDashboardOverview } from "@/hooks/dashboard/use-dashboard-overview";
 import { useAuth } from "@/hooks/identity/use-auth";
+import { useDashboardRealtime } from "@/hooks/realtime/use-dashboard-realtime";
 import { canAccessRoute, getVisibleRoutes } from "@/lib/rbac";
+import type { DashboardScope } from "@/types/realtime/signalr-events";
 
 export default function DashboardPage() {
   const { effectiveAccess } = useAuth();
@@ -34,8 +36,27 @@ export default function DashboardPage() {
     errorMessage,
     refresh,
   } = useDashboardOverview({ includeOrderOverview: canViewOrders });
-  const visibleRoutes = new Set(getVisibleRoutes(effectiveAccess));
+
   const isSystemAdmin = effectiveAccess?.isSystemAdmin ?? false;
+  const scope: DashboardScope = isSystemAdmin
+    ? "system"
+    : effectiveAccess?.effectiveScope?.storeIds?.[0]
+      ? "store"
+      : "organization";
+  const organizationId = effectiveAccess?.effectiveScope?.organizationIds?.[0] ?? null;
+  const storeId = effectiveAccess?.effectiveScope?.storeIds?.[0] ?? null;
+
+  useDashboardRealtime({
+    scope,
+    organizationId,
+    storeId,
+    enabled: Boolean(effectiveAccess),
+    onInvalidated: () => {
+      void refresh();
+    },
+  });
+
+  const visibleRoutes = new Set(getVisibleRoutes(effectiveAccess));
   const hasAllRoots = Boolean(
       data?.dashboard &&
       data.kioskStatusOverview &&

@@ -3,6 +3,7 @@
 import axios from "axios";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { useKioskOperationsRealtime } from "@/hooks/kiosks/use-kiosk-operations-realtime";
 import {
   acknowledgeAlert as apiAcknowledgeAlert,
   getAlertById,
@@ -74,6 +75,17 @@ export function useAlerts() {
     }
   }, []);
 
+  const refresh = useCallback(async () => {
+    await loadAlerts(filters);
+  }, [filters, loadAlerts]);
+
+  useKioskOperationsRealtime({
+    kioskIds: filters.kioskId ? [filters.kioskId] : [],
+    onAlertChanged: () => {
+      void refresh();
+    },
+  });
+
   useEffect(() => {
     const controller = new AbortController();
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -88,10 +100,6 @@ export function useAlerts() {
     },
     [],
   );
-
-  const refresh = useCallback(async () => {
-    await loadAlerts(filters);
-  }, [filters, loadAlerts]);
 
   const updateAlertInList = useCallback((updatedAlert: AlertResult) => {
     setAlerts((current) =>
