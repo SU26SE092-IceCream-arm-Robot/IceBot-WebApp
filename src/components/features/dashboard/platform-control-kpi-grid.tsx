@@ -1,6 +1,7 @@
 import { Building2, Monitor, Store, WifiOff } from "lucide-react";
 
 import { DashboardKpiCard } from "@/components/features/dashboard/dashboard-kpi-card";
+import { MetricStrip } from "@/components/shared/metric-strip";
 import type { DashboardMetrics } from "@/types/dashboard/overview";
 import type { DashboardRoutePath } from "@/types";
 
@@ -23,7 +24,7 @@ export function PlatformControlKpiGrid({
     metrics && visibleRoutes.has("/kiosks") ? "/kiosks" : undefined;
 
   return (
-    <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <MetricStrip>
       <DashboardKpiCard
         icon={Building2}
         label="Tổ chức"
@@ -69,6 +70,6 @@ export function PlatformControlKpiGrid({
         href={kioskHref}
         tone={metrics?.offlineKioskCount ? "destructive" : "neutral"}
       />
-    </section>
+    </MetricStrip>
   );
 }

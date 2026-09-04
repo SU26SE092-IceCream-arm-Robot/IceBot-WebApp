@@ -58,13 +58,14 @@ export default function DashboardPage() {
 
   const visibleRoutes = new Set(getVisibleRoutes(effectiveAccess));
   const hasAllRoots = Boolean(
-      data?.dashboard &&
+    data?.dashboard &&
       data.kioskStatusOverview &&
       data.inventorySummary &&
       (!canViewOrders || data.orderOverview),
   );
 
-  const isEmpty = hasAllRoots &&
+  const isEmpty =
+    hasAllRoots &&
     (isSystemAdmin
       ? data?.dashboard?.organizationCount === 0 &&
         data?.dashboard?.storeCount === 0 &&
@@ -76,7 +77,7 @@ export default function DashboardPage() {
         data.inventorySummary?.totalDispenserCount === 0);
 
   return (
-    <div className="space-y-7">
+    <div className="space-y-5">
       <DashboardHeader
         lastUpdatedAt={lastUpdatedAt}
         isRefreshing={isRefreshing}
@@ -142,7 +143,7 @@ export default function DashboardPage() {
             />
           )}
 
-          <section className="grid items-start gap-4 xl:grid-cols-12">
+          <section className="grid items-stretch gap-4 xl:grid-cols-12">
             <div className="xl:col-span-7">
               {isSystemAdmin ? (
                 <PlatformInterventionList
@@ -167,7 +168,11 @@ export default function DashboardPage() {
             </div>
           </section>
 
-          <section className="grid items-start gap-4 xl:grid-cols-2">
+          <section
+            className={`grid items-stretch gap-4 ${
+              canViewOrders ? "xl:grid-cols-3" : "xl:grid-cols-2"
+            }`}
+          >
             {data.kioskStatusOverview ? (
               <>
                 <DashboardStatusDistribution

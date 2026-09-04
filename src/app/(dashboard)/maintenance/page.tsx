@@ -23,8 +23,10 @@ import {
   MAINTENANCE_STATUS_LABELS,
   MaintenanceTable,
 } from "@/components/features/operations/maintenance/maintenance-table";
+import { MetricStrip, MetricStripItem } from "@/components/shared/metric-strip";
+import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -63,59 +65,6 @@ function isStatusFilter(value: string | null): value is MaintenanceStatusFilter 
 
 function isPriorityFilter(value: string | null): value is MaintenancePriorityFilter {
   return PRIORITY_OPTIONS.some((option) => option.value === value);
-}
-
-type StatTone = "primary" | "success" | "warning" | "destructive";
-
-const STAT_TONES: Record<StatTone, { iconClassName: string; valueClassName: string }> = {
-  primary: {
-    iconClassName: "border-primary/20 bg-primary/10 text-primary",
-    valueClassName: "text-foreground",
-  },
-  success: {
-    iconClassName: "border-success/20 bg-success/10 text-success",
-    valueClassName: "text-success",
-  },
-  warning: {
-    iconClassName: "border-warning/20 bg-warning/10 text-warning",
-    valueClassName: "text-warning",
-  },
-  destructive: {
-    iconClassName: "border-destructive/20 bg-destructive/10 text-destructive",
-    valueClassName: "text-destructive",
-  },
-};
-
-function StatCard({
-  icon: Icon,
-  label,
-  tone,
-  value,
-}: {
-  icon: typeof Wrench;
-  label: string;
-  tone: StatTone;
-  value: number;
-}) {
-  const toneClasses = STAT_TONES[tone];
-
-  return (
-    <Card className="rounded-xl border border-border/80 bg-card shadow-none">
-      <CardContent className="p-5">
-        <div className="mb-3 flex items-center justify-between gap-4">
-          <p className="text-sm font-medium text-muted-foreground">{label}</p>
-          <span
-            className={`flex size-10 shrink-0 items-center justify-center rounded-xl border ${toneClasses.iconClassName}`}
-          >
-            <Icon className="size-5" />
-          </span>
-        </div>
-        <p className={`tabular-nums text-3xl font-semibold tracking-tight ${toneClasses.valueClassName}`}>
-          {value}
-        </p>
-      </CardContent>
-    </Card>
-  );
 }
 
 function MaintenanceLoadingTable() {
@@ -213,7 +162,7 @@ export default function MaintenancePage() {
     : false;
 
   return (
-    <div className="space-y-7">
+    <div className="space-y-5">
       {successMessage ? (
         <div
           role="status"
@@ -248,33 +197,29 @@ export default function MaintenancePage() {
         </div>
       ) : null}
 
-      <section className="flex flex-col gap-4 border-b border-border pb-6 lg:flex-row lg:items-end lg:justify-between">
-        <div className="max-w-2xl space-y-2">
-          <h1 className="text-3xl font-semibold tracking-tight text-foreground">
-            Bảo trì
-          </h1>
-          <p className="text-sm leading-6 text-muted-foreground">
-            Theo dõi và điều phối các yêu cầu bảo trì máy tại hiện trường.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            variant="outline"
-            className="h-10"
-            onClick={() => void refresh()}
-            isLoading={tickets.isLoading}
-          >
-            <RefreshCw className="size-4" />
-            Làm mới
-          </Button>
-          {canCreate ? (
-            <Button className="h-10" onClick={openCreateEditor}>
-              <Plus className="size-4" />
-              Tạo yêu cầu
+      <PageHeader
+        title="Bảo trì"
+        description="Theo dõi và điều phối các yêu cầu bảo trì máy tại hiện trường."
+        actions={
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => void refresh()}
+              isLoading={tickets.isLoading}
+            >
+              <RefreshCw className="size-4" />
+              Làm mới
             </Button>
-          ) : null}
-        </div>
-      </section>
+            {canCreate ? (
+              <Button size="sm" onClick={openCreateEditor}>
+                <Plus className="size-4" />
+                Tạo yêu cầu
+              </Button>
+            ) : null}
+          </>
+        }
+      />
 
       {lookupWarning ? (
         <div className="flex items-start gap-3 rounded-lg border border-warning/30 bg-warning/5 px-4 py-3 text-sm text-warning">
@@ -283,118 +228,106 @@ export default function MaintenancePage() {
         </div>
       ) : null}
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard
+      <MetricStrip>
+        <MetricStripItem
           icon={ClipboardList}
           label="Tổng yêu cầu"
-          value={summary.total}
+          value={summary.total.toLocaleString("vi-VN")}
+          description="Trong phạm vi hiện tại"
           tone="primary"
         />
-        <StatCard
+        <MetricStripItem
           icon={Wrench}
           label="Đang mở trên trang"
-          value={summary.openOnPage}
+          value={summary.openOnPage.toLocaleString("vi-VN")}
+          description="Chưa bắt đầu xử lý"
           tone="warning"
         />
-        <StatCard
+        <MetricStripItem
           icon={Filter}
           label="Đang xử lý trên trang"
-          value={summary.inProgressOnPage}
+          value={summary.inProgressOnPage.toLocaleString("vi-VN")}
+          description="Đã được tiếp nhận"
           tone="success"
         />
-        <StatCard
+        <MetricStripItem
           icon={ShieldAlert}
           label="Khẩn cấp trên trang"
-          value={summary.criticalOnPage}
+          value={summary.criticalOnPage.toLocaleString("vi-VN")}
+          description="Cần ưu tiên kiểm tra"
           tone="destructive"
         />
+      </MetricStrip>
+
+      <section
+        className="rounded-lg border border-border bg-card p-3"
+        aria-label="Bộ lọc yêu cầu bảo trì"
+      >
+        <div className="grid gap-2 lg:grid-cols-[minmax(260px,1fr)_210px_210px_auto]">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={filters.searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              placeholder="Tìm trong trang hiện tại theo ticket, tiêu đề, mã lỗi hoặc kiosk..."
+              className="h-9 bg-card pl-9 text-sm"
+            />
+          </div>
+          <Select
+            value={filters.status}
+            onValueChange={(value) => {
+              if (isStatusFilter(value)) {
+                setStatusFilter(value);
+              }
+            }}
+          >
+            <SelectTrigger className="h-9 w-full bg-card">
+              <SelectValue>
+                {STATUS_OPTIONS.find((option) => option.value === filters.status)
+                  ?.label ?? "Tất cả trạng thái"}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {STATUS_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
+            value={filters.priority}
+            onValueChange={(value) => {
+              if (isPriorityFilter(value)) {
+                setPriorityFilter(value);
+              }
+            }}
+          >
+            <SelectTrigger className="h-9 w-full bg-card">
+              <SelectValue>
+                {PRIORITY_OPTIONS.find((option) => option.value === filters.priority)
+                  ?.label ?? "Tất cả mức độ"}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {PRIORITY_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button variant="outline" size="sm" onClick={clearFilters}>
+            Xóa lọc
+          </Button>
+        </div>
       </section>
 
-      <Card className="rounded-xl border border-border bg-card shadow-none">
-        <CardHeader className="border-b border-border pb-4">
-          <div className="flex items-start gap-3">
-            <span className="mt-0.5 flex size-10 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
-              <Filter className="size-5" />
-            </span>
-            <div>
-              <CardTitle className="text-base">Bộ lọc bảo trì</CardTitle>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="p-4">
-          <div className="grid gap-2 xl:grid-cols-[minmax(260px,1fr)_220px_220px_auto]">
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={filters.searchTerm}
-                onChange={(event) => setSearchTerm(event.target.value)}
-                placeholder="Tìm trong trang hiện tại theo ticket, tiêu đề, mã lỗi hoặc kiosk..."
-                className="h-9 bg-card pl-9 text-sm"
-              />
-            </div>
-            <Select
-              value={filters.status}
-              onValueChange={(value) => {
-                if (isStatusFilter(value)) {
-                  setStatusFilter(value);
-                }
-              }}
-            >
-              <SelectTrigger className="h-9 w-full bg-card">
-                <SelectValue>
-                  {STATUS_OPTIONS.find((option) => option.value === filters.status)?.label ??
-                    "Tất cả trạng thái"}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                {STATUS_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select
-              value={filters.priority}
-              onValueChange={(value) => {
-                if (isPriorityFilter(value)) {
-                  setPriorityFilter(value);
-                }
-              }}
-            >
-              <SelectTrigger className="h-9 w-full bg-card">
-                <SelectValue>
-                  {PRIORITY_OPTIONS.find((option) => option.value === filters.priority)?.label ??
-                    "Tất cả mức độ"}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                {PRIORITY_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button variant="outline" size="sm" onClick={clearFilters}>
-              Xóa lọc
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card className="rounded-xl border border-border bg-card shadow-none">
-        <CardHeader className="border-b border-border pb-4">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex items-start gap-3">
-              <span className="mt-0.5 flex size-10 items-center justify-center rounded-xl border border-warning/20 bg-warning/10 text-warning">
-                <Wrench className="size-5" />
-              </span>
-              <div>
-                <CardTitle className="text-base">Yêu cầu bảo trì</CardTitle>
-              </div>
-            </div>
-            <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
+      <Card className="gap-0 rounded-lg border border-border bg-card py-0 shadow-none">
+        <CardHeader className="border-b border-border px-4 py-3.5">
+          <div className="flex items-center justify-between gap-3">
+            <CardTitle className="text-sm font-semibold">Yêu cầu bảo trì</CardTitle>
+            <span className="text-xs font-medium text-muted-foreground">
               {visibleTickets.length} dòng đang hiển thị
             </span>
           </div>
@@ -404,8 +337,8 @@ export default function MaintenancePage() {
           {tickets.isLoading ? (
             <MaintenanceLoadingTable />
           ) : tickets.errorMessage ? (
-            <div className="flex flex-col items-center gap-4 p-10 text-center">
-              <span className="flex size-12 items-center justify-center rounded-xl bg-destructive/10 text-destructive">
+            <div className="flex flex-col items-center gap-3 p-8 text-center">
+              <span className="flex size-10 items-center justify-center rounded-md bg-destructive/10 text-destructive">
                 <AlertTriangle className="size-5" />
               </span>
               <div className="space-y-1">
@@ -419,9 +352,9 @@ export default function MaintenancePage() {
               </Button>
             </div>
           ) : visibleTickets.length === 0 ? (
-            <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
-              <span className="mb-4 flex size-14 items-center justify-center rounded-full border border-border bg-muted/20 text-muted-foreground shadow-sm">
-                <Wrench className="size-6 opacity-70" />
+            <div className="flex flex-col items-center justify-center px-6 py-10 text-center">
+              <span className="mb-3 flex size-10 items-center justify-center rounded-md border border-border bg-muted/20 text-muted-foreground">
+                <Wrench className="size-5 opacity-70" />
               </span>
               <div className="max-w-md space-y-1.5">
                 <p className="text-base font-semibold tracking-tight text-foreground">Không tìm thấy yêu cầu bảo trì</p>

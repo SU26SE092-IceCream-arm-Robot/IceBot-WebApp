@@ -1,22 +1,37 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { LoaderCircle, RefreshCw, ShieldAlert, WifiOff } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 
 import { AppSidebar } from "@/components/shared/app-sidebar";
 import { AuthenticatedAppProviders } from "@/components/shared/authenticated-app-providers";
+import { Topbar } from "@/components/shared/topbar";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { useAuth } from "@/hooks/identity/use-auth";
-import { canAccessRoute, getDashboardRoutePath, getVisibleRoutes } from "@/lib/rbac";
+import {
+  canAccessRoute,
+  getDashboardRoutePath,
+  getVisibleRoutes,
+} from "@/lib/rbac";
 
 export default function DashboardLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return <AuthenticatedAppProviders><DashboardShell>{children}</DashboardShell></AuthenticatedAppProviders>;
+  return (
+    <AuthenticatedAppProviders>
+      <DashboardShell>{children}</DashboardShell>
+    </AuthenticatedAppProviders>
+  );
 }
 
 function DashboardShell({ children }: Readonly<{ children: React.ReactNode }>) {
@@ -30,6 +45,8 @@ function DashboardShell({ children }: Readonly<{ children: React.ReactNode }>) {
     logout,
   } = useAuth();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileNavigationOpen, setMobileNavigationOpen] = useState(false);
+  const mobileNavigationPanelRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
   const router = useRouter();
   const guardedRoute = getDashboardRoutePath(pathname);
@@ -58,7 +75,64 @@ function DashboardShell({ children }: Readonly<{ children: React.ReactNode }>) {
     ) {
       router.replace(fallbackRoute);
     }
-  }, [currentUser, effectiveAccess, fallbackRoute, pathname, routeDenied, router, status]);
+  }, [
+    currentUser,
+    effectiveAccess,
+    fallbackRoute,
+    pathname,
+    routeDenied,
+    router,
+    status,
+  ]);
+
+  useEffect(() => {
+    if (!mobileNavigationOpen) return;
+
+    const previouslyFocusedElement = document.activeElement as HTMLElement | null;
+    const panel = mobileNavigationPanelRef.current;
+    const focusableSelector =
+      'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+    const focusableElements = panel
+      ? Array.from(panel.querySelectorAll<HTMLElement>(focusableSelector))
+      : [];
+    const closeButton = panel?.querySelector<HTMLElement>(
+      'button[aria-label="Đóng menu điều hướng"]',
+    );
+    const animationFrame = window.requestAnimationFrame(() => {
+      (closeButton ?? focusableElements[0])?.focus();
+    });
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setMobileNavigationOpen(false);
+        return;
+      }
+
+      if (event.key !== "Tab" || focusableElements.length === 0) return;
+
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+      const activeElement = document.activeElement;
+
+      if (event.shiftKey && activeElement === firstElement) {
+        event.preventDefault();
+        lastElement.focus();
+      } else if (!event.shiftKey && activeElement === lastElement) {
+        event.preventDefault();
+        firstElement.focus();
+      } else if (!panel?.contains(activeElement)) {
+        event.preventDefault();
+        firstElement.focus();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.cancelAnimationFrame(animationFrame);
+      document.removeEventListener("keydown", handleKeyDown);
+      previouslyFocusedElement?.focus();
+    };
+  }, [mobileNavigationOpen]);
 
   if (status === "loading" || status === "unauthenticated") {
     return (
@@ -108,7 +182,9 @@ function DashboardShell({ children }: Readonly<{ children: React.ReactNode }>) {
             <div className="mb-3 flex size-11 items-center justify-center rounded-xl bg-destructive/10 text-destructive">
               <ShieldAlert className="size-5" />
             </div>
-            <CardTitle className="text-xl font-bold tracking-tight">Không có quyền truy cập</CardTitle>
+            <CardTitle className="text-xl font-bold tracking-tight">
+              Không có quyền truy cập
+            </CardTitle>
             <CardDescription>
               Tài khoản đã đăng nhập nhưng chưa được cấp quyền vào Trung tâm vận hành.
             </CardDescription>
@@ -188,22 +264,62 @@ function DashboardShell({ children }: Readonly<{ children: React.ReactNode }>) {
     );
   }
 
+  const visibleRoutes = new Set(getVisibleRoutes(effectiveAccess));
+
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="dashboard-shell flex h-dvh min-h-screen overflow-hidden bg-background text-foreground">
       <AppSidebar
-        currentUser={currentUser}
         effectiveAccess={effectiveAccess}
         collapsed={sidebarCollapsed}
+        className="hidden lg:flex"
         onToggleCollapsed={() => setSidebarCollapsed((previous) => !previous)}
-        onLogout={async () => {
-          await logout();
-          router.replace("/login");
-        }}
       />
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <main className="flex-1 overflow-y-auto p-6 lg:p-8">{children}</main>
+        <Topbar
+          currentUser={currentUser}
+          showAlerts={visibleRoutes.has("/alerts")}
+          onOpenNavigation={() => setMobileNavigationOpen(true)}
+          onLogout={async () => {
+            await logout();
+            router.replace("/login");
+          }}
+        />
+        <main id="main-content" className="flex-1 overflow-y-auto">
+          <div className="mx-auto w-full max-w-[1600px] p-4 md:p-5 xl:p-6">
+            {children}
+          </div>
+        </main>
       </div>
+
+      {mobileNavigationOpen ? (
+        <div
+          className="fixed inset-0 z-50 lg:hidden"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Menu điều hướng"
+        >
+          <button
+            type="button"
+            className="absolute inset-0 cursor-default bg-slate-950/45"
+            onClick={() => setMobileNavigationOpen(false)}
+            aria-label="Đóng menu điều hướng"
+          />
+          <div
+            ref={mobileNavigationPanelRef}
+            className="relative h-full w-fit animate-in slide-in-from-left-4 duration-200"
+          >
+            <AppSidebar
+              effectiveAccess={effectiveAccess}
+              collapsed={false}
+              mobile
+              onToggleCollapsed={() => undefined}
+              onNavigate={() => setMobileNavigationOpen(false)}
+              onClose={() => setMobileNavigationOpen(false)}
+            />
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
