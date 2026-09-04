@@ -1,58 +1,58 @@
-import React from 'react';
-import { Map, Activity, Cpu, ShieldCheck } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Activity, Boxes, ShieldCheck, Store } from "lucide-react";
+
+const capabilities = [
+  {
+    icon: Store,
+    title: "Kiểm soát đa địa điểm",
+    description: "Tổ chức, điểm bán và kiosk được đặt trong cùng một phạm vi quản trị rõ ràng.",
+    evidence: ["Tổ chức và cửa hàng", "Kiosk theo từng điểm bán", "Phạm vi người dùng"],
+  },
+  {
+    icon: Activity,
+    title: "Phản ứng theo thời gian thực",
+    description: "Trạng thái, sự kiện và cảnh báo giúp đội ngũ nhìn thấy bằng chứng trước khi hành động.",
+    evidence: ["Trạng thái thiết bị", "Cảnh báo vận hành", "Lịch sử sự kiện"],
+  },
+  {
+    icon: Boxes,
+    title: "Điều phối bán hàng đến sản xuất",
+    description: "Danh mục, menu, đơn hàng, thanh toán và cấu hình sản xuất được liên kết theo chuỗi.",
+    evidence: ["Danh mục và menu", "Đơn hàng và thanh toán", "Cấu hình sản xuất"],
+  },
+  {
+    icon: ShieldCheck,
+    title: "Quản trị có kiểm soát",
+    description: "Vai trò, readiness, bảo trì và các thao tác ảnh hưởng cao luôn có ngữ cảnh vận hành.",
+    evidence: ["RBAC theo phạm vi", "Readiness và bảo trì", "Theo dõi thay đổi"],
+  },
+];
 
 export function ValueSection() {
-  const values = [
-    {
-      title: 'Quản lý đa địa điểm',
-      description: 'Quản lý Organization, Store và Kiosk tập trung trên một hệ thống.',
-      icon: <Map className="w-10 h-10 text-primary" />,
-    },
-    {
-      title: 'Vận hành theo thời gian thực',
-      description: 'Theo dõi trạng thái kiosk, tồn kho, cảnh báo và các hoạt động vận hành.',
-      icon: <Activity className="w-10 h-10 text-primary" />,
-    },
-    {
-      title: 'Tự động hóa bằng robot',
-      description: 'Production workflow được chuẩn bị tập trung và thực thi tại Local Edge kết nối với robot.',
-      icon: <Cpu className="w-10 h-10 text-primary" />,
-    },
-    {
-      title: 'Phân quyền theo phạm vi',
-      description: 'Các vai trò quản trị, quản lý, nhân viên và kỹ thuật viên chỉ truy cập chức năng và tài nguyên phù hợp.',
-      icon: <ShieldCheck className="w-10 h-10 text-primary" />,
-    },
-  ];
-
   return (
-    <section id="giai-phap" className="py-24 bg-muted/30">
-      <div className="container mx-auto px-4">
-        <div className="text-center mb-16 max-w-2xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
-            Một nền tảng cho toàn bộ hệ thống vận hành
+    <section id="giai-phap" className="scroll-mt-20 bg-[#0B1018] py-20 text-white sm:py-24 lg:py-32" data-landing-reveal>
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="grid gap-8 lg:grid-cols-12 lg:items-end">
+          <div className="lg:col-span-8"><p className="text-sm font-semibold uppercase tracking-[0.16em] text-cyan-300">Nền tảng phía sau workflow</p>
+          <h2 className="mt-4 text-4xl font-semibold tracking-[-0.05em] text-white sm:text-5xl lg:text-6xl">
+            Không chỉ điều khiển robot.<br/><span className="text-slate-500">Vận hành cả mô hình bán hàng.</span>
           </h2>
-          <p className="text-muted-foreground text-lg">
-            Khám phá sức mạnh của hệ thống quản trị tự động tập trung, giúp bạn mở rộng quy mô kinh doanh một cách bền vững.
-          </p>
+          </div><p className="max-w-md text-base leading-7 text-slate-400 lg:col-span-4">Từ quyền truy cập đến đơn hàng và thực thi, mỗi lớp đều nằm trong cùng một ngữ cảnh vận hành.</p>
         </div>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {values.map((value, index) => (
-            <Card key={index} className="border-border hover:shadow-md transition-shadow duration-300">
-              <CardHeader>
-                <div className="bg-primary/5 w-16 h-16 rounded-xl flex items-center justify-center mb-4">
-                  {value.icon}
-                </div>
-                <CardTitle className="text-xl">{value.title}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription className="text-base text-muted-foreground leading-relaxed">
-                  {value.description}
-                </CardDescription>
-              </CardContent>
-            </Card>
+        <div className="mt-14 grid gap-4 md:grid-cols-2 lg:grid-cols-6">
+          {capabilities.map(({ description, evidence, icon: Icon, title }, index) => (
+            <article key={title} className={`relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.045] p-6 ${index < 2 ? "lg:col-span-3" : "lg:col-span-3"}`} data-reveal-item>
+              <div className="absolute right-0 top-0 h-32 w-32 bg-cyan-300/5 blur-3xl"/><div className="flex size-11 items-center justify-center rounded-xl border border-cyan-300/15 bg-cyan-300/10 text-cyan-200">
+                <Icon className="size-5" aria-hidden="true" />
+              </div>
+              <h3 className="mt-8 text-xl font-semibold text-white">{title}</h3>
+              <p className="mt-3 max-w-md text-sm leading-6 text-slate-400">{description}</p>
+              <ul className="mt-6 flex flex-wrap gap-2 border-t border-white/10 pt-5 text-xs text-slate-300">
+                {evidence.map((item) => (
+                  <li key={item} className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5">{item}</li>
+                ))}
+              </ul>
+            </article>
           ))}
         </div>
       </div>

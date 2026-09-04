@@ -1,93 +1,47 @@
-import React from 'react';
-import { Button } from '@/components/ui/button';
-import { Server, Store, Cpu, Cloud, Activity } from 'lucide-react';
+import { Apple, Download, Monitor, Terminal } from "lucide-react";
+
+import { OperationalSystemMap } from "@/components/features/service-registration/operational-system-map";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+
+const downloadUrl = process.env.NEXT_PUBLIC_FAIROBOT_STUDIO_DOWNLOAD_URL?.trim();
 
 export function HeroSection() {
   return (
-    <section className="relative pt-32 pb-20 md:pt-48 md:pb-32 overflow-hidden bg-background">
-      {/* Background decoration */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-primary/10 via-background to-background -z-10" />
-      
-      <div className="container mx-auto px-4 grid lg:grid-cols-2 gap-12 lg:gap-8 items-center">
-        {/* Content */}
-        <div className="max-w-2xl">
-          <div className="inline-flex items-center rounded-full px-3 py-1 text-sm font-medium text-primary bg-primary/10 mb-6">
-            ICEBOT AUTOMATED RETAIL PLATFORM
-          </div>
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6 text-foreground">
-            Vận hành điểm bán kem tự động thông minh cùng <span className="text-primary">IceBot</span>
-          </h1>
-          <p className="text-lg md:text-xl text-muted-foreground mb-8 leading-relaxed">
-            IceBot kết hợp Kiosk, nền tảng quản trị tập trung, IoT và robot để hỗ trợ vận hành hệ thống bán kem tự động tại nhiều địa điểm.
+    <section className="relative min-h-screen overflow-hidden bg-[#05070A] pb-20 pt-32 text-white sm:pt-36 lg:flex lg:items-center lg:py-40">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_78%_18%,rgba(64,221,255,0.15),transparent_30%),radial-gradient(circle_at_14%_40%,rgba(55,94,255,0.18),transparent_34%),linear-gradient(rgba(255,255,255,0.035)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.035)_1px,transparent_1px)] bg-[size:auto,auto,48px_48px,48px_48px]" />
+      <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-[#0B1018] to-transparent" />
+      <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 sm:px-6 lg:grid-cols-12 lg:gap-10 lg:px-8">
+        <div className="relative z-10 max-w-2xl lg:col-span-6">
+          <p className="inline-flex rounded-full border border-cyan-300/20 bg-cyan-300/5 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200" data-hero-motion>
+            FaiRobot Studio × IceBot Platform
           </p>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <a href="#dang-ky">
-              <Button size="lg" className="w-full sm:w-auto text-base">
-                Đăng ký triển khai
-              </Button>
-            </a>
-            <a href="#giai-phap">
-              <Button size="lg" variant="outline" className="w-full sm:w-auto text-base">
-                Khám phá hệ thống
-              </Button>
-            </a>
+          <h1 className="mt-7 text-5xl font-semibold leading-[0.98] tracking-[-0.06em] text-white sm:text-6xl lg:text-[5.2rem]" data-hero-motion>
+            Biến workflow thành một điểm bán <span className="bg-gradient-to-r from-cyan-200 via-white to-indigo-200 bg-clip-text text-transparent">đang vận hành.</span>
+          </h1>
+          <p className="mt-7 max-w-xl text-lg leading-8 text-slate-300" data-hero-motion>
+            Thiết kế và quan sát quy trình trước khi triển khai. IceBot kết nối workflow, quản trị đa điểm bán, thanh toán, máy biên và robot trong một hệ thống thống nhất.
+          </p>
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row" data-hero-motion>
+            {downloadUrl ? (
+              <a href={downloadUrl} className={cn(buttonVariants({ size: "lg" }), "h-12 bg-white px-5 text-base text-[#080B10] shadow-[0_0_35px_rgba(125,230,255,0.22)] hover:bg-cyan-50")}>
+                <Download className="size-4" aria-hidden="true" />Tải FaiRobot Studio cho Windows
+              </a>
+            ) : (
+              <span aria-disabled="true" className={cn(buttonVariants({ size: "lg" }), "h-12 cursor-not-allowed bg-white/80 px-5 text-base text-[#080B10]")}>
+                <Download className="size-4" aria-hidden="true" />FaiRobot Studio sắp phát hành
+              </span>
+            )}
+            <a href="#cach-hoat-dong" className={cn(buttonVariants({ size: "lg", variant: "outline" }), "h-12 border-white/20 bg-white/5 px-5 text-base text-white hover:bg-white/10 hover:text-white")}>Xem hành trình triển khai</a>
           </div>
-        </div>
-
-        {/* Visual Product Representation */}
-        <div className="relative h-[400px] md:h-[500px] w-full hidden sm:block">
-          <div className="absolute inset-0 flex items-center justify-center">
-            {/* Central Node */}
-            <div className="relative z-20 bg-card border border-border shadow-2xl rounded-2xl p-6 w-64 flex flex-col items-center justify-center transform hover:scale-105 transition-transform duration-300">
-              <Cloud className="text-primary w-12 h-12 mb-3" />
-              <h3 className="font-semibold text-lg">Cloud Managed</h3>
-              <p className="text-sm text-muted-foreground mt-1 text-center">Nền tảng quản trị tập trung</p>
-              
-              <div className="mt-4 pt-4 border-t w-full flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Trạng thái</span>
-                <span className="flex items-center text-success font-medium">
-                  <Activity className="w-4 h-4 mr-1" />
-                  Real-time
-                </span>
-              </div>
-            </div>
-
-            {/* Connecting Lines (CSS representation) */}
-            <div className="absolute top-1/2 left-1/2 w-[300px] h-[300px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-primary/30 -z-10 animate-[spin_30s_linear_infinite]" />
-            <div className="absolute top-1/2 left-1/2 w-[450px] h-[450px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-primary/20 -z-10 animate-[spin_40s_linear_infinite_reverse]" />
-
-            {/* Orbiting Nodes */}
-            <div className="absolute top-[15%] left-[20%] z-10 bg-card/80 backdrop-blur border border-border rounded-xl p-3 shadow-lg flex items-center gap-3 transform -translate-x-1/2 -translate-y-1/2 animate-in fade-in duration-700 delay-100">
-              <div className="bg-primary/10 p-2 rounded-lg">
-                <Store className="text-primary w-5 h-5" />
-              </div>
-              <div>
-                <p className="text-sm font-medium">Multi-location</p>
-                <p className="text-xs text-muted-foreground">Store / Kiosk</p>
-              </div>
-            </div>
-
-            <div className="absolute bottom-[20%] right-[15%] z-10 bg-card/80 backdrop-blur border border-border rounded-xl p-3 shadow-lg flex items-center gap-3 transform translate-x-1/2 translate-y-1/2 animate-in fade-in duration-700 delay-300">
-              <div className="bg-secondary/20 p-2 rounded-lg">
-                <Cpu className="text-secondary-foreground w-5 h-5" />
-              </div>
-              <div>
-                <p className="text-sm font-medium">Automated</p>
-                <p className="text-xs text-muted-foreground">Robot Operation</p>
-              </div>
-            </div>
-
-            <div className="absolute top-[25%] right-[10%] z-10 bg-card/80 backdrop-blur border border-border rounded-xl p-3 shadow-lg flex items-center gap-3 transform translate-x-1/2 -translate-y-1/2 animate-in fade-in duration-700 delay-500">
-              <div className="bg-muted p-2 rounded-lg">
-                <Server className="text-foreground w-5 h-5" />
-              </div>
-              <div>
-                <p className="text-sm font-medium">Local Edge</p>
-                <p className="text-xs text-muted-foreground">Execution</p>
-              </div>
-            </div>
+          <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-xs font-medium text-slate-400" data-hero-motion>
+            <span className="flex items-center gap-1.5"><Monitor className="size-4 text-cyan-300" />Windows 10/11</span>
+            <span className="flex items-center gap-1.5"><Apple className="size-4" />macOS — Coming soon</span>
+            <span className="flex items-center gap-1.5"><Terminal className="size-4" />Linux — Coming soon</span>
           </div>
+          <p className="mt-7 border-l border-cyan-300/40 pl-4 text-sm leading-6 text-slate-400">IceBot cung cấp nền tảng phần mềm và giải pháp tích hợp; không cung cấp cánh tay robot.</p>
         </div>
+        <div className="lg:col-span-6"><OperationalSystemMap /></div>
       </div>
     </section>
   );

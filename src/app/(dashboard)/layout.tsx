@@ -5,6 +5,7 @@ import { LoaderCircle, RefreshCw, ShieldAlert, WifiOff } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 
 import { AppSidebar } from "@/components/shared/app-sidebar";
+import { AuthenticatedAppProviders } from "@/components/shared/authenticated-app-providers";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/hooks/identity/use-auth";
@@ -15,6 +16,10 @@ export default function DashboardLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  return <AuthenticatedAppProviders><DashboardShell>{children}</DashboardShell></AuthenticatedAppProviders>;
+}
+
+function DashboardShell({ children }: Readonly<{ children: React.ReactNode }>) {
   const {
     status,
     currentUser,

@@ -1,64 +1,38 @@
-import React from 'react';
-import Link from 'next/link';
+import Link from "next/link";
+
+const quickLinks = [
+  ["Giải pháp", "/#giai-phap"],
+  ["Hành trình", "/#cach-hoat-dong"],
+  ["Hệ thống", "/#he-thong"],
+  ["Đăng ký triển khai", "/#dang-ky"],
+] as const;
+
+const policyLinks = [
+  ["Về chúng tôi", "/about-us"],
+  ["Chính sách bảo mật", "/privacy-policy"],
+  ["Điều khoản sử dụng", "/terms-of-use"],
+  ["Thông tin liên hệ", "/contact-information"],
+] as const;
 
 export function PublicFooter() {
-  const currentYear = new Date().getFullYear();
-
   return (
-    <footer className="bg-card border-t border-border py-12">
-      <div className="container mx-auto px-4">
-        <div className="grid md:grid-cols-3 gap-8 items-start justify-between">
-          <div className="md:col-span-1">
-            <Link href="/" className="font-bold text-2xl tracking-tighter text-primary block mb-2">
-              ICEBOT
+    <footer className="border-t border-white/10 bg-[#05070A] text-white">
+      <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8 lg:py-20">
+        <div className="grid gap-12 lg:grid-cols-12">
+          <div className="lg:col-span-6">
+            <Link href="/" className="inline-flex items-center gap-3 text-lg font-bold tracking-[-0.04em]">
+              <span className="flex size-9 items-center justify-center rounded-lg bg-white text-xs text-[#05070A]">IB</span>ICEBOT
             </Link>
-            <p className="text-muted-foreground text-sm leading-relaxed">
-              Hệ thống kiosk bán kem tự động kết hợp robot arm và IoT đa điểm, tối ưu hiệu suất vận hành chuỗi.
-            </p>
+            <p className="mt-5 max-w-sm text-sm leading-6 text-slate-400">Nền tảng biến workflow mô phỏng thành hệ thống bán hàng tự động có thể quản trị và mở rộng.</p>
           </div>
-          
-          <div className="flex flex-col gap-2">
-            <h4 className="text-xs font-semibold text-foreground uppercase tracking-wider mb-1">
-              Liên kết nhanh
-            </h4>
-            <a href="/#giai-phap" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              Giải pháp
-            </a>
-            <a href="/#he-thong" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              Hệ thống
-            </a>
-            <a href="/#dang-ky" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              Đăng ký hợp tác
-            </a>
-            <Link href="/login" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              Đăng nhập quản trị
-            </Link>
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <h4 className="text-xs font-semibold text-foreground uppercase tracking-wider mb-1">
-              Chính sách & Thông tin
-            </h4>
-            <Link href="/about-us" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              Về chúng tôi
-            </Link>
-            <Link href="/privacy-policy" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              Chính sách bảo mật
-            </Link>
-            <Link href="/terms-of-use" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              Điều khoản sử dụng
-            </Link>
-            <Link href="/payment-policy" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              Chính sách thanh toán
-            </Link>
-            <Link href="/contact-information" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              Thông tin liên hệ
-            </Link>
-          </div>
+          <nav className="grid grid-cols-2 gap-8 lg:col-span-6" aria-label="Liên kết chân trang">
+            <div><h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Khám phá</h2><ul className="mt-5 space-y-3">{quickLinks.map(([label, href]) => <li key={href}><Link href={href} className="text-sm text-slate-300 transition-colors hover:text-white">{label}</Link></li>)}</ul></div>
+            <div><h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Thông tin</h2><ul className="mt-5 space-y-3">{policyLinks.map(([label, href]) => <li key={href}><Link href={href} className="text-sm text-slate-300 transition-colors hover:text-white">{label}</Link></li>)}<li><Link href="/login" className="text-sm text-slate-300 transition-colors hover:text-white">Đăng nhập quản trị</Link></li></ul></div>
+          </nav>
         </div>
-        
-        <div className="mt-12 pt-8 border-t border-border/50 text-center text-xs text-muted-foreground">
-          &copy; {currentYear} IceBot. All rights reserved.
+        <div className="mt-14 flex flex-col gap-3 border-t border-white/10 pt-6 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between">
+          <span>© {new Date().getFullYear()} IceBot. All rights reserved.</span>
+          <span>Software platform for robot-powered retail.</span>
         </div>
       </div>
     </footer>
