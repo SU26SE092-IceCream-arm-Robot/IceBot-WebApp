@@ -27,7 +27,7 @@ export default defineConfig({
     baseURL,
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
-    video: "retain-on-failure",
+    video: "off",
   },
   webServer: useExternalWebServer
     ? undefined
@@ -39,7 +39,25 @@ export default defineConfig({
       },
   projects: [
     {
+      name: "public-desktop",
+      testMatch: /.*landing.*\.spec\.ts/,
+      use: {
+        ...devices["Desktop Chrome"],
+        channel: "chrome",
+        viewport: { width: 1440, height: 900 },
+      },
+    },
+    {
+      name: "public-mobile",
+      testMatch: /.*landing.*\.spec\.ts/,
+      use: {
+        ...devices["Pixel 7"],
+        channel: "chrome",
+      },
+    },
+    {
       name: "system-admin-desktop",
+      testIgnore: /.*landing.*\.spec\.ts/,
       use: {
         ...devices["Desktop Chrome"],
         viewport: { width: 1440, height: 900 },
@@ -48,6 +66,7 @@ export default defineConfig({
     },
     {
       name: "system-admin-tablet",
+      testIgnore: /.*landing.*\.spec\.ts/,
       use: {
         ...devices["Desktop Chrome"],
         viewport: { width: 1024, height: 768 },

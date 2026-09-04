@@ -51,13 +51,17 @@ export function useKioskOperationsRealtime(
   kioskIdsOrOptions: readonly string[] | UseKioskOperationsRealtimeOptions,
   legacyCallback?: () => void,
 ): void {
-  const isLegacy = Array.isArray(kioskIdsOrOptions);
-  const kioskIds = isLegacy ? kioskIdsOrOptions : (kioskIdsOrOptions.kioskIds ?? []);
-  const enabled = isLegacy ? true : (kioskIdsOrOptions.enabled ?? true);
+  const options: UseKioskOperationsRealtimeOptions = Array.isArray(kioskIdsOrOptions)
+    ? {
+        kioskIds: kioskIdsOrOptions,
+        enabled: true,
+        onInventoryChanged: legacyCallback,
+      }
+    : (kioskIdsOrOptions as UseKioskOperationsRealtimeOptions);
 
-  const callbacks: KioskOperationsRealtimeCallbacks = isLegacy
-    ? { onInventoryChanged: legacyCallback }
-    : kioskIdsOrOptions;
+  const kioskIds = options.kioskIds ?? [];
+  const enabled = options.enabled ?? true;
+  const callbacks: KioskOperationsRealtimeCallbacks = options;
 
   const callbacksRef = useRef(callbacks);
   const kioskKey = [...new Set(kioskIds)].sort().join(",");

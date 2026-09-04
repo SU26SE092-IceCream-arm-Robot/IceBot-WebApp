@@ -8,7 +8,10 @@ describe("HeroSection", () => {
     render(<HeroSection />);
 
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
-    expect(screen.getByText("FaiRobot Studio sắp phát hành")).toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByRole("link", { name: /Tải FaiRobot Studio cho Windows/i })).toHaveAttribute(
+      "href",
+      "https://github.com/SU26SE092-IceCream-arm-Robot/Fairino-Studio/releases",
+    );
     expect(screen.getByRole("link", { name: "Xem hành trình triển khai" })).toHaveAttribute(
       "href",
       "#cach-hoat-dong",

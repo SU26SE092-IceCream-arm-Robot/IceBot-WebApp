@@ -4,7 +4,13 @@ import { OperationalSystemMap } from "@/components/features/service-registration
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-const downloadUrl = process.env.NEXT_PUBLIC_FAIROBOT_STUDIO_DOWNLOAD_URL?.trim();
+export const DEFAULT_FAIROBOT_STUDIO_DOWNLOAD_URL =
+  "https://github.com/SU26SE092-IceCream-arm-Robot/Fairino-Studio/releases";
+
+const downloadUrl = (
+  process.env.NEXT_PUBLIC_FAIROBOT_STUDIO_DOWNLOAD_URL ??
+  DEFAULT_FAIROBOT_STUDIO_DOWNLOAD_URL
+).trim();
 
 export function HeroSection() {
   return (

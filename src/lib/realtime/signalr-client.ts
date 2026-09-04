@@ -22,7 +22,7 @@ export function createHubConnection(
       nextRetryDelayInMilliseconds: (retryContext) => {
         // Exponential backoff: 0s, 2s, 5s, 10s, 20s, max 30s
         const delays = [0, 2000, 5000, 10000, 20000];
-        return delays[retryContext.previousAttempts] ?? 30000;
+        return delays[retryContext.previousRetryCount] ?? 30000;
       },
     })
     .configureLogging(options.logLevel ?? LogLevel.Warning)
