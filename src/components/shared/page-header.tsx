@@ -12,7 +12,6 @@ interface PageHeaderProps {
 
 export function PageHeader({
   title,
-  description,
   metadata,
   actions,
   className,
@@ -28,11 +27,6 @@ export function PageHeader({
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">
           {title}
         </h1>
-        {description ? (
-          <p className="mt-1.5 text-sm leading-6 text-muted-foreground">
-            {description}
-          </p>
-        ) : null}
         {metadata ? <div className="mt-2">{metadata}</div> : null}
       </div>
       {actions ? (

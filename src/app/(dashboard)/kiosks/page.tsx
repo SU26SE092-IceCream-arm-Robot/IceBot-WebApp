@@ -4,20 +4,16 @@ import { useState } from "react";
 import {
   AlertTriangle,
   Cpu,
-  Monitor,
   Plus,
   RefreshCw,
   Search,
   SlidersHorizontal,
-  Power,
-  ShieldAlert,
 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 
 import { DeviceCatalogDialog } from "@/components/features/kiosks/catalog/device-catalog-dialog";
 import { KioskCreateDialog } from "@/components/features/kiosks/management/kiosk-create-dialog";
 import { KioskCard } from "@/components/features/kiosks/kiosk-card";
-import { MetricStrip, MetricStripItem } from "@/components/shared/metric-strip";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import {
@@ -70,7 +66,6 @@ export default function KiosksPage() {
   const [isDeviceCatalogOpen, setIsDeviceCatalogOpen] = useState(false);
   const {
     kiosks,
-    summary,
     locations,
     filters,
     isLoading,
@@ -126,41 +121,6 @@ export default function KiosksPage() {
           </>
         }
       />
-
-      <MetricStrip>
-        <MetricStripItem
-          icon={Monitor}
-          label="Tổng số kiosk"
-          value={summary.total.toLocaleString("vi-VN")}
-          tone="neutral"
-          description="Trong phạm vi hiện tại"
-        />
-        <MetricStripItem
-          icon={Power}
-          label="Đã kích hoạt"
-          value={summary.active.toLocaleString("vi-VN")}
-          tone="primary"
-          description="Sẵn sàng nhận cấu hình"
-        />
-        <MetricStripItem
-          icon={Cpu}
-          label="Đang cấu hình"
-          value={summary.provisioning.toLocaleString("vi-VN")}
-          tone="neutral"
-          description="Chưa hoàn tất kích hoạt"
-        />
-        <MetricStripItem
-          icon={ShieldAlert}
-          label="Cần chú ý"
-          value={(summary.maintenance + summary.disabled).toLocaleString(
-            "vi-VN",
-          )}
-          tone={
-            summary.maintenance + summary.disabled > 0 ? "warning" : "neutral"
-          }
-          description={`${summary.maintenance} bảo trì · ${summary.disabled} đã dừng`}
-        />
-      </MetricStrip>
 
       {metadataWarning ? (
         <div

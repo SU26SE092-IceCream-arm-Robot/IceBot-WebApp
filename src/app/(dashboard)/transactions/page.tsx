@@ -4,13 +4,11 @@ import {
   AlertTriangle,
   ChevronLeft,
   ChevronRight,
-  CreditCard,
   ReceiptText,
   RefreshCw,
   RotateCcw,
   Search,
   ShieldAlert,
-  XCircle,
 } from "lucide-react";
 
 import {
@@ -37,7 +35,6 @@ import {
   TransactionsTable,
 } from "@/components/features/transactions/orders/transactions-table";
 import { Button } from "@/components/ui/button";
-import { MetricStrip, MetricStripItem } from "@/components/shared/metric-strip";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -159,8 +156,6 @@ export default function TransactionsPage() {
     statusHistory,
     filters,
     refundFilters,
-    summary,
-    refundsSummary,
     selectedOrder,
     selectedRefund,
     isDetailOpen,
@@ -269,61 +264,6 @@ export default function TransactionsPage() {
           </Button>
         }
       />
-
-      {activeTab === "orders" || activeTab === "refunds" ? (
-        <MetricStrip>
-          <MetricStripItem
-            icon={ReceiptText}
-            label={activeTab === "orders" ? "Tổng giao dịch" : "Tổng hoàn tiền"}
-            value={
-              activeTab === "orders" ? summary.total : refundsSummary.total
-            }
-            tone="primary"
-          />
-          <MetricStripItem
-            icon={CreditCard}
-            label={
-              activeTab === "orders"
-                ? "Đã thanh toán trên trang"
-                : "Đã xử lý trên trang"
-            }
-            value={
-              activeTab === "orders"
-                ? summary.paidOnPage
-                : refundsSummary.processedOnPage
-            }
-            tone="success"
-          />
-          <MetricStripItem
-            icon={RotateCcw}
-            label={
-              activeTab === "orders"
-                ? "Cần hoàn tiền trên trang"
-                : "Đã yêu cầu trên trang"
-            }
-            value={
-              activeTab === "orders"
-                ? summary.refundRequiredOnPage
-                : refundsSummary.requestedOnPage
-            }
-            tone="warning"
-          />
-          <MetricStripItem
-            icon={XCircle}
-            label={
-              activeTab === "orders"
-                ? "Thất bại / hủy trên trang"
-                : "Lỗi / từ chối trên trang"
-            }
-            value={
-              activeTab === "orders"
-                ? summary.failedOrCancelledOnPage
-                : refundsSummary.failedOrRejectedOnPage
-            }
-            tone="destructive"
-          />
-        </MetricStrip>
-      ) : null}
 
       <div
         className="flex max-w-full overflow-x-auto border-b border-border"

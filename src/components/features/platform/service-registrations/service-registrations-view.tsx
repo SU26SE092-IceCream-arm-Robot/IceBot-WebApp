@@ -3,23 +3,19 @@
 import {
   AlertTriangle,
   Calendar,
-  CheckCircle2,
   ChevronLeft,
   ChevronRight,
-  ClipboardList,
   Eye,
   FileCheck2,
   RefreshCw,
   RotateCcw,
   Search,
   Store,
-  UserCheck,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { MetricStrip, MetricStripItem } from "@/components/shared/metric-strip";
 import { PageHeader } from "@/components/shared/page-header";
 import {
   Select,
@@ -56,17 +52,6 @@ const STATUS_OPTIONS = [
 
 export function ServiceRegistrationsView() {
   const state = useServiceRegistrations();
-  const pendingOnPage = state.items.filter(
-    (item) => item.status === "Submitted" || item.status === "UnderReview",
-  ).length;
-  const approvedOnPage = state.items.filter(
-    (item) => item.status === "Approved",
-  ).length;
-  const failedOnPage = state.items.filter(
-    (item) =>
-      item.status === "Rejected" || item.status === "ProvisioningFailed",
-  ).length;
-
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6">
       <PageHeader
@@ -83,37 +68,6 @@ export function ServiceRegistrationsView() {
           </Button>
         }
       />
-
-      <MetricStrip>
-        <MetricStripItem
-          icon={ClipboardList}
-          label="Tổng hồ sơ"
-          value={state.pagination.totalCount}
-          description="Theo bộ lọc hiện tại"
-          tone="primary"
-        />
-        <MetricStripItem
-          icon={UserCheck}
-          label="Chờ xử lý trên trang"
-          value={pendingOnPage}
-          description="Submitted hoặc UnderReview"
-          tone={pendingOnPage > 0 ? "warning" : "neutral"}
-        />
-        <MetricStripItem
-          icon={CheckCircle2}
-          label="Đã duyệt trên trang"
-          value={approvedOnPage}
-          description="Provisioning hoàn tất"
-          tone="success"
-        />
-        <MetricStripItem
-          icon={AlertTriangle}
-          label="Ngoại lệ trên trang"
-          value={failedOnPage}
-          description="Bị từ chối hoặc cấp phát lỗi"
-          tone={failedOnPage > 0 ? "destructive" : "neutral"}
-        />
-      </MetricStrip>
 
       {/* Filter Bar */}
       <Card>
@@ -270,32 +224,21 @@ export function ServiceRegistrationsView() {
                         </dl>
                         <div className="flex flex-wrap justify-end gap-2 border-t border-border pt-3">
                           <Button
-                            variant="outline"
+                            variant={
+                              item.status === "Submitted" ||
+                              item.status === "UnderReview"
+                                ? "default"
+                                : "outline"
+                            }
                             size="sm"
                             onClick={() => void state.openDetail(item.id)}
                           >
                             <Eye className="size-4" />
-                            Chi tiết
+                            {item.status === "Submitted" ||
+                            item.status === "UnderReview"
+                              ? "Rà soát hồ sơ"
+                              : "Chi tiết"}
                           </Button>
-                          {item.status === "Submitted" ? (
-                            <Button
-                              size="sm"
-                              onClick={() =>
-                                void state.startReview(item.id, item.revision)
-                              }
-                              disabled={state.actionLoading}
-                            >
-                              Rà soát
-                            </Button>
-                          ) : null}
-                          {item.status === "UnderReview" ? (
-                            <Button
-                              size="sm"
-                              onClick={() => void state.openDetail(item.id)}
-                            >
-                              Duyệt hồ sơ
-                            </Button>
-                          ) : null}
                           {item.status === "ProvisioningFailed" ? (
                             <Button
                               variant="destructive"
@@ -327,14 +270,14 @@ export function ServiceRegistrationsView() {
                       <TableHead className="w-[20%]">
                         Thương hiệu / Cơ sở
                       </TableHead>
-                      <TableHead className="w-[18%]">Email & SĐT</TableHead>
+                      <TableHead className="w-[16%]">Email & SĐT</TableHead>
                       <TableHead className="w-[14%] text-center">
                         Trạng thái
                       </TableHead>
-                      <TableHead className="w-[10%] text-center">
+                      <TableHead className="w-[8%] text-center">
                         Ngày nộp
                       </TableHead>
-                      <TableHead className="w-[6%] text-right">
+                      <TableHead className="w-[10%] text-right">
                         Thao tác
                       </TableHead>
                     </TableRow>
@@ -409,42 +352,30 @@ export function ServiceRegistrationsView() {
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-1">
                               <Button
-                                variant="ghost"
+                                variant={
+                                  item.status === "Submitted" ||
+                                  item.status === "UnderReview"
+                                    ? "default"
+                                    : "ghost"
+                                }
                                 size="sm"
                                 onClick={() => void state.openDetail(item.id)}
-                                title="Xem chi tiết"
-                                className="h-8 px-2"
+                                title={
+                                  item.status === "Submitted" ||
+                                  item.status === "UnderReview"
+                                    ? "Rà soát và quyết định hồ sơ"
+                                    : "Xem chi tiết"
+                                }
+                                className="h-8 gap-1.5 px-2 text-xs"
                               >
                                 <Eye className="size-4" />
+                                <span>
+                                  {item.status === "Submitted" ||
+                                  item.status === "UnderReview"
+                                    ? "Rà soát hồ sơ"
+                                    : "Xem chi tiết"}
+                                </span>
                               </Button>
-                              {item.status === "Submitted" ? (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() =>
-                                    void state.startReview(
-                                      item.id,
-                                      item.revision,
-                                    )
-                                  }
-                                  disabled={state.actionLoading}
-                                  title="Bắt đầu rà soát"
-                                  className="h-8 px-2 text-xs"
-                                >
-                                  Rà soát
-                                </Button>
-                              ) : null}
-                              {item.status === "UnderReview" ? (
-                                <Button
-                                  variant="default"
-                                  size="sm"
-                                  onClick={() => void state.openDetail(item.id)}
-                                  title="Xử lý duyệt"
-                                  className="h-8 px-2 text-xs"
-                                >
-                                  Duyệt
-                                </Button>
-                              ) : null}
                               {item.status === "ProvisioningFailed" ? (
                                 <Button
                                   variant="destructive"
@@ -510,7 +441,6 @@ export function ServiceRegistrationsView() {
         loading={state.detailLoading}
         error={state.detailError}
         actionLoading={state.actionLoading}
-        onStartReview={state.startReview}
         onOpenApprove={state.openApproveDialog}
         onOpenReject={state.openRejectDialog}
         onRetryProvisioning={state.retryProvisioning}

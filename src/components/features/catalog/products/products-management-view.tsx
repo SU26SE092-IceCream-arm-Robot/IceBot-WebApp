@@ -3,9 +3,6 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import {
-  CircleCheckBig,
-  CirclePause,
-  ShoppingBag,
   LayoutTemplate,
   ListTree,
   Plus,
@@ -31,7 +28,6 @@ import { ProductOptionsCatalogDialog } from "@/components/features/catalog/optio
 import { ProductOptionAuthoringDialog } from "@/components/features/catalog/options/product-option-authoring-dialog";
 import { ProductTemplatesDialog } from "@/components/features/catalog/templates/product-templates-dialog";
 import { RecipeAuthoringDialog } from "@/components/features/catalog/recipes/recipe-authoring-dialog";
-import { MetricStrip, MetricStripItem } from "@/components/shared/metric-strip";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/identity/use-auth";
@@ -148,9 +144,6 @@ export function ProductsManagementView() {
   });
   const productCategories = useProductCategories(true);
   const menuScopeOptions = useMenuScopeOptions(selectedOrganizationId);
-  const availableProductsOnPage = products.data.filter((product) => product.isAvailable).length;
-  const unavailableProductsOnPage =
-    products.data.length - availableProductsOnPage;
 
   const handleOrganizationChange = useCallback((organizationId: string | null) => {
     setSelectedOrganizationId(organizationId);
@@ -263,37 +256,6 @@ export function ProductsManagementView() {
         noun="Sản phẩm"
         onChange={handleOrganizationChange}
       />
-
-      <MetricStrip>
-        <MetricStripItem
-          icon={ShoppingBag}
-          label="Tổng sản phẩm"
-          value={products.pagination.totalCount.toLocaleString("vi-VN")}
-          description="Trong tổ chức đã chọn"
-          tone="primary"
-        />
-        <MetricStripItem
-          icon={ListTree}
-          label="Đang hiển thị"
-          value={products.data.length.toLocaleString("vi-VN")}
-          description="Kết quả trên trang hiện tại"
-          tone="neutral"
-        />
-        <MetricStripItem
-          icon={CircleCheckBig}
-          label="Đang bán trên trang"
-          value={availableProductsOnPage.toLocaleString("vi-VN")}
-          description="Có thể đưa vào thực đơn"
-          tone="success"
-        />
-        <MetricStripItem
-          icon={CirclePause}
-          label="Ngừng bán trên trang"
-          value={unavailableProductsOnPage.toLocaleString("vi-VN")}
-          description="Không khả dụng để bán"
-          tone={unavailableProductsOnPage > 0 ? "warning" : "neutral"}
-        />
-      </MetricStrip>
 
       <CatalogSearchBar
         value={searchTerm}

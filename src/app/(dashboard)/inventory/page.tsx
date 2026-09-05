@@ -3,15 +3,11 @@
 import { useCallback, useState } from "react";
 import {
   AlertTriangle,
-  Boxes,
   ChevronLeft,
   ChevronRight,
   CircleCheck,
-  CircleHelp,
-  PackageCheck,
   RefreshCw,
   Search,
-  SlidersHorizontal,
   TriangleAlert,
   Warehouse,
   FlaskConical,
@@ -29,10 +25,9 @@ import {
   StockMovementsTable,
 } from "@/components/features/operations/inventory/inventory-table";
 import { InventoryTopologyPanel } from "@/components/features/operations/inventory/inventory-topology-panel";
-import { MetricStrip, MetricStripItem } from "@/components/shared/metric-strip";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -224,7 +219,6 @@ export default function InventoryPage() {
     stores,
     availableKiosks,
     filters,
-    summary,
     lookupWarning,
     selectedDispenser,
     isDetailOpen,
@@ -356,51 +350,8 @@ export default function InventoryPage() {
         </div>
       ) : null}
 
-      <MetricStrip>
-        <MetricStripItem
-          icon={Boxes}
-          label="Tổng bộ phân phối"
-          value={summary.total.toLocaleString("vi-VN")}
-          tone="primary"
-          description="Trong phạm vi hiện tại"
-        />
-        <MetricStripItem
-          icon={TriangleAlert}
-          label="Sắp hết trên trang"
-          value={summary.lowOnPage.toLocaleString("vi-VN")}
-          tone="warning"
-          description="Cần chuẩn bị nạp thêm"
-        />
-        <MetricStripItem
-          icon={PackageCheck}
-          label="Đầy trên trang"
-          value={summary.fullOnPage.toLocaleString("vi-VN")}
-          tone="success"
-          description="Đủ mức phục vụ"
-        />
-        <MetricStripItem
-          icon={CircleHelp}
-          label="Chưa xác định trên trang"
-          value={summary.unknownOnPage.toLocaleString("vi-VN")}
-          tone="neutral"
-          description="Thiếu số đo hợp lệ"
-        />
-      </MetricStrip>
-
-      <Card className="gap-0 rounded-xl border border-border/80 bg-card py-0 shadow-none">
-        <CardHeader className="border-b border-border px-4 py-4">
-          <div className="flex items-start gap-3">
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
-              <SlidersHorizontal className="size-5" />
-            </span>
-            <div className="space-y-0.5">
-              <CardTitle className="text-base font-semibold">
-                Bộ lọc tồn kho
-              </CardTitle>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="grid gap-2 bg-muted/10 px-4 py-3 md:grid-cols-2 xl:grid-cols-[minmax(240px,1fr)_180px_220px_220px_auto]">
+      <section className="border-y border-border bg-muted/10 py-3">
+        <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-[minmax(240px,1fr)_180px_220px_220px_auto]">
           <div className="relative">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -503,14 +454,8 @@ export default function InventoryPage() {
           >
             Xóa lọc
           </Button>
-        </CardContent>
-      </Card>
-
-      <InventoryTopologyPanel
-        kioskId={filters.kioskId === "ALL" ? null : filters.kioskId}
-        canConfigure={canConfigureInventory}
-        onInventoryChanged={refresh}
-      />
+        </div>
+      </section>
 
       <Card className="gap-0 rounded-xl border border-border/80 bg-card py-0 shadow-none">
         <CardHeader className="border-b border-border px-4 py-4">
@@ -520,9 +465,7 @@ export default function InventoryPage() {
                 <Warehouse className="size-5" />
               </span>
               <div className="space-y-0.5">
-                <CardTitle className="text-base font-semibold">
-                  Trạng thái nguyên liệu
-                </CardTitle>
+              <CardTitle className="text-base font-semibold">Việc cần xử lý</CardTitle>
               </div>
             </div>
             <span className="w-fit rounded-full border border-border bg-muted/30 px-2.5 py-1 text-xs text-muted-foreground">
@@ -576,6 +519,12 @@ export default function InventoryPage() {
           onNext={nextDispenserPage}
         />
       </Card>
+
+      <InventoryTopologyPanel
+        kioskId={filters.kioskId === "ALL" ? null : filters.kioskId}
+        canConfigure={canConfigureInventory}
+        onInventoryChanged={refresh}
+      />
 
       <Card className="gap-0 rounded-xl border border-border/80 bg-card py-0 shadow-none">
         <CardHeader className="border-b border-border px-4 py-4">

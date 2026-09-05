@@ -187,16 +187,25 @@ export function useServiceRegistrations() {
     setDetailLoading(false);
   }, []);
 
-  const handleStartReview = useCallback(
-    async (id: string, revision?: number) => {
+  const prepareForDecision = useCallback(
+    async (detail: ManagementServiceRegistrationDetail) => {
+      if (detail.status !== "Submitted") return detail;
+
       setActionLoading(true);
       try {
-        const updated = await startReviewServiceRegistration(id, revision);
-        toast.success("Đã chuyển đơn đăng ký sang trạng thái đang rà soát.");
+        // The API keeps this transition for audit/concurrency purposes. It is
+        // deliberately not a separate operator task: opening a decision form
+        // is itself the start of the review.
+        const updated = await startReviewServiceRegistration(
+          detail.id,
+          detail.revision,
+        );
         setSelectedDetail(updated);
         refresh();
+        return updated;
       } catch (err) {
         toast.error(getServiceRegistrationErrorMessage(err));
+        return null;
       } finally {
         setActionLoading(false);
       }
@@ -265,19 +274,25 @@ export function useServiceRegistrations() {
   );
 
   const openApproveDialog = useCallback(
-    (detail: ManagementServiceRegistrationDetail) => {
-      setTargetForApprove(detail);
+    async (detail: ManagementServiceRegistrationDetail) => {
+      const decisionTarget = await prepareForDecision(detail);
+      if (!decisionTarget) return;
+
+      setTargetForApprove(decisionTarget);
       setApproveDialogOpen(true);
     },
-    [],
+    [prepareForDecision],
   );
 
   const openRejectDialog = useCallback(
-    (detail: ManagementServiceRegistrationDetail) => {
-      setTargetForReject(detail);
+    async (detail: ManagementServiceRegistrationDetail) => {
+      const decisionTarget = await prepareForDecision(detail);
+      if (!decisionTarget) return;
+
+      setTargetForReject(decisionTarget);
       setRejectDialogOpen(true);
     },
-    [],
+    [prepareForDecision],
   );
 
   return {
@@ -322,7 +337,6 @@ export function useServiceRegistrations() {
     targetForReject,
     openRejectDialog,
     actionLoading,
-    startReview: handleStartReview,
     approve: handleApprove,
     reject: handleReject,
     retryProvisioning: handleRetryProvisioning,

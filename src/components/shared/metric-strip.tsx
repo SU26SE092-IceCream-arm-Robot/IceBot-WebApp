@@ -39,7 +39,7 @@ export function MetricStrip({
   return (
     <section
       className={cn(
-        "grid overflow-hidden rounded-lg border border-border bg-card sm:grid-cols-2 xl:grid-cols-4",
+        "grid overflow-hidden border-y border-border bg-muted/10 sm:grid-cols-2 xl:grid-cols-4",
         className,
       )}
     >
@@ -66,7 +66,7 @@ export function MetricStripItem({
   tone = "neutral",
 }: MetricStripItemProps) {
   const itemClassName = cn(
-    "group flex min-h-24 min-w-0 items-start justify-between gap-4 border-b border-border px-4 py-3.5 transition-colors sm:[&:nth-last-child(-n+2)]:border-b-0 xl:border-r xl:border-b-0 xl:last:border-r-0",
+    "group flex min-w-0 items-center justify-between gap-3 border-b border-border px-4 py-2.5 transition-colors sm:[&:nth-last-child(-n+2)]:border-b-0 xl:border-r xl:border-b-0 xl:last:border-r-0",
     href && "hover:bg-accent/50",
   );
   const content = (
@@ -75,21 +75,17 @@ export function MetricStripItem({
         <p className="text-xs font-medium text-muted-foreground">{label}</p>
         <p
           className={cn(
-            "mt-1 tabular-nums text-2xl font-semibold tracking-tight",
+            "mt-0.5 tabular-nums text-lg font-semibold tracking-tight",
             TONES[tone].value,
           )}
         >
           {value}
         </p>
-        {description ? (
-          <p className="mt-1 truncate text-xs text-muted-foreground" title={description}>
-            {description}
-          </p>
-        ) : null}
+        {description ? <span className="sr-only">{description}</span> : null}
       </div>
       <span
         className={cn(
-          "flex size-8 shrink-0 items-center justify-center rounded-md",
+          "flex size-7 shrink-0 items-center justify-center rounded-md",
           TONES[tone].icon,
         )}
       >

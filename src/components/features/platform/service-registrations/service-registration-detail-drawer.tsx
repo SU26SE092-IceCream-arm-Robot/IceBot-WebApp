@@ -11,7 +11,6 @@ import {
   FileText,
   LoaderCircle,
   RotateCcw,
-  Shield,
   User,
   XCircle,
 } from "lucide-react";
@@ -38,9 +37,8 @@ interface Props {
   loading: boolean;
   error: string | null;
   actionLoading: boolean;
-  onStartReview: (id: string, revision?: number) => Promise<void>;
-  onOpenApprove: (item: ManagementServiceRegistrationDetail) => void;
-  onOpenReject: (item: ManagementServiceRegistrationDetail) => void;
+  onOpenApprove: (item: ManagementServiceRegistrationDetail) => Promise<void>;
+  onOpenReject: (item: ManagementServiceRegistrationDetail) => Promise<void>;
   onRetryProvisioning: (id: string, revision?: number) => Promise<void>;
 }
 
@@ -133,32 +131,31 @@ export function ServiceRegistrationDetailDrawer({
   loading,
   error,
   actionLoading,
-  onStartReview,
   onOpenApprove,
   onOpenReject,
   onRetryProvisioning,
 }: Props) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[88vh] max-w-3xl flex flex-col p-0 overflow-hidden">
-        <DialogHeader className="px-6 pt-6 pb-2 border-b">
-          <div className="flex flex-wrap items-center justify-between gap-3 pr-6">
+      <DialogContent className="flex h-[min(860px,calc(100vh-3rem))] w-[calc(100vw-3rem)] max-w-6xl flex-col overflow-hidden p-0 sm:max-w-6xl">
+        <DialogHeader className="border-b px-8 py-6">
+          <div className="flex flex-wrap items-start justify-between gap-5 pr-8">
             <div className="space-y-1">
-              <DialogTitle className="text-xl font-bold flex items-center gap-2">
+              <DialogTitle className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
                 <FileCheck2 className="size-5 text-primary" />
                 Đơn đăng ký #{item?.referenceCode || "Chi tiết"}
               </DialogTitle>
-              <DialogDescription>
+              <DialogDescription className="text-sm">
                 {item
-                  ? `Nộp ngày ${formatDateTime(item.submittedAt)} • Phiên bản: v${item.revision}`
-                  : "Xem thông tin đơn"}
+                  ? `Nộp ${formatDateTime(item.submittedAt)} · Đánh giá hồ sơ và quyết định cấp phát.`
+                  : "Đánh giá hồ sơ đăng ký"}
               </DialogDescription>
             </div>
             {item ? getStatusBadge(item.status) : null}
           </div>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto px-6 py-4">
+        <div className="flex-1 overflow-y-auto px-8 py-6">
           {loading ? (
             <div className="flex min-h-64 flex-col items-center justify-center gap-3">
               <LoaderCircle className="size-8 animate-spin text-primary" />
@@ -172,8 +169,9 @@ export function ServiceRegistrationDetailDrawer({
               <p className="text-sm font-medium text-destructive">{error}</p>
             </div>
           ) : item ? (
-            <div className="space-y-6 text-sm">
+            <div className="grid gap-6 text-sm xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.8fr)]">
               {/* Alert nếu lỗi provisioning hoặc bị từ chối */}
+              <div className="space-y-6">
               {item.status === "ProvisioningFailed" &&
               item.provisioningError ? (
                 <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3.5 space-y-1 text-destructive">
@@ -196,7 +194,7 @@ export function ServiceRegistrationDetailDrawer({
                 </div>
               ) : null}
 
-              {/* Nhóm 1: Người liên hệ */}
+              {/* Evidence required to make the decision. */}
               <div className="space-y-2">
                 <div className="flex items-center gap-2 font-semibold text-xs text-foreground uppercase tracking-wider text-muted-foreground">
                   <User className="size-3.5 text-primary" /> Thông tin người
@@ -209,7 +207,6 @@ export function ServiceRegistrationDetailDrawer({
                 </div>
               </div>
 
-              {/* Nhóm 2: Doanh nghiệp & Điểm bán */}
               <div className="space-y-2">
                 <div className="flex items-center gap-2 font-semibold text-xs text-foreground uppercase tracking-wider text-muted-foreground">
                   <Building2 className="size-3.5 text-primary" /> Thông tin cơ
@@ -234,7 +231,18 @@ export function ServiceRegistrationDetailDrawer({
                 </div>
               </div>
 
-              {/* Nhóm 3: Lời nhắn & Điều khoản */}
+              </div>
+              <aside className="space-y-5 rounded-xl border bg-muted/10 p-5 xl:sticky xl:top-0 xl:self-start">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Quyết định</p>
+                  <p className="mt-1 text-sm font-medium">
+                    {item.status === "Submitted"
+                      ? "Kiểm tra hồ sơ rồi chọn phê duyệt hoặc từ chối."
+                      : item.status === "UnderReview"
+                        ? "Hồ sơ đang chờ quyết định cấp phát."
+                        : "Kiểm tra trạng thái và điều kiện hồ sơ."}
+                  </p>
+                </div>
               <div className="space-y-2">
                 <div className="flex items-center gap-2 font-semibold text-xs text-foreground uppercase tracking-wider text-muted-foreground">
                   <FileText className="size-3.5 text-primary" /> Lời nhắn &
@@ -248,21 +256,12 @@ export function ServiceRegistrationDetailDrawer({
                       item.privacyPolicyAccepted ? "Đã đồng ý" : "Chưa đồng ý"
                     }
                   />
-                  <DetailRow
-                    label="Privacy Policy Revision"
-                    value={item.privacyPolicyRevisionId}
-                    mono
-                  />
                 </div>
               </div>
 
-              {/* Nhóm 4: Lịch sử xét duyệt & Cấp phát */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 font-semibold text-xs text-foreground uppercase tracking-wider text-muted-foreground">
-                  <Shield className="size-3.5 text-primary" /> Lịch sử xét duyệt
-                  & Cấp phát
-                </div>
-                <div className="rounded-lg border bg-card/60 p-3.5 space-y-0.5">
+              <details className="group rounded-lg border bg-card/60 p-3.5">
+                <summary className="cursor-pointer list-none text-xs font-semibold uppercase tracking-wider text-muted-foreground">Audit và cấp phát</summary>
+                <dl className="mt-3 space-y-0.5">
                   <DetailRow label="Người rà soát" value={item.reviewedBy} />
                   <DetailRow
                     label="Thời gian rà soát"
@@ -282,43 +281,47 @@ export function ServiceRegistrationDetailDrawer({
                     label="Trạng thái cấp phát"
                     value={item.provisioningStatus}
                   />
-                </div>
-              </div>
+                  <DetailRow label="Policy revision" value={item.privacyPolicyRevisionId} mono />
+                </dl>
+              </details>
+              </aside>
             </div>
           ) : null}
         </div>
 
         {item && !loading ? (
-          <DialogFooter className="px-6 py-4 border-t bg-muted/20 flex-row justify-end gap-2">
-            {item.status === "Submitted" ? (
-              <Button
-                type="button"
-                isLoading={actionLoading}
-                onClick={() => void onStartReview(item.id, item.revision)}
-                className="gap-1.5"
-              >
-                <Eye className="size-4" />
-                Bắt đầu rà soát
-              </Button>
-            ) : null}
+          <DialogFooter className="mx-0 mb-0 shrink-0 flex-col gap-3 rounded-none border-x-0 border-b-0 bg-card px-6 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:px-8">
+            <p className="hidden text-xs leading-relaxed text-muted-foreground lg:block">
+              Thao tác sẽ được ghi nhận vào lịch sử xét duyệt.
+            </p>
+            <div className="flex w-full flex-col-reverse gap-2 sm:ml-auto sm:w-auto sm:flex-row sm:items-center sm:justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              className="h-11 w-full sm:w-auto"
+              disabled={actionLoading}
+              onClick={() => onOpenChange(false)}
+            >
+              Đóng
+            </Button>
 
-            {item.status === "UnderReview" ? (
+            {item.status === "Submitted" || item.status === "UnderReview" ? (
               <>
                 <Button
                   type="button"
                   variant="outline"
-                  className="text-destructive hover:bg-destructive/10"
+                  className="h-11 w-full text-destructive hover:bg-destructive/10 sm:min-w-28 sm:w-auto"
                   disabled={actionLoading}
-                  onClick={() => onOpenReject(item)}
+                  onClick={() => void onOpenReject(item)}
                 >
                   <XCircle className="mr-1.5 size-4" />
                   Từ chối
                 </Button>
                 <Button
                   type="button"
-                  className="bg-emerald-600 hover:bg-emerald-700 gap-1.5"
+                  className="h-11 w-full gap-1.5 bg-emerald-600 hover:bg-emerald-700 sm:min-w-48 sm:w-auto"
                   disabled={actionLoading}
-                  onClick={() => onOpenApprove(item)}
+                  onClick={() => void onOpenApprove(item)}
                 >
                   <CheckCircle2 className="size-4" />
                   Phê duyệt & Cấp phát
@@ -332,20 +335,13 @@ export function ServiceRegistrationDetailDrawer({
                 variant="destructive"
                 isLoading={actionLoading}
                 onClick={() => void onRetryProvisioning(item.id, item.revision)}
-                className="gap-1.5"
+                className="h-11 w-full gap-1.5 sm:w-auto"
               >
                 <RotateCcw className="size-4" />
                 Thử lại cấp phát
               </Button>
             ) : null}
-
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
-              Đóng
-            </Button>
+            </div>
           </DialogFooter>
         ) : null}
       </DialogContent>
