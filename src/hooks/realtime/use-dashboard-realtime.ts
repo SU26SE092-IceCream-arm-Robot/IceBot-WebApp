@@ -30,7 +30,6 @@ export function useDashboardRealtime({
   enabled = true,
 }: UseDashboardRealtimeOptions) {
   const onInvalidatedRef = useRef(onInvalidated);
-  const scopeKey = `${scope}:${organizationId ?? ""}:${storeId ?? ""}:${enabled}`;
 
   useEffect(() => {
     onInvalidatedRef.current = onInvalidated;
@@ -43,6 +42,7 @@ export function useDashboardRealtime({
     let retryAttempt = 0;
     let retryTimer: ReturnType<typeof setTimeout> | null = null;
     let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+    let startPromise: Promise<void> | null = null;
 
     const connection = createHubConnection({
       url: getManagementDashboardHubUrl(),
@@ -84,11 +84,25 @@ export function useDashboardRealtime({
       }, delay);
     };
 
+    const ensureStarted = async () => {
+      if (startPromise) {
+        await startPromise;
+        return;
+      }
+      if (connection.state !== HubConnectionState.Disconnected) return;
+
+      const pendingStart = connection.start();
+      startPromise = pendingStart;
+      try {
+        await pendingStart;
+      } finally {
+        if (startPromise === pendingStart) startPromise = null;
+      }
+    };
+
     const connectAndJoin = async () => {
       try {
-        if (connection.state === HubConnectionState.Disconnected) {
-          await connection.start();
-        }
+        await ensureStarted();
         if (disposed) return;
 
         await joinGroup();
@@ -108,7 +122,12 @@ export function useDashboardRealtime({
     connection.onreconnected(() => {
       void connectAndJoin().then(() => {
         if (!retryTimer) {
-          triggerInvalidated({ scope, organizationId, storeId, reason: "Reconnected" });
+          triggerInvalidated({
+            scope,
+            organizationId,
+            storeId,
+            reason: "Reconnected",
+          });
         }
       });
     });
@@ -122,7 +141,21 @@ export function useDashboardRealtime({
       if (retryTimer) clearTimeout(retryTimer);
       if (debounceTimer) clearTimeout(debounceTimer);
       connection.off("DashboardInvalidated");
-      void connection.stop();
+      const pendingStart = startPromise;
+      void (async () => {
+        if (pendingStart) {
+          try {
+            await pendingStart;
+          } catch {
+            // A failed start still needs a best-effort stop below.
+          }
+        }
+        try {
+          await connection.stop();
+        } catch {
+          // Cleanup must not create an unhandled rejection during unmount.
+        }
+      })();
     };
-  }, [scopeKey]);
+  }, [enabled, organizationId, scope, storeId]);
 }

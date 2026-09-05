@@ -55,8 +55,8 @@ function DashboardShell({ children }: Readonly<{ children: React.ReactNode }>) {
     : undefined;
   const routeDenied = Boolean(
     effectiveAccess &&
-      guardedRoute &&
-      !canAccessRoute(effectiveAccess, guardedRoute),
+    guardedRoute &&
+    !canAccessRoute(effectiveAccess, guardedRoute),
   );
 
   useEffect(() => {
@@ -88,7 +88,8 @@ function DashboardShell({ children }: Readonly<{ children: React.ReactNode }>) {
   useEffect(() => {
     if (!mobileNavigationOpen) return;
 
-    const previouslyFocusedElement = document.activeElement as HTMLElement | null;
+    const previouslyFocusedElement =
+      document.activeElement as HTMLElement | null;
     const panel = mobileNavigationPanelRef.current;
     const focusableSelector =
       'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
@@ -173,7 +174,9 @@ function DashboardShell({ children }: Readonly<{ children: React.ReactNode }>) {
   }
 
   if (status === "forbidden" || !currentUser) {
-    const assignedRoles = session?.account.roles.map((roleScope) => roleScope.roleCode).join(", ");
+    const assignedRoles = session?.account.roles
+      .map((roleScope) => roleScope.roleCode)
+      .join(", ");
 
     return (
       <main className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -186,13 +189,17 @@ function DashboardShell({ children }: Readonly<{ children: React.ReactNode }>) {
               Không có quyền truy cập
             </CardTitle>
             <CardDescription>
-              Tài khoản đã đăng nhập nhưng chưa được cấp quyền vào Trung tâm vận hành.
+              Tài khoản đã đăng nhập nhưng chưa được cấp quyền vào Trung tâm vận
+              hành.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {assignedRoles && (
               <p className="rounded-md bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-                Vai trò hiện tại: <span className="font-medium text-foreground">{assignedRoles}</span>
+                Vai trò hiện tại:{" "}
+                <span className="font-medium text-foreground">
+                  {assignedRoles}
+                </span>
               </p>
             )}
             <Button
@@ -223,7 +230,8 @@ function DashboardShell({ children }: Readonly<{ children: React.ReactNode }>) {
               Chưa thể xác minh quyền truy cập
             </CardTitle>
             <CardDescription>
-              Phiên đăng nhập vẫn được giữ nhưng thông tin vai trò và phạm vi chưa tải được.
+              Phiên đăng nhập vẫn được giữ nhưng thông tin vai trò và phạm vi
+              chưa tải được.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -249,12 +257,16 @@ function DashboardShell({ children }: Readonly<{ children: React.ReactNode }>) {
               Không có quyền truy cập trang này
             </CardTitle>
             <CardDescription>
-              Bạn đang được chuyển tới khu vực phù hợp với vai trò và phạm vi hiện tại.
+              Bạn đang được chuyển tới khu vực phù hợp với vai trò và phạm vi
+              hiện tại.
             </CardDescription>
           </CardHeader>
           {fallbackRoute ? (
             <CardContent>
-              <Button className="w-full" onClick={() => router.replace(fallbackRoute)}>
+              <Button
+                className="w-full"
+                onClick={() => router.replace(fallbackRoute)}
+              >
                 Đi tới khu vực được phép
               </Button>
             </CardContent>
@@ -268,6 +280,12 @@ function DashboardShell({ children }: Readonly<{ children: React.ReactNode }>) {
 
   return (
     <div className="dashboard-shell flex h-dvh min-h-screen overflow-hidden bg-background text-foreground">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[70] focus:rounded-md focus:bg-primary focus:px-4 focus:py-3 focus:text-primary-foreground"
+      >
+        Bỏ qua điều hướng, tới nội dung chính
+      </a>
       <AppSidebar
         effectiveAccess={effectiveAccess}
         collapsed={sidebarCollapsed}
@@ -286,7 +304,7 @@ function DashboardShell({ children }: Readonly<{ children: React.ReactNode }>) {
           }}
         />
         <main id="main-content" className="flex-1 overflow-y-auto">
-          <div className="mx-auto w-full max-w-[1600px] p-4 md:p-5 xl:p-6">
+          <div className="workspace-page mx-auto w-full max-w-[1600px] p-4 md:p-5 xl:p-6">
             {children}
           </div>
         </main>

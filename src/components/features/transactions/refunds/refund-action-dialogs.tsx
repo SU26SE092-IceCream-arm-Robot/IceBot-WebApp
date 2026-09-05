@@ -49,17 +49,21 @@ export function RequestRefundDialog({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const [refundMethod, setRefundMethod] = useState<RefundMethod>("FullMoneyRefund");
+  const [refundMethod, setRefundMethod] =
+    useState<RefundMethod>("FullMoneyRefund");
   const [reason, setReason] = useState("");
   const [voucherCode, setVoucherCode] = useState("");
   const [voucherValue, setVoucherValue] = useState("");
   const [note, setNote] = useState("");
-  const submissionIntentRef = useRef<{ orderId: string; idempotencyKey: string } | null>(null);
+  const submissionIntentRef = useRef<{
+    orderId: string;
+    idempotencyKey: string;
+  } | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!order) return;
-    
+
     if (!reason.trim()) {
       setErrorMessage("Vui lòng nhập lý do yêu cầu hoàn tiền.");
       return;
@@ -71,12 +75,18 @@ export function RequestRefundDialog({
         return;
       }
       const parsedVoucherValue = Number(voucherValue);
-      if (!voucherValue || !Number.isFinite(parsedVoucherValue) || parsedVoucherValue <= 0) {
+      if (
+        !voucherValue ||
+        !Number.isFinite(parsedVoucherValue) ||
+        parsedVoucherValue <= 0
+      ) {
         setErrorMessage("Vui lòng nhập giá trị Voucher hợp lệ.");
         return;
       }
       if (parsedVoucherValue !== order.totalAmount) {
-        setErrorMessage(`Giá trị Voucher phải bằng tổng đơn ${order.totalAmount.toLocaleString("vi-VN")} ${order.currency}.`);
+        setErrorMessage(
+          `Giá trị Voucher phải bằng tổng đơn ${order.totalAmount.toLocaleString("vi-VN")} ${order.currency}.`,
+        );
         return;
       }
     }
@@ -85,7 +95,10 @@ export function RequestRefundDialog({
     setErrorMessage(null);
 
     try {
-      if (!submissionIntentRef.current || submissionIntentRef.current.orderId !== order.id) {
+      if (
+        !submissionIntentRef.current ||
+        submissionIntentRef.current.orderId !== order.id
+      ) {
         submissionIntentRef.current = {
           orderId: order.id,
           idempotencyKey:
@@ -95,13 +108,18 @@ export function RequestRefundDialog({
         };
       }
 
-      await onSubmit(order.id, {
-        refundMethod,
-        reason: reason.trim(),
-        voucherCode: refundMethod === "Voucher" ? voucherCode.trim() : null,
-        voucherValue: refundMethod === "Voucher" ? Number(voucherValue) : null,
-        note: note.trim() || null,
-      }, submissionIntentRef.current.idempotencyKey);
+      await onSubmit(
+        order.id,
+        {
+          refundMethod,
+          reason: reason.trim(),
+          voucherCode: refundMethod === "Voucher" ? voucherCode.trim() : null,
+          voucherValue:
+            refundMethod === "Voucher" ? Number(voucherValue) : null,
+          note: note.trim() || null,
+        },
+        submissionIntentRef.current.idempotencyKey,
+      );
       submissionIntentRef.current = null;
       // Reset form
       setReason("");
@@ -110,7 +128,9 @@ export function RequestRefundDialog({
       setNote("");
       onOpenChange(false);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Đã xảy ra lỗi.");
+      setErrorMessage(
+        error instanceof Error ? error.message : "Đã xảy ra lỗi.",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -125,7 +145,8 @@ export function RequestRefundDialog({
           </span>
           <DialogTitle>Yêu cầu hoàn tiền</DialogTitle>
           <DialogDescription>
-            Tạo yêu cầu hoàn tiền cho đơn hàng {order?.orderNumber}. Yêu cầu này sẽ cần được xử lý ở bước sau.
+            Tạo yêu cầu hoàn tiền cho đơn hàng {order?.orderNumber}. Yêu cầu này
+            sẽ cần được xử lý ở bước sau.
           </DialogDescription>
         </DialogHeader>
 
@@ -138,7 +159,9 @@ export function RequestRefundDialog({
           ) : null}
 
           <div className="space-y-2">
-            <label className="text-sm font-medium">Phương thức hoàn tiền</label>
+            <label htmlFor="refund-method" className="text-sm font-medium">
+              Phương thức hoàn tiền
+            </label>
             <Select
               value={refundMethod}
               onValueChange={(val) => {
@@ -151,19 +174,24 @@ export function RequestRefundDialog({
               }}
               disabled={isSubmitting}
             >
-              <SelectTrigger>
+              <SelectTrigger id="refund-method">
                 <SelectValue placeholder="Chọn phương thức" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="FullMoneyRefund">Hoàn tiền đầy đủ</SelectItem>
+                <SelectItem value="FullMoneyRefund">
+                  Hoàn tiền đầy đủ
+                </SelectItem>
                 <SelectItem value="Voucher">Voucher</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium">Lý do <span className="text-destructive">*</span></label>
+            <label htmlFor="refund-reason" className="text-sm font-medium">
+              Lý do <span className="text-destructive">*</span>
+            </label>
             <Input
+              id="refund-reason"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               placeholder="Ví dụ: Lỗi không nhả hàng"
@@ -174,8 +202,14 @@ export function RequestRefundDialog({
           {refundMethod === "Voucher" && (
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium">Mã Voucher <span className="text-destructive">*</span></label>
+                <label
+                  htmlFor="refund-voucher-code"
+                  className="text-sm font-medium"
+                >
+                  Mã Voucher <span className="text-destructive">*</span>
+                </label>
                 <Input
+                  id="refund-voucher-code"
                   value={voucherCode}
                   onChange={(e) => setVoucherCode(e.target.value)}
                   placeholder="Mã giảm giá"
@@ -183,8 +217,14 @@ export function RequestRefundDialog({
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium">Giá trị <span className="text-destructive">*</span></label>
+                <label
+                  htmlFor="refund-voucher-value"
+                  className="text-sm font-medium"
+                >
+                  Giá trị <span className="text-destructive">*</span>
+                </label>
                 <Input
+                  id="refund-voucher-value"
                   type="number"
                   min="0.01"
                   step="0.01"
@@ -194,15 +234,20 @@ export function RequestRefundDialog({
                   disabled={isSubmitting}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Refund V1 yêu cầu bằng tổng đơn {order?.totalAmount.toLocaleString("vi-VN")} {order?.currency}.
+                  Refund V1 yêu cầu bằng tổng đơn{" "}
+                  {order?.totalAmount.toLocaleString("vi-VN")} {order?.currency}
+                  .
                 </p>
               </div>
             </div>
           )}
 
           <div className="space-y-2">
-            <label className="text-sm font-medium">Ghi chú thêm (Tùy chọn)</label>
+            <label htmlFor="refund-note" className="text-sm font-medium">
+              Ghi chú thêm (Tùy chọn)
+            </label>
             <Input
+              id="refund-note"
               value={note}
               onChange={(e) => setNote(e.target.value)}
               placeholder="Thông tin thêm nếu có"
@@ -233,7 +278,10 @@ interface ProcessRefundDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   refund: RefundResult | null;
-  onSubmit: (refundId: string, request: MarkRefundProcessedRequest) => Promise<void>;
+  onSubmit: (
+    refundId: string,
+    request: MarkRefundProcessedRequest,
+  ) => Promise<void>;
 }
 
 export function ProcessRefundDialog({
@@ -261,7 +309,9 @@ export function ProcessRefundDialog({
       setProviderRefundId("");
       onOpenChange(false);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Đã xảy ra lỗi.");
+      setErrorMessage(
+        error instanceof Error ? error.message : "Đã xảy ra lỗi.",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -276,7 +326,8 @@ export function ProcessRefundDialog({
           </span>
           <DialogTitle>Đánh dấu đã xử lý</DialogTitle>
           <DialogDescription>
-            Ghi nhận thủ công rằng yêu cầu hoàn tiền {refund?.refundNumber} đã được xử lý xong.
+            Ghi nhận thủ công rằng yêu cầu hoàn tiền {refund?.refundNumber} đã
+            được xử lý xong.
           </DialogDescription>
         </DialogHeader>
 
@@ -289,25 +340,35 @@ export function ProcessRefundDialog({
           ) : null}
 
           {refund?.refundMethod === "Voucher" ? (
-             <div className="flex items-start gap-2 rounded-lg bg-primary/10 p-3 text-sm text-primary">
-               <Info className="mt-0.5 size-4 shrink-0" />
-               <p>Phương thức là Voucher. Vui lòng kiểm tra chắc chắn mã voucher đã được cấp/gửi cho khách hàng.</p>
-             </div>
+            <div className="flex items-start gap-2 rounded-lg bg-primary/10 p-3 text-sm text-primary">
+              <Info className="mt-0.5 size-4 shrink-0" />
+              <p>
+                Phương thức là Voucher. Vui lòng kiểm tra chắc chắn mã voucher
+                đã được cấp/gửi cho khách hàng.
+              </p>
+            </div>
           ) : null}
 
           {refund?.refundMethod !== "Voucher" ? (
             <div className="flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/5 p-3 text-sm text-warning">
               <Info className="mt-0.5 size-4 shrink-0" />
               <p>
-                Chỉ xác nhận sau khi đã kiểm tra khoản tiền thực sự được hoàn trả qua nhà cung cấp.
-                Nút này chỉ ghi nhận bằng chứng vận hành trong IceBot, không tự gửi lệnh hoàn tiền tới nhà cung cấp.
+                Chỉ xác nhận sau khi đã kiểm tra khoản tiền thực sự được hoàn
+                trả qua nhà cung cấp. Nút này chỉ ghi nhận bằng chứng vận hành
+                trong IceBot, không tự gửi lệnh hoàn tiền tới nhà cung cấp.
               </p>
             </div>
           ) : null}
 
           <div className="space-y-2">
-            <label className="text-sm font-medium">Mã tham chiếu (Tùy chọn)</label>
+            <label
+              htmlFor="refund-provider-reference"
+              className="text-sm font-medium"
+            >
+              Mã tham chiếu (Tùy chọn)
+            </label>
             <Input
+              id="refund-provider-reference"
               value={providerRefundId}
               onChange={(e) => setProviderRefundId(e.target.value)}
               placeholder="Mã giao dịch ngân hàng / gateway..."
@@ -354,7 +415,7 @@ export function RejectRefundDialog({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!refund) return;
-    
+
     if (!reason.trim()) {
       setErrorMessage("Vui lòng nhập lý do từ chối.");
       return;
@@ -368,7 +429,9 @@ export function RejectRefundDialog({
       setReason("");
       onOpenChange(false);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Đã xảy ra lỗi.");
+      setErrorMessage(
+        error instanceof Error ? error.message : "Đã xảy ra lỗi.",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -383,7 +446,8 @@ export function RejectRefundDialog({
           </span>
           <DialogTitle>Từ chối hoàn tiền</DialogTitle>
           <DialogDescription>
-            Từ chối yêu cầu hoàn tiền {refund?.refundNumber}. Hành động này không thể hoàn tác.
+            Từ chối yêu cầu hoàn tiền {refund?.refundNumber}. Hành động này
+            không thể hoàn tác.
           </DialogDescription>
         </DialogHeader>
 
@@ -396,8 +460,14 @@ export function RejectRefundDialog({
           ) : null}
 
           <div className="space-y-2">
-            <label className="text-sm font-medium">Lý do từ chối <span className="text-destructive">*</span></label>
+            <label
+              htmlFor="refund-reject-reason"
+              className="text-sm font-medium"
+            >
+              Lý do từ chối <span className="text-destructive">*</span>
+            </label>
             <Input
+              id="refund-reject-reason"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               placeholder="Ví dụ: Không hợp lệ, đã giải quyết..."
@@ -444,7 +514,7 @@ export function CancelRefundDialog({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!refund) return;
-    
+
     if (!reason.trim()) {
       setErrorMessage("Vui lòng nhập lý do hủy.");
       return;
@@ -458,7 +528,9 @@ export function CancelRefundDialog({
       setReason("");
       onOpenChange(false);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Đã xảy ra lỗi.");
+      setErrorMessage(
+        error instanceof Error ? error.message : "Đã xảy ra lỗi.",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -486,8 +558,14 @@ export function CancelRefundDialog({
           ) : null}
 
           <div className="space-y-2">
-            <label className="text-sm font-medium">Lý do hủy <span className="text-destructive">*</span></label>
+            <label
+              htmlFor="refund-cancel-reason"
+              className="text-sm font-medium"
+            >
+              Lý do hủy <span className="text-destructive">*</span>
+            </label>
             <Input
+              id="refund-cancel-reason"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               placeholder="Nhập lý do hủy..."

@@ -151,14 +151,14 @@ export function DeviceFormDialog({
                 catalog.selectType(next);
               }}
             >
-              <SelectTrigger className="w-full"><SelectValue>{selectedType ? `${selectedType.name} — ${selectedType.code}` : "Chọn loại thiết bị"}</SelectValue></SelectTrigger>
+              <SelectTrigger className="w-full" aria-label="Loại thiết bị"><SelectValue>{selectedType ? `${selectedType.name} — ${selectedType.code}` : "Chọn loại thiết bị"}</SelectValue></SelectTrigger>
               <SelectContent>{catalog.types.map((item) => <SelectItem key={item.id} value={item.id.toString()}>{item.name} — {item.code}</SelectItem>)}</SelectContent>
             </Select>
           </div>
           <div className="space-y-1.5">
             <Label>Model thiết bị</Label>
             <Select value={deviceModelId} disabled={isSubmitting || catalog.modelsLoading || effectiveDeviceTypeId === null} onValueChange={(value) => setDeviceModelId(value ?? NO_MODEL)}>
-              <SelectTrigger className="w-full"><SelectValue>{modelLabel}</SelectValue></SelectTrigger>
+              <SelectTrigger className="w-full" aria-label="Model thiết bị"><SelectValue>{modelLabel}</SelectValue></SelectTrigger>
               <SelectContent>
                 <SelectItem value={NO_MODEL}>Không chọn model</SelectItem>
                 {device?.deviceModelId && !catalog.models.some((item) => item.id === device.deviceModelId) ? <SelectItem value={device.deviceModelId}>{device.deviceModelCode || "Model hiện tại"}</SelectItem> : null}
@@ -217,7 +217,7 @@ export function DeviceStatusDialog({
       <DialogContent>
         <DialogHeader><DialogTitle>Đổi trạng thái thiết bị</DialogTitle><DialogDescription>{device.name}. Trạng thái này là vòng đời quản trị, không thay thế bằng chứng kết nối.</DialogDescription></DialogHeader>
         <Select value={status} disabled={isSubmitting || options.length === 0} onValueChange={(value) => setStatus(value as Exclude<DeviceStatus, "Retired">)}>
-          <SelectTrigger className="w-full"><SelectValue>{status ? getDeviceStatusLabel(status) : "Không có trạng thái hợp lệ"}</SelectValue></SelectTrigger>
+          <SelectTrigger className="w-full" aria-label="Trạng thái thiết bị"><SelectValue>{status ? getDeviceStatusLabel(status) : "Không có trạng thái hợp lệ"}</SelectValue></SelectTrigger>
           <SelectContent>{options.map((item) => <SelectItem key={item} value={item}>{getDeviceStatusLabel(item)}</SelectItem>)}</SelectContent>
         </Select>
         {errorMessage ? <p className="text-sm text-destructive" role="alert">{errorMessage}</p> : null}
@@ -300,7 +300,7 @@ export function ReplaceDeviceDialog({
         <div className="space-y-2">
           <Label>Thiết bị thay thế</Label>
           <Select value={replacementDeviceId || null} disabled={isSubmitting || candidates.length === 0} onValueChange={(value) => setReplacementDeviceId(value ?? "")}>
-            <SelectTrigger className="w-full"><SelectValue>{replacement ? `${replacement.name} — ${replacement.code}` : "Chọn thiết bị đã có trong kiosk"}</SelectValue></SelectTrigger>
+            <SelectTrigger className="w-full" aria-label="Thiết bị thay thế"><SelectValue>{replacement ? `${replacement.name} — ${replacement.code}` : "Chọn thiết bị đã có trong kiosk"}</SelectValue></SelectTrigger>
             <SelectContent>{candidates.map((item) => <SelectItem key={item.id} value={item.id}>{item.name} — {item.code} ({item.deviceTypeCode})</SelectItem>)}</SelectContent>
           </Select>
           {candidates.length === 0 ? <p className="text-xs text-warning">Hãy tạo thiết bị thay thế trước khi thực hiện chuyển đổi.</p> : null}
@@ -348,7 +348,7 @@ export function ExecutionEndpointCreateDialog({
       <DialogContent>
         <DialogHeader><DialogTitle>Tạo điểm thực thi</DialogTitle><DialogDescription>Điểm thực thi được tạo ở trạng thái chờ cấu hình. Việc cấp thông tin kết nối thuộc quy trình kỹ thuật riêng.</DialogDescription></DialogHeader>
         <div className="space-y-1.5"><Label htmlFor="endpoint-code">Mã điểm thực thi</Label><Input id="endpoint-code" maxLength={100} value={endpointCode} onChange={(event) => setEndpointCode(event.target.value)} disabled={isSubmitting} /></div>
-        <div className="space-y-1.5"><Label>Hồ sơ thực thi</Label><Select value={executionProfile} disabled={isSubmitting} onValueChange={(value) => setExecutionProfile(value as ExecutionProfile)}><SelectTrigger className="w-full"><SelectValue>{executionProfile === "FullEdge" ? "Full Edge" : "Bộ điều khiển chi phí thấp"}</SelectValue></SelectTrigger><SelectContent><SelectItem value="FullEdge">Full Edge</SelectItem><SelectItem value="LowCostController">Bộ điều khiển chi phí thấp</SelectItem></SelectContent></Select></div>
+        <div className="space-y-1.5"><Label>Hồ sơ thực thi</Label><Select value={executionProfile} disabled={isSubmitting} onValueChange={(value) => setExecutionProfile(value as ExecutionProfile)}><SelectTrigger className="w-full" aria-label="Hồ sơ thực thi"><SelectValue>{executionProfile === "FullEdge" ? "Full Edge" : "Bộ điều khiển chi phí thấp"}</SelectValue></SelectTrigger><SelectContent><SelectItem value="FullEdge">Full Edge</SelectItem><SelectItem value="LowCostController">Bộ điều khiển chi phí thấp</SelectItem></SelectContent></Select></div>
         {validationMessage || errorMessage ? <p className="text-sm text-destructive" role="alert">{validationMessage || errorMessage}</p> : null}
         <DialogFooter><Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>Hủy</Button><Button onClick={() => void submit()} disabled={isSubmitting}>{isSubmitting ? "Đang tạo..." : "Tạo điểm thực thi"}</Button></DialogFooter>
       </DialogContent>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { AlertTriangle, XCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -23,7 +23,10 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   item: ManagementServiceRegistrationDetail | null;
   loading: boolean;
-  onReject: (id: string, request: RejectServiceRegistrationRequest) => Promise<void>;
+  onReject: (
+    id: string,
+    request: RejectServiceRegistrationRequest,
+  ) => Promise<void>;
 }
 
 export function ServiceRegistrationRejectDialog({
@@ -35,13 +38,6 @@ export function ServiceRegistrationRejectDialog({
 }: Props) {
   const [reason, setReason] = useState("");
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (item) {
-      setReason("");
-      setError(null);
-    }
-  }, [item]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -81,14 +77,20 @@ export function ServiceRegistrationRejectDialog({
               Từ chối Đơn đăng ký dịch vụ
             </DialogTitle>
             <DialogDescription>
-              Đơn đăng ký <span className="font-semibold text-foreground">#{item.referenceCode}</span>{" "}
+              Đơn đăng ký{" "}
+              <span className="font-semibold text-foreground">
+                #{item.referenceCode}
+              </span>{" "}
               sẽ được chuyển sang trạng thái Từ chối.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
             <div className="space-y-1.5">
-              <label htmlFor="rejectReason" className="text-sm font-medium text-foreground">
+              <label
+                htmlFor="rejectReason"
+                className="text-sm font-medium text-foreground"
+              >
                 Lý do từ chối <span className="text-destructive">*</span>
               </label>
               <Textarea

@@ -16,7 +16,12 @@ import { ReadinessSummaryCard } from "@/components/features/operations/readiness
 import { useSetupReadiness } from "@/hooks/operations/use-setup-readiness";
 import type { ReadinessCheckGroup as ReadinessCheckGroupName } from "@/types/operations/readiness";
 
-const GROUP_ORDER: ReadinessCheckGroupName[] = ["scope", "kiosk", "catalog", "payment"];
+const GROUP_ORDER: ReadinessCheckGroupName[] = [
+  "scope",
+  "kiosk",
+  "catalog",
+  "payment",
+];
 
 export default function ReadinessPage() {
   const {
@@ -57,7 +62,7 @@ export default function ReadinessPage() {
   };
 
   return (
-    <main className="space-y-6">
+    <main className="space-y-5">
       <ReadinessHeader
         lastUpdatedAt={lastUpdatedAt}
         isRefreshing={isRefreshing || isScopeLoading}
@@ -82,12 +87,15 @@ export default function ReadinessPage() {
         <ReadinessLoadingState />
       ) : null}
 
-      {!errorMessage && !isScopeLoading && !isLoading && (!selectedOrganizationId || !selectedStoreId) ? (
+      {!errorMessage &&
+      !isScopeLoading &&
+      !isLoading &&
+      (!selectedOrganizationId || !selectedStoreId) ? (
         <ReadinessEmptyState />
       ) : null}
 
       {!errorMessage && !isScopeLoading && !isLoading && result ? (
-        <div className="space-y-6">
+        <div className="space-y-5">
           <ReadinessPartialFailureBanner
             failures={scopeFailures}
             unknownCount={result.summary.unknownCount}
@@ -98,7 +106,11 @@ export default function ReadinessPage() {
               {GROUP_ORDER.map((group) => {
                 const checks = checksByGroup.get(group) ?? [];
                 return checks.length > 0 ? (
-                  <ReadinessCheckGroup key={group} group={group} checks={checks} />
+                  <ReadinessCheckGroup
+                    key={group}
+                    group={group}
+                    checks={checks}
+                  />
                 ) : null;
               })}
             </div>

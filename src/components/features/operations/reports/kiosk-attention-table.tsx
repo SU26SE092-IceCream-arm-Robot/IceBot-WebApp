@@ -4,7 +4,14 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
   getKioskLifecycleLabel,
   getKioskOperationalLabel,
@@ -33,7 +40,11 @@ const LIFECYCLE_CLASS_NAMES: Record<
   Retired: "border-border bg-muted/20 text-muted-foreground",
 };
 
-export function KioskAttentionTable({ rows }: { rows: ReportKioskAttentionRow[] }) {
+export function KioskAttentionTable({
+  rows,
+}: {
+  rows: ReportKioskAttentionRow[];
+}) {
   return (
     <Card className="rounded-xl border border-border bg-card shadow-none">
       <CardHeader className="border-b border-border pb-4">
@@ -52,73 +63,168 @@ export function KioskAttentionTable({ rows }: { rows: ReportKioskAttentionRow[] 
             <MonitorCog className="size-5" />
           </span>
           <p className="font-medium text-foreground">Chưa có kiosk cần chú ý</p>
-          <p className="max-w-md text-sm text-muted-foreground">Không có tín hiệu cảnh báo trong phạm vi đang chọn.</p>
+          <p className="max-w-md text-sm text-muted-foreground">
+            Không có tín hiệu cảnh báo trong phạm vi đang chọn.
+          </p>
         </CardContent>
       ) : (
-        <Table className="min-w-[1080px]">
-          <TableHeader className="bg-muted/40">
-            <TableRow className="hover:bg-transparent">
-              <TableHead className="pl-5">Kiosk</TableHead>
-              <TableHead>Cửa hàng</TableHead>
-              <TableHead className="text-center">Vòng đời</TableHead>
-              <TableHead className="text-center">Tồn kho</TableHead>
-              <TableHead className="text-center">Bảo trì</TableHead>
-              <TableHead className="text-center">Đơn hàng</TableHead>
-              <TableHead>Cần xử lý</TableHead>
-              <TableHead className="pr-5 text-center">Chi tiết</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
+        <>
+          <div className="grid gap-3 p-4 md:hidden">
             {rows.map((row) => (
-              <TableRow key={row.kioskId}>
-                <TableCell className="pl-5">
-                  <p className="font-medium text-foreground">{row.kioskName}</p>
-                  <p className="text-xs text-muted-foreground">{row.kioskCode}</p>
-                </TableCell>
-                <TableCell className="text-muted-foreground">{row.storeName}</TableCell>
-                <TableCell className="text-center">
+              <article
+                key={row.kioskId}
+                className="space-y-3 rounded-lg border border-border p-4"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate font-medium text-foreground">
+                      {row.kioskName}
+                    </p>
+                    <p className="mt-1 truncate font-mono text-xs text-muted-foreground">
+                      {row.kioskCode} · {row.storeName}
+                    </p>
+                  </div>
                   <Badge
                     variant="outline"
-                    className={`h-6 rounded-full px-2.5 ${LIFECYCLE_CLASS_NAMES[row.lifecycleStatus]}`}
+                    className={`shrink-0 ${LIFECYCLE_CLASS_NAMES[row.lifecycleStatus]}`}
                   >
                     {getKioskLifecycleLabel(row.lifecycleStatus)}
                   </Badge>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Nhận đơn: {getKioskOperationalLabel(row.operationalState)}
-                  </p>
-                  <p className="mt-1 text-xs text-muted-foreground">Kết nối gần nhất: {formatDate(row.lastOnlineAt)}</p>
-                </TableCell>
-                <TableCell className="text-center tabular-nums">{row.inventoryIssueCount}</TableCell>
-                <TableCell className="text-center tabular-nums">
-                  {row.maintenanceIssueCount}
-                  {row.criticalMaintenanceCount > 0 ? (
-                    <span className="ml-1 text-xs text-destructive">({row.criticalMaintenanceCount} khẩn cấp)</span>
-                  ) : null}
-                </TableCell>
-                <TableCell className="text-center tabular-nums">{row.attentionOrderCount}</TableCell>
-                <TableCell>
-                  <div className="flex max-w-md items-start gap-2 whitespace-normal">
-                    <AlertTriangle className={`mt-0.5 size-4 shrink-0 ${row.level === "critical" ? "text-destructive" : "text-warning"}`} />
-                    <span className="text-sm text-foreground">{row.reasons.join(" · ")}</span>
+                </div>
+                <div className="flex items-start gap-2 rounded-md bg-muted/20 p-3 text-sm">
+                  <AlertTriangle
+                    className={`mt-0.5 size-4 shrink-0 ${
+                      row.level === "critical"
+                        ? "text-destructive"
+                        : "text-warning"
+                    }`}
+                  />
+                  <span className="break-words">{row.reasons.join(" · ")}</span>
+                </div>
+                <dl className="grid grid-cols-3 gap-2 text-center text-sm">
+                  <div>
+                    <dt className="text-xs text-muted-foreground">Tồn kho</dt>
+                    <dd className="mt-1 font-semibold tabular-nums">
+                      {row.inventoryIssueCount}
+                    </dd>
                   </div>
-                </TableCell>
-                <TableCell className="pr-5 text-center">
+                  <div>
+                    <dt className="text-xs text-muted-foreground">Bảo trì</dt>
+                    <dd className="mt-1 font-semibold tabular-nums">
+                      {row.maintenanceIssueCount}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs text-muted-foreground">Đơn hàng</dt>
+                    <dd className="mt-1 font-semibold tabular-nums">
+                      {row.attentionOrderCount}
+                    </dd>
+                  </div>
+                </dl>
+                <div className="flex items-center justify-between gap-3 border-t border-border pt-3">
+                  <span className="text-xs text-muted-foreground">
+                    Online: {formatDate(row.lastOnlineAt)}
+                  </span>
                   <Link
-                    className={cn(
-                      buttonVariants({ variant: "ghost", size: "icon-sm" }),
-                      "rounded-lg text-muted-foreground hover:bg-muted/35 hover:text-foreground",
-                    )}
                     href={`/kiosks/${row.kioskId}`}
-                    title={`Mở chi tiết ${row.kioskName}`}
-                    aria-label={`Mở chi tiết ${row.kioskName}`}
+                    className={buttonVariants({
+                      variant: "outline",
+                      size: "sm",
+                    })}
                   >
                     <ExternalLink className="size-4" />
+                    Chi tiết
                   </Link>
-                </TableCell>
-              </TableRow>
+                </div>
+              </article>
             ))}
-          </TableBody>
-        </Table>
+          </div>
+          <div className="hidden md:block">
+            <Table className="min-w-[1080px]">
+              <TableHeader className="bg-muted/40">
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="pl-5">Kiosk</TableHead>
+                  <TableHead>Cửa hàng</TableHead>
+                  <TableHead className="text-center">Vòng đời</TableHead>
+                  <TableHead className="text-center">Tồn kho</TableHead>
+                  <TableHead className="text-center">Bảo trì</TableHead>
+                  <TableHead className="text-center">Đơn hàng</TableHead>
+                  <TableHead>Cần xử lý</TableHead>
+                  <TableHead className="pr-5 text-center">Chi tiết</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {rows.map((row) => (
+                  <TableRow key={row.kioskId}>
+                    <TableCell className="pl-5">
+                      <p className="font-medium text-foreground">
+                        {row.kioskName}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {row.kioskCode}
+                      </p>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {row.storeName}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Badge
+                        variant="outline"
+                        className={`h-6 rounded-full px-2.5 ${LIFECYCLE_CLASS_NAMES[row.lifecycleStatus]}`}
+                      >
+                        {getKioskLifecycleLabel(row.lifecycleStatus)}
+                      </Badge>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Nhận đơn:{" "}
+                        {getKioskOperationalLabel(row.operationalState)}
+                      </p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Kết nối gần nhất: {formatDate(row.lastOnlineAt)}
+                      </p>
+                    </TableCell>
+                    <TableCell className="text-center tabular-nums">
+                      {row.inventoryIssueCount}
+                    </TableCell>
+                    <TableCell className="text-center tabular-nums">
+                      {row.maintenanceIssueCount}
+                      {row.criticalMaintenanceCount > 0 ? (
+                        <span className="ml-1 text-xs text-destructive">
+                          ({row.criticalMaintenanceCount} khẩn cấp)
+                        </span>
+                      ) : null}
+                    </TableCell>
+                    <TableCell className="text-center tabular-nums">
+                      {row.attentionOrderCount}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex max-w-md items-start gap-2 whitespace-normal">
+                        <AlertTriangle
+                          className={`mt-0.5 size-4 shrink-0 ${row.level === "critical" ? "text-destructive" : "text-warning"}`}
+                        />
+                        <span className="text-sm text-foreground">
+                          {row.reasons.join(" · ")}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="pr-5 text-center">
+                      <Link
+                        className={cn(
+                          buttonVariants({ variant: "ghost", size: "icon-sm" }),
+                          "rounded-lg text-muted-foreground hover:bg-muted/35 hover:text-foreground",
+                        )}
+                        href={`/kiosks/${row.kioskId}`}
+                        title={`Mở chi tiết ${row.kioskName}`}
+                        aria-label={`Mở chi tiết ${row.kioskName}`}
+                      >
+                        <ExternalLink className="size-4" />
+                      </Link>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </>
       )}
     </Card>
   );

@@ -3,7 +3,6 @@
 import { useState } from "react";
 import {
   AlertTriangle,
-  Ban,
   Cpu,
   Monitor,
   Plus,
@@ -11,16 +10,23 @@ import {
   Search,
   SlidersHorizontal,
   Power,
-  Wrench,
-  type LucideIcon,
+  ShieldAlert,
 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 
 import { DeviceCatalogDialog } from "@/components/features/kiosks/catalog/device-catalog-dialog";
 import { KioskCreateDialog } from "@/components/features/kiosks/management/kiosk-create-dialog";
 import { KioskCard } from "@/components/features/kiosks/kiosk-card";
+import { MetricStrip, MetricStripItem } from "@/components/shared/metric-strip";
+import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -41,62 +47,6 @@ const STATUS_OPTIONS: { value: KioskStatusFilter; label: string }[] = [
   { value: "Disabled", label: "Đã vô hiệu hóa" },
   { value: "Retired", label: "Ngừng sử dụng" },
 ];
-
-type SummaryTone = "neutral" | "primary" | "destructive" | "warning";
-
-const SUMMARY_TONES: Record<
-  SummaryTone,
-  { iconClassName: string; valueClassName: string }
-> = {
-  neutral: {
-    iconClassName: "bg-secondary text-secondary-foreground",
-    valueClassName: "text-foreground",
-  },
-  primary: {
-    iconClassName: "bg-primary/10 text-primary",
-    valueClassName: "text-primary",
-  },
-  destructive: {
-    iconClassName: "bg-destructive/10 text-destructive",
-    valueClassName: "text-destructive",
-  },
-  warning: {
-    iconClassName: "bg-warning/10 text-warning",
-    valueClassName: "text-warning",
-  },
-};
-
-interface SummaryCardProps {
-  icon: LucideIcon;
-  label: string;
-  tone: SummaryTone;
-  value: number;
-}
-
-function SummaryCard({
-  icon: Icon,
-  label,
-  tone,
-  value,
-}: SummaryCardProps) {
-  const toneClasses = SUMMARY_TONES[tone];
-
-  return (
-    <Card className="border-border/80 bg-card shadow-none">
-      <CardContent className="flex items-start justify-between gap-4 p-5">
-        <div className="space-y-1.5">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
-          <p className={`tabular-nums text-3xl lg:text-4xl font-bold tracking-tight ${toneClasses.valueClassName}`}>
-            {value}
-          </p>
-        </div>
-        <span className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${toneClasses.iconClassName}`}>
-          <Icon className="size-5" />
-        </span>
-      </CardContent>
-    </Card>
-  );
-}
 
 function StatusLegend({
   className,
@@ -142,107 +92,132 @@ export default function KiosksPage() {
   );
 
   return (
-    <div className="space-y-7">
-      <section className="flex flex-col gap-4 border-b border-border pb-6 sm:flex-row sm:items-end sm:justify-between">
-        <div className="max-w-2xl space-y-3">
-          <div className="space-y-2">
-            <h1 className="text-3xl font-semibold tracking-tight text-foreground">Giám sát Kiosk</h1>
-            <p className="text-sm leading-6 text-muted-foreground">
-              Theo dõi vòng đời quản lý của đội máy IceBot và mở trang chi tiết để xem heartbeat, sự kiện thiết bị.
-            </p>
-          </div>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {canCreateKiosk ? (
-            <Button className="w-fit" onClick={createKiosk.open}>
-              <Plus className="size-4" />
-              Tạo kiosk
+    <div className="space-y-5">
+      <PageHeader
+        title="Đội kiosk"
+        description="Theo dõi vòng đời, trạng thái vận hành và mở hồ sơ từng máy để kiểm tra heartbeat, thiết bị và lịch sử sự kiện."
+        metadata={
+          organizationId ? (
+            <span className="text-xs font-medium text-primary">
+              Đang giới hạn theo tổ chức của bản phát hành được chọn
+            </span>
+          ) : (
+            <span className="text-xs text-muted-foreground">
+              {scopedCount.toLocaleString("vi-VN")} kiosk trong phạm vi được cấp
+            </span>
+          )
+        }
+        actions={
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsDeviceCatalogOpen(true)}
+            >
+              <Cpu className="size-4" aria-hidden="true" />
+              Danh mục thiết bị
             </Button>
-          ) : null}
-          <Button
-            variant="outline"
-            className="w-fit"
-            onClick={() => setIsDeviceCatalogOpen(true)}
-          >
-            <Cpu className="size-4" />
-            Danh mục thiết bị
-          </Button>
-        </div>
-      </section>
+            {canCreateKiosk ? (
+              <Button size="sm" onClick={createKiosk.open}>
+                <Plus className="size-4" aria-hidden="true" />
+                Tạo kiosk
+              </Button>
+            ) : null}
+          </>
+        }
+      />
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-        <SummaryCard
+      <MetricStrip>
+        <MetricStripItem
           icon={Monitor}
           label="Tổng số kiosk"
-          value={summary.total}
+          value={summary.total.toLocaleString("vi-VN")}
           tone="neutral"
+          description="Trong phạm vi hiện tại"
         />
-        <SummaryCard
+        <MetricStripItem
           icon={Power}
           label="Đã kích hoạt"
-          value={summary.active}
+          value={summary.active.toLocaleString("vi-VN")}
           tone="primary"
+          description="Sẵn sàng nhận cấu hình"
         />
-        <SummaryCard
+        <MetricStripItem
           icon={Cpu}
           label="Đang cấu hình"
-          value={summary.provisioning}
+          value={summary.provisioning.toLocaleString("vi-VN")}
           tone="neutral"
+          description="Chưa hoàn tất kích hoạt"
         />
-        <SummaryCard
-          icon={Wrench}
-          label="Vận hành: bảo trì"
-          value={summary.maintenance}
-          tone="warning"
+        <MetricStripItem
+          icon={ShieldAlert}
+          label="Cần chú ý"
+          value={(summary.maintenance + summary.disabled).toLocaleString(
+            "vi-VN",
+          )}
+          tone={
+            summary.maintenance + summary.disabled > 0 ? "warning" : "neutral"
+          }
+          description={`${summary.maintenance} bảo trì · ${summary.disabled} đã dừng`}
         />
-        <SummaryCard
-          icon={Ban}
-          label="Đã dừng sử dụng"
-          value={summary.disabled}
-          tone="neutral"
-        />
-      </section>
+      </MetricStrip>
 
       {metadataWarning ? (
-        <div className="rounded-lg border border-warning/30 bg-warning/5 px-4 py-3" role="status">
+        <div
+          className="rounded-lg border border-warning/30 bg-warning/5 px-4 py-3"
+          role="status"
+        >
           <div className="flex items-start gap-3">
             <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" />
-            <p className="text-xs font-medium text-warning">{metadataWarning}</p>
+            <p className="text-xs font-medium text-warning">
+              {metadataWarning}
+            </p>
           </div>
         </div>
       ) : null}
 
       {organizationId ? (
-        <div className="rounded-lg border border-primary/20 bg-primary/5 px-4 py-3 text-sm">
+        <div
+          className="rounded-lg border border-primary/20 bg-primary/5 px-4 py-3 text-sm"
+          role="status"
+        >
           Danh sách đang giới hạn trong tổ chức của bản phát hành đã chọn. Chọn
           một kiosk để tiếp tục triển khai.
         </div>
       ) : null}
 
-      <Card className="border-border/80 bg-card shadow-none">
-        <CardHeader className="border-b border-border pb-4">
+      <Card className="gap-0 border-border/80 bg-card py-0 shadow-none">
+        <CardHeader className="border-b border-border px-4 py-3.5">
           <div className="flex items-start gap-3">
-            <span className="mt-0.5 flex size-10 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
-              <SlidersHorizontal className="size-5" />
+            <span className="mt-0.5 flex size-8 items-center justify-center rounded-md bg-primary/10 text-primary">
+              <SlidersHorizontal className="size-4" aria-hidden="true" />
             </span>
             <div className="space-y-1">
-              <CardTitle className="text-base">Bộ lọc giám sát</CardTitle>
+              <CardTitle className="text-sm">Bộ lọc đội máy</CardTitle>
               <CardDescription>
-                <span className="tabular-nums font-medium text-foreground">{kiosks.length}</span> /{" "}
-                <span className="tabular-nums font-medium text-foreground">{scopedCount}</span> kiosk
+                <span className="tabular-nums font-medium text-foreground">
+                  {kiosks.length}
+                </span>{" "}
+                /{" "}
+                <span className="tabular-nums font-medium text-foreground">
+                  {scopedCount}
+                </span>{" "}
+                kiosk
               </CardDescription>
             </div>
           </div>
         </CardHeader>
-        <CardContent className="space-y-4 p-5">
-          <div className="grid gap-3 lg:grid-cols-[minmax(280px,1fr)_220px_240px_auto]">
+        <CardContent className="space-y-4 bg-muted/10 p-3">
+          <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-[minmax(280px,1fr)_220px_240px_auto]">
             <div className="relative">
               <Search className="pointer-events-none absolute top-2.5 left-3 size-4 text-muted-foreground" />
               <Input
+                type="search"
                 value={filters.searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
                 placeholder="Tìm kiosk ID, tên máy hoặc địa điểm..."
                 className="h-9 bg-card pl-9"
+                aria-label="Tìm kiosk"
               />
             </div>
 
@@ -254,10 +229,14 @@ export default function KiosksPage() {
                 }
               }}
             >
-              <SelectTrigger className="h-9 w-full bg-card">
+              <SelectTrigger
+                className="h-9 w-full bg-card"
+                aria-label="Lọc kiosk theo vòng đời"
+              >
                 <SelectValue>
-                  {STATUS_OPTIONS.find((option) => option.value === filters.status)?.label ??
-                    "Tất cả vòng đời"}
+                  {STATUS_OPTIONS.find(
+                    (option) => option.value === filters.status,
+                  )?.label ?? "Tất cả vòng đời"}
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
@@ -269,38 +248,48 @@ export default function KiosksPage() {
               </SelectContent>
             </Select>
 
-            <Select value={filters.locationId} onValueChange={setLocationFilter}>
-              <SelectTrigger className="h-9 w-full bg-card">
+            <Select
+              value={filters.locationId}
+              onValueChange={setLocationFilter}
+            >
+              <SelectTrigger
+                className="h-9 w-full bg-card"
+                aria-label="Lọc kiosk theo địa điểm"
+              >
                 <SelectValue>
                   {filters.locationId === "ALL"
                     ? "Tất cả địa điểm"
-                    : locations.find(
-                        (location) => location.locationId === filters.locationId,
-                      )?.locationName ?? "Tất cả địa điểm"}
+                    : (locations.find(
+                        (location) =>
+                          location.locationId === filters.locationId,
+                      )?.locationName ?? "Tất cả địa điểm")}
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL">Tất cả địa điểm</SelectItem>
                 {locations.map((location) => (
-                  <SelectItem key={location.locationId} value={location.locationId}>
+                  <SelectItem
+                    key={location.locationId}
+                    value={location.locationId}
+                  >
                     {location.locationName}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
 
-            <div className="flex gap-2 lg:justify-end">
-              <Button variant="outline" size="sm" className="h-9" onClick={clearFilters}>
+            <div className="grid grid-cols-[1fr_auto] gap-2 md:flex lg:justify-end">
+              <Button variant="outline" size="sm" onClick={clearFilters}>
                 Xóa lọc
               </Button>
               <Button
                 variant="secondary"
                 size="icon-sm"
-                className="size-9"
+                className="size-9 shrink-0"
                 onClick={() => void refresh()}
                 aria-label="Tải lại dữ liệu kiosk"
               >
-                <RefreshCw className="size-4" />
+                <RefreshCw className="size-4" aria-hidden="true" />
               </Button>
             </div>
           </div>
@@ -310,19 +299,27 @@ export default function KiosksPage() {
       <section className="space-y-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-base font-semibold text-foreground">Trạng thái đội máy</h2>
+            <h2 className="text-base font-semibold text-foreground">
+              Trạng thái đội máy
+            </h2>
           </div>
           <div className="flex flex-wrap items-center gap-4">
             <StatusLegend className="bg-primary" label="Vòng đời: hoạt động" />
             <StatusLegend className="bg-warning" label="Vận hành: bảo trì" />
-            <StatusLegend className="bg-destructive" label="Vòng đời: vô hiệu hóa" />
+            <StatusLegend
+              className="bg-destructive"
+              label="Vòng đời: vô hiệu hóa"
+            />
           </div>
         </div>
 
         {isLoading ? (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {Array.from({ length: 6 }).map((_, index) => (
-              <Card key={`kiosk-skeleton-${index}`} className="border-border/80 shadow-none">
+              <Card
+                key={`kiosk-skeleton-${index}`}
+                className="border-border/80 shadow-none"
+              >
                 <CardContent className="space-y-4 p-5">
                   <div className="flex justify-between gap-3">
                     <div className="space-y-2">
@@ -344,7 +341,7 @@ export default function KiosksPage() {
                 <AlertTriangle className="size-5 shrink-0" />
                 <p className="text-sm font-medium">{errorMessage}</p>
               </div>
-              <Button variant="destructive" onClick={() => void refresh()}>
+              <Button variant="outline" onClick={() => void refresh()}>
                 Thử lại
               </Button>
             </CardContent>
@@ -356,11 +353,17 @@ export default function KiosksPage() {
                 <Search className="size-6 opacity-70" />
               </span>
               <div className="space-y-1.5">
-                <p className="text-base font-semibold tracking-tight text-foreground">Không tìm thấy Kiosk</p>
+                <p className="text-base font-semibold tracking-tight text-foreground">
+                  Không tìm thấy Kiosk
+                </p>
                 <p className="mx-auto max-w-md text-sm leading-relaxed text-muted-foreground">
-                  Không có Kiosk nào phù hợp với bộ lọc hiện tại. Thử thay đổi từ khóa, trạng thái hoặc địa điểm để xem kết quả.
+                  Không có Kiosk nào phù hợp với bộ lọc hiện tại. Thử thay đổi
+                  từ khóa, trạng thái hoặc địa điểm để xem kết quả.
                 </p>
               </div>
+              <Button variant="outline" size="sm" onClick={clearFilters}>
+                Xóa bộ lọc
+              </Button>
             </CardContent>
           </Card>
         ) : (

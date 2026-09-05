@@ -103,7 +103,7 @@ export function OrderItemFulfillmentDialog({
               disabled={isSubmitting}
               onValueChange={(value) => setAction(value as FulfillmentAction)}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="w-full" aria-label="Trạng thái tiếp theo">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

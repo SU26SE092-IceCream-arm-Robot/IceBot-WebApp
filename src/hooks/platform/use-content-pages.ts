@@ -23,8 +23,7 @@ function getErrorMessage(error: unknown, fallback: string) {
   if (axios.isCancel(error)) return "";
   if (axios.isAxiosError(error)) {
     const data = error.response?.data as
-      | { message?: string; businessError?: string }
-      | undefined;
+      { message?: string; businessError?: string } | undefined;
     return data?.message || data?.businessError || error.message || fallback;
   }
   return error instanceof Error ? error.message : fallback;
@@ -39,6 +38,7 @@ export function useContentPages() {
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async (signal?: AbortSignal): Promise<boolean> => {
+    if (signal?.aborted) return false;
     setIsLoading(true);
     setError(null);
     try {
@@ -103,7 +103,7 @@ export function useContentPages() {
 
   useEffect(() => {
     const controller = new AbortController();
-    void load(controller.signal);
+    queueMicrotask(() => void load(controller.signal));
     return () => controller.abort();
   }, [load]);
 
@@ -125,51 +125,59 @@ export function useContentPageDetail(key: string) {
   const [isPublishing, setIsPublishing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async (signal?: AbortSignal): Promise<boolean> => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const result = await getManagementContentPage(key, signal);
+  const load = useCallback(
+    async (signal?: AbortSignal): Promise<boolean> => {
       if (signal?.aborted) return false;
-      setPage(result);
-      return true;
-    } catch (loadError) {
-      if (axios.isCancel(loadError) || signal?.aborted) return false;
-      const message = getErrorMessage(
-        loadError,
-        "Không thể tải chi tiết trang nội dung.",
-      );
-      setError(message);
+      setIsLoading(true);
+      setError(null);
+      try {
+        const result = await getManagementContentPage(key, signal);
+        if (signal?.aborted) return false;
+        setPage(result);
+        return true;
+      } catch (loadError) {
+        if (axios.isCancel(loadError) || signal?.aborted) return false;
+        const message = getErrorMessage(
+          loadError,
+          "Không thể tải chi tiết trang nội dung.",
+        );
+        setError(message);
 
-      // Fallback with static page metadata if not initialized on backend
-      const staticKey = key as StaticContentPageKey;
-      const meta = STATIC_CONTENT_PAGE_METADATA[staticKey];
-      if (meta) {
-        setPage({
-          id: `temp-${key}`,
-          key,
-          slug: key,
-          draftTitle: meta.defaultTitle,
-          draftBodyHtml: "",
-          publishedRevisionId: null,
-          revision: 0,
-          revisions: [],
-        });
+        // Fallback with static page metadata if not initialized on backend
+        const staticKey = key as StaticContentPageKey;
+        const meta = STATIC_CONTENT_PAGE_METADATA[staticKey];
+        if (meta) {
+          setPage({
+            id: `temp-${key}`,
+            key,
+            slug: key,
+            draftTitle: meta.defaultTitle,
+            draftBodyHtml: "",
+            publishedRevisionId: null,
+            revision: 0,
+            revisions: [],
+          });
+        }
+        return false;
+      } finally {
+        if (!signal?.aborted) setIsLoading(false);
       }
-      return false;
-    } finally {
-      if (!signal?.aborted) setIsLoading(false);
-    }
-  }, [key]);
+    },
+    [key],
+  );
 
   useEffect(() => {
     const controller = new AbortController();
-    void load(controller.signal);
+    queueMicrotask(() => void load(controller.signal));
     return () => controller.abort();
   }, [load]);
 
   const saveDraft = useCallback(
-    async (request: { title: string; bodyHtml: string; expectedRevision?: number }) => {
+    async (request: {
+      title: string;
+      bodyHtml: string;
+      expectedRevision?: number;
+    }) => {
       setIsSaving(true);
       try {
         const payload: SaveContentPageDraftRequest = {
@@ -192,7 +200,7 @@ export function useContentPageDetail(key: string) {
         setIsSaving(false);
       }
     },
-    [key, page?.revision, load],
+    [key, page, load],
   );
 
   const publish = useCallback(
@@ -217,7 +225,7 @@ export function useContentPageDetail(key: string) {
         setIsPublishing(false);
       }
     },
-    [key, page?.revision, load],
+    [key, page, load],
   );
 
   return {

@@ -47,23 +47,34 @@ import type {
 
 const STATUS_OPTIONS: { value: MaintenanceStatusFilter; label: string }[] = [
   { value: "ALL", label: "Tất cả trạng thái" },
-  ...(Object.entries(MAINTENANCE_STATUS_LABELS) as [MaintenanceTicketStatus, string][]).map(
-    ([value, label]) => ({ value, label }),
-  ),
+  ...(
+    Object.entries(MAINTENANCE_STATUS_LABELS) as [
+      MaintenanceTicketStatus,
+      string,
+    ][]
+  ).map(([value, label]) => ({ value, label })),
 ];
 
-const PRIORITY_OPTIONS: { value: MaintenancePriorityFilter; label: string }[] = [
-  { value: "ALL", label: "Tất cả mức độ" },
-  ...(Object.entries(MAINTENANCE_PRIORITY_LABELS) as [MaintenancePriority, string][]).map(
-    ([value, label]) => ({ value, label }),
-  ),
-];
+const PRIORITY_OPTIONS: { value: MaintenancePriorityFilter; label: string }[] =
+  [
+    { value: "ALL", label: "Tất cả mức độ" },
+    ...(
+      Object.entries(MAINTENANCE_PRIORITY_LABELS) as [
+        MaintenancePriority,
+        string,
+      ][]
+    ).map(([value, label]) => ({ value, label })),
+  ];
 
-function isStatusFilter(value: string | null): value is MaintenanceStatusFilter {
+function isStatusFilter(
+  value: string | null,
+): value is MaintenanceStatusFilter {
   return STATUS_OPTIONS.some((option) => option.value === value);
 }
 
-function isPriorityFilter(value: string | null): value is MaintenancePriorityFilter {
+function isPriorityFilter(
+  value: string | null,
+): value is MaintenancePriorityFilter {
   return PRIORITY_OPTIONS.some((option) => option.value === value);
 }
 
@@ -267,6 +278,8 @@ export default function MaintenancePage() {
           <div className="relative">
             <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
             <Input
+              aria-label="Tìm kiếm yêu cầu bảo trì"
+              type="search"
               value={filters.searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
               placeholder="Tìm trong trang hiện tại theo ticket, tiêu đề, mã lỗi hoặc kiosk..."
@@ -281,10 +294,14 @@ export default function MaintenancePage() {
               }
             }}
           >
-            <SelectTrigger className="h-9 w-full bg-card">
+            <SelectTrigger
+              aria-label="Lọc trạng thái yêu cầu bảo trì"
+              className="h-9 w-full bg-card"
+            >
               <SelectValue>
-                {STATUS_OPTIONS.find((option) => option.value === filters.status)
-                  ?.label ?? "Tất cả trạng thái"}
+                {STATUS_OPTIONS.find(
+                  (option) => option.value === filters.status,
+                )?.label ?? "Tất cả trạng thái"}
               </SelectValue>
             </SelectTrigger>
             <SelectContent>
@@ -303,10 +320,14 @@ export default function MaintenancePage() {
               }
             }}
           >
-            <SelectTrigger className="h-9 w-full bg-card">
+            <SelectTrigger
+              aria-label="Lọc mức độ ưu tiên bảo trì"
+              className="h-9 w-full bg-card"
+            >
               <SelectValue>
-                {PRIORITY_OPTIONS.find((option) => option.value === filters.priority)
-                  ?.label ?? "Tất cả mức độ"}
+                {PRIORITY_OPTIONS.find(
+                  (option) => option.value === filters.priority,
+                )?.label ?? "Tất cả mức độ"}
               </SelectValue>
             </SelectTrigger>
             <SelectContent>
@@ -326,7 +347,9 @@ export default function MaintenancePage() {
       <Card className="gap-0 rounded-lg border border-border bg-card py-0 shadow-none">
         <CardHeader className="border-b border-border px-4 py-3.5">
           <div className="flex items-center justify-between gap-3">
-            <CardTitle className="text-sm font-semibold">Yêu cầu bảo trì</CardTitle>
+            <CardTitle className="text-sm font-semibold">
+              Yêu cầu bảo trì
+            </CardTitle>
             <span className="text-xs font-medium text-muted-foreground">
               {visibleTickets.length} dòng đang hiển thị
             </span>
@@ -345,7 +368,9 @@ export default function MaintenancePage() {
                 <p className="text-sm font-medium text-destructive">
                   Không thể tải yêu cầu bảo trì
                 </p>
-                <p className="text-sm text-muted-foreground">{tickets.errorMessage}</p>
+                <p className="text-sm text-muted-foreground">
+                  {tickets.errorMessage}
+                </p>
               </div>
               <Button variant="destructive" onClick={() => void refresh()}>
                 Thử lại
@@ -357,9 +382,12 @@ export default function MaintenancePage() {
                 <Wrench className="size-5 opacity-70" />
               </span>
               <div className="max-w-md space-y-1.5">
-                <p className="text-base font-semibold tracking-tight text-foreground">Không tìm thấy yêu cầu bảo trì</p>
+                <p className="text-base font-semibold tracking-tight text-foreground">
+                  Không tìm thấy yêu cầu bảo trì
+                </p>
                 <p className="text-sm leading-relaxed text-muted-foreground">
-                  Không có yêu cầu bảo trì phù hợp. Thử thay đổi từ khóa, trạng thái hoặc mức độ ưu tiên.
+                  Không có yêu cầu bảo trì phù hợp. Thử thay đổi từ khóa, trạng
+                  thái hoặc mức độ ưu tiên.
                 </p>
               </div>
             </div>

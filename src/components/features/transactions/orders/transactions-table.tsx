@@ -83,7 +83,9 @@ export function formatTransactionMoney(
   }).format(value);
 }
 
-export function formatTransactionDate(value: string | null | undefined): string {
+export function formatTransactionDate(
+  value: string | null | undefined,
+): string {
   if (!value) {
     return "Chưa có";
   }
@@ -140,50 +142,29 @@ export function TransactionsTable({
   onViewDetail,
 }: TransactionsTableProps) {
   return (
-    <Table className="min-w-[1120px] table-fixed">
-      <TableHeader className="bg-muted/40">
-        <TableRow className="hover:bg-transparent">
-          <TableHead className="w-[22%] px-4">Đơn hàng</TableHead>
-          <TableHead className="w-[13%] text-center">Kiosk</TableHead>
-          <TableHead className="w-[15%] text-center">Trạng thái</TableHead>
-          <TableHead className="w-[15%] text-center">Thanh toán</TableHead>
-          <TableHead className="w-[13%] text-right">Tổng tiền</TableHead>
-          <TableHead className="w-[14%] text-center">Hỗ trợ</TableHead>
-          <TableHead className="w-[8%] px-4 text-center">Thao tác</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
+    <>
+      <div className="grid gap-3 p-4 md:hidden">
         {orders.map((order) => (
-          <TableRow key={order.id} className="hover:bg-muted/30">
-            <TableCell className="h-16 px-4 py-2.5">
-              <div className="min-w-0 space-y-0.5">
-                <p className="truncate font-mono text-[13px] font-medium text-foreground">
+          <article
+            key={order.id}
+            className="space-y-3 rounded-lg border border-border bg-card p-4"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="truncate font-mono text-sm font-medium text-foreground">
                   {order.orderNumber}
                 </p>
-                <p className="truncate text-xs tabular-nums text-muted-foreground">
+                <p className="mt-1 text-xs tabular-nums text-muted-foreground">
                   {formatTransactionDate(order.placedAt)}
                 </p>
               </div>
-            </TableCell>
-            <TableCell className="py-2.5 text-center">
-              <Badge variant="outline" className="bg-muted/20 text-muted-foreground">
-                {order.kioskId ? "Đã liên kết" : "Chưa có"}
-              </Badge>
-            </TableCell>
-            <TableCell className="py-2.5 text-center">
-              <div className="flex justify-center">
-                <OrderStatusBadge status={order.status} />
-              </div>
-            </TableCell>
-            <TableCell className="py-2.5 text-center">
-              <div className="flex justify-center">
-                <PaymentStatusBadge status={order.paymentStatus} />
-              </div>
-            </TableCell>
-            <TableCell className="py-2.5 text-right font-medium tabular-nums">
-              {formatTransactionMoney(order.totalAmount, order.currency)}
-            </TableCell>
-            <TableCell className="py-2.5 text-center">
+              <p className="shrink-0 font-medium tabular-nums">
+                {formatTransactionMoney(order.totalAmount, order.currency)}
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <OrderStatusBadge status={order.status} />
+              <PaymentStatusBadge status={order.paymentStatus} />
               {order.requiresStaffSupport ? (
                 <Badge
                   variant="outline"
@@ -192,28 +173,21 @@ export function TransactionsTable({
                   <Headset className="size-3" />
                   Cần hỗ trợ
                 </Badge>
-              ) : (
-                <Badge
-                  variant="outline"
-                  className="gap-1 border-success/20 bg-success/10 text-success"
-                >
-                  <ReceiptText className="size-3" />
-                  Ổn định
-                </Badge>
-              )}
-            </TableCell>
-            <TableCell className="px-4 py-2.5 text-center">
-              <div className="flex items-center justify-center gap-1.5">
+              ) : null}
+            </div>
+            <div className="flex items-center justify-between border-t border-border pt-3">
+              <span className="text-xs text-muted-foreground">
+                Kiosk: {order.kioskId ? "Đã liên kết" : "Chưa có"}
+              </span>
+              <div className="flex items-center gap-2">
                 <Button
                   type="button"
-                  variant="ghost"
-                  size="icon-sm"
-                  className="rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
-                  title={`Xem chi tiết ${order.orderNumber}`}
-                  aria-label={`Xem chi tiết ${order.orderNumber}`}
+                  variant="outline"
+                  size="sm"
                   onClick={() => onViewDetail(order.id)}
                 >
                   <Eye className="size-4" />
+                  Chi tiết
                 </Button>
                 {canManageOrders &&
                 order.paymentStatus === "Paid" &&
@@ -222,14 +196,13 @@ export function TransactionsTable({
                 order.status !== "RefundRequired" ? (
                   <Button
                     type="button"
-                    variant="ghost"
-                    size="icon-sm"
-                    className="rounded-lg text-warning hover:bg-warning/10 hover:text-warning"
-                    title={`Đánh dấu ${order.orderNumber} cần hoàn tiền`}
-                    aria-label={`Đánh dấu ${order.orderNumber} cần hoàn tiền`}
+                    variant="outline"
+                    size="sm"
+                    className="text-warning hover:text-warning"
                     onClick={() => onMarkRefundRequired(order)}
                   >
                     <RotateCcw className="size-4" />
+                    Cần hoàn
                   </Button>
                 ) : null}
                 {canManageOrders &&
@@ -238,21 +211,141 @@ export function TransactionsTable({
                 order.status !== "Cancelled" ? (
                   <Button
                     type="button"
-                    variant="ghost"
-                    size="icon-sm"
-                    className="rounded-lg text-destructive hover:bg-destructive/10 hover:text-destructive"
-                    title={`Hủy ${order.orderNumber}`}
-                    aria-label={`Hủy ${order.orderNumber}`}
+                    variant="destructive"
+                    size="sm"
                     onClick={() => onCancelOrder(order)}
                   >
                     <Ban className="size-4" />
+                    Hủy
                   </Button>
                 ) : null}
               </div>
-            </TableCell>
-          </TableRow>
+            </div>
+          </article>
         ))}
-      </TableBody>
-    </Table>
+      </div>
+
+      <div className="hidden md:block">
+        <Table className="min-w-[1120px] table-fixed">
+          <TableHeader className="bg-muted/40">
+            <TableRow className="hover:bg-transparent">
+              <TableHead className="w-[22%] px-4">Đơn hàng</TableHead>
+              <TableHead className="w-[13%] text-center">Kiosk</TableHead>
+              <TableHead className="w-[15%] text-center">Trạng thái</TableHead>
+              <TableHead className="w-[15%] text-center">Thanh toán</TableHead>
+              <TableHead className="w-[13%] text-right">Tổng tiền</TableHead>
+              <TableHead className="w-[14%] text-center">Hỗ trợ</TableHead>
+              <TableHead className="w-[8%] px-4 text-center">
+                Thao tác
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {orders.map((order) => (
+              <TableRow key={order.id} className="hover:bg-muted/30">
+                <TableCell className="h-16 px-4 py-2.5">
+                  <div className="min-w-0 space-y-0.5">
+                    <p className="truncate font-mono text-[13px] font-medium text-foreground">
+                      {order.orderNumber}
+                    </p>
+                    <p className="truncate text-xs tabular-nums text-muted-foreground">
+                      {formatTransactionDate(order.placedAt)}
+                    </p>
+                  </div>
+                </TableCell>
+                <TableCell className="py-2.5 text-center">
+                  <Badge
+                    variant="outline"
+                    className="bg-muted/20 text-muted-foreground"
+                  >
+                    {order.kioskId ? "Đã liên kết" : "Chưa có"}
+                  </Badge>
+                </TableCell>
+                <TableCell className="py-2.5 text-center">
+                  <div className="flex justify-center">
+                    <OrderStatusBadge status={order.status} />
+                  </div>
+                </TableCell>
+                <TableCell className="py-2.5 text-center">
+                  <div className="flex justify-center">
+                    <PaymentStatusBadge status={order.paymentStatus} />
+                  </div>
+                </TableCell>
+                <TableCell className="py-2.5 text-right font-medium tabular-nums">
+                  {formatTransactionMoney(order.totalAmount, order.currency)}
+                </TableCell>
+                <TableCell className="py-2.5 text-center">
+                  {order.requiresStaffSupport ? (
+                    <Badge
+                      variant="outline"
+                      className="gap-1 border-warning/20 bg-warning/10 text-warning"
+                    >
+                      <Headset className="size-3" />
+                      Cần hỗ trợ
+                    </Badge>
+                  ) : (
+                    <Badge
+                      variant="outline"
+                      className="gap-1 border-success/20 bg-success/10 text-success"
+                    >
+                      <ReceiptText className="size-3" />
+                      Ổn định
+                    </Badge>
+                  )}
+                </TableCell>
+                <TableCell className="px-4 py-2.5 text-center">
+                  <div className="flex items-center justify-center gap-1.5">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      className="rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
+                      title={`Xem chi tiết ${order.orderNumber}`}
+                      aria-label={`Xem chi tiết ${order.orderNumber}`}
+                      onClick={() => onViewDetail(order.id)}
+                    >
+                      <Eye className="size-4" />
+                    </Button>
+                    {canManageOrders &&
+                    order.paymentStatus === "Paid" &&
+                    order.status !== "Completed" &&
+                    order.status !== "Cancelled" &&
+                    order.status !== "RefundRequired" ? (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon-sm"
+                        className="rounded-lg text-warning hover:bg-warning/10 hover:text-warning"
+                        title={`Đánh dấu ${order.orderNumber} cần hoàn tiền`}
+                        aria-label={`Đánh dấu ${order.orderNumber} cần hoàn tiền`}
+                        onClick={() => onMarkRefundRequired(order)}
+                      >
+                        <RotateCcw className="size-4" />
+                      </Button>
+                    ) : null}
+                    {canManageOrders &&
+                    order.paymentStatus !== "Paid" &&
+                    order.status !== "Completed" &&
+                    order.status !== "Cancelled" ? (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon-sm"
+                        className="rounded-lg text-destructive hover:bg-destructive/10 hover:text-destructive"
+                        title={`Hủy ${order.orderNumber}`}
+                        aria-label={`Hủy ${order.orderNumber}`}
+                        onClick={() => onCancelOrder(order)}
+                      >
+                        <Ban className="size-4" />
+                      </Button>
+                    ) : null}
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    </>
   );
 }

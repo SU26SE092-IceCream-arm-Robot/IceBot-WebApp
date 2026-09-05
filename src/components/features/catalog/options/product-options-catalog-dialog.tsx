@@ -20,7 +20,10 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import type { ProductOptionGroupCatalogItem } from "@/hooks/catalog/use-product-options-catalog";
-import type { MenuManagementPagination, OptionSelectionType } from "@/types/catalog/menu-management";
+import type {
+  MenuManagementPagination,
+  OptionSelectionType,
+} from "@/types/catalog/menu-management";
 
 const SELECTION_TYPE_LABELS: Record<OptionSelectionType, string> = {
   Single: "Chọn một",
@@ -39,7 +42,10 @@ function OptionGroupsLoading() {
   return (
     <div className="space-y-3">
       {Array.from({ length: 3 }).map((_, index) => (
-        <div key={index} className="h-32 animate-pulse rounded-lg bg-muted/40" />
+        <div
+          key={index}
+          className="h-32 animate-pulse rounded-lg bg-muted/40"
+        />
       ))}
     </div>
   );
@@ -57,7 +63,9 @@ function OptionGroupCard({ item }: { item: ProductOptionGroupCatalogItem }) {
             <Badge variant={group.isActive ? "default" : "outline"}>
               {group.isActive ? "Đang dùng" : "Đã tắt"}
             </Badge>
-            {group.isRequired ? <Badge variant="secondary">Bắt buộc</Badge> : null}
+            {group.isRequired ? (
+              <Badge variant="secondary">Bắt buộc</Badge>
+            ) : null}
           </div>
           <p className="font-mono text-xs text-muted-foreground">
             {group.code} · {product.displayName || product.name}
@@ -73,7 +81,8 @@ function OptionGroupCard({ item }: { item: ProductOptionGroupCatalogItem }) {
           <div className="rounded-lg bg-muted/40 px-3 py-2">
             <p className="text-muted-foreground">Kiểu chọn</p>
             <p className="mt-1 font-medium text-foreground">
-              {SELECTION_TYPE_LABELS[group.selectionType] ?? group.selectionType}
+              {SELECTION_TYPE_LABELS[group.selectionType] ??
+                group.selectionType}
             </p>
           </div>
           <div className="rounded-lg bg-muted/40 px-3 py-2">
@@ -125,7 +134,9 @@ function OptionGroupCard({ item }: { item: ProductOptionGroupCatalogItem }) {
                 <Badge variant={option.isAvailable ? "default" : "outline"}>
                   {option.isAvailable ? "Khả dụng" : "Không khả dụng"}
                 </Badge>
-                {option.isDefault ? <Badge variant="secondary">Mặc định</Badge> : null}
+                {option.isDefault ? (
+                  <Badge variant="secondary">Mặc định</Badge>
+                ) : null}
                 <Badge variant="outline">#{option.displayOrder}</Badge>
               </div>
               {option.description ? (
@@ -183,7 +194,8 @@ export function ProductOptionsCatalogDialog({
             <div className="min-w-0 space-y-1">
               <DialogTitle>Nhóm tuỳ chọn sản phẩm</DialogTitle>
               <DialogDescription>
-                Xem các nhóm tuỳ chọn và lựa chọn đang gắn với sản phẩm của tổ chức {organizationName}.
+                Xem các nhóm tuỳ chọn và lựa chọn đang gắn với sản phẩm của tổ
+                chức {organizationName}.
               </DialogDescription>
             </div>
           </div>
@@ -193,6 +205,8 @@ export function ProductOptionsCatalogDialog({
           <div className="relative flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
+              aria-label="Tìm tùy chọn sản phẩm"
+              type="search"
               value={searchTerm}
               onChange={(event) => onSearchTermChange(event.target.value)}
               placeholder="Tìm theo tên hoặc mã sản phẩm..."
@@ -200,8 +214,12 @@ export function ProductOptionsCatalogDialog({
             />
           </div>
           <div className="rounded-lg border border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
-            <span className="font-medium text-foreground">{optionGroups.length}</span> nhóm /{" "}
-            <span className="font-medium text-foreground">{productsCount}</span> sản phẩm trên trang
+            <span className="font-medium text-foreground">
+              {optionGroups.length}
+            </span>{" "}
+            nhóm /{" "}
+            <span className="font-medium text-foreground">{productsCount}</span>{" "}
+            sản phẩm trên trang
           </div>
         </div>
 
@@ -222,7 +240,8 @@ export function ProductOptionsCatalogDialog({
             <SlidersHorizontal className="mx-auto mb-3 size-8 text-muted-foreground" />
             <p className="text-sm font-medium">Chưa có nhóm tuỳ chọn</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              Không có nhóm tuỳ chọn nào trong các sản phẩm phù hợp với bộ lọc hiện tại.
+              Không có nhóm tuỳ chọn nào trong các sản phẩm phù hợp với bộ lọc
+              hiện tại.
             </p>
           </div>
         ) : (
@@ -238,8 +257,12 @@ export function ProductOptionsCatalogDialog({
 
         <div className="flex flex-col justify-between gap-3 border-t border-border pt-3 text-sm sm:flex-row sm:items-center">
           <p className="text-muted-foreground">
-            Trang <span className="font-medium text-foreground">{pagination.page}</span> /{" "}
-            {Math.max(pagination.totalPages, 1)} · {pagination.totalCount} sản phẩm
+            Trang{" "}
+            <span className="font-medium text-foreground">
+              {pagination.page}
+            </span>{" "}
+            / {Math.max(pagination.totalPages, 1)} · {pagination.totalCount} sản
+            phẩm
           </p>
           <div className="flex gap-2">
             <Button

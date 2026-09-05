@@ -1,7 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { AlertTriangle, Info, AlertCircle, AlertOctagon, CheckCircle2, ShieldAlert } from "lucide-react";
+import {
+  AlertTriangle,
+  Info,
+  AlertCircle,
+  AlertOctagon,
+  CheckCircle2,
+  LoaderCircle,
+  ShieldAlert,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -11,9 +19,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/identity/use-auth";
 import { hasScopedPermission } from "@/lib/rbac";
-import type { AlertResult, AlertSeverity, AlertStatus } from "@/types/operations/alerts";
+import type {
+  AlertResult,
+  AlertSeverity,
+  AlertStatus,
+} from "@/types/operations/alerts";
 
 function formatDateTime(isoString: string) {
   return new Date(isoString).toLocaleString("vi-VN", {
@@ -26,22 +40,52 @@ function formatDateTime(isoString: string) {
   });
 }
 
-const SEVERITY_CONFIG: Record<AlertSeverity, { label: string; icon: React.ElementType; className: string }> = {
+const SEVERITY_CONFIG: Record<
+  AlertSeverity,
+  { label: string; icon: React.ElementType; className: string }
+> = {
   Debug: { label: "Gỡ lỗi", icon: Info, className: "text-muted-foreground" },
   Info: { label: "Thông tin", icon: Info, className: "text-primary" },
-  Warning: { label: "Cảnh báo", icon: AlertTriangle, className: "text-warning" },
+  Warning: {
+    label: "Cảnh báo",
+    icon: AlertTriangle,
+    className: "text-warning",
+  },
   Error: { label: "Lỗi", icon: AlertCircle, className: "text-destructive" },
-  Critical: { label: "Nghiêm trọng", icon: AlertOctagon, className: "text-destructive" },
+  Critical: {
+    label: "Nghiêm trọng",
+    icon: AlertOctagon,
+    className: "text-destructive",
+  },
 };
 
-const STATUS_CONFIG: Record<AlertStatus, { label: string; className: string }> = {
-  Open: { label: "Mới", className: "bg-destructive/10 text-destructive border-destructive/20" },
-  Acknowledged: { label: "Đã tiếp nhận", className: "bg-warning/10 text-warning border-warning/20" },
-  Resolved: { label: "Đã xử lý", className: "bg-success/10 text-success border-success/20" },
-  Suppressed: { label: "Đã ẩn", className: "bg-muted text-muted-foreground border-border" },
-};
+const STATUS_CONFIG: Record<AlertStatus, { label: string; className: string }> =
+  {
+    Open: {
+      label: "Mới",
+      className: "bg-destructive/10 text-destructive border-destructive/20",
+    },
+    Acknowledged: {
+      label: "Đã tiếp nhận",
+      className: "bg-warning/10 text-warning border-warning/20",
+    },
+    Resolved: {
+      label: "Đã xử lý",
+      className: "bg-success/10 text-success border-success/20",
+    },
+    Suppressed: {
+      label: "Đã ẩn",
+      className: "bg-muted text-muted-foreground border-border",
+    },
+  };
 
-function DetailTile({ label, value }: { label: string; value: React.ReactNode }) {
+function DetailTile({
+  label,
+  value,
+}: {
+  label: string;
+  value: React.ReactNode;
+}) {
   return (
     <div className="rounded-xl border border-border bg-card p-3">
       <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
@@ -55,13 +99,19 @@ function DetailTile({ label, value }: { label: string; value: React.ReactNode })
 }
 
 function LinkedValue({ value }: { value?: string | null }) {
-  return value ? "Đã liên kết" : <span className="text-muted-foreground">—</span>;
+  return value ? (
+    "Đã liên kết"
+  ) : (
+    <span className="text-muted-foreground">—</span>
+  );
 }
 
 interface AlertDetailDrawerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   alert: AlertResult | null;
+  isLoading?: boolean;
+  loadErrorMessage?: string | null;
   onAcknowledge: (alertId: string) => Promise<boolean>;
   onResolve: (alertId: string, notes: string) => Promise<boolean>;
   isSubmitting: boolean;
@@ -78,6 +128,8 @@ export function AlertDetailDrawer({
   open,
   onOpenChange,
   alert,
+  isLoading = false,
+  loadErrorMessage,
   onAcknowledge,
   onResolve,
   isSubmitting,
@@ -87,30 +139,69 @@ export function AlertDetailDrawer({
   const [resolutionNotes, setResolutionNotes] = useState("");
   const [showResolveInput, setShowResolveInput] = useState(false);
 
-  if (!alert) return null;
-
-  const canManage = Boolean(
-    alert.organizationId &&
-      alert.storeId &&
-      alert.kioskId &&
-      hasScopedPermission(
-        effectiveAccess,
-        "alerts.manage",
-        {
-          organizationId: alert.organizationId,
-          storeId: alert.storeId,
-          kioskId: alert.kioskId,
-        },
-      ),
-  );
-  const SeverityIcon = SEVERITY_CONFIG[alert.severity].icon;
-  const statusConfig = STATUS_CONFIG[alert.status];
-
   const handleClose = () => {
     setShowResolveInput(false);
     setResolutionNotes("");
     onOpenChange(false);
   };
+
+  if (isLoading || loadErrorMessage || !alert) {
+    return (
+      <Dialog open={open} onOpenChange={handleClose}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Chi tiết cảnh báo</DialogTitle>
+            <DialogDescription>
+              {isLoading
+                ? "Đang lấy dữ liệu mới nhất trước khi xử lý."
+                : "Không thể hiển thị đầy đủ cảnh báo đã chọn."}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col items-center px-4 py-8 text-center">
+            <span
+              className={`flex size-11 items-center justify-center rounded-lg ${
+                isLoading
+                  ? "bg-primary/10 text-primary"
+                  : "bg-destructive/10 text-destructive"
+              }`}
+            >
+              {isLoading ? (
+                <LoaderCircle
+                  className="size-5 animate-spin"
+                  aria-hidden="true"
+                />
+              ) : (
+                <ShieldAlert className="size-5" aria-hidden="true" />
+              )}
+            </span>
+            <p className="mt-3 max-w-sm text-sm text-muted-foreground">
+              {isLoading
+                ? "Vui lòng chờ trong giây lát."
+                : (loadErrorMessage ?? "Cảnh báo không còn khả dụng.")}
+            </p>
+            {!isLoading ? (
+              <Button variant="outline" className="mt-4" onClick={handleClose}>
+                Đóng
+              </Button>
+            ) : null}
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  const canManage = Boolean(
+    alert.organizationId &&
+    alert.storeId &&
+    alert.kioskId &&
+    hasScopedPermission(effectiveAccess, "alerts.manage", {
+      organizationId: alert.organizationId,
+      storeId: alert.storeId,
+      kioskId: alert.kioskId,
+    }),
+  );
+  const SeverityIcon = SEVERITY_CONFIG[alert.severity].icon;
+  const statusConfig = STATUS_CONFIG[alert.status];
 
   const handleAcknowledge = async () => {
     await onAcknowledge(alert.id);
@@ -138,16 +229,18 @@ export function AlertDetailDrawer({
         <DialogHeader>
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-3">
-              <div className={`rounded-xl p-2.5 ${SEVERITY_CONFIG[alert.severity].className} bg-muted`}>
+              <div
+                className={`rounded-xl p-2.5 ${SEVERITY_CONFIG[alert.severity].className} bg-muted`}
+              >
                 <SeverityIcon className="size-6" />
               </div>
               <div>
-                <DialogTitle className="text-xl">
-                  {alert.title}
-                </DialogTitle>
+                <DialogTitle className="text-xl">{alert.title}</DialogTitle>
                 <DialogDescription className="mt-1 flex items-center gap-2 font-mono text-xs">
                   {alert.alertCode}
-                  <span className={`rounded-full border px-2 py-0.5 font-sans font-medium ${statusConfig.className}`}>
+                  <span
+                    className={`rounded-full border px-2 py-0.5 font-sans font-medium ${statusConfig.className}`}
+                  >
                     {statusConfig.label}
                   </span>
                   {alert.occurrenceCount > 1 && (
@@ -162,57 +255,101 @@ export function AlertDetailDrawer({
         </DialogHeader>
 
         <div className="grid grid-cols-2 gap-4 py-4 sm:grid-cols-3">
-          <DetailTile label="Mức độ" value={SEVERITY_CONFIG[alert.severity].label} />
+          <DetailTile
+            label="Mức độ"
+            value={SEVERITY_CONFIG[alert.severity].label}
+          />
           <DetailTile label="Trạng thái" value={statusConfig.label} />
-          <DetailTile label="Mã cảnh báo" value={<span className="font-mono">{alert.alertCode}</span>} />
-          <DetailTile label="Lần đầu xuất hiện" value={formatDateTime(alert.raisedAt)} />
-          <DetailTile label="Lần cuối xuất hiện" value={formatDateTime(alert.lastOccurredAt)} />
-          <DetailTile label="Số lần ghi nhận" value={`${alert.occurrenceCount} lần`} />
-          <DetailTile label="Ngày cập nhật" value={alert.updatedAt ? formatDateTime(alert.updatedAt) : formatDateTime(alert.createdAt)} />
+          <DetailTile
+            label="Mã cảnh báo"
+            value={<span className="font-mono">{alert.alertCode}</span>}
+          />
+          <DetailTile
+            label="Lần đầu xuất hiện"
+            value={formatDateTime(alert.raisedAt)}
+          />
+          <DetailTile
+            label="Lần cuối xuất hiện"
+            value={formatDateTime(alert.lastOccurredAt)}
+          />
+          <DetailTile
+            label="Số lần ghi nhận"
+            value={`${alert.occurrenceCount} lần`}
+          />
+          <DetailTile
+            label="Ngày cập nhật"
+            value={
+              alert.updatedAt
+                ? formatDateTime(alert.updatedAt)
+                : formatDateTime(alert.createdAt)
+            }
+          />
         </div>
 
         <div className="space-y-4">
-          <DetailTile 
-            label="Nội dung chi tiết" 
-            value={<div className="whitespace-pre-wrap">{alert.message}</div>} 
+          <DetailTile
+            label="Nội dung chi tiết"
+            value={<div className="whitespace-pre-wrap">{alert.message}</div>}
           />
-          
+
           <div className="grid grid-cols-2 gap-4">
-            <DetailTile label="Tổ chức" value={<LinkedValue value={alert.organizationId} />} />
-            <DetailTile label="Cửa hàng" value={<LinkedValue value={alert.storeId} />} />
-            <DetailTile label="Kiosk" value={<LinkedValue value={alert.kioskId} />} />
-            <DetailTile label="Thiết bị" value={<LinkedValue value={alert.deviceId} />} />
+            <DetailTile
+              label="Tổ chức"
+              value={<LinkedValue value={alert.organizationId} />}
+            />
+            <DetailTile
+              label="Cửa hàng"
+              value={<LinkedValue value={alert.storeId} />}
+            />
+            <DetailTile
+              label="Kiosk"
+              value={<LinkedValue value={alert.kioskId} />}
+            />
+            <DetailTile
+              label="Thiết bị"
+              value={<LinkedValue value={alert.deviceId} />}
+            />
           </div>
 
           {alert.sourceType ? (
             <DetailTile
               label="Nguồn cảnh báo"
-              value={SOURCE_TYPE_LABELS[alert.sourceType] ?? "Nguồn vận hành khác"}
+              value={
+                SOURCE_TYPE_LABELS[alert.sourceType] ?? "Nguồn vận hành khác"
+              }
             />
           ) : null}
 
           {alert.status !== "Open" && (
             <div className="grid grid-cols-2 gap-4 border-t pt-4">
-              <DetailTile 
-                label="Người tiếp nhận" 
-                value={alert.acknowledgedByAccountId ? "Đã ghi nhận" : "Chưa có"}
+              <DetailTile
+                label="Người tiếp nhận"
+                value={
+                  alert.acknowledgedByAccountId ? "Đã ghi nhận" : "Chưa có"
+                }
               />
-              <DetailTile 
-                label="Thời gian tiếp nhận" 
-                value={alert.acknowledgedAt && formatDateTime(alert.acknowledgedAt)} 
+              <DetailTile
+                label="Thời gian tiếp nhận"
+                value={
+                  alert.acknowledgedAt && formatDateTime(alert.acknowledgedAt)
+                }
               />
             </div>
           )}
 
           {alert.status === "Resolved" && (
             <div className="grid grid-cols-1 gap-4 border-t pt-4">
-              <DetailTile 
-                label="Thời gian xử lý" 
-                value={alert.resolvedAt && formatDateTime(alert.resolvedAt)} 
+              <DetailTile
+                label="Thời gian xử lý"
+                value={alert.resolvedAt && formatDateTime(alert.resolvedAt)}
               />
-              <DetailTile 
-                label="Ghi chú xử lý" 
-                value={<div className="whitespace-pre-wrap">{alert.resolutionNotes}</div>} 
+              <DetailTile
+                label="Ghi chú xử lý"
+                value={
+                  <div className="whitespace-pre-wrap">
+                    {alert.resolutionNotes}
+                  </div>
+                }
               />
             </div>
           )}
@@ -227,45 +364,64 @@ export function AlertDetailDrawer({
           </div>
         ) : null}
 
-        {canManage && (alert.status === "Open" || alert.status === "Acknowledged") && (
-          <div className="mt-6 flex flex-col gap-3 border-t pt-4">
-            {showResolveInput ? (
-              <div className="space-y-3">
-                <p className="text-sm font-medium">Ghi chú xử lý (bắt buộc)</p>
-                <textarea
-                  className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                  value={resolutionNotes}
-                  onChange={(e) => setResolutionNotes(e.target.value)}
-                  maxLength={500}
-                  placeholder="Mô tả cách xử lý cảnh báo này..."
-                  disabled={isSubmitting}
-                />
+        {canManage &&
+          (alert.status === "Open" || alert.status === "Acknowledged") && (
+            <div className="mt-6 flex flex-col gap-3 border-t pt-4">
+              {showResolveInput ? (
+                <div className="space-y-3">
+                  <Label htmlFor="alert-resolution-notes">
+                    Ghi chú xử lý (bắt buộc)
+                  </Label>
+                  <Textarea
+                    id="alert-resolution-notes"
+                    className="min-h-24"
+                    value={resolutionNotes}
+                    onChange={(e) => setResolutionNotes(e.target.value)}
+                    maxLength={500}
+                    placeholder="Mô tả cách xử lý cảnh báo này..."
+                    disabled={isSubmitting}
+                  />
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowResolveInput(false)}
+                      disabled={isSubmitting}
+                    >
+                      Hủy
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={handleResolve}
+                      disabled={!resolutionNotes.trim() || isSubmitting}
+                    >
+                      Xác nhận xử lý
+                    </Button>
+                  </div>
+                </div>
+              ) : (
                 <div className="flex justify-end gap-2">
-                  <Button variant="outline" size="sm" onClick={() => setShowResolveInput(false)} disabled={isSubmitting}>
-                    Hủy
-                  </Button>
-                  <Button size="sm" onClick={handleResolve} disabled={!resolutionNotes.trim() || isSubmitting}>
-                    Xác nhận xử lý
+                  {alert.status === "Open" && (
+                    <Button
+                      variant="outline"
+                      onClick={handleAcknowledge}
+                      disabled={isSubmitting}
+                    >
+                      <ShieldAlert className="mr-2 size-4" />
+                      Tiếp nhận
+                    </Button>
+                  )}
+                  <Button
+                    onClick={() => setShowResolveInput(true)}
+                    disabled={isSubmitting}
+                  >
+                    <CheckCircle2 className="mr-2 size-4" />
+                    Đánh dấu xử lý
                   </Button>
                 </div>
-              </div>
-            ) : (
-              <div className="flex justify-end gap-2">
-                {alert.status === "Open" && (
-                  <Button variant="outline" onClick={handleAcknowledge} disabled={isSubmitting}>
-                    <ShieldAlert className="mr-2 size-4" />
-                    Tiếp nhận
-                  </Button>
-                )}
-                <Button onClick={() => setShowResolveInput(true)} disabled={isSubmitting}>
-                  <CheckCircle2 className="mr-2 size-4" />
-                  Đánh dấu xử lý
-                </Button>
-              </div>
-            )}
-          </div>
-        )}
-
+              )}
+            </div>
+          )}
       </DialogContent>
     </Dialog>
   );

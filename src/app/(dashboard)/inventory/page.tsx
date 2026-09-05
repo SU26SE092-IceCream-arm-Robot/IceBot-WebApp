@@ -15,7 +15,6 @@ import {
   TriangleAlert,
   Warehouse,
   FlaskConical,
-  type LucideIcon,
 } from "lucide-react";
 
 import { IngredientCatalogDialog } from "@/components/features/operations/inventory/ingredient-catalog-dialog";
@@ -30,13 +29,10 @@ import {
   StockMovementsTable,
 } from "@/components/features/operations/inventory/inventory-table";
 import { InventoryTopologyPanel } from "@/components/features/operations/inventory/inventory-topology-panel";
+import { MetricStrip, MetricStripItem } from "@/components/shared/metric-strip";
+import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -69,45 +65,6 @@ function isInventoryStatusFilter(
   value: string | null,
 ): value is InventoryStatusFilter {
   return STATUS_OPTIONS.some((option) => option.value === value);
-}
-
-type StatTone = "primary" | "success" | "warning" | "muted";
-
-const STAT_TONES: Record<StatTone, string> = {
-  primary: "border-primary/20 bg-primary/10 text-primary",
-  success: "border-success/20 bg-success/10 text-success",
-  warning: "border-warning/20 bg-warning/10 text-warning",
-  muted: "border-border bg-muted/20 text-muted-foreground",
-};
-
-function StatCard({
-  icon: Icon,
-  label,
-  value,
-  tone,
-}: {
-  icon: LucideIcon;
-  label: string;
-  value: number;
-  tone: StatTone;
-}) {
-  return (
-    <Card className="rounded-xl border border-border/80 bg-card py-0 shadow-none">
-      <CardContent className="p-5">
-        <div className="flex items-center justify-between gap-4">
-          <p className="text-sm font-medium text-muted-foreground">{label}</p>
-          <span
-            className={`flex size-10 shrink-0 items-center justify-center rounded-xl border ${STAT_TONES[tone]}`}
-          >
-            <Icon className="size-5" strokeWidth={1.8} />
-          </span>
-        </div>
-        <p className="mt-3 text-3xl font-semibold leading-none tracking-tight tabular-nums text-foreground">
-          {value}
-        </p>
-      </CardContent>
-    </Card>
-  );
 }
 
 function TableLoading({ rows = 6 }: { rows?: number }) {
@@ -172,8 +129,12 @@ function EmptyState({
         <Warehouse className="size-6 opacity-70" />
       </span>
       <div className="max-w-md space-y-1.5">
-        <p className="text-base font-semibold tracking-tight text-foreground">{title}</p>
-        <p className="text-sm leading-relaxed text-muted-foreground">{description}</p>
+        <p className="text-base font-semibold tracking-tight text-foreground">
+          {title}
+        </p>
+        <p className="text-sm leading-relaxed text-muted-foreground">
+          {description}
+        </p>
       </div>
     </div>
   );
@@ -298,9 +259,10 @@ export default function InventoryPage() {
   const refreshFromRealtime = useCallback(() => {
     void refresh();
   }, [refresh]);
-  const realtimeKioskIds = filters.kioskId !== "ALL"
-    ? [filters.kioskId]
-    : availableKiosks.map((kiosk) => kiosk.id);
+  const realtimeKioskIds =
+    filters.kioskId !== "ALL"
+      ? [filters.kioskId]
+      : availableKiosks.map((kiosk) => kiosk.id);
   useKioskOperationsRealtime(realtimeKioskIds, refreshFromRealtime);
 
   const openDispenserHistory = (dispenser: DispenserStateResult) => {
@@ -320,39 +282,39 @@ export default function InventoryPage() {
   const isRefreshing = dispensers.isLoading || movements.isLoading;
 
   return (
-    <div className="space-y-7">
-      <section className="flex flex-col gap-4 border-b border-border pb-6 lg:flex-row lg:items-end lg:justify-between">
-        <div className="max-w-2xl space-y-2">
-          <h1 className="text-3xl font-semibold tracking-tight text-foreground">
-            Quản lý tồn kho
-          </h1>
-          <p className="text-sm leading-6 text-muted-foreground">
-            Theo dõi lượng nguyên liệu trong từng bộ phân phối và lịch sử biến
-            động theo phạm vi được cấp.
+    <div className="space-y-5">
+      <PageHeader
+        title="Tồn kho nguyên liệu"
+        description="Phát hiện khay sắp hết, kiểm tra cấu hình bộ phân phối và truy vết mọi biến động trong phạm vi được cấp."
+        metadata={
+          <p className="text-xs text-muted-foreground">
+            Dữ liệu được làm mới tự động khi kiosk phát sinh thay đổi tồn kho
           </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {canReadIngredientCatalog ? (
+        }
+        actions={
+          <>
+            {canReadIngredientCatalog ? (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsIngredientCatalogOpen(true)}
+              >
+                <FlaskConical className="size-4" aria-hidden="true" />
+                Danh mục nguyên liệu
+              </Button>
+            ) : null}
             <Button
               variant="outline"
-              className="h-10"
-              onClick={() => setIsIngredientCatalogOpen(true)}
+              size="sm"
+              isLoading={isRefreshing}
+              onClick={() => void refresh()}
             >
-              <FlaskConical className="size-4" />
-              Danh mục nguyên liệu
+              <RefreshCw className="size-4" aria-hidden="true" />
+              Làm mới
             </Button>
-          ) : null}
-          <Button
-            variant="outline"
-            className="h-10"
-            isLoading={isRefreshing}
-            onClick={() => void refresh()}
-          >
-            <RefreshCw className="size-4" />
-            Làm mới
-          </Button>
-        </div>
-      </section>
+          </>
+        }
+      />
 
       {lookupWarning ? (
         <div className="flex items-start gap-3 rounded-lg border border-warning/30 bg-warning/5 px-4 py-3 text-sm text-warning">
@@ -394,32 +356,36 @@ export default function InventoryPage() {
         </div>
       ) : null}
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard
+      <MetricStrip>
+        <MetricStripItem
           icon={Boxes}
           label="Tổng bộ phân phối"
-          value={summary.total}
+          value={summary.total.toLocaleString("vi-VN")}
           tone="primary"
+          description="Trong phạm vi hiện tại"
         />
-        <StatCard
+        <MetricStripItem
           icon={TriangleAlert}
           label="Sắp hết trên trang"
-          value={summary.lowOnPage}
+          value={summary.lowOnPage.toLocaleString("vi-VN")}
           tone="warning"
+          description="Cần chuẩn bị nạp thêm"
         />
-        <StatCard
+        <MetricStripItem
           icon={PackageCheck}
           label="Đầy trên trang"
-          value={summary.fullOnPage}
+          value={summary.fullOnPage.toLocaleString("vi-VN")}
           tone="success"
+          description="Đủ mức phục vụ"
         />
-        <StatCard
+        <MetricStripItem
           icon={CircleHelp}
           label="Chưa xác định trên trang"
-          value={summary.unknownOnPage}
-          tone="muted"
+          value={summary.unknownOnPage.toLocaleString("vi-VN")}
+          tone="neutral"
+          description="Thiếu số đo hợp lệ"
         />
-      </section>
+      </MetricStrip>
 
       <Card className="gap-0 rounded-xl border border-border/80 bg-card py-0 shadow-none">
         <CardHeader className="border-b border-border px-4 py-4">
@@ -438,10 +404,12 @@ export default function InventoryPage() {
           <div className="relative">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
+              type="search"
               value={filters.ingredientSearch}
               onChange={(event) => setIngredientSearch(event.target.value)}
               placeholder="Tìm nguyên liệu, khay hoặc thiết bị..."
               className="h-9 bg-card pl-9"
+              aria-label="Tìm nguyên liệu, khay hoặc thiết bị"
             />
           </div>
 
@@ -453,7 +421,10 @@ export default function InventoryPage() {
               }
             }}
           >
-            <SelectTrigger className="h-9 w-full bg-card">
+            <SelectTrigger
+              className="h-9 w-full bg-card"
+              aria-label="Lọc tồn kho theo trạng thái"
+            >
               <SelectValue>
                 {STATUS_OPTIONS.find(
                   (option) => option.value === filters.status,
@@ -475,12 +446,15 @@ export default function InventoryPage() {
               setStoreFilter(value === "ALL" ? null : value)
             }
           >
-            <SelectTrigger className="h-9 w-full bg-card">
+            <SelectTrigger
+              className="h-9 w-full bg-card"
+              aria-label="Lọc tồn kho theo cửa hàng"
+            >
               <SelectValue>
                 {filters.storeId === "ALL"
                   ? "Tất cả cửa hàng"
-                  : stores.find((store) => store.id === filters.storeId)?.name ??
-                    "Cửa hàng đã chọn"}
+                  : (stores.find((store) => store.id === filters.storeId)
+                      ?.name ?? "Cửa hàng đã chọn")}
               </SelectValue>
             </SelectTrigger>
             <SelectContent>
@@ -499,13 +473,16 @@ export default function InventoryPage() {
               setKioskFilter(value === "ALL" ? null : value)
             }
           >
-            <SelectTrigger className="h-9 w-full bg-card">
+            <SelectTrigger
+              className="h-9 w-full bg-card"
+              aria-label="Lọc tồn kho theo kiosk"
+            >
               <SelectValue>
                 {filters.kioskId === "ALL"
                   ? "Tất cả kiosk"
-                  : availableKiosks.find(
-                        (kiosk) => kiosk.id === filters.kioskId,
-                      )?.name ?? "Kiosk đã chọn"}
+                  : (availableKiosks.find(
+                      (kiosk) => kiosk.id === filters.kioskId,
+                    )?.name ?? "Kiosk đã chọn")}
               </SelectValue>
             </SelectTrigger>
             <SelectContent>

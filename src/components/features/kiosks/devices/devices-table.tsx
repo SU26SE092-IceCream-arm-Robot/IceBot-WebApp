@@ -1,7 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { AlertTriangle, Cpu, PackageSearch, Pencil, Plus, Power, Replace, Trash2 } from "lucide-react";
+import {
+  AlertTriangle,
+  Cpu,
+  PackageSearch,
+  Pencil,
+  Plus,
+  Power,
+  Replace,
+  Trash2,
+} from "lucide-react";
 
 import {
   DeviceFormDialog,
@@ -29,7 +38,9 @@ interface DevicesTableProps {
   canManage: boolean;
 }
 
-function getStatusVariant(status: string): "default" | "secondary" | "destructive" | "outline" {
+function getStatusVariant(
+  status: string,
+): "default" | "secondary" | "destructive" | "outline" {
   switch (status) {
     case "Online":
       return "default";
@@ -60,18 +71,44 @@ function formatTimestamp(value?: string | null): string {
   }).format(date);
 }
 
-function EmptyState({ title, message, isError = false, onRetry }: { title: string; message: string; isError?: boolean; onRetry?: () => void }) {
+function EmptyState({
+  title,
+  message,
+  isError = false,
+  onRetry,
+}: {
+  title: string;
+  message: string;
+  isError?: boolean;
+  onRetry?: () => void;
+}) {
   return (
     <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
-      <span className={`mb-4 flex size-14 items-center justify-center rounded-full border ${isError ? 'border-destructive/20 bg-destructive/10 text-destructive' : 'border-border bg-muted/20 text-muted-foreground'} shadow-sm`}>
-        {isError ? <AlertTriangle className="size-6" /> : <PackageSearch className="size-6 opacity-70" />}
+      <span
+        className={`mb-4 flex size-14 items-center justify-center rounded-full border ${isError ? "border-destructive/20 bg-destructive/10 text-destructive" : "border-border bg-muted/20 text-muted-foreground"} shadow-sm`}
+      >
+        {isError ? (
+          <AlertTriangle className="size-6" />
+        ) : (
+          <PackageSearch className="size-6 opacity-70" />
+        )}
       </span>
       <div className="max-w-md space-y-1.5 mb-4">
-        <p className={`text-base font-semibold tracking-tight ${isError ? 'text-destructive' : 'text-foreground'}`}>{title}</p>
-        <p className="text-sm leading-relaxed text-muted-foreground">{message}</p>
+        <p
+          className={`text-base font-semibold tracking-tight ${isError ? "text-destructive" : "text-foreground"}`}
+        >
+          {title}
+        </p>
+        <p className="text-sm leading-relaxed text-muted-foreground">
+          {message}
+        </p>
       </div>
       {onRetry && (
-        <Button variant={isError ? "destructive" : "outline"} onClick={onRetry} size="sm">
+        <Button
+          variant={isError ? "destructive" : "outline"}
+          onClick={onRetry}
+          size="sm"
+        >
           Thử lại
         </Button>
       )}
@@ -84,7 +121,8 @@ export function DevicesTable({ kioskId, canManage }: DevicesTableProps) {
   const [editingDevice, setEditingDevice] = useState<DeviceResult | null>(null);
   const [statusDevice, setStatusDevice] = useState<DeviceResult | null>(null);
   const [retireDevice, setRetireDevice] = useState<DeviceResult | null>(null);
-  const [replacementSource, setReplacementSource] = useState<DeviceResult | null>(null);
+  const [replacementSource, setReplacementSource] =
+    useState<DeviceResult | null>(null);
   const management = useDevices(kioskId);
   const { state, devices, errorMessage, refresh } = management;
 
@@ -97,9 +135,18 @@ export function DevicesTable({ kioskId, canManage }: DevicesTableProps) {
             Danh sách thiết bị
           </CardTitle>
           <div className="flex items-center gap-3">
-            <span className="text-xs text-muted-foreground">Hiển thị {devices.length} thiết bị</span>
+            <span className="text-xs text-muted-foreground">
+              Hiển thị {devices.length} thiết bị
+            </span>
             {canManage ? (
-              <Button size="sm" onClick={() => { management.clearMutationError(); setEditingDevice(null); setFormOpen(true); }}>
+              <Button
+                size="sm"
+                onClick={() => {
+                  management.clearMutationError();
+                  setEditingDevice(null);
+                  setFormOpen(true);
+                }}
+              >
                 <Plus className="size-4" />
                 Tạo thiết bị
               </Button>
@@ -109,82 +156,265 @@ export function DevicesTable({ kioskId, canManage }: DevicesTableProps) {
       </CardHeader>
       <CardContent className="p-0">
         {state === "LOADING" ? (
-          <EmptyState title="Đang tải danh sách thiết bị" message="Vui lòng đợi trong giây lát..." />
+          <EmptyState
+            title="Đang tải danh sách thiết bị"
+            message="Vui lòng đợi trong giây lát..."
+          />
         ) : state === "ERROR" ? (
-          <EmptyState 
-            isError 
-            title="Không tải được thiết bị" 
-            message={errorMessage || "Đã xảy ra lỗi hệ thống"} 
+          <EmptyState
+            isError
+            title="Không tải được thiết bị"
+            message={errorMessage || "Đã xảy ra lỗi hệ thống"}
             onRetry={() => refresh()}
           />
         ) : devices.length === 0 ? (
-          <EmptyState 
-            title="Chưa có thiết bị nào" 
-            message="Kiosk này chưa được gán bất kỳ thiết bị phần cứng nào từ hệ thống." 
+          <EmptyState
+            title="Chưa có thiết bị nào"
+            message="Kiosk này chưa được gán bất kỳ thiết bị phần cứng nào từ hệ thống."
             onRetry={() => refresh()}
           />
         ) : (
-          <div className="overflow-x-auto">
-            <Table className="min-w-[1040px] table-fixed">
-              <TableHeader>
-                <TableRow className="hover:bg-transparent">
-                  <TableHead className="pl-5">Mã thiết bị</TableHead>
-                  <TableHead>Tên</TableHead>
-                  <TableHead className="text-center">Loại</TableHead>
-                  <TableHead className="text-center">Model</TableHead>
-                  <TableHead className="text-center">Serial</TableHead>
-                  <TableHead className="text-center">Trạng thái</TableHead>
-                  <TableHead className="text-center">Firmware</TableHead>
-                  <TableHead className="pr-5 text-center">Cài đặt lúc</TableHead>
-                  {canManage ? <TableHead className="pr-5 text-right">Thao tác</TableHead> : null}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {devices.map((device) => (
-                  <TableRow key={device.id}>
-                    <TableCell className="pl-5 font-mono text-xs font-medium text-foreground">
-                      {device.code}
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      {device.name}
-                    </TableCell>
-                    <TableCell className="text-center text-muted-foreground">
-                      {device.deviceTypeCode}
-                    </TableCell>
-                    <TableCell className="text-center text-muted-foreground">
-                      {device.deviceModelCode || "--"}
-                    </TableCell>
-                    <TableCell className="text-center font-mono text-xs text-muted-foreground">
-                      {device.serialNumber || "--"}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <div className="flex justify-center">
-                        <Badge variant={getStatusVariant(device.status)}>
-                          {getDeviceStatusLabel(device.status)}
-                        </Badge>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-center font-mono text-xs text-muted-foreground">
-                      {device.firmwareVersion || "--"}
-                    </TableCell>
-                    <TableCell className="pr-5 text-center tabular-nums text-xs text-muted-foreground">
-                      {formatTimestamp(device.installedAt)}
-                    </TableCell>
+          <>
+            <div className="grid gap-3 p-4 md:hidden">
+              {devices.map((device) => (
+                <article
+                  key={device.id}
+                  className="space-y-3 rounded-lg border border-border p-4"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate font-medium">{device.name}</p>
+                      <p className="mt-1 truncate font-mono text-xs text-muted-foreground">
+                        {device.code}
+                      </p>
+                    </div>
+                    <Badge variant={getStatusVariant(device.status)}>
+                      {getDeviceStatusLabel(device.status)}
+                    </Badge>
+                  </div>
+                  <dl className="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <dt className="text-xs text-muted-foreground">
+                        Loại / model
+                      </dt>
+                      <dd className="mt-1 break-words">
+                        {device.deviceTypeCode} ·{" "}
+                        {device.deviceModelCode || "Chưa có"}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs text-muted-foreground">Serial</dt>
+                      <dd className="mt-1 break-all font-mono text-xs">
+                        {device.serialNumber || "Chưa có"}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs text-muted-foreground">
+                        Firmware
+                      </dt>
+                      <dd className="mt-1 font-mono text-xs">
+                        {device.firmwareVersion || "Chưa có"}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs text-muted-foreground">
+                        Cài đặt lúc
+                      </dt>
+                      <dd className="mt-1 text-xs tabular-nums">
+                        {formatTimestamp(device.installedAt)}
+                      </dd>
+                    </div>
+                  </dl>
+                  {canManage ? (
+                    <div className="flex flex-wrap justify-end gap-2 border-t border-border pt-3">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={
+                          management.isMutating || device.status === "Retired"
+                        }
+                        onClick={() => {
+                          management.clearMutationError();
+                          setEditingDevice(device);
+                          setFormOpen(true);
+                        }}
+                      >
+                        <Pencil className="size-4" /> Sửa
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={
+                          management.isMutating || device.status === "Retired"
+                        }
+                        onClick={() => {
+                          management.clearMutationError();
+                          setStatusDevice(device);
+                        }}
+                      >
+                        <Power className="size-4" /> Trạng thái
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={
+                          management.isMutating || device.status === "Retired"
+                        }
+                        onClick={() => {
+                          management.clearMutationError();
+                          setReplacementSource(device);
+                        }}
+                      >
+                        <Replace className="size-4" /> Thay thế
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        disabled={
+                          management.isMutating || device.status === "Retired"
+                        }
+                        onClick={() => {
+                          management.clearMutationError();
+                          setRetireDevice(device);
+                        }}
+                      >
+                        <Trash2 className="size-4" /> Ngừng dùng
+                      </Button>
+                    </div>
+                  ) : null}
+                </article>
+              ))}
+            </div>
+            <div className="hidden overflow-x-auto md:block">
+              <Table className="min-w-[1040px] table-fixed">
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="pl-5">Mã thiết bị</TableHead>
+                    <TableHead>Tên</TableHead>
+                    <TableHead className="text-center">Loại</TableHead>
+                    <TableHead className="text-center">Model</TableHead>
+                    <TableHead className="text-center">Serial</TableHead>
+                    <TableHead className="text-center">Trạng thái</TableHead>
+                    <TableHead className="text-center">Firmware</TableHead>
+                    <TableHead className="pr-5 text-center">
+                      Cài đặt lúc
+                    </TableHead>
                     {canManage ? (
-                      <TableCell className="pr-5">
-                        <div className="flex justify-end gap-1">
-                          <Button variant="ghost" size="icon-sm" title="Chỉnh sửa thiết bị" aria-label={`Chỉnh sửa ${device.name}`} disabled={management.isMutating || device.status === "Retired"} onClick={() => { management.clearMutationError(); setEditingDevice(device); setFormOpen(true); }}><Pencil className="size-4" /></Button>
-                          <Button variant="ghost" size="icon-sm" title="Đổi trạng thái thiết bị" aria-label={`Đổi trạng thái ${device.name}`} disabled={management.isMutating || device.status === "Retired"} onClick={() => { management.clearMutationError(); setStatusDevice(device); }}><Power className="size-4" /></Button>
-                          <Button variant="ghost" size="icon-sm" title="Thay bằng thiết bị khác" aria-label={`Thay thiết bị ${device.name}`} disabled={management.isMutating || device.status === "Retired"} onClick={() => { management.clearMutationError(); setReplacementSource(device); }}><Replace className="size-4" /></Button>
-                          <Button variant="ghost" size="icon-sm" className="text-destructive hover:text-destructive" title="Ngừng sử dụng thiết bị" aria-label={`Ngừng sử dụng ${device.name}`} disabled={management.isMutating || device.status === "Retired"} onClick={() => { management.clearMutationError(); setRetireDevice(device); }}><Trash2 className="size-4" /></Button>
-                        </div>
-                      </TableCell>
+                      <TableHead className="pr-5 text-right">
+                        Thao tác
+                      </TableHead>
                     ) : null}
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                </TableHeader>
+                <TableBody>
+                  {devices.map((device) => (
+                    <TableRow key={device.id}>
+                      <TableCell className="pl-5 font-mono text-xs font-medium text-foreground">
+                        {device.code}
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        {device.name}
+                      </TableCell>
+                      <TableCell className="text-center text-muted-foreground">
+                        {device.deviceTypeCode}
+                      </TableCell>
+                      <TableCell className="text-center text-muted-foreground">
+                        {device.deviceModelCode || "--"}
+                      </TableCell>
+                      <TableCell className="text-center font-mono text-xs text-muted-foreground">
+                        {device.serialNumber || "--"}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <div className="flex justify-center">
+                          <Badge variant={getStatusVariant(device.status)}>
+                            {getDeviceStatusLabel(device.status)}
+                          </Badge>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-center font-mono text-xs text-muted-foreground">
+                        {device.firmwareVersion || "--"}
+                      </TableCell>
+                      <TableCell className="pr-5 text-center tabular-nums text-xs text-muted-foreground">
+                        {formatTimestamp(device.installedAt)}
+                      </TableCell>
+                      {canManage ? (
+                        <TableCell className="pr-5">
+                          <div className="flex justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              title="Chỉnh sửa thiết bị"
+                              aria-label={`Chỉnh sửa ${device.name}`}
+                              disabled={
+                                management.isMutating ||
+                                device.status === "Retired"
+                              }
+                              onClick={() => {
+                                management.clearMutationError();
+                                setEditingDevice(device);
+                                setFormOpen(true);
+                              }}
+                            >
+                              <Pencil className="size-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              title="Đổi trạng thái thiết bị"
+                              aria-label={`Đổi trạng thái ${device.name}`}
+                              disabled={
+                                management.isMutating ||
+                                device.status === "Retired"
+                              }
+                              onClick={() => {
+                                management.clearMutationError();
+                                setStatusDevice(device);
+                              }}
+                            >
+                              <Power className="size-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              title="Thay bằng thiết bị khác"
+                              aria-label={`Thay thiết bị ${device.name}`}
+                              disabled={
+                                management.isMutating ||
+                                device.status === "Retired"
+                              }
+                              onClick={() => {
+                                management.clearMutationError();
+                                setReplacementSource(device);
+                              }}
+                            >
+                              <Replace className="size-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              className="text-destructive hover:text-destructive"
+                              title="Ngừng sử dụng thiết bị"
+                              aria-label={`Ngừng sử dụng ${device.name}`}
+                              disabled={
+                                management.isMutating ||
+                                device.status === "Retired"
+                              }
+                              onClick={() => {
+                                management.clearMutationError();
+                                setRetireDevice(device);
+                              }}
+                            >
+                              <Trash2 className="size-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      ) : null}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </>
         )}
       </CardContent>
 
@@ -194,7 +424,9 @@ export function DevicesTable({ kioskId, canManage }: DevicesTableProps) {
           device={editingDevice}
           isSubmitting={management.isMutating}
           errorMessage={management.mutationErrorMessage}
-          onOpenChange={(open) => { if (!management.isMutating) setFormOpen(open); }}
+          onOpenChange={(open) => {
+            if (!management.isMutating) setFormOpen(open);
+          }}
           onCreate={management.createDevice}
           onUpdate={management.updateDevice}
         />
@@ -205,8 +437,12 @@ export function DevicesTable({ kioskId, canManage }: DevicesTableProps) {
           open
           isSubmitting={management.isMutating}
           errorMessage={management.mutationErrorMessage}
-          onOpenChange={(open) => { if (!open && !management.isMutating) setStatusDevice(null); }}
-          onSubmit={(status) => management.setDeviceStatus(statusDevice.id, status)}
+          onOpenChange={(open) => {
+            if (!open && !management.isMutating) setStatusDevice(null);
+          }}
+          onSubmit={(status) =>
+            management.setDeviceStatus(statusDevice.id, status)
+          }
         />
       ) : null}
       {retireDevice ? (
@@ -215,18 +451,33 @@ export function DevicesTable({ kioskId, canManage }: DevicesTableProps) {
           open
           isSubmitting={management.isMutating}
           errorMessage={management.mutationErrorMessage}
-          onOpenChange={(open) => { if (!open && !management.isMutating) setRetireDevice(null); }}
-          onSubmit={(reason) => management.retireDevice(retireDevice.id, reason)}
+          onOpenChange={(open) => {
+            if (!open && !management.isMutating) setRetireDevice(null);
+          }}
+          onSubmit={(reason) =>
+            management.retireDevice(retireDevice.id, reason)
+          }
         />
       ) : null}
       {replacementSource ? (
         <ReplaceDeviceDialog
           device={replacementSource}
-          candidates={devices.filter((item) => item.id !== replacementSource.id && item.status !== "Retired")}
+          candidates={devices.filter(
+            (item) =>
+              item.id !== replacementSource.id && item.status !== "Retired",
+          )}
           isSubmitting={management.isMutating}
           errorMessage={management.mutationErrorMessage}
-          onOpenChange={(open) => { if (!open && !management.isMutating) setReplacementSource(null); }}
-          onSubmit={(replacementDeviceId, reason) => management.replaceDevice(replacementSource.id, replacementDeviceId, reason)}
+          onOpenChange={(open) => {
+            if (!open && !management.isMutating) setReplacementSource(null);
+          }}
+          onSubmit={(replacementDeviceId, reason) =>
+            management.replaceDevice(
+              replacementSource.id,
+              replacementDeviceId,
+              reason,
+            )
+          }
         />
       ) : null}
     </Card>

@@ -306,7 +306,7 @@ export function EditRolesDialog({
                         onValueChange={(value) => handleRoleChange(role.rowId, value ?? "")}
                         disabled={isSubmitting}
                       >
-                        <SelectTrigger><SelectValue placeholder="Chọn vai trò" /></SelectTrigger>
+                        <SelectTrigger aria-label={`Vai trò ${index + 1}`}><SelectValue placeholder="Chọn vai trò" /></SelectTrigger>
                         <SelectContent>
                           {managementRoles.map((item) => (
                             <SelectItem key={item.code} value={item.code}>
@@ -329,7 +329,7 @@ export function EditRolesDialog({
                         })}
                         disabled={isSubmitting || !options}
                       >
-                        <SelectTrigger><SelectValue placeholder={isRoleScopeLoading ? "Đang tải..." : "Chọn phạm vi"} /></SelectTrigger>
+                        <SelectTrigger aria-label={`Loại phạm vi cho vai trò ${index + 1}`}><SelectValue placeholder={isRoleScopeLoading ? "Đang tải..." : "Chọn phạm vi"} /></SelectTrigger>
                         <SelectContent>
                           {allowedScopes.map((scope) => (
                             <SelectItem key={scope} value={scope}>{SCOPE_LABELS[scope]}</SelectItem>
@@ -343,7 +343,7 @@ export function EditRolesDialog({
                     <div className="space-y-2">
                       <Label>Tổ chức</Label>
                       <Select value={role.organizationId ?? ""} onValueChange={(value) => updateRole(role.rowId, { organizationId: value })} disabled={isSubmitting}>
-                        <SelectTrigger><SelectValue placeholder="Chọn tổ chức" /></SelectTrigger>
+                        <SelectTrigger aria-label={`Tổ chức cho vai trò ${index + 1}`}><SelectValue placeholder="Chọn tổ chức" /></SelectTrigger>
                         <SelectContent>{options.organizations.map((organization) => <SelectItem key={organization.id} value={organization.id}>{organization.name}</SelectItem>)}</SelectContent>
                       </Select>
                     </div>
@@ -353,7 +353,7 @@ export function EditRolesDialog({
                     <div className="space-y-2">
                       <Label>Cửa hàng</Label>
                       <Select value={role.storeId ?? ""} onValueChange={(value) => updateRole(role.rowId, { storeId: value })} disabled={isSubmitting}>
-                        <SelectTrigger><SelectValue placeholder="Chọn cửa hàng" /></SelectTrigger>
+                        <SelectTrigger aria-label={`Cửa hàng cho vai trò ${index + 1}`}><SelectValue placeholder="Chọn cửa hàng" /></SelectTrigger>
                         <SelectContent>{stores.map((store) => <SelectItem key={store.id} value={store.id}>{store.name} ({store.code})</SelectItem>)}</SelectContent>
                       </Select>
                     </div>
@@ -363,7 +363,7 @@ export function EditRolesDialog({
                     <div className="space-y-2">
                       <Label>Kiosk</Label>
                       <Select value={role.kioskId ?? ""} onValueChange={(value) => updateRole(role.rowId, { kioskId: value })} disabled={isSubmitting}>
-                        <SelectTrigger><SelectValue placeholder="Chọn kiosk" /></SelectTrigger>
+                        <SelectTrigger aria-label={`Kiosk cho vai trò ${index + 1}`}><SelectValue placeholder="Chọn kiosk" /></SelectTrigger>
                         <SelectContent>{kiosks.map((kiosk) => <SelectItem key={kiosk.id} value={kiosk.id}>{kiosk.name} ({kiosk.code})</SelectItem>)}</SelectContent>
                       </Select>
                     </div>

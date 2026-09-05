@@ -42,18 +42,37 @@ function EndpointConnectionDialog({
         <DialogHeader>
           <DialogTitle>Kết nối {endpoint.endpointCode}</DialogTitle>
           <DialogDescription>
-            Thực hiện trên máy Edge. IOT tạo và giữ PFX/private key tại Edge, chỉ gửi fingerprint để Backend provision endpoint; hardware và readiness được Edge báo về Backend.
+            Thực hiện trên máy Edge. IOT tạo và giữ PFX/private key tại Edge,
+            chỉ gửi fingerprint để Backend provision endpoint; hardware và
+            readiness được Edge báo về Backend.
           </DialogDescription>
         </DialogHeader>
         <ol className="list-decimal space-y-3 pl-5 text-sm">
-          <li>Mở <span className="font-medium">InitIceBot.exe</span> trên máy Edge và đăng nhập tài khoản của tổ chức.</li>
-          <li>Chọn <span className="font-medium">Cấu hình → Khởi tạo Edge mới</span>.</li>
-          <li>Nhập mã kiosk <code className="rounded bg-muted px-1.5 py-0.5">{endpoint.kioskCode}</code>.</li>
-          <li>Nhập NetBird setup key. IOT nhận endpoint này, tạo hoặc tái sử dụng PFX đã provision, rồi gửi hardware report, readiness và heartbeat.</li>
+          <li>
+            Mở <span className="font-medium">InitIceBot.exe</span> trên máy Edge
+            và đăng nhập tài khoản của tổ chức.
+          </li>
+          <li>
+            Chọn{" "}
+            <span className="font-medium">Cấu hình → Khởi tạo Edge mới</span>.
+          </li>
+          <li>
+            Nhập mã kiosk{" "}
+            <code className="rounded bg-muted px-1.5 py-0.5">
+              {endpoint.kioskCode}
+            </code>
+            .
+          </li>
+          <li>
+            Nhập NetBird setup key. IOT nhận endpoint này, tạo hoặc tái sử dụng
+            PFX đã provision, rồi gửi hardware report, readiness và heartbeat.
+          </li>
         </ol>
         <div className="rounded-md border bg-muted/40 p-3 text-sm">
           <p className="font-medium">Điểm thực thi sẽ được dùng</p>
-          <p className="mt-1 font-mono text-xs text-muted-foreground">{endpoint.endpointCode}</p>
+          <p className="mt-1 font-mono text-xs text-muted-foreground">
+            {endpoint.endpointCode}
+          </p>
         </div>
         <DialogFooter>
           <Button onClick={() => onOpenChange(false)}>Đã hiểu</Button>
@@ -86,13 +105,20 @@ function getEndpointStatusLabel(status: ExecutionEndpointResult["status"]) {
   }[status];
 }
 
-export function ExecutionEndpointsTable({ kioskId, canManage }: { kioskId: string; canManage: boolean }) {
+export function ExecutionEndpointsTable({
+  kioskId,
+  canManage,
+}: {
+  kioskId: string;
+  canManage: boolean;
+}) {
   const [createOpen, setCreateOpen] = useState(false);
   const [lifecycleAction, setLifecycleAction] = useState<{
     endpoint: ExecutionEndpointResult;
     action: "disable" | "reactivate" | "retire";
   } | null>(null);
-  const [connectionEndpoint, setConnectionEndpoint] = useState<ExecutionEndpointResult | null>(null);
+  const [connectionEndpoint, setConnectionEndpoint] =
+    useState<ExecutionEndpointResult | null>(null);
   const management = useExecutionEndpoints(kioskId);
   const { items, isLoading, errorMessage, refresh } = management;
 
@@ -106,13 +132,32 @@ export function ExecutionEndpointsTable({ kioskId, canManage }: { kioskId: strin
               Điểm thực thi
             </CardTitle>
             <p className="text-xs text-muted-foreground">
-              Hiển thị trạng thái và bằng chứng sẵn sàng do Edge báo về; không hiển thị thông tin xác thực.
+              Hiển thị trạng thái và bằng chứng sẵn sàng do Edge báo về; không
+              hiển thị thông tin xác thực.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            {canManage ? <Button size="sm" onClick={() => { management.clearMutationError(); setCreateOpen(true); }}><Plus className="size-4" />Tạo điểm thực thi</Button> : null}
-            <Button variant="outline" size="sm" onClick={() => void refresh()} disabled={isLoading}>
-              <RefreshCw className={isLoading ? "size-4 animate-spin" : "size-4"} />
+            {canManage ? (
+              <Button
+                size="sm"
+                onClick={() => {
+                  management.clearMutationError();
+                  setCreateOpen(true);
+                }}
+              >
+                <Plus className="size-4" />
+                Tạo điểm thực thi
+              </Button>
+            ) : null}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => void refresh()}
+              disabled={isLoading}
+            >
+              <RefreshCw
+                className={isLoading ? "size-4 animate-spin" : "size-4"}
+              />
               Làm mới
             </Button>
           </div>
@@ -120,55 +165,252 @@ export function ExecutionEndpointsTable({ kioskId, canManage }: { kioskId: strin
       </CardHeader>
       <CardContent className="p-0">
         {isLoading ? (
-          <p className="px-6 py-12 text-center text-sm text-muted-foreground">Đang tải điểm thực thi...</p>
+          <p className="px-6 py-12 text-center text-sm text-muted-foreground">
+            Đang tải điểm thực thi...
+          </p>
         ) : errorMessage ? (
           <div className="flex flex-col items-center gap-3 px-6 py-12 text-center">
             <AlertTriangle className="size-6 text-destructive" />
             <p className="text-sm text-destructive">{errorMessage}</p>
-            <Button variant="outline" size="sm" onClick={() => void refresh()}>Thử lại</Button>
+            <Button variant="outline" size="sm" onClick={() => void refresh()}>
+              Thử lại
+            </Button>
           </div>
         ) : items.length === 0 ? (
-          <p className="px-6 py-12 text-center text-sm text-muted-foreground">Kiosk chưa có điểm thực thi.</p>
+          <p className="px-6 py-12 text-center text-sm text-muted-foreground">
+            Kiosk chưa có điểm thực thi.
+          </p>
         ) : (
-          <div className="overflow-x-auto">
-            <Table className="min-w-[920px]">
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="pl-5">Endpoint</TableHead>
-                  <TableHead className="text-center">Profile</TableHead>
-                  <TableHead className="text-center">Vòng đời</TableHead>
-                  <TableHead className="text-center">Sẵn sàng</TableHead>
-                  <TableHead className="text-center">Hoạt động</TableHead>
-                  <TableHead className="text-center">An toàn</TableHead>
-                  <TableHead className="pr-5 text-right">Báo cáo lúc</TableHead>
-                  {canManage ? <TableHead className="pr-5 text-right">Thao tác</TableHead> : null}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {items.map((item) => (
-                  <TableRow key={item.id}>
-                    <TableCell className="pl-5 font-mono text-xs font-medium">{item.endpointCode}</TableCell>
-                    <TableCell className="text-center">{item.executionProfile}</TableCell>
-                    <TableCell className="text-center"><Badge variant="outline">{getEndpointStatusLabel(item.status)}</Badge></TableCell>
-                    <TableCell className="text-center">{item.readiness?.readiness ?? "Chưa có"}</TableCell>
-                    <TableCell className="text-center">{item.readiness?.activity ?? "Chưa có"}</TableCell>
-                    <TableCell className="text-center">{item.readiness?.safety ?? "Chưa có"}</TableCell>
-                    <TableCell className="pr-5 text-right text-xs text-muted-foreground">{formatTimestamp(item.readiness?.executorReportedAt)}</TableCell>
+          <>
+            <div className="grid gap-3 p-4 md:hidden">
+              {items.map((item) => (
+                <article
+                  key={item.id}
+                  className="space-y-3 rounded-lg border border-border p-4"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="break-all font-mono text-sm font-medium">
+                        {item.endpointCode}
+                      </p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Profile: {item.executionProfile}
+                      </p>
+                    </div>
+                    <Badge variant="outline">
+                      {getEndpointStatusLabel(item.status)}
+                    </Badge>
+                  </div>
+                  <dl className="grid grid-cols-3 gap-2 text-sm">
+                    <div className="rounded-md bg-muted/20 p-2">
+                      <dt className="text-xs text-muted-foreground">
+                        Sẵn sàng
+                      </dt>
+                      <dd className="mt-1 break-words">
+                        {item.readiness?.readiness ?? "Chưa có"}
+                      </dd>
+                    </div>
+                    <div className="rounded-md bg-muted/20 p-2">
+                      <dt className="text-xs text-muted-foreground">
+                        Hoạt động
+                      </dt>
+                      <dd className="mt-1 break-words">
+                        {item.readiness?.activity ?? "Chưa có"}
+                      </dd>
+                    </div>
+                    <div className="rounded-md bg-muted/20 p-2">
+                      <dt className="text-xs text-muted-foreground">An toàn</dt>
+                      <dd className="mt-1 break-words">
+                        {item.readiness?.safety ?? "Chưa có"}
+                      </dd>
+                    </div>
+                  </dl>
+                  <p className="text-xs tabular-nums text-muted-foreground">
+                    Báo cáo:{" "}
+                    {formatTimestamp(item.readiness?.executorReportedAt)}
+                  </p>
+                  {canManage ? (
+                    <div className="flex flex-wrap justify-end gap-2 border-t border-border pt-3">
+                      {item.status === "Active" ? (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={management.isMutating}
+                          onClick={() => {
+                            management.clearMutationError();
+                            setLifecycleAction({
+                              endpoint: item,
+                              action: "disable",
+                            });
+                          }}
+                        >
+                          Vô hiệu hóa
+                        </Button>
+                      ) : null}
+                      {item.status === "Disabled" ? (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={management.isMutating}
+                          onClick={() => {
+                            management.clearMutationError();
+                            setLifecycleAction({
+                              endpoint: item,
+                              action: "reactivate",
+                            });
+                          }}
+                        >
+                          Kích hoạt lại
+                        </Button>
+                      ) : null}
+                      {item.status === "Provisioning" ||
+                      item.status === "Disabled" ? (
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          disabled={management.isMutating}
+                          onClick={() => {
+                            management.clearMutationError();
+                            setLifecycleAction({
+                              endpoint: item,
+                              action: "retire",
+                            });
+                          }}
+                        >
+                          Ngừng sử dụng
+                        </Button>
+                      ) : null}
+                      {item.status === "Provisioning" ? (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setConnectionEndpoint(item)}
+                        >
+                          Kết nối Edge
+                        </Button>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </article>
+              ))}
+            </div>
+            <div className="hidden overflow-x-auto md:block">
+              <Table className="min-w-[920px]">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="pl-5">Endpoint</TableHead>
+                    <TableHead className="text-center">Profile</TableHead>
+                    <TableHead className="text-center">Vòng đời</TableHead>
+                    <TableHead className="text-center">Sẵn sàng</TableHead>
+                    <TableHead className="text-center">Hoạt động</TableHead>
+                    <TableHead className="text-center">An toàn</TableHead>
+                    <TableHead className="pr-5 text-right">
+                      Báo cáo lúc
+                    </TableHead>
                     {canManage ? (
-                      <TableCell className="pr-5">
-                        <div className="flex justify-end gap-1">
-                          {item.status === "Active" ? <Button size="sm" variant="outline" disabled={management.isMutating} onClick={() => { management.clearMutationError(); setLifecycleAction({ endpoint: item, action: "disable" }); }}>Vô hiệu hóa</Button> : null}
-                          {item.status === "Disabled" ? <Button size="sm" variant="outline" disabled={management.isMutating} onClick={() => { management.clearMutationError(); setLifecycleAction({ endpoint: item, action: "reactivate" }); }}>Kích hoạt lại</Button> : null}
-                          {item.status === "Provisioning" || item.status === "Disabled" ? <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" disabled={management.isMutating} onClick={() => { management.clearMutationError(); setLifecycleAction({ endpoint: item, action: "retire" }); }}>Ngừng sử dụng</Button> : null}
-                          {item.status === "Provisioning" ? <Button size="sm" variant="outline" onClick={() => setConnectionEndpoint(item)}>Kết nối Edge</Button> : null}
-                        </div>
-                      </TableCell>
+                      <TableHead className="pr-5 text-right">
+                        Thao tác
+                      </TableHead>
                     ) : null}
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                </TableHeader>
+                <TableBody>
+                  {items.map((item) => (
+                    <TableRow key={item.id}>
+                      <TableCell className="pl-5 font-mono text-xs font-medium">
+                        {item.endpointCode}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {item.executionProfile}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Badge variant="outline">
+                          {getEndpointStatusLabel(item.status)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {item.readiness?.readiness ?? "Chưa có"}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {item.readiness?.activity ?? "Chưa có"}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {item.readiness?.safety ?? "Chưa có"}
+                      </TableCell>
+                      <TableCell className="pr-5 text-right text-xs text-muted-foreground">
+                        {formatTimestamp(item.readiness?.executorReportedAt)}
+                      </TableCell>
+                      {canManage ? (
+                        <TableCell className="pr-5">
+                          <div className="flex justify-end gap-1">
+                            {item.status === "Active" ? (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                disabled={management.isMutating}
+                                onClick={() => {
+                                  management.clearMutationError();
+                                  setLifecycleAction({
+                                    endpoint: item,
+                                    action: "disable",
+                                  });
+                                }}
+                              >
+                                Vô hiệu hóa
+                              </Button>
+                            ) : null}
+                            {item.status === "Disabled" ? (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                disabled={management.isMutating}
+                                onClick={() => {
+                                  management.clearMutationError();
+                                  setLifecycleAction({
+                                    endpoint: item,
+                                    action: "reactivate",
+                                  });
+                                }}
+                              >
+                                Kích hoạt lại
+                              </Button>
+                            ) : null}
+                            {item.status === "Provisioning" ||
+                            item.status === "Disabled" ? (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="text-destructive hover:text-destructive"
+                                disabled={management.isMutating}
+                                onClick={() => {
+                                  management.clearMutationError();
+                                  setLifecycleAction({
+                                    endpoint: item,
+                                    action: "retire",
+                                  });
+                                }}
+                              >
+                                Ngừng sử dụng
+                              </Button>
+                            ) : null}
+                            {item.status === "Provisioning" ? (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setConnectionEndpoint(item)}
+                              >
+                                Kết nối Edge
+                              </Button>
+                            ) : null}
+                          </div>
+                        </TableCell>
+                      ) : null}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </>
         )}
       </CardContent>
 
@@ -177,7 +419,9 @@ export function ExecutionEndpointsTable({ kioskId, canManage }: { kioskId: strin
           open
           isSubmitting={management.isMutating}
           errorMessage={management.mutationErrorMessage}
-          onOpenChange={(open) => { if (!management.isMutating) setCreateOpen(open); }}
+          onOpenChange={(open) => {
+            if (!management.isMutating) setCreateOpen(open);
+          }}
           onSubmit={management.createEndpoint}
         />
       ) : null}
@@ -187,11 +431,25 @@ export function ExecutionEndpointsTable({ kioskId, canManage }: { kioskId: strin
           action={lifecycleAction.action}
           isSubmitting={management.isMutating}
           errorMessage={management.mutationErrorMessage}
-          onOpenChange={(open) => { if (!open && !management.isMutating) setLifecycleAction(null); }}
-          onSubmit={() => management.setLifecycle(lifecycleAction.endpoint.id, lifecycleAction.action)}
+          onOpenChange={(open) => {
+            if (!open && !management.isMutating) setLifecycleAction(null);
+          }}
+          onSubmit={() =>
+            management.setLifecycle(
+              lifecycleAction.endpoint.id,
+              lifecycleAction.action,
+            )
+          }
         />
       ) : null}
-      {connectionEndpoint ? <EndpointConnectionDialog endpoint={connectionEndpoint} onOpenChange={(open) => { if (!open) setConnectionEndpoint(null); }} /> : null}
+      {connectionEndpoint ? (
+        <EndpointConnectionDialog
+          endpoint={connectionEndpoint}
+          onOpenChange={(open) => {
+            if (!open) setConnectionEndpoint(null);
+          }}
+        />
+      ) : null}
     </Card>
   );
 }

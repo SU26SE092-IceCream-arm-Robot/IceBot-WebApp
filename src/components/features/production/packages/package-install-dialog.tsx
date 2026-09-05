@@ -119,7 +119,7 @@ export function PackageInstallDialog({
                   );
                 }}
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-full" aria-label="Gói và phiên bản">
                   <SelectValue>
                     {current
                       ? `${current.package.name} — phiên bản ${current.version.version}`

@@ -167,7 +167,7 @@ export function MenusPanel({
   onToggleStatus: (menu: MenuResult, status: MenuStatus) => void;
 }) {
   return (
-    <Card className="rounded-xl border border-border bg-card shadow-none">
+    <Card className="gap-0 rounded-lg border border-border bg-card py-0 shadow-none">
       <CardHeader className="border-b border-border pb-4">
         <div className="flex items-start gap-3">
           <span className="mt-0.5 flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -291,7 +291,7 @@ export function CatalogOrganizationSelector({
       <CardContent className="flex flex-col gap-3 p-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex items-center gap-3">
           <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-            <Building2 className="size-5" />
+            <Building2 className="size-5" aria-hidden="true" />
           </span>
           <div>
             <p className="text-sm font-medium">Tổ chức quản lý</p>
@@ -303,7 +303,10 @@ export function CatalogOrganizationSelector({
           disabled={isLoading || organizations.length === 0}
           onValueChange={(value) => onChange(value || null)}
         >
-          <SelectTrigger className="h-10 w-full lg:w-[360px]">
+          <SelectTrigger
+            className="h-10 w-full lg:w-[360px]"
+            aria-label={`Chọn tổ chức quản lý ${noun.toLocaleLowerCase()}`}
+          >
             <SelectValue placeholder={isLoading ? "Đang tải tổ chức..." : "Chọn tổ chức"}>
               {selectedOrganization ? organizationLabel(selectedOrganization) : null}
             </SelectValue>
@@ -344,15 +347,17 @@ export function CatalogSearchBar({
   onClear: () => void;
 }) {
   return (
-    <Card className="rounded-xl border border-border bg-card shadow-none">
+    <Card className="gap-0 rounded-lg border border-border bg-card py-0 shadow-none">
       <CardContent className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center">
         <div className="relative flex-1">
           <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
+            type="search"
             value={value}
             onChange={(event) => onChange(event.target.value)}
             placeholder={placeholder}
             className="h-9 bg-card pl-9 text-sm"
+            aria-label={placeholder}
           />
         </div>
         <Button variant="outline" size="sm" className="h-9" onClick={onClear}>

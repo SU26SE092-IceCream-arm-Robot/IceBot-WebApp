@@ -60,14 +60,20 @@ describe("ServiceRegistrationsView component", () => {
       },
     };
 
-    vi.mocked(serviceModule.listManagementServiceRegistrations).mockResolvedValue(paged);
+    vi.mocked(
+      serviceModule.listManagementServiceRegistrations,
+    ).mockResolvedValue(paged);
 
     render(<ServiceRegistrationsView />);
 
-    expect(await screen.findByText("SR-2026-0001")).toBeInTheDocument();
-    expect(screen.getByText("Nguyen Van A")).toBeInTheDocument();
-    expect(screen.getByText("Kem A")).toBeInTheDocument();
-    expect(screen.getAllByText(/Chờ rà soát/i).length).toBeGreaterThanOrEqual(1);
+    expect((await screen.findAllByText("SR-2026-0001")).length).toBeGreaterThan(
+      0,
+    );
+    expect(screen.getAllByText("Nguyen Van A").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Kem A").length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Chờ rà soát/i).length).toBeGreaterThanOrEqual(
+      1,
+    );
   });
 
   it("opens detail drawer when clicking on item reference code", async () => {
@@ -85,12 +91,18 @@ describe("ServiceRegistrationsView component", () => {
       },
     };
 
-    vi.mocked(serviceModule.listManagementServiceRegistrations).mockResolvedValue(paged);
-    vi.mocked(serviceModule.getManagementServiceRegistration).mockResolvedValue(mockItem);
+    vi.mocked(
+      serviceModule.listManagementServiceRegistrations,
+    ).mockResolvedValue(paged);
+    vi.mocked(serviceModule.getManagementServiceRegistration).mockResolvedValue(
+      mockItem,
+    );
 
     render(<ServiceRegistrationsView />);
 
-    const refLink = await screen.findByRole("button", { name: "SR-2026-0001" });
+    const [refLink] = await screen.findAllByRole("button", {
+      name: "SR-2026-0001",
+    });
     fireEvent.click(refLink);
 
     await waitFor(() => {

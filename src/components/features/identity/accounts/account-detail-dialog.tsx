@@ -1,7 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AlertTriangle, IdCard, KeyRound, Mail, ShieldCheck, UserRound, Lock, Info } from "lucide-react";
+import {
+  AlertTriangle,
+  IdCard,
+  KeyRound,
+  Mail,
+  ShieldCheck,
+  UserRound,
+  Lock,
+  Info,
+} from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -31,22 +40,26 @@ interface AccountDetailDialogProps {
   canManageAccounts: boolean;
 }
 
-const ROLE_LABELS: Record<string, string> = {
-  SystemAdmin: "Quản trị hệ thống",
-  Manager: "Quản lý vận hành",
-  OrgAdmin: "Quản trị tổ chức",
-  Staff: "Nhân viên",
-  Technician: "Kỹ thuật viên",
-};
-
 function StatusBadge({ status }: { status: ManagementAccountStatus }) {
   switch (status) {
     case "Active":
-      return <Badge className="border border-success/20 bg-success/10 text-success">Hoạt động</Badge>;
+      return (
+        <Badge className="border border-success/20 bg-success/10 text-success">
+          Hoạt động
+        </Badge>
+      );
     case "PendingVerification":
-      return <Badge className="border border-warning/20 bg-warning/10 text-warning">Chờ xác minh</Badge>;
+      return (
+        <Badge className="border border-warning/20 bg-warning/10 text-warning">
+          Chờ xác minh
+        </Badge>
+      );
     case "Suspended":
-      return <Badge className="border border-warning/20 bg-warning/10 text-warning">Tạm khóa</Badge>;
+      return (
+        <Badge className="border border-warning/20 bg-warning/10 text-warning">
+          Tạm khóa
+        </Badge>
+      );
     case "Disabled":
       return (
         <Badge className="border border-destructive/20 bg-destructive/10 text-destructive">
@@ -54,7 +67,11 @@ function StatusBadge({ status }: { status: ManagementAccountStatus }) {
         </Badge>
       );
     case "Invited":
-      return <Badge className="border border-primary/20 bg-primary/10 text-primary">Đã mời</Badge>;
+      return (
+        <Badge className="border border-primary/20 bg-primary/10 text-primary">
+          Đã mời
+        </Badge>
+      );
   }
 }
 
@@ -71,13 +88,21 @@ function getScopeLabel(role: InternalAccountRoleResult): string {
   return "Toàn hệ thống";
 }
 
-function DetailField({ label, children }: { label: string; children: React.ReactNode }) {
+function DetailField({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="rounded-xl border border-border/80 bg-background p-3.5">
       <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
         {label}
       </p>
-      <div className="mt-1.5 text-sm font-medium text-foreground">{children}</div>
+      <div className="mt-1.5 text-sm font-medium text-foreground">
+        {children}
+      </div>
     </div>
   );
 }
@@ -145,7 +170,11 @@ export function AccountDetailDialog({
           </div>
         ) : account ? (
           <div className="flex flex-col h-[500px]">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
+            <Tabs
+              value={activeTab}
+              onValueChange={setActiveTab}
+              className="flex-1 flex flex-col"
+            >
               <div className="px-5 pt-4 border-b">
                 <TabsList className="w-full justify-start rounded-none border-b bg-transparent p-0">
                   <TabsTrigger
@@ -176,16 +205,23 @@ export function AccountDetailDialog({
               </div>
 
               <ScrollArea className="flex-1 p-5">
-                <TabsContent value="info" className="mt-0 space-y-4 outline-none">
+                <TabsContent
+                  value="info"
+                  className="mt-0 space-y-4 outline-none"
+                >
                   <div className="rounded-2xl border border-border/80 bg-card p-4">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                       <div className="flex min-w-0 items-center gap-3">
                         <span className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-sm font-semibold text-primary">
-                          {(account.fullName?.trim() || account.userName || "?").slice(0, 2).toUpperCase()}
+                          {(account.fullName?.trim() || account.userName || "?")
+                            .slice(0, 2)
+                            .toUpperCase()}
                         </span>
                         <div className="min-w-0 space-y-1">
                           <p className="truncate text-base font-semibold text-foreground">
-                            {account.fullName?.trim() || account.userName || "Chưa cập nhật"}
+                            {account.fullName?.trim() ||
+                              account.userName ||
+                              "Chưa cập nhật"}
                           </p>
                           <p className="truncate text-sm text-muted-foreground">
                             {account.email || "Chưa cập nhật"}
@@ -198,10 +234,14 @@ export function AccountDetailDialog({
 
                   <div className="grid gap-3 sm:grid-cols-2">
                     <DetailField label="Tên đăng nhập">
-                      <span className="tabular-nums">{account.userName || "Chưa cập nhật"}</span>
+                      <span className="tabular-nums">
+                        {account.userName || "Chưa cập nhật"}
+                      </span>
                     </DetailField>
                     <DetailField label="Email">
-                      <span className="break-all">{account.email || "Chưa cập nhật"}</span>
+                      <span className="break-all">
+                        {account.email || "Chưa cập nhật"}
+                      </span>
                     </DetailField>
                   </div>
 
@@ -217,20 +257,29 @@ export function AccountDetailDialog({
                   </div>
                 </TabsContent>
 
-                <TabsContent value="roles" className="mt-0 space-y-4 outline-none">
+                <TabsContent
+                  value="roles"
+                  className="mt-0 space-y-4 outline-none"
+                >
                   <div className="flex items-center justify-between">
                     <p className="text-sm text-muted-foreground">
                       Các vai trò và phạm vi đã được gán cho tài khoản này.
                     </p>
-                    <Button variant="outline" size="sm" onClick={() => accountActions.setEditRolesOpen(true)}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => accountActions.setEditRolesOpen(true)}
+                    >
                       Sửa vai trò
                     </Button>
                   </div>
-                  
+
                   {account.roles.length === 0 ? (
                     <div className="flex flex-col items-center justify-center p-8 text-center border rounded-lg border-dashed bg-muted/20">
                       <ShieldCheck className="h-8 w-8 text-muted-foreground/50 mb-2" />
-                      <p className="text-sm text-muted-foreground">Chưa gán vai trò.</p>
+                      <p className="text-sm text-muted-foreground">
+                        Chưa gán vai trò.
+                      </p>
                     </div>
                   ) : (
                     <div className="space-y-2">
@@ -241,7 +290,7 @@ export function AccountDetailDialog({
                         >
                           <Badge className="w-fit gap-1 border border-primary/20 bg-primary/10 text-primary">
                             <ShieldCheck className="size-3" />
-                            {ROLE_LABELS[role.roleCode] ?? role.roleCode}
+                            {role.roleCode}
                           </Badge>
                           <span className="break-all text-xs font-medium text-muted-foreground sm:text-right">
                             {getScopeLabel(role)}
@@ -252,12 +301,22 @@ export function AccountDetailDialog({
                   )}
                 </TabsContent>
 
-                <TabsContent value="access" className="mt-0 space-y-4 outline-none">
+                <TabsContent
+                  value="access"
+                  className="mt-0 space-y-4 outline-none"
+                >
                   <div className="flex items-center justify-between mb-2">
                     <p className="text-sm text-muted-foreground">
                       Vai trò và phạm vi hiệu lực do hệ thống tính toán.
                     </p>
-                    <Button variant="outline" size="sm" onClick={() => void accountActions.loadEffectiveAccess(account.id)} disabled={accountActions.isEffectiveAccessLoading}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        void accountActions.loadEffectiveAccess(account.id)
+                      }
+                      disabled={accountActions.isEffectiveAccessLoading}
+                    >
                       Làm mới
                     </Button>
                   </div>
@@ -276,9 +335,12 @@ export function AccountDetailDialog({
                       <div className="rounded-xl border border-border bg-muted/15 p-4">
                         <div className="flex flex-wrap items-center justify-between gap-3">
                           <div>
-                            <p className="text-sm font-semibold text-foreground">Backend Effective Access</p>
+                            <p className="text-sm font-semibold text-foreground">
+                              Backend Effective Access
+                            </p>
                             <p className="mt-1 text-xs text-muted-foreground">
-                              Dữ liệu này mô tả vai trò và phạm vi, không phải danh sách permission code.
+                              Dữ liệu này mô tả vai trò và phạm vi, không phải
+                              danh sách permission code.
                             </p>
                           </div>
                           {accountActions.effectiveAccess.isSystemAdmin ? (
@@ -292,11 +354,13 @@ export function AccountDetailDialog({
                           {accountActions.effectiveAccess.roles.length > 0 ? (
                             accountActions.effectiveAccess.roles.map((role) => (
                               <Badge key={role} variant="secondary">
-                                {ROLE_LABELS[role] ?? role}
+                                {role}
                               </Badge>
                             ))
                           ) : (
-                            <span className="text-sm text-muted-foreground">Chưa có vai trò hiệu lực.</span>
+                            <span className="text-sm text-muted-foreground">
+                              Chưa có vai trò hiệu lực.
+                            </span>
                           )}
                         </div>
                       </div>
@@ -306,38 +370,62 @@ export function AccountDetailDialog({
                           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                             Vai trò theo phạm vi
                           </p>
-                          {accountActions.effectiveAccess.roleScopes.map((role, index) => (
-                            <div
-                              key={`${role.roleCode}-${role.organizationId ?? ""}-${role.storeId ?? ""}-${role.kioskId ?? ""}-${index}`}
-                              className="flex flex-col gap-2 rounded-lg border border-border px-3 py-3 sm:flex-row sm:items-center sm:justify-between"
-                            >
-                              <Badge variant="outline">{ROLE_LABELS[role.roleCode] ?? role.roleCode}</Badge>
-                              <span className="break-all font-mono text-xs text-muted-foreground">
-                                {getScopeLabel(role)}
-                              </span>
-                            </div>
-                          ))}
+                          {accountActions.effectiveAccess.roleScopes.map(
+                            (role, index) => (
+                              <div
+                                key={`${role.roleCode}-${role.organizationId ?? ""}-${role.storeId ?? ""}-${role.kioskId ?? ""}-${index}`}
+                                className="flex flex-col gap-2 rounded-lg border border-border px-3 py-3 sm:flex-row sm:items-center sm:justify-between"
+                              >
+                                <Badge variant="outline">{role.roleCode}</Badge>
+                                <span className="break-all font-mono text-xs text-muted-foreground">
+                                  {getScopeLabel(role)}
+                                </span>
+                              </div>
+                            ),
+                          )}
                         </div>
                       ) : null}
 
                       <div className="grid gap-3 sm:grid-cols-3">
                         {[
-                          ["Tổ chức", accountActions.effectiveAccess.effectiveScope.organizationIds],
-                          ["Cửa hàng", accountActions.effectiveAccess.effectiveScope.storeIds],
-                          ["Kiosk", accountActions.effectiveAccess.effectiveScope.kioskIds],
+                          [
+                            "Tổ chức",
+                            accountActions.effectiveAccess.effectiveScope
+                              .organizationIds,
+                          ],
+                          [
+                            "Cửa hàng",
+                            accountActions.effectiveAccess.effectiveScope
+                              .storeIds,
+                          ],
+                          [
+                            "Kiosk",
+                            accountActions.effectiveAccess.effectiveScope
+                              .kioskIds,
+                          ],
                         ].map(([label, ids]) => (
-                          <div key={label as string} className="rounded-xl border border-border p-3">
-                            <p className="text-xs font-semibold text-muted-foreground">{label as string}</p>
+                          <div
+                            key={label as string}
+                            className="rounded-xl border border-border p-3"
+                          >
+                            <p className="text-xs font-semibold text-muted-foreground">
+                              {label as string}
+                            </p>
                             {(ids as string[]).length > 0 ? (
                               <div className="mt-2 space-y-1.5">
                                 {(ids as string[]).map((id) => (
-                                  <p key={id} className="break-all font-mono text-[11px] text-foreground">
+                                  <p
+                                    key={id}
+                                    className="break-all font-mono text-[11px] text-foreground"
+                                  >
                                     {id}
                                   </p>
                                 ))}
                               </div>
                             ) : (
-                              <p className="mt-2 text-xs text-muted-foreground">Không có phạm vi</p>
+                              <p className="mt-2 text-xs text-muted-foreground">
+                                Không có phạm vi
+                              </p>
                             )}
                           </div>
                         ))}
@@ -346,27 +434,40 @@ export function AccountDetailDialog({
                   ) : (
                     <div className="flex flex-col items-center justify-center p-8 text-center border rounded-lg border-dashed bg-muted/20">
                       <ShieldCheck className="h-8 w-8 text-muted-foreground/50 mb-2" />
-                      <p className="text-sm text-muted-foreground">Chưa tải phạm vi hiệu lực.</p>
+                      <p className="text-sm text-muted-foreground">
+                        Chưa tải phạm vi hiệu lực.
+                      </p>
                     </div>
                   )}
                 </TabsContent>
 
-                <TabsContent value="security" className="mt-0 space-y-4 outline-none">
+                <TabsContent
+                  value="security"
+                  className="mt-0 space-y-4 outline-none"
+                >
                   <div className="rounded-2xl border border-border/80 bg-card p-4 space-y-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <span className="flex size-8 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
                           <IdCard className="size-4" />
                         </span>
-                        <p className="text-sm font-semibold text-foreground">Phương thức đăng nhập</p>
+                        <p className="text-sm font-semibold text-foreground">
+                          Phương thức đăng nhập
+                        </p>
                       </div>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      <Badge variant="outline" className="gap-1 border-primary/20 bg-primary/10 text-primary">
+                      <Badge
+                        variant="outline"
+                        className="gap-1 border-primary/20 bg-primary/10 text-primary"
+                      >
                         <KeyRound className="size-3" />
                         Mật khẩu: {account.localLoginEnabled ? "Bật" : "Tắt"}
                       </Badge>
-                      <Badge variant="outline" className="gap-1 border-primary/20 bg-primary/10 text-primary">
+                      <Badge
+                        variant="outline"
+                        className="gap-1 border-primary/20 bg-primary/10 text-primary"
+                      >
                         <Mail className="size-3" />
                         Google: {account.googleLoginEnabled ? "Bật" : "Tắt"}
                       </Badge>
@@ -379,18 +480,28 @@ export function AccountDetailDialog({
                         <span className="flex size-8 items-center justify-center rounded-xl border border-warning/20 bg-warning/10 text-warning">
                           <Lock className="size-4" />
                         </span>
-                        <p className="text-sm font-semibold text-foreground">Bảo mật tài khoản</p>
+                        <p className="text-sm font-semibold text-foreground">
+                          Bảo mật tài khoản
+                        </p>
                       </div>
                     </div>
-                    {canManageAccounts && account.localLoginEnabled ? <div className="flex items-center justify-between gap-3 rounded-lg bg-muted/20 p-3">
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Info className="h-4 w-4" />
-                        Gửi hướng dẫn để người dùng tự đặt lại mật khẩu
+                    {canManageAccounts && account.localLoginEnabled ? (
+                      <div className="flex items-center justify-between gap-3 rounded-lg bg-muted/20 p-3">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Info className="h-4 w-4" />
+                          Gửi hướng dẫn để người dùng tự đặt lại mật khẩu
+                        </div>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() =>
+                            accountActions.setResetPasswordOpen(true)
+                          }
+                        >
+                          Gửi hướng dẫn
+                        </Button>
                       </div>
-                      <Button variant="secondary" size="sm" onClick={() => accountActions.setResetPasswordOpen(true)}>
-                        Gửi hướng dẫn
-                      </Button>
-                    </div> : null}
+                    ) : null}
                   </div>
                 </TabsContent>
               </ScrollArea>

@@ -24,14 +24,6 @@ interface AccountsTableProps {
   onViewAccount: (accountId: string) => void;
 }
 
-const ROLE_LABELS: Record<string, string> = {
-  SystemAdmin: "Quản trị hệ thống",
-  Manager: "Quản lý vận hành",
-  OrgAdmin: "Quản trị tổ chức",
-  Staff: "Nhân viên",
-  Technician: "Kỹ thuật viên",
-};
-
 function getStatusLabel(status: ManagementAccountStatus): string {
   switch (status) {
     case "Active":
@@ -113,7 +105,92 @@ export function AccountsTable({
   onViewAccount,
 }: AccountsTableProps) {
   return (
-    <Table>
+    <>
+      <div className="divide-y divide-border md:hidden">
+        {accounts.map((account) => {
+          const accountName = account.fullName?.trim() || account.userName;
+          return (
+            <article key={account.id} className="space-y-3 p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold text-foreground">
+                    {accountName}
+                  </p>
+                  <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                    {account.email}
+                  </p>
+                </div>
+                <StatusBadge status={account.status} />
+              </div>
+              <div>
+                <p className="mb-1.5 text-xs font-medium text-muted-foreground">
+                  Role hệ thống
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {account.roles.length === 0 ? (
+                    <span className="text-xs text-muted-foreground">
+                      Chưa gán role
+                    </span>
+                  ) : (
+                    account.roles.map((role, index) => (
+                      <Badge
+                        key={`${role.roleCode}-${role.organizationId ?? ""}-${role.storeId ?? ""}-${role.kioskId ?? ""}-${index}`}
+                        className="gap-1 border-0 bg-primary/10 font-mono text-primary"
+                      >
+                        <ShieldCheck className="size-3" aria-hidden="true" />
+                        {role.roleCode}
+                      </Badge>
+                    ))
+                  )}
+                </div>
+              </div>
+              <div>
+                <p className="mb-1.5 text-xs font-medium text-muted-foreground">
+                  Phương thức đăng nhập
+                </p>
+                <LoginMethods account={account} />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onViewAccount(account.id)}
+                >
+                  <Eye className="size-4" aria-hidden="true" />
+                  Chi tiết
+                </Button>
+                {canManageAccounts && account.status === "Invited" ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onRegenerateInvitation(account)}
+                  >
+                    <RefreshCw className="size-4" aria-hidden="true" />
+                    Gửi lại lời mời
+                  </Button>
+                ) : null}
+                {canManageAccounts ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="col-span-2 text-destructive hover:text-destructive"
+                    disabled={
+                      account.id === currentAccountId ||
+                      account.status === "Disabled"
+                    }
+                    onClick={() => onDisableAccount(account)}
+                  >
+                    <UserRoundX className="size-4" aria-hidden="true" />
+                    Vô hiệu hóa tài khoản
+                  </Button>
+                ) : null}
+              </div>
+            </article>
+          );
+        })}
+      </div>
+      <div className="hidden overflow-x-auto md:block">
+        <Table className="min-w-[900px] table-fixed">
       <TableHeader>
         <TableRow>
           <TableHead className="px-5">Tài khoản</TableHead>
@@ -148,7 +225,7 @@ export function AccountsTable({
                       className="gap-1 border-0 bg-primary/10 text-primary"
                     >
                       <ShieldCheck className="size-3" />
-                      {ROLE_LABELS[role.roleCode] ?? role.roleCode}
+                      {role.roleCode}
                     </Badge>
                   ))
                 )}
@@ -207,6 +284,8 @@ export function AccountsTable({
           </TableRow>
         ))}
       </TableBody>
-    </Table>
+        </Table>
+      </div>
+    </>
   );
 }

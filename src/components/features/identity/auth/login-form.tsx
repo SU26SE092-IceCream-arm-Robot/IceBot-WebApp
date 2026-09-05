@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { FirebaseError } from "firebase/app";
-import { LockKeyhole, UserRound } from "lucide-react";
+import { UserRound } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -16,13 +16,16 @@ import {
   signInWithFirebaseGoogle,
 } from "@/lib/firebase-auth";
 import { getAuthErrorMessage } from "@/lib/services/identity/auth";
+import { PasswordField } from "./password-field";
 
 export function LoginForm() {
   const router = useRouter();
   const { status, login, googleLogin } = useAuth();
   const [emailOrUsername, setEmailOrUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [validationMessage, setValidationMessage] = useState<string | null>(null);
+  const [validationMessage, setValidationMessage] = useState<string | null>(
+    null,
+  );
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -38,7 +41,9 @@ export function LoginForm() {
     setErrorMessage(null);
 
     if (!emailOrUsername.trim() || !password) {
-      setValidationMessage("Vui lòng nhập email hoặc tên đăng nhập và mật khẩu.");
+      setValidationMessage(
+        "Vui lòng nhập email hoặc tên đăng nhập và mật khẩu.",
+      );
       return;
     }
     setIsSubmitting(true);
@@ -77,7 +82,9 @@ export function LoginForm() {
   return (
     <div className="w-full">
       <div className="mb-8 space-y-2 text-center">
-        <h2 className="text-2xl font-semibold tracking-tight text-foreground">Đăng nhập</h2>
+        <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+          Đăng nhập
+        </h2>
         <p className="text-sm text-muted-foreground">
           Truy cập hệ thống quản trị dành cho nhân sự được cấp quyền.
         </p>
@@ -90,7 +97,10 @@ export function LoginForm() {
         className="space-y-5"
       >
         <div className="space-y-2">
-          <label htmlFor="emailOrUsername" className="text-sm font-medium text-foreground">
+          <label
+            htmlFor="emailOrUsername"
+            className="text-sm font-medium text-foreground"
+          >
             Email hoặc tên đăng nhập
           </label>
           <div className="relative">
@@ -110,36 +120,50 @@ export function LoginForm() {
 
         <div className="space-y-2">
           <div className="flex items-center justify-between gap-4">
-            <label htmlFor="password" className="text-sm font-medium text-foreground">
+            <label
+              htmlFor="password"
+              className="text-sm font-medium text-foreground"
+            >
               Mật khẩu
             </label>
-            <Link href="/forgot-password" className="text-sm font-medium text-primary hover:underline">
+            <Link
+              href="/forgot-password"
+              className="text-sm font-medium text-primary hover:underline"
+            >
               Quên mật khẩu?
             </Link>
           </div>
-          <div className="relative">
-            <LockKeyhole className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              id="password"
-              name="password"
-              type="password"
-              autoComplete="current-password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              className="h-11 pl-10"
-              placeholder="Nhập mật khẩu"
-              required
-            />
-          </div>
+          <PasswordField
+            id="password"
+            name="password"
+            label=""
+            aria-label="Mật khẩu"
+            autoComplete="current-password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            placeholder="Nhập mật khẩu"
+            required
+            error={validationMessage || errorMessage}
+            errorId="login-error"
+            showError={false}
+          />
         </div>
 
         {validationMessage || errorMessage ? (
-          <p className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          <p
+            id="login-error"
+            role="alert"
+            className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+          >
             {validationMessage || errorMessage}
           </p>
         ) : null}
 
-        <Button type="submit" className="h-11 w-full text-base" isLoading={isSubmitting}>
+        <Button
+          type="submit"
+          className="h-11 w-full text-base"
+          isLoading={isSubmitting}
+        >
           Đăng nhập
         </Button>
 

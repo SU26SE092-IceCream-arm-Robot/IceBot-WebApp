@@ -17,7 +17,6 @@ import type {
   ApproveServiceRegistrationRequest,
   CreateServiceRegistrationRequest,
   ManagementServiceRegistrationDetail,
-  ManagementServiceRegistrationItem,
   RejectServiceRegistrationRequest,
   ServiceRegistrationsPagedResult,
   ServiceRegistrationResult,
@@ -80,7 +79,10 @@ describe("service registration contract", () => {
       } as ApiResult<ServiceRegistrationResult>,
     } as AxiosResponse);
 
-    const result = await submitServiceRegistration(mockRequest, "custom-idempotency-key");
+    const result = await submitServiceRegistration(
+      mockRequest,
+      "custom-idempotency-key",
+    );
 
     expect(result).toEqual(mockResult);
     expect(axiosClient.post).toHaveBeenCalledWith(
@@ -246,7 +248,11 @@ describe("management service registration contract", () => {
       data: {
         succeeded: true,
         statusCode: 200,
-        data: { ...mockDetail, status: "Rejected", rejectionReason: "Thông tin không chính xác" },
+        data: {
+          ...mockDetail,
+          status: "Rejected",
+          rejectionReason: "Thông tin không chính xác",
+        },
       },
     } as AxiosResponse);
 

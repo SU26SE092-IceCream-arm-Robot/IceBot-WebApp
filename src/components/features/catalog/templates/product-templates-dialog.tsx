@@ -1,6 +1,13 @@
 "use client";
 
-import { AlertTriangle, ChevronLeft, ChevronRight, Copy, LayoutTemplate, Search } from "lucide-react";
+import {
+  AlertTriangle,
+  ChevronLeft,
+  ChevronRight,
+  Copy,
+  LayoutTemplate,
+  Search,
+} from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,7 +19,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import type { MenuManagementPagination, ProductResult } from "@/types/catalog/menu-management";
+import type {
+  MenuManagementPagination,
+  ProductResult,
+} from "@/types/catalog/menu-management";
 
 interface ProductTemplatesDialogProps {
   open: boolean;
@@ -58,7 +68,8 @@ export function ProductTemplatesDialog({
             <div className="min-w-0 space-y-1">
               <DialogTitle>Tạo sản phẩm từ mẫu</DialogTitle>
               <DialogDescription>
-                Chọn mẫu toàn cục để tạo bản sao thuộc tổ chức {organizationName}.
+                Chọn mẫu toàn cục để tạo bản sao thuộc tổ chức{" "}
+                {organizationName}.
               </DialogDescription>
             </div>
           </div>
@@ -67,6 +78,8 @@ export function ProductTemplatesDialog({
         <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
+            aria-label="Tìm mẫu sản phẩm"
+            type="search"
             value={searchTerm}
             onChange={(event) => onSearchTermChange(event.target.value)}
             placeholder="Tìm theo tên hoặc mã mẫu..."
@@ -77,7 +90,10 @@ export function ProductTemplatesDialog({
         {isLoading ? (
           <div className="space-y-2">
             {Array.from({ length: 3 }).map((_, index) => (
-              <div key={index} className="h-24 animate-pulse rounded-lg bg-muted/40" />
+              <div
+                key={index}
+                className="h-24 animate-pulse rounded-lg bg-muted/40"
+              />
             ))}
           </div>
         ) : errorMessage ? (
@@ -86,7 +102,9 @@ export function ProductTemplatesDialog({
               <AlertTriangle className="mt-0.5 size-4 shrink-0 text-destructive" />
               <p className="text-sm text-destructive">{errorMessage}</p>
             </div>
-            <Button variant="outline" size="sm" onClick={onRetry}>Thử lại</Button>
+            <Button variant="outline" size="sm" onClick={onRetry}>
+              Thử lại
+            </Button>
           </div>
         ) : templates.length === 0 ? (
           <div className="rounded-lg border border-dashed border-border px-6 py-10 text-center">
@@ -99,16 +117,29 @@ export function ProductTemplatesDialog({
         ) : (
           <div className="space-y-2">
             {templates.map((template) => (
-              <div key={template.id} className="flex flex-col gap-3 rounded-lg border border-border p-4 sm:flex-row sm:items-center sm:justify-between">
+              <div
+                key={template.id}
+                className="flex flex-col gap-3 rounded-lg border border-border p-4 sm:flex-row sm:items-center sm:justify-between"
+              >
                 <div className="min-w-0 space-y-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <p className="font-medium text-foreground">{template.displayName || template.name}</p>
-                    <Badge variant="outline">{template.variants.length} phiên bản</Badge>
-                    {!template.isAvailable ? <Badge variant="secondary">Không khả dụng</Badge> : null}
+                    <p className="font-medium text-foreground">
+                      {template.displayName || template.name}
+                    </p>
+                    <Badge variant="outline">
+                      {template.variants.length} phiên bản
+                    </Badge>
+                    {!template.isAvailable ? (
+                      <Badge variant="secondary">Không khả dụng</Badge>
+                    ) : null}
                   </div>
-                  <p className="font-mono text-xs text-muted-foreground">{template.code}</p>
+                  <p className="font-mono text-xs text-muted-foreground">
+                    {template.code}
+                  </p>
                   {template.description ? (
-                    <p className="line-clamp-2 text-sm text-muted-foreground">{template.description}</p>
+                    <p className="line-clamp-2 text-sm text-muted-foreground">
+                      {template.description}
+                    </p>
                   ) : null}
                 </div>
                 <Button
@@ -128,13 +159,27 @@ export function ProductTemplatesDialog({
 
         <div className="flex flex-col justify-between gap-3 border-t border-border pt-3 text-sm sm:flex-row sm:items-center">
           <p className="text-muted-foreground">
-            Trang <span className="font-medium text-foreground">{pagination.page}</span> / {Math.max(pagination.totalPages, 1)} · {pagination.totalCount} mẫu
+            Trang{" "}
+            <span className="font-medium text-foreground">
+              {pagination.page}
+            </span>{" "}
+            / {Math.max(pagination.totalPages, 1)} · {pagination.totalCount} mẫu
           </p>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" disabled={!pagination.hasPrevious || isLoading} onClick={onPreviousPage}>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={!pagination.hasPrevious || isLoading}
+              onClick={onPreviousPage}
+            >
               <ChevronLeft className="size-4" /> Trước
             </Button>
-            <Button variant="outline" size="sm" disabled={!pagination.hasNext || isLoading} onClick={onNextPage}>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={!pagination.hasNext || isLoading}
+              onClick={onNextPage}
+            >
               Sau <ChevronRight className="size-4" />
             </Button>
           </div>

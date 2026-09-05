@@ -1,14 +1,20 @@
 "use client";
 
 import { useCallback } from "react";
-import { CircleCheckBig, Layers3, Plus, RefreshCw } from "lucide-react";
+import {
+  CircleCheckBig,
+  CirclePause,
+  Layers3,
+  ListTree,
+  Plus,
+  RefreshCw,
+} from "lucide-react";
 
 import { CatalogActionDialog, MenuDetailDialog } from "@/components/features/catalog/shared/catalog-dialogs";
 import {
   CatalogOrganizationSelector,
   CatalogRefreshWarning,
   CatalogSearchBar,
-  CatalogStatCard,
   MenusPanel,
 } from "@/components/features/catalog/shared/catalog-page-ui";
 import {
@@ -16,6 +22,8 @@ import {
   MenuFormDialog,
   MenuItemFormDialog,
 } from "@/components/features/catalog/menus/menu-crud-dialogs";
+import { MetricStrip, MetricStripItem } from "@/components/shared/metric-strip";
+import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/identity/use-auth";
 import { useCatalogOrganization } from "@/hooks/catalog/use-catalog-organization";
@@ -87,28 +95,45 @@ export function MenusManagementView() {
       })
     : false;
   const activeMenusOnPage = menus.data.filter((menu) => menu.status === "Active").length;
+  const inactiveMenusOnPage = menus.data.length - activeMenusOnPage;
   const deleteTarget = menuCrud.deleteTarget;
 
   return (
-    <div className="space-y-7">
-      <section className="flex flex-col gap-4 border-b border-border pb-6 lg:flex-row lg:items-end lg:justify-between">
-        <div className="max-w-2xl space-y-2">
-          <h1 className="text-3xl font-semibold tracking-tight text-foreground">Thực đơn</h1>
-          <p className="text-sm leading-6 text-muted-foreground">
-            Tổ chức sản phẩm thành danh sách bán theo phạm vi cửa hàng hoặc kiosk và quản lý trạng thái hiển thị.
+    <div className="space-y-5">
+      <PageHeader
+        title="Thực đơn"
+        description="Tổ chức sản phẩm thành danh sách bán, xác định phạm vi áp dụng và kiểm soát thời gian hiệu lực."
+        metadata={
+          <p className="text-xs text-muted-foreground">
+            {selectedOrganization
+              ? `Phạm vi: ${selectedOrganization.name || selectedOrganization.code}`
+              : "Chọn tổ chức để tải thực đơn"}
           </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="outline" className="h-10" onClick={() => void refresh()} isLoading={menus.isLoading}>
-            <RefreshCw className="size-4" />Làm mới
-          </Button>
-          {canManage ? (
-            <Button className="h-10" disabled={!selectedOrganizationId} onClick={() => menuCrud.openMenuForm()}>
-              <Plus className="size-4" />Tạo thực đơn
+        }
+        actions={
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => void refresh()}
+              isLoading={menus.isLoading}
+            >
+              <RefreshCw className="size-4" aria-hidden="true" />
+              Làm mới
             </Button>
-          ) : null}
-        </div>
-      </section>
+            {canManage ? (
+              <Button
+                size="sm"
+                disabled={!selectedOrganizationId}
+                onClick={() => menuCrud.openMenuForm()}
+              >
+                <Plus className="size-4" aria-hidden="true" />
+                Tạo thực đơn
+              </Button>
+            ) : null}
+          </>
+        }
+      />
 
       <CatalogRefreshWarning
         message={menuCrud.refreshWarningMessage}
@@ -126,10 +151,36 @@ export function MenusManagementView() {
         onChange={setSelectedOrganizationId}
       />
 
-      <section className="grid gap-4 sm:grid-cols-2">
-        <CatalogStatCard icon={Layers3} label="Tổng thực đơn" value={menus.pagination.totalCount} tone="primary" />
-        <CatalogStatCard icon={CircleCheckBig} label="Đang bán trên trang" value={activeMenusOnPage} tone="success" />
-      </section>
+      <MetricStrip>
+        <MetricStripItem
+          icon={Layers3}
+          label="Tổng thực đơn"
+          value={menus.pagination.totalCount.toLocaleString("vi-VN")}
+          description="Trong tổ chức đã chọn"
+          tone="primary"
+        />
+        <MetricStripItem
+          icon={ListTree}
+          label="Đang hiển thị"
+          value={menus.data.length.toLocaleString("vi-VN")}
+          description="Kết quả trên trang hiện tại"
+          tone="neutral"
+        />
+        <MetricStripItem
+          icon={CircleCheckBig}
+          label="Đang bán trên trang"
+          value={activeMenusOnPage.toLocaleString("vi-VN")}
+          description="Đã kích hoạt"
+          tone="success"
+        />
+        <MetricStripItem
+          icon={CirclePause}
+          label="Chưa bán trên trang"
+          value={inactiveMenusOnPage.toLocaleString("vi-VN")}
+          description="Nháp, tạm dừng hoặc lưu trữ"
+          tone={inactiveMenusOnPage > 0 ? "warning" : "neutral"}
+        />
+      </MetricStrip>
 
       <CatalogSearchBar
         value={searchTerm}

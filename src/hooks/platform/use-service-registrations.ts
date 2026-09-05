@@ -43,7 +43,8 @@ export function useServiceRegistrations() {
   const [createdTo, setCreatedTo] = useState("");
 
   const [items, setItems] = useState<ManagementServiceRegistrationItem[]>([]);
-  const [pagination, setPagination] = useState<PaginationMeta>(EMPTY_PAGINATION);
+  const [pagination, setPagination] =
+    useState<PaginationMeta>(EMPTY_PAGINATION);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -76,6 +77,7 @@ export function useServiceRegistrations() {
       to: string,
       signal?: AbortSignal,
     ) => {
+      if (signal?.aborted) return;
       setIsLoading(true);
       setError(null);
       try {
@@ -111,7 +113,17 @@ export function useServiceRegistrations() {
 
   useEffect(() => {
     const controller = new AbortController();
-    void load(page, statusFilter, searchQuery, createdFrom, createdTo, controller.signal);
+    queueMicrotask(
+      () =>
+        void load(
+          page,
+          statusFilter,
+          searchQuery,
+          createdFrom,
+          createdTo,
+          controller.signal,
+        ),
+    );
     return () => controller.abort();
   }, [load, page, statusFilter, searchQuery, createdFrom, createdTo]);
 
@@ -139,8 +151,12 @@ export function useServiceRegistrations() {
     setDetailLoading(true);
 
     try {
-      const detail = await getManagementServiceRegistration(id, controller.signal);
-      if (controller.signal.aborted || requestId !== detailRequestIdRef.current) return;
+      const detail = await getManagementServiceRegistration(
+        id,
+        controller.signal,
+      );
+      if (controller.signal.aborted || requestId !== detailRequestIdRef.current)
+        return;
       setSelectedDetail(detail);
     } catch (detailLoadError) {
       if (axios.isCancel(detailLoadError) || controller.signal.aborted) return;
@@ -153,7 +169,10 @@ export function useServiceRegistrations() {
         );
       }
     } finally {
-      if (!controller.signal.aborted && requestId === detailRequestIdRef.current) {
+      if (
+        !controller.signal.aborted &&
+        requestId === detailRequestIdRef.current
+      ) {
         setDetailLoading(false);
       }
     }
@@ -229,7 +248,10 @@ export function useServiceRegistrations() {
     async (id: string, revision?: number) => {
       setActionLoading(true);
       try {
-        const updated = await retryProvisioningServiceRegistration(id, revision);
+        const updated = await retryProvisioningServiceRegistration(
+          id,
+          revision,
+        );
         toast.success("Đã gửi lệnh thử lại quy trình cấp phát.");
         setSelectedDetail(updated);
         refresh();
@@ -242,15 +264,21 @@ export function useServiceRegistrations() {
     [refresh],
   );
 
-  const openApproveDialog = useCallback((detail: ManagementServiceRegistrationDetail) => {
-    setTargetForApprove(detail);
-    setApproveDialogOpen(true);
-  }, []);
+  const openApproveDialog = useCallback(
+    (detail: ManagementServiceRegistrationDetail) => {
+      setTargetForApprove(detail);
+      setApproveDialogOpen(true);
+    },
+    [],
+  );
 
-  const openRejectDialog = useCallback((detail: ManagementServiceRegistrationDetail) => {
-    setTargetForReject(detail);
-    setRejectDialogOpen(true);
-  }, []);
+  const openRejectDialog = useCallback(
+    (detail: ManagementServiceRegistrationDetail) => {
+      setTargetForReject(detail);
+      setRejectDialogOpen(true);
+    },
+    [],
+  );
 
   return {
     items,

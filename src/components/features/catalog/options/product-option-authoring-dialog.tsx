@@ -130,8 +130,9 @@ function GroupForm({
         </DialogHeader>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
-            <Label>Mã nhóm</Label>
+            <Label htmlFor="option-group-code">Mã nhóm</Label>
             <Input
+              id="option-group-code"
               value={code}
               maxLength={100}
               disabled={isSubmitting}
@@ -139,8 +140,9 @@ function GroupForm({
             />
           </div>
           <div className="space-y-1.5">
-            <Label>Tên nhóm</Label>
+            <Label htmlFor="option-group-name">Tên nhóm</Label>
             <Input
+              id="option-group-name"
               value={name}
               maxLength={200}
               disabled={isSubmitting}
@@ -148,7 +150,7 @@ function GroupForm({
             />
           </div>
           <div className="space-y-1.5">
-            <Label>Kiểu chọn</Label>
+            <Label htmlFor="option-group-selection-type">Kiểu chọn</Label>
             <Select
               value={selectionType}
               disabled={isSubmitting}
@@ -158,7 +160,10 @@ function GroupForm({
                 if (next === "Single") setMaxSelections("1");
               }}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger
+                id="option-group-selection-type"
+                className="w-full"
+              >
                 <SelectValue>
                   {selectionType === "Single" ? "Chọn một" : "Chọn nhiều"}
                 </SelectValue>
@@ -183,8 +188,9 @@ function GroupForm({
             <span className="text-sm">Bắt buộc chọn</span>
           </label>
           <div className="space-y-1.5">
-            <Label>Tối thiểu</Label>
+            <Label htmlFor="option-group-min">Tối thiểu</Label>
             <Input
+              id="option-group-min"
               type="number"
               min="0"
               value={minSelections}
@@ -193,8 +199,9 @@ function GroupForm({
             />
           </div>
           <div className="space-y-1.5">
-            <Label>Tối đa</Label>
+            <Label htmlFor="option-group-max">Tối đa</Label>
             <Input
+              id="option-group-max"
               type="number"
               min="1"
               value={maxSelections}
@@ -203,8 +210,9 @@ function GroupForm({
             />
           </div>
           <div className="space-y-1.5">
-            <Label>Thứ tự</Label>
+            <Label htmlFor="option-group-order">Thứ tự</Label>
             <Input
+              id="option-group-order"
               type="number"
               value={displayOrder}
               disabled={isSubmitting}
@@ -212,8 +220,9 @@ function GroupForm({
             />
           </div>
           <div className="space-y-1.5 sm:col-span-2">
-            <Label>Mô tả</Label>
+            <Label htmlFor="option-group-description">Mô tả</Label>
             <Input
+              id="option-group-description"
               value={description}
               disabled={isSubmitting}
               onChange={(e) => setDescription(e.target.value)}
@@ -307,8 +316,9 @@ function OptionForm({
         </DialogHeader>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
-            <Label>Mã tùy chọn</Label>
+            <Label htmlFor="product-option-code">Mã tùy chọn</Label>
             <Input
+              id="product-option-code"
               value={code}
               maxLength={100}
               disabled={isSubmitting}
@@ -316,8 +326,9 @@ function OptionForm({
             />
           </div>
           <div className="space-y-1.5">
-            <Label>Tên tùy chọn</Label>
+            <Label htmlFor="product-option-name">Tên tùy chọn</Label>
             <Input
+              id="product-option-name"
               value={name}
               maxLength={200}
               disabled={isSubmitting}
@@ -325,8 +336,11 @@ function OptionForm({
             />
           </div>
           <div className="space-y-1.5">
-            <Label>Giá tăng thêm ({currency})</Label>
+            <Label htmlFor="product-option-price">
+              Giá tăng thêm ({currency})
+            </Label>
             <Input
+              id="product-option-price"
               type="number"
               min="0"
               value={priceDelta}
@@ -335,7 +349,7 @@ function OptionForm({
             />
           </div>
           <div className="space-y-1.5">
-            <Label>Ảnh hưởng</Label>
+            <Label htmlFor="product-option-effect">Ảnh hưởng</Label>
             <Select
               value={executionImpact}
               disabled={isSubmitting}
@@ -343,7 +357,7 @@ function OptionForm({
                 setExecutionImpact(v as ProductOptionExecutionImpact)
               }
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger id="product-option-effect" className="w-full">
                 <SelectValue>
                   {executionImpact === "CommercialOnly"
                     ? "Chỉ thương mại"
@@ -368,8 +382,9 @@ function OptionForm({
             <span className="text-sm">Chọn mặc định</span>
           </label>
           <div className="space-y-1.5">
-            <Label>Thứ tự</Label>
+            <Label htmlFor="product-option-order">Thứ tự</Label>
             <Input
+              id="product-option-order"
               type="number"
               value={displayOrder}
               disabled={isSubmitting}
@@ -377,8 +392,9 @@ function OptionForm({
             />
           </div>
           <div className="space-y-1.5 sm:col-span-2">
-            <Label>Mô tả</Label>
+            <Label htmlFor="product-option-description">Mô tả</Label>
             <Input
+              id="product-option-description"
               value={description}
               disabled={isSubmitting}
               onChange={(e) => setDescription(e.target.value)}
@@ -454,8 +470,7 @@ function RequirementsForm({
         ingredientId: item.ingredientId,
         quantity: item.quantity,
         unit: item.unit,
-        requiredWorkcellCapabilityCode:
-          item.requiredWorkcellCapabilityCode,
+        requiredWorkcellCapabilityCode: item.requiredWorkcellCapabilityCode,
       })),
     );
     if (ok) onClose();
@@ -476,6 +491,8 @@ function RequirementsForm({
         </DialogHeader>
         <div className="flex gap-2">
           <Input
+            aria-label="Tìm nguyên liệu cho tùy chọn"
+            type="search"
             value={ingredients.search}
             onChange={(e) => ingredients.setSearch(e.target.value)}
             placeholder="Tìm nguyên liệu..."
@@ -515,7 +532,10 @@ function RequirementsForm({
                     });
                   }}
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger
+                    aria-label={`Chọn nguyên liệu thực thi dòng ${item.key}`}
+                    className="w-full"
+                  >
                     <SelectValue>
                       {selected
                         ? `${selected.name} — ${selected.code}`
@@ -766,8 +786,8 @@ export function ProductOptionAuthoringDialog({
                               : "Ảnh hưởng sản xuất"}{" "}
                             · {option.isAvailable ? "Đang bán" : "Ngừng bán"}
                             {option.isDefault ? " · Mặc định" : ""} ·{" "}
-                              {(option.ingredientRequirements ?? []).length} nguyên liệu
-                            thực thi
+                            {(option.ingredientRequirements ?? []).length}{" "}
+                            nguyên liệu thực thi
                           </p>
                         </div>
                         <div className="flex flex-wrap gap-1">

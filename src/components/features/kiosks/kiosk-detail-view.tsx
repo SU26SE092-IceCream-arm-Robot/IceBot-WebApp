@@ -39,6 +39,7 @@ import { ExecutionEndpointsTable } from "@/components/features/kiosks/execution-
 import { OperationLogsPanel } from "@/components/features/kiosks/diagnostics/operation-logs-panel";
 import { ProductionOperationsPanel } from "@/components/features/kiosks/deployments/production-operations-panel";
 import { MenuItemAvailabilityPanel } from "@/components/features/kiosks/menu-item-availability-panel";
+import { MetricStrip, MetricStripItem } from "@/components/shared/metric-strip";
 import { useAuth } from "@/hooks/identity/use-auth";
 import type { KioskEvidenceState } from "@/hooks/kiosks/use-kiosk-detail";
 import { useKioskDetail } from "@/hooks/kiosks/use-kiosk-detail";
@@ -211,7 +212,10 @@ function StatePanel({
         </div>
         <div className="flex flex-wrap justify-center gap-2">
           {onRetry ? (
-            <Button variant={destructive ? "destructive" : "outline"} onClick={onRetry}>
+            <Button
+              variant={destructive ? "destructive" : "outline"}
+              onClick={onRetry}
+            >
               <RefreshCw className="size-4" />
               Thử lại
             </Button>
@@ -329,7 +333,7 @@ function MetadataPanel({ kiosk }: { kiosk: KioskManagementDetail }) {
       <CardHeader className="border-b border-border pb-4">
         <CardTitle className="flex items-center gap-2 text-base">
           <Building2 className="size-4 text-primary" />
-          Metadata quản lý
+          Thông tin quản lý
         </CardTitle>
       </CardHeader>
       <CardContent className="p-5">
@@ -350,14 +354,24 @@ function MetadataPanel({ kiosk }: { kiosk: KioskManagementDetail }) {
           value={formatTimestamp(kiosk.operationalStateChangedAt)}
         />
         <DetailValue label="Cửa hàng" value={kiosk.locationName} />
-        <DetailValue label="Tổ chức" value={kiosk.organizationId ? "Đã liên kết" : "Chưa có"} />
+        <DetailValue
+          label="Tổ chức"
+          value={kiosk.organizationId ? "Đã liên kết" : "Chưa có"}
+        />
         <DetailValue label="Loại kiosk" value={kiosk.kioskType} />
-        <DetailValue label="Serial" value={kiosk.serialNumber || "Chưa cập nhật"} />
+        <DetailValue
+          label="Serial"
+          value={kiosk.serialNumber || "Chưa cập nhật"}
+        />
         <DetailValue label="Múi giờ" value={kiosk.timeZone} />
         <DetailValue label="Địa chỉ" value={kiosk.address || "Chưa cập nhật"} />
         <DetailValue
           label="Kết nối gần nhất theo thông tin quản lý"
-          value={<span className="tabular-nums">{formatTimestamp(kiosk.lastOnlineAt)}</span>}
+          value={
+            <span className="tabular-nums">
+              {formatTimestamp(kiosk.lastOnlineAt)}
+            </span>
+          }
         />
       </CardContent>
     </Card>
@@ -377,8 +391,12 @@ function EvidenceUnavailable({
         <CircleHelp className="size-6 opacity-70" />
       </span>
       <div className="max-w-md space-y-1.5">
-        <p className="text-base font-semibold tracking-tight text-foreground">{title}</p>
-        <p className="text-sm leading-relaxed text-muted-foreground">{message}</p>
+        <p className="text-base font-semibold tracking-tight text-foreground">
+          {title}
+        </p>
+        <p className="text-sm leading-relaxed text-muted-foreground">
+          {message}
+        </p>
       </div>
     </div>
   );
@@ -391,7 +409,8 @@ function LatestHeartbeatPanel({
 }) {
   const latest = [...state.data].sort(
     (left, right) =>
-      new Date(right.reportedAt).getTime() - new Date(left.reportedAt).getTime(),
+      new Date(right.reportedAt).getTime() -
+      new Date(left.reportedAt).getTime(),
   )[0];
 
   return (
@@ -413,7 +432,10 @@ function LatestHeartbeatPanel({
         {state.isLoading ? (
           <div className="space-y-3" aria-label="Đang tải heartbeat">
             {Array.from({ length: 5 }).map((_, index) => (
-              <div key={index} className="h-9 animate-pulse rounded bg-muted/40" />
+              <div
+                key={index}
+                className="h-9 animate-pulse rounded bg-muted/40"
+              />
             ))}
           </div>
         ) : state.errorMessage ? (
@@ -428,13 +450,46 @@ function LatestHeartbeatPanel({
           />
         ) : (
           <div>
-            <DetailValue label="Kiosk báo cáo lúc" value={<span className="tabular-nums">{formatTimestamp(latest.reportedAt)}</span>} />
-            <DetailValue label="Hệ thống nhận lúc" value={<span className="tabular-nums">{formatTimestamp(latest.receivedAt)}</span>} />
-            <DetailValue label="Network status" value={latest.networkStatus || "Không được heartbeat cung cấp"} />
-            <DetailValue label="Robot status" value={latest.robotStatus || "Không được heartbeat cung cấp"} />
-            <DetailValue label="Phiên bản ứng dụng" value={latest.appVersion || "Chưa có dữ liệu"} />
-            <DetailValue label="Phiên bản firmware" value={latest.firmwareVersion || "Chưa có dữ liệu"} />
-            <DetailValue label="Sự kiện chờ đồng bộ" value={<span className="tabular-nums">{latest.pendingSyncEventCount}</span>} />
+            <DetailValue
+              label="Kiosk báo cáo lúc"
+              value={
+                <span className="tabular-nums">
+                  {formatTimestamp(latest.reportedAt)}
+                </span>
+              }
+            />
+            <DetailValue
+              label="Hệ thống nhận lúc"
+              value={
+                <span className="tabular-nums">
+                  {formatTimestamp(latest.receivedAt)}
+                </span>
+              }
+            />
+            <DetailValue
+              label="Trạng thái kết nối"
+              value={latest.networkStatus || "Không được heartbeat cung cấp"}
+            />
+            <DetailValue
+              label="Trạng thái robot"
+              value={latest.robotStatus || "Không được heartbeat cung cấp"}
+            />
+            <DetailValue
+              label="Phiên bản ứng dụng"
+              value={latest.appVersion || "Chưa có dữ liệu"}
+            />
+            <DetailValue
+              label="Phiên bản firmware"
+              value={latest.firmwareVersion || "Chưa có dữ liệu"}
+            />
+            <DetailValue
+              label="Sự kiện chờ đồng bộ"
+              value={
+                <span className="tabular-nums">
+                  {latest.pendingSyncEventCount}
+                </span>
+              }
+            />
           </div>
         )}
       </CardContent>
@@ -457,7 +512,9 @@ function ResourceTile({
         <Icon className="size-3.5" />
         {label}
       </div>
-      <p className="tabular-nums text-sm font-semibold text-foreground">{value}</p>
+      <p className="tabular-nums text-sm font-semibold text-foreground">
+        {value}
+      </p>
     </div>
   );
 }
@@ -477,18 +534,28 @@ function HeartbeatsTable({
           </CardTitle>
           {state.pagination ? (
             <span className="text-xs text-muted-foreground">
-              Hiển thị {state.data.length}/{state.pagination.totalCount} heartbeat
+              Hiển thị {state.data.length}/{state.pagination.totalCount}{" "}
+              heartbeat
             </span>
           ) : null}
         </div>
       </CardHeader>
       <CardContent className="p-0">
         {state.isLoading ? (
-          <EvidenceUnavailable title="Đang tải heartbeat" message="Đang lấy bằng chứng vận hành." />
+          <EvidenceUnavailable
+            title="Đang tải heartbeat"
+            message="Đang lấy bằng chứng vận hành."
+          />
         ) : state.errorMessage ? (
-          <EvidenceUnavailable title="Không lấy được dữ liệu heartbeat" message={state.errorMessage} />
+          <EvidenceUnavailable
+            title="Không lấy được dữ liệu heartbeat"
+            message={state.errorMessage}
+          />
         ) : state.data.length === 0 ? (
-          <EvidenceUnavailable title="Chưa có heartbeat" message="Kiosk chưa gửi heartbeat nào." />
+          <EvidenceUnavailable
+            title="Chưa có heartbeat"
+            message="Kiosk chưa gửi heartbeat nào."
+          />
         ) : (
           <div className="overflow-x-auto">
             <Table>
@@ -517,9 +584,21 @@ function HeartbeatsTable({
                     <TableCell>{heartbeat.robotStatus || "--"}</TableCell>
                     <TableCell>
                       <div className="grid min-w-52 grid-cols-3 gap-2">
-                        <ResourceTile icon={Cpu} label="CPU" value={formatPercent(heartbeat.cpuUsagePercent)} />
-                        <ResourceTile icon={MemoryStick} label="RAM" value={formatPercent(heartbeat.memoryUsagePercent)} />
-                        <ResourceTile icon={HardDrive} label="Disk" value={formatPercent(heartbeat.diskUsagePercent)} />
+                        <ResourceTile
+                          icon={Cpu}
+                          label="CPU"
+                          value={formatPercent(heartbeat.cpuUsagePercent)}
+                        />
+                        <ResourceTile
+                          icon={MemoryStick}
+                          label="RAM"
+                          value={formatPercent(heartbeat.memoryUsagePercent)}
+                        />
+                        <ResourceTile
+                          icon={HardDrive}
+                          label="Disk"
+                          value={formatPercent(heartbeat.diskUsagePercent)}
+                        />
                       </div>
                     </TableCell>
                     <TableCell className="max-w-48 truncate pr-5 font-mono text-xs text-muted-foreground">
@@ -558,11 +637,20 @@ function EventsTable({
       </CardHeader>
       <CardContent className="p-0">
         {state.isLoading ? (
-          <EvidenceUnavailable title="Đang tải sự kiện" message="Đang lấy sự kiện thiết bị." />
+          <EvidenceUnavailable
+            title="Đang tải sự kiện"
+            message="Đang lấy sự kiện thiết bị."
+          />
         ) : state.errorMessage ? (
-          <EvidenceUnavailable title="Không lấy được sự kiện từ kiosk" message={state.errorMessage} />
+          <EvidenceUnavailable
+            title="Không lấy được sự kiện từ kiosk"
+            message={state.errorMessage}
+          />
         ) : state.data.length === 0 ? (
-          <EvidenceUnavailable title="Chưa có sự kiện từ kiosk" message="Chưa ghi nhận sự kiện thiết bị nào cho kiosk này." />
+          <EvidenceUnavailable
+            title="Chưa có sự kiện từ kiosk"
+            message="Chưa ghi nhận sự kiện thiết bị nào cho kiosk này."
+          />
         ) : (
           <div className="overflow-x-auto">
             <Table>
@@ -590,7 +678,8 @@ function EventsTable({
                       {event.eventType}
                     </TableCell>
                     <TableCell className="min-w-72 max-w-xl whitespace-normal text-sm text-muted-foreground">
-                      {event.message || "Backend không cung cấp nội dung sự kiện."}
+                      {event.message ||
+                        "Backend không cung cấp nội dung sự kiện."}
                     </TableCell>
                     <TableCell className="max-w-48 truncate pr-5 font-mono text-xs text-muted-foreground">
                       {event.deviceId}
@@ -610,7 +699,9 @@ export function KioskDetailView({ kioskId }: KioskDetailViewProps) {
   const searchParams = useSearchParams();
   const requestedTab = searchParams?.get("tab");
   const initialTab =
-    requestedTab === "deployments" || requestedTab === "devices" ? "devices" : "overview";
+    requestedTab === "deployments" || requestedTab === "devices"
+      ? "devices"
+      : "overview";
   const { effectiveAccess } = useAuth();
   const [operationalStateOpen, setOperationalStateOpen] = useState(false);
   const [activeTab, setActiveTab] = useState(initialTab);
@@ -666,23 +757,44 @@ export function KioskDetailView({ kioskId }: KioskDetailViewProps) {
     storeId: kiosk.locationId,
     kioskId: kiosk.managementId,
   };
-  const canManageOperationalState = hasScopedPermission(effectiveAccess, "kiosks.manage", scope);
-  const canManageDevices = hasScopedPermission(effectiveAccess, "devices.manage", scope);
+  const canManageOperationalState = hasScopedPermission(
+    effectiveAccess,
+    "kiosks.manage",
+    scope,
+  );
+  const canManageDevices = hasScopedPermission(
+    effectiveAccess,
+    "devices.manage",
+    scope,
+  );
   const canManageMenuAvailability = hasScopedPermission(
     effectiveAccess,
     "menu-items.availability.manage",
     scope,
   );
-  const canDeploy = hasScopedPermission(effectiveAccess, "release.deploy", scope);
-  const canRollbackDeployments = hasScopedPermission(effectiveAccess, "release.rollback", scope);
+  const canDeploy = hasScopedPermission(
+    effectiveAccess,
+    "release.deploy",
+    scope,
+  );
+  const canRollbackDeployments = hasScopedPermission(
+    effectiveAccess,
+    "release.rollback",
+    scope,
+  );
   const canViewDeployments =
     canDeploy ||
     canRollbackDeployments ||
     hasScopedPermission(effectiveAccess, "release.read", scope) ||
     hasScopedPermission(effectiveAccess, "deployment.read", scope);
+  const latestHeartbeat = [...heartbeats.data].sort(
+    (left, right) =>
+      new Date(right.reportedAt).getTime() -
+      new Date(left.reportedAt).getTime(),
+  )[0];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <DetailHeader
         canManage={canManageOperationalState}
         kiosk={kiosk}
@@ -694,17 +806,85 @@ export function KioskDetailView({ kioskId }: KioskDetailViewProps) {
       />
 
       {metadataWarning ? (
-        <div className="rounded-lg border border-warning/30 bg-warning/5 px-4 py-3" role="status">
+        <div
+          className="rounded-lg border border-warning/30 bg-warning/5 px-4 py-3"
+          role="status"
+        >
           <div className="flex items-start gap-3">
             <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" />
-            <p className="text-xs font-medium text-warning">{metadataWarning}</p>
+            <p className="text-xs font-medium text-warning">
+              {metadataWarning}
+            </p>
           </div>
         </div>
       ) : null}
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full space-y-6">
+      <MetricStrip>
+        <MetricStripItem
+          icon={Server}
+          label="Vòng đời"
+          value={getKioskLifecycleLabel(kiosk.lifecycleStatus)}
+          description="Trạng thái quản lý của kiosk"
+          tone={kiosk.lifecycleStatus === "Active" ? "primary" : "neutral"}
+        />
+        <MetricStripItem
+          icon={Activity}
+          label="Kết nối gần nhất"
+          value={
+            latestHeartbeat
+              ? getHeartbeatLabel(latestHeartbeat.status)
+              : "Chưa có dữ liệu"
+          }
+          description={
+            latestHeartbeat
+              ? formatTimestamp(latestHeartbeat.reportedAt)
+              : "Chưa nhận heartbeat"
+          }
+          tone={
+            !latestHeartbeat
+              ? "neutral"
+              : latestHeartbeat.status === "Online"
+                ? "success"
+                : latestHeartbeat.status === "Offline"
+                  ? "destructive"
+                  : "warning"
+          }
+        />
+        <MetricStripItem
+          icon={Network}
+          label="Sự kiện chờ đồng bộ"
+          value={(latestHeartbeat?.pendingSyncEventCount ?? 0).toLocaleString(
+            "vi-VN",
+          )}
+          description={
+            latestHeartbeat
+              ? "Theo heartbeat gần nhất"
+              : "Chưa có bằng chứng vận hành"
+          }
+          tone={
+            (latestHeartbeat?.pendingSyncEventCount ?? 0) > 0
+              ? "warning"
+              : "neutral"
+          }
+        />
+        <MetricStripItem
+          icon={Settings2}
+          label="Phiên bản cấu hình"
+          value={kiosk.configurationVersion.toLocaleString("vi-VN")}
+          description={`Schema ${kiosk.settingsSchemaVersion.toLocaleString("vi-VN")}`}
+          tone="neutral"
+        />
+      </MetricStrip>
+
+      <Tabs
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="w-full space-y-5"
+      >
         <TabsList
-          className="grid w-full grid-cols-2 lg:w-auto lg:inline-flex"
+          variant="line"
+          className="w-full border-b border-border"
+          aria-label="Khu vực hồ sơ kiosk"
         >
           <TabsTrigger value="overview">Tổng quan</TabsTrigger>
           <TabsTrigger value="heartbeats">Kết nối</TabsTrigger>
@@ -740,12 +920,22 @@ export function KioskDetailView({ kioskId }: KioskDetailViewProps) {
         <TabsContent value="devices">
           <div className="space-y-6">
             <div className="rounded-lg border border-warning/30 bg-warning/5 px-4 py-3 text-sm text-warning">
-              Khu vực này chỉ hiển thị thông tin kỹ thuật đã giới hạn và bằng chứng từ điểm thực thi. Thông tin kết nối bí mật và lệnh trực tiếp không được hiển thị.
+              Khu vực này chỉ hiển thị thông tin kỹ thuật đã giới hạn và bằng
+              chứng từ điểm thực thi. Thông tin kết nối bí mật và lệnh trực tiếp
+              không được hiển thị.
             </div>
 
-            <section className="space-y-3" aria-labelledby="kiosk-devices-heading">
+            <section
+              className="space-y-3"
+              aria-labelledby="kiosk-devices-heading"
+            >
               <div>
-                <h2 id="kiosk-devices-heading" className="text-base font-semibold">Thiết bị tại kiosk</h2>
+                <h2
+                  id="kiosk-devices-heading"
+                  className="text-base font-semibold"
+                >
+                  Thiết bị tại kiosk
+                </h2>
                 <p className="text-sm text-muted-foreground">
                   Quản lý máy, hopper và cảm biến được gắn với kiosk này.
                 </p>
@@ -753,22 +943,34 @@ export function KioskDetailView({ kioskId }: KioskDetailViewProps) {
               <DevicesTable kioskId={kioskId} canManage={canManageDevices} />
             </section>
 
-            <section className="space-y-3" aria-labelledby="edge-execution-heading">
+            <section
+              className="space-y-3"
+              aria-labelledby="edge-execution-heading"
+            >
               <div>
-                <h2 id="edge-execution-heading" className="text-base font-semibold">Điểm thực thi Edge</h2>
+                <h2
+                  id="edge-execution-heading"
+                  className="text-base font-semibold"
+                >
+                  Điểm thực thi Edge
+                </h2>
                 <p className="text-sm text-muted-foreground">
-                  Theo dõi identity, readiness, hardware report và triển khai cấu hình tới Edge của kiosk.
+                  Theo dõi identity, readiness, hardware report và triển khai
+                  cấu hình tới Edge của kiosk.
                 </p>
               </div>
-              <ExecutionEndpointsTable kioskId={kioskId} canManage={canManageDevices} />
-              {canViewDeployments ? (
-              <ProductionOperationsPanel
-                organizationId={kiosk.organizationId}
-                kioskId={kiosk.managementId}
-                initialReleaseId={searchParams?.get("releaseId")}
-                canDeploy={canDeploy}
-                canRollback={canRollbackDeployments}
+              <ExecutionEndpointsTable
+                kioskId={kioskId}
+                canManage={canManageDevices}
               />
+              {canViewDeployments ? (
+                <ProductionOperationsPanel
+                  organizationId={kiosk.organizationId}
+                  kioskId={kiosk.managementId}
+                  initialReleaseId={searchParams?.get("releaseId")}
+                  canDeploy={canDeploy}
+                  canRollback={canRollbackDeployments}
+                />
               ) : null}
               <OperationLogsPanel kioskId={kioskId} />
             </section>

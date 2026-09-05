@@ -98,7 +98,10 @@ describe("useOrderRealtime", () => {
     await flushPromises();
 
     expect(signalR.connection.start).toHaveBeenCalledTimes(1);
-    expect(signalR.connection.invoke).toHaveBeenCalledWith("JoinOrder", "order-123");
+    expect(signalR.connection.invoke).toHaveBeenCalledWith(
+      "JoinOrder",
+      "order-123",
+    );
 
     act(() => {
       signalR.emit("OrderStatusChanged", {
@@ -130,5 +133,35 @@ describe("useOrderRealtime", () => {
     });
 
     expect(onOrderStatusChanged).not.toHaveBeenCalled();
+  });
+
+  it("waits for a pending start before stopping on unmount", async () => {
+    let resolveStart: (() => void) | undefined;
+    signalR.connection.start.mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveStart = () => {
+            signalR.connection.state = "Connected";
+            resolve();
+          };
+        }),
+    );
+
+    const { unmount } = renderHook(() =>
+      useOrderRealtime({ orderId: "order-123" }),
+    );
+
+    expect(signalR.connection.start).toHaveBeenCalledTimes(1);
+    unmount();
+    expect(signalR.connection.stop).not.toHaveBeenCalled();
+
+    await act(async () => {
+      resolveStart?.();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(signalR.connection.invoke).not.toHaveBeenCalled();
+    expect(signalR.connection.stop).toHaveBeenCalledTimes(1);
   });
 });

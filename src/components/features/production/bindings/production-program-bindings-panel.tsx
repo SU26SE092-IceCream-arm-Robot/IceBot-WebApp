@@ -4,6 +4,7 @@ import { AlertTriangle, Link2, RefreshCw } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -41,45 +42,50 @@ export function ProductionProgramBindingsPanel({
   const [optionsError, setOptionsError] = useState<string | null>(null);
   const [bindingsError, setBindingsError] = useState<string | null>(null);
   const [mutationError, setMutationError] = useState<string | null>(null);
+  const [retireTarget, setRetireTarget] =
+    useState<ProductionProgramBindingResult | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const load = useCallback(async (signal?: AbortSignal) => {
-    setBusy(true);
-    setOptionsError(null);
-    setBindingsError(null);
-    setMutationError(null);
+  const load = useCallback(
+    async (signal?: AbortSignal) => {
+      setBusy(true);
+      setOptionsError(null);
+      setBindingsError(null);
+      setMutationError(null);
 
-    const [optionsResult, bindingsResult] = await Promise.allSettled([
-      getConfigurationReleaseAuthoringOptions(organizationId, signal),
-      listProductionProgramBindings(organizationId, signal),
-    ]);
-    if (signal?.aborted) return;
+      const [optionsResult, bindingsResult] = await Promise.allSettled([
+        getConfigurationReleaseAuthoringOptions(organizationId, signal),
+        listProductionProgramBindings(organizationId, signal),
+      ]);
+      if (signal?.aborted) return;
 
-    if (optionsResult.status === "fulfilled") {
-      setOptions(optionsResult.value);
-    } else {
-      setOptions(null);
-      setOptionsError(
-        getProductionOperationsErrorMessage(
-          optionsResult.reason,
-          "Không thể tải Recipe và chương trình robot.",
-        ),
-      );
-    }
+      if (optionsResult.status === "fulfilled") {
+        setOptions(optionsResult.value);
+      } else {
+        setOptions(null);
+        setOptionsError(
+          getProductionOperationsErrorMessage(
+            optionsResult.reason,
+            "Không thể tải Recipe và chương trình robot.",
+          ),
+        );
+      }
 
-    if (bindingsResult.status === "fulfilled") {
-      setBindings(bindingsResult.value);
-    } else {
-      setBindings([]);
-      setBindingsError(
-        getProductionOperationsErrorMessage(
-          bindingsResult.reason,
-          "Không thể tải danh sách liên kết hiện có.",
-        ),
-      );
-    }
-    setBusy(false);
-  }, [organizationId]);
+      if (bindingsResult.status === "fulfilled") {
+        setBindings(bindingsResult.value);
+      } else {
+        setBindings([]);
+        setBindingsError(
+          getProductionOperationsErrorMessage(
+            bindingsResult.reason,
+            "Không thể tải danh sách liên kết hiện có.",
+          ),
+        );
+      }
+      setBusy(false);
+    },
+    [organizationId],
+  );
   useEffect(() => {
     const controller = new AbortController();
     const timer = window.setTimeout(() => void load(controller.signal), 0);
@@ -113,11 +119,28 @@ export function ProductionProgramBindingsPanel({
       await load();
     } catch (reason) {
       setMutationError(
+        getProductionOperationsErrorMessage(reason, "Không thể tạo liên kết."),
+      );
+    } finally {
+      setBusy(false);
+    }
+  };
+  const retire = async () => {
+    if (!retireTarget) return;
+    setBusy(true);
+    setMutationError(null);
+    try {
+      await retireProductionProgramBinding(organizationId, retireTarget.id);
+      setRetireTarget(null);
+      await load();
+    } catch (reason) {
+      setMutationError(
         getProductionOperationsErrorMessage(
           reason,
-          "Không thể tạo liên kết.",
+          "Không thể ngừng liên kết.",
         ),
       );
+      setRetireTarget(null);
     } finally {
       setBusy(false);
     }
@@ -135,7 +158,8 @@ export function ProductionProgramBindingsPanel({
               <h2 className="font-semibold">Tạo liên kết sản xuất</h2>
               <p className="mt-1 text-sm text-muted-foreground">
                 Chọn Recipe và Robot Program đã phát hành. Backend lưu liên kết
-                người vận hành xác nhận nhưng không chứng minh hành vi bên trong Lua.
+                người vận hành xác nhận nhưng không chứng minh hành vi bên trong
+                Lua.
               </p>
             </div>
           </div>
@@ -165,7 +189,8 @@ export function ProductionProgramBindingsPanel({
             <div>
               <p className="font-medium">Chưa tải được các liên kết hiện có.</p>
               <p className="mt-1 text-muted-foreground">
-                {bindingsError} Chưa thể tạo liên kết mới để tránh dữ liệu trùng.
+                {bindingsError} Chưa thể tạo liên kết mới để tránh dữ liệu
+                trùng.
               </p>
             </div>
           </div>
@@ -188,7 +213,8 @@ export function ProductionProgramBindingsPanel({
                 <SelectContent align="start">
                   {options?.recipes.map((item) => (
                     <SelectItem key={item.id} value={item.id}>
-                      {item.productName} / {item.productVariantName} / {item.name}
+                      {item.productName} / {item.productVariantName} /{" "}
+                      {item.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -221,9 +247,7 @@ export function ProductionProgramBindingsPanel({
             <div className="md:col-span-2">
               <Button
                 onClick={() => void create()}
-                disabled={
-                  busy || Boolean(bindingsError) || !recipe || !program
-                }
+                disabled={busy || Boolean(bindingsError) || !recipe || !program}
               >
                 Tạo liên kết
               </Button>
@@ -267,8 +291,9 @@ export function ProductionProgramBindingsPanel({
               >
                 <div>
                   <p className="font-medium">
-                    {options?.recipes.find((item) => item.id === binding.recipeId)
-                      ?.name ?? binding.recipeId}{" "}
+                    {options?.recipes.find(
+                      (item) => item.id === binding.recipeId,
+                    )?.name ?? binding.recipeId}{" "}
                     →{" "}
                     {options?.robotPrograms.find(
                       (item) => item.id === binding.robotProgramId,
@@ -278,12 +303,13 @@ export function ProductionProgramBindingsPanel({
                     Recipe v{binding.recipeVersion} ·{" "}
                     {binding.requiredCapabilityCodes.length > 0
                       ? binding.requiredCapabilityCodes.join(", ")
-                      : "Không khai báo yêu cầu thiết bị"} · {binding.status}
+                      : "Không khai báo yêu cầu thiết bị"}{" "}
+                    · {binding.status}
                   </p>
                   {binding.capabilityEvidenceStatus === "Missing" ? (
                     <p className="mt-1 text-xs text-warning">
-                      Bundle không khai báo yêu cầu thiết bị. Backend không tự suy
-                      đoán yêu cầu từ Lua.
+                      Bundle không khai báo yêu cầu thiết bị. Backend không tự
+                      suy đoán yêu cầu từ Lua.
                     </p>
                   ) : null}
                 </div>
@@ -292,26 +318,7 @@ export function ProductionProgramBindingsPanel({
                     size="sm"
                     variant="outline"
                     disabled={busy}
-                    onClick={() => {
-                      if (
-                        window.confirm(
-                          "Ngừng dùng liên kết này cho release mới?",
-                        )
-                      )
-                        void retireProductionProgramBinding(
-                          organizationId,
-                          binding.id,
-                        )
-                          .then(() => load())
-                          .catch((reason) =>
-                            setMutationError(
-                              getProductionOperationsErrorMessage(
-                                reason,
-                                "Không thể ngừng liên kết.",
-                              ),
-                            ),
-                          );
-                    }}
+                    onClick={() => setRetireTarget(binding)}
                   >
                     Ngừng dùng
                   </Button>
@@ -321,6 +328,19 @@ export function ProductionProgramBindingsPanel({
           )}
         </div>
       </section>
+
+      <ConfirmationDialog
+        open={Boolean(retireTarget)}
+        onOpenChange={(open) => {
+          if (!open) setRetireTarget(null);
+        }}
+        title="Ngừng sử dụng liên kết?"
+        description="Liên kết sẽ không còn được chọn cho các bản phát hành mới. Những bản phát hành đã tạo không bị thay đổi."
+        confirmLabel="Ngừng sử dụng"
+        isConfirming={busy}
+        destructive
+        onConfirm={retire}
+      />
     </div>
   );
 }

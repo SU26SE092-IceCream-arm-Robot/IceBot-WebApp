@@ -18,8 +18,12 @@ const MAX_RETRY_DELAY_MS = 10_000;
 export interface UseOrderRealtimeCallbacks {
   onOrderStatusChanged?: (event: OrderStatusChangedEvent) => void;
   onPaymentStatusChanged?: (event: PaymentStatusChangedEvent) => void;
-  onOrderItemFulfillmentChanged?: (event: OrderItemFulfillmentChangedEvent) => void;
-  onOrderExecutionObservationChanged?: (event: OrderExecutionObservationChangedEvent) => void;
+  onOrderItemFulfillmentChanged?: (
+    event: OrderItemFulfillmentChangedEvent,
+  ) => void;
+  onOrderExecutionObservationChanged?: (
+    event: OrderExecutionObservationChangedEvent,
+  ) => void;
 }
 
 export interface UseOrderRealtimeOptions extends UseOrderRealtimeCallbacks {
@@ -62,6 +66,7 @@ export function useOrderRealtime({
     let disposed = false;
     let retryAttempt = 0;
     let retryTimer: ReturnType<typeof setTimeout> | null = null;
+    let startPromise: Promise<void> | null = null;
 
     const connection = createHubConnection({
       url: getOrdersHubUrl(),
@@ -87,11 +92,25 @@ export function useOrderRealtime({
       }, delay);
     };
 
+    const ensureStarted = async () => {
+      if (startPromise) {
+        await startPromise;
+        return;
+      }
+      if (connection.state !== HubConnectionState.Disconnected) return;
+
+      const pendingStart = connection.start();
+      startPromise = pendingStart;
+      try {
+        await pendingStart;
+      } finally {
+        if (startPromise === pendingStart) startPromise = null;
+      }
+    };
+
     const connectAndJoin = async () => {
       try {
-        if (connection.state === HubConnectionState.Disconnected) {
-          await connection.start();
-        }
+        await ensureStarted();
         if (disposed) return;
 
         await joinGroup();
@@ -107,23 +126,32 @@ export function useOrderRealtime({
       }
     });
 
-    connection.on("PaymentStatusChanged", (event: PaymentStatusChangedEvent) => {
-      if (event?.orderId === orderId) {
-        callbacksRef.current.onPaymentStatusChanged?.(event);
-      }
-    });
+    connection.on(
+      "PaymentStatusChanged",
+      (event: PaymentStatusChangedEvent) => {
+        if (event?.orderId === orderId) {
+          callbacksRef.current.onPaymentStatusChanged?.(event);
+        }
+      },
+    );
 
-    connection.on("OrderItemFulfillmentChanged", (event: OrderItemFulfillmentChangedEvent) => {
-      if (event?.orderId === orderId) {
-        callbacksRef.current.onOrderItemFulfillmentChanged?.(event);
-      }
-    });
+    connection.on(
+      "OrderItemFulfillmentChanged",
+      (event: OrderItemFulfillmentChangedEvent) => {
+        if (event?.orderId === orderId) {
+          callbacksRef.current.onOrderItemFulfillmentChanged?.(event);
+        }
+      },
+    );
 
-    connection.on("OrderExecutionObservationChanged", (event: OrderExecutionObservationChangedEvent) => {
-      if (event?.orderId === orderId) {
-        callbacksRef.current.onOrderExecutionObservationChanged?.(event);
-      }
-    });
+    connection.on(
+      "OrderExecutionObservationChanged",
+      (event: OrderExecutionObservationChangedEvent) => {
+        if (event?.orderId === orderId) {
+          callbacksRef.current.onOrderExecutionObservationChanged?.(event);
+        }
+      },
+    );
 
     connection.onreconnected(() => {
       void connectAndJoin();
@@ -140,7 +168,21 @@ export function useOrderRealtime({
       connection.off("PaymentStatusChanged");
       connection.off("OrderItemFulfillmentChanged");
       connection.off("OrderExecutionObservationChanged");
-      void connection.stop();
+      const pendingStart = startPromise;
+      void (async () => {
+        if (pendingStart) {
+          try {
+            await pendingStart;
+          } catch {
+            // A failed start still needs a best-effort stop below.
+          }
+        }
+        try {
+          await connection.stop();
+        } catch {
+          // Cleanup must not create an unhandled rejection during unmount.
+        }
+      })();
     };
   }, [orderId, enabled]);
 }

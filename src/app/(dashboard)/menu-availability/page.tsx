@@ -3,6 +3,7 @@
 import { AlertTriangle, Monitor, RefreshCw } from "lucide-react";
 
 import { MenuItemAvailabilityPanel } from "@/components/features/kiosks/menu-item-availability-panel";
+import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -16,25 +17,33 @@ export default function MenuAvailabilityPage() {
     : null;
 
   return (
-    <div className="space-y-6">
-      <section className="flex flex-col gap-3 border-b border-border pb-6 sm:flex-row sm:items-end sm:justify-between">
-        <div className="space-y-1.5">
-          <h1 className="text-3xl font-semibold tracking-tight">Trạng thái bán món</h1>
-          <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
-            Tạm ngừng hoặc mở bán lại từng món tại kiosk mà không thay đổi thực đơn dùng chung.
+    <div className="space-y-5">
+      <PageHeader
+        title="Trạng thái bán món"
+        description="Tạm ngừng hoặc mở bán lại từng món tại một kiosk mà không thay đổi thực đơn dùng chung của cửa hàng."
+        metadata={
+          <p className="text-xs text-muted-foreground">
+            Mọi thay đổi đều yêu cầu xác nhận và được giới hạn trong kiosk đã chọn
           </p>
-        </div>
-        <Button variant="outline" onClick={workspace.refresh} isLoading={workspace.isLoading}>
-          <RefreshCw className="size-4" />
-          Làm mới
-        </Button>
-      </section>
+        }
+        actions={
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={workspace.refresh}
+            isLoading={workspace.isLoading}
+          >
+            <RefreshCw className="size-4" aria-hidden="true" />
+            Làm mới
+          </Button>
+        }
+      />
 
-      <Card className="border-border/80 shadow-none">
-        <CardHeader className="border-b border-border">
+      <Card className="gap-0 border-border/80 py-0 shadow-none">
+        <CardHeader className="border-b border-border px-4 py-3.5">
           <div className="flex items-start gap-3">
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <Monitor className="size-5" />
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+              <Monitor className="size-4" aria-hidden="true" />
             </span>
             <div>
               <CardTitle className="text-base">Chọn kiosk vận hành</CardTitle>
@@ -44,10 +53,10 @@ export default function MenuAvailabilityPage() {
             </div>
           </div>
         </CardHeader>
-        <CardContent className="pt-5">
+        <CardContent className="bg-muted/10 p-4">
           {workspace.errorMessage ? (
             <div className="flex flex-col items-center gap-3 py-5 text-center">
-              <AlertTriangle className="size-7 text-destructive" />
+              <AlertTriangle className="size-7 text-destructive" aria-hidden="true" />
               <p role="alert" className="text-sm text-destructive">{workspace.errorMessage}</p>
               <Button variant="outline" onClick={workspace.refresh}>Thử lại</Button>
             </div>
@@ -59,7 +68,7 @@ export default function MenuAvailabilityPage() {
                 onValueChange={(value) => workspace.selectKiosk(value ?? "")}
                 disabled={workspace.isLoading || workspace.kiosks.length === 0}
               >
-                <SelectTrigger id="menu-availability-kiosk" className="w-full bg-card">
+              <SelectTrigger id="menu-availability-kiosk" className="w-full bg-card">
                   <SelectValue placeholder={workspace.isLoading ? "Đang tải kiosk..." : "Chọn kiosk"}>
                     {selectedKioskLabel}
                   </SelectValue>

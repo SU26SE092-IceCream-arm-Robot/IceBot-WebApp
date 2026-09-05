@@ -174,6 +174,64 @@
   --sidebar-ring: var(--ring);
 }
 
+/* Shared operational workspace rhythm for H16-H18 modules. */
+.workspace-page {
+  container-type: inline-size;
+}
+
+.workspace-page :where(h1) {
+  text-wrap: balance;
+}
+
+.workspace-page :where([data-slot="card"], [data-slot="table-container"]) {
+  border-color: var(--border);
+}
+
+.workspace-page [data-slot="table-container"] {
+  overscroll-behavior-inline: contain;
+  scrollbar-gutter: stable;
+}
+
+.workspace-page :where([data-slot="dialog-content"], [role="dialog"]) {
+  scroll-margin-block: 1rem;
+}
+
+.auth-shell {
+  --background: oklch(0.975 0.006 255);
+  --foreground: oklch(0.2 0.025 258);
+  --card: oklch(1 0 0);
+  --card-foreground: var(--foreground);
+  --primary: oklch(0.54 0.18 258);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.955 0.018 255);
+  --secondary-foreground: oklch(0.3 0.045 258);
+  --muted: oklch(0.95 0.008 255);
+  --muted-foreground: oklch(0.46 0.025 255);
+  --accent: oklch(0.945 0.015 255);
+  --accent-foreground: oklch(0.24 0.03 258);
+  --border: oklch(0.9 0.012 255);
+  --input: oklch(0.88 0.016 255);
+  --ring: oklch(0.58 0.16 258);
+}
+
+.dark .auth-shell {
+  --background: oklch(0.15 0.014 255);
+  --foreground: oklch(0.94 0.008 250);
+  --card: oklch(0.19 0.016 255);
+  --card-foreground: var(--foreground);
+  --primary: oklch(0.72 0.14 252);
+  --primary-foreground: oklch(0.14 0.02 255);
+  --secondary: oklch(0.25 0.025 255);
+  --secondary-foreground: oklch(0.9 0.012 250);
+  --muted: oklch(0.23 0.016 255);
+  --muted-foreground: oklch(0.7 0.018 250);
+  --accent: oklch(0.24 0.022 255);
+  --accent-foreground: oklch(0.95 0.008 250);
+  --border: oklch(0.29 0.018 255);
+  --input: oklch(0.33 0.022 255);
+  --ring: oklch(0.72 0.14 252);
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -241,6 +299,26 @@
   }
 }
 
+:where(button, a, input, select, textarea) {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: color-mix(
+    in oklab,
+    var(--primary) 16%,
+    transparent
+  );
+}
+
+:where(h1, h2, h3, [id]) {
+  scroll-margin-top: 6rem;
+}
+
+.workspace-page :where(h1) {
+  font-size: clamp(1.5rem, 1.25rem + 0.65vw, 1.875rem);
+  line-height: 1.2;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }
@@ -267,6 +345,17 @@
 *:focus-visible {
   outline: 2px solid var(--ring);
   outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /*

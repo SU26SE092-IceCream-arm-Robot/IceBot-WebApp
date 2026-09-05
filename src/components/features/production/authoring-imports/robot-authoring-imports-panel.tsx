@@ -9,10 +9,11 @@ import {
   Search,
   XCircle,
 } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 import { RobotAuthoringBundleUpload } from "@/components/features/production/authoring-imports/robot-authoring-bundle-upload";
 import { ProductionAwareProgramOrderPanel } from "@/components/features/production/programs/production-aware-program-order-panel";
+import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -88,6 +89,7 @@ export function RobotAuthoringImportsPanel(
   props: RobotAuthoringImportsPanelProps,
 ) {
   const state = useRobotAuthoringImports(props.organizationId);
+  const [isDiscardOpen, setDiscardOpen] = useState(false);
   const selected = state.selectedImport;
   const availableActions = useMemo(
     () =>
@@ -202,6 +204,8 @@ export function RobotAuthoringImportsPanel(
               <div className="relative">
                 <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
+                  aria-label="Tìm chương trình authoring"
+                  type="search"
                   value={state.query.search ?? ""}
                   className="pl-9"
                   placeholder="Tìm theo tên hoặc mã chương trình"
@@ -216,7 +220,10 @@ export function RobotAuthoringImportsPanel(
                   )
                 }
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger
+                  aria-label="Lọc trạng thái gói authoring"
+                  className="w-full"
+                >
                   <SelectValue>
                     {state.query.status === "ALL" || !state.query.status
                       ? "Tất cả trạng thái"
@@ -391,12 +398,11 @@ export function RobotAuthoringImportsPanel(
             ) : null}
             <div className="space-y-3 rounded-lg border p-4">
               <div>
-                <p className="font-semibold">
-                  Kết quả nhập chương trình
-                </p>
+                <p className="font-semibold">Kết quả nhập chương trình</p>
                 <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                  Backend tự kiểm tra cấu trúc bundle và tạo artifact cùng
-                  Robot Program ở trạng thái Draft. Đây không phải kiểm tra hành vi Lua.
+                  Backend tự kiểm tra cấu trúc bundle và tạo artifact cùng Robot
+                  Program ở trạng thái Draft. Đây không phải kiểm tra hành vi
+                  Lua.
                 </p>
               </div>
               {selected.validation?.errors.length ? (
@@ -407,7 +413,8 @@ export function RobotAuthoringImportsPanel(
                       key={`${issue.code}-${issue.message}`}
                       className="mt-2 text-destructive"
                     >
-                      {issue.message}{issue.count > 1 ? ` (${issue.count} artifact)` : ""}
+                      {issue.message}
+                      {issue.count > 1 ? ` (${issue.count} artifact)` : ""}
                     </p>
                   ))}
                 </div>
@@ -440,16 +447,9 @@ export function RobotAuthoringImportsPanel(
                     size="sm"
                     variant="destructive"
                     disabled={state.isMutating}
-                    onClick={() => {
-                      if (
-                        window.confirm(
-                          "Hủy gói cấu hình này? Tài nguyên đã phát hành sẽ không bị xóa bởi thao tác này.",
-                        )
-                      )
-                        void state.discard();
-                    }}
+                    onClick={() => setDiscardOpen(true)}
                   >
-                    Hủy import
+                    Hủy gói nhập
                   </Button>
                 ) : null}
               </div>
@@ -467,8 +467,8 @@ export function RobotAuthoringImportsPanel(
                   <p className="font-semibold">Phát hành Robot Program</p>
                   <p className="mt-1 text-sm text-muted-foreground">
                     Khóa phiên bản artifact và thứ tự chương trình để có thể
-                    chọn chương trình này trong tab Bind Configuration. Bước
-                    này không xác nhận Lua khớp Recipe.
+                    chọn chương trình này trong tab Bind Configuration. Bước này
+                    không xác nhận Lua khớp Recipe.
                   </p>
                 </div>
                 {!hasPublishedResources &&
@@ -507,6 +507,20 @@ export function RobotAuthoringImportsPanel(
           </section>
         ) : null}
       </section>
+
+      <ConfirmationDialog
+        open={isDiscardOpen}
+        onOpenChange={setDiscardOpen}
+        title="Hủy gói chương trình đã nhập?"
+        description="Gói nhập sẽ chuyển sang trạng thái đã hủy. Tài nguyên đã phát hành trước đó vẫn được giữ nguyên."
+        confirmLabel="Hủy gói nhập"
+        isConfirming={state.isMutating}
+        destructive
+        onConfirm={async () => {
+          await state.discard();
+          setDiscardOpen(false);
+        }}
+      />
     </div>
   );
 }

@@ -41,7 +41,10 @@ import {
   useDeviceCatalog,
 } from "@/hooks/kiosks/use-device-catalog";
 import { cn } from "@/lib/utils";
-import type { DeviceModelResult, DeviceTypeResult } from "@/types/kiosks/catalog";
+import type {
+  DeviceModelResult,
+  DeviceTypeResult,
+} from "@/types/kiosks/catalog";
 
 const STATUS_OPTIONS: Array<{
   value: DeviceTypeStatusFilter;
@@ -56,7 +59,10 @@ function LoadingRows({ count = 4 }: { count?: number }) {
   return (
     <div className="space-y-2 p-3">
       {Array.from({ length: count }).map((_, index) => (
-        <div key={index} className="h-16 animate-pulse rounded-lg bg-muted/40" />
+        <div
+          key={index}
+          className="h-16 animate-pulse rounded-lg bg-muted/40"
+        />
       ))}
     </div>
   );
@@ -91,9 +97,15 @@ export function DeviceCatalogDialog({
   canManage: boolean;
 }) {
   const catalog = useDeviceCatalog(open);
-  const [typeFormTarget, setTypeFormTarget] = useState<DeviceTypeResult | "new" | null>(null);
-  const [modelFormTarget, setModelFormTarget] = useState<DeviceModelResult | "new" | null>(null);
-  const [retireTarget, setRetireTarget] = useState<DeviceModelResult | null>(null);
+  const [typeFormTarget, setTypeFormTarget] = useState<
+    DeviceTypeResult | "new" | null
+  >(null);
+  const [modelFormTarget, setModelFormTarget] = useState<
+    DeviceModelResult | "new" | null
+  >(null);
+  const [retireTarget, setRetireTarget] = useState<DeviceModelResult | null>(
+    null,
+  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -110,14 +122,18 @@ export function DeviceCatalogDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid min-h-[560px] md:grid-cols-[340px_minmax(0,1fr)]">
+        <div className="grid max-h-[calc(90vh-7rem)] overflow-y-auto md:h-[min(560px,calc(90vh-7rem))] md:grid-cols-[340px_minmax(0,1fr)] md:overflow-hidden">
           <section className="border-b border-border md:border-r md:border-b-0">
             <div className="grid gap-2 border-b border-border bg-muted/10 p-3">
               <div className="relative">
                 <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
+                  aria-label="Tìm loại thiết bị"
+                  type="search"
                   value={catalog.typeSearch}
-                  onChange={(event) => catalog.setTypeSearch(event.target.value)}
+                  onChange={(event) =>
+                    catalog.setTypeSearch(event.target.value)
+                  }
                   placeholder="Tìm loại thiết bị..."
                   className="bg-card pl-9"
                 />
@@ -128,11 +144,16 @@ export function DeviceCatalogDialog({
                   catalog.setStatus(value as DeviceTypeStatusFilter)
                 }
               >
-                <SelectTrigger className="w-full bg-card">
+                <SelectTrigger
+                  aria-label="Lọc trạng thái loại thiết bị"
+                  className="w-full bg-card"
+                >
                   <SelectValue>
-                    {STATUS_OPTIONS.find(
-                      (option) => option.value === catalog.status,
-                    )?.label}
+                    {
+                      STATUS_OPTIONS.find(
+                        (option) => option.value === catalog.status,
+                      )?.label
+                    }
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
@@ -158,7 +179,7 @@ export function DeviceCatalogDialog({
               ) : null}
             </div>
 
-            <div className="max-h-[460px] overflow-y-auto">
+            <div className="max-h-72 overflow-y-auto md:max-h-[460px]">
               {catalog.typesLoading ? (
                 <LoadingRows />
               ) : catalog.typesError ? (
@@ -169,7 +190,9 @@ export function DeviceCatalogDialog({
               ) : catalog.types.length === 0 ? (
                 <div className="flex min-h-52 flex-col items-center justify-center px-5 text-center">
                   <Boxes className="size-7 text-muted-foreground" />
-                  <p className="mt-3 font-medium">Không có loại thiết bị phù hợp</p>
+                  <p className="mt-3 font-medium">
+                    Không có loại thiết bị phù hợp
+                  </p>
                 </div>
               ) : (
                 <div className="space-y-1 p-2">
@@ -190,12 +213,16 @@ export function DeviceCatalogDialog({
                       >
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
-                            <p className="truncate text-sm font-medium">{type.name}</p>
+                            <p className="truncate text-sm font-medium">
+                              {type.name}
+                            </p>
                             <p className="truncate font-mono text-xs text-muted-foreground">
                               {type.code}
                             </p>
                           </div>
-                          <Badge variant={type.isActive ? "default" : "outline"}>
+                          <Badge
+                            variant={type.isActive ? "default" : "outline"}
+                          >
                             {type.isActive ? "Đang dùng" : "Đã tắt"}
                           </Badge>
                         </div>
@@ -208,8 +235,41 @@ export function DeviceCatalogDialog({
                       </button>
                       {canManage ? (
                         <div className="flex justify-end gap-1 border-t border-border/70 px-2 py-1.5">
-                          <Button type="button" variant="ghost" size="icon-sm" title="Chỉnh sửa loại thiết bị" aria-label="Chỉnh sửa loại thiết bị" disabled={catalog.mutationTarget !== null} onClick={() => { catalog.clearMutationError(); setTypeFormTarget(type); }}><Edit3 className="size-4" /></Button>
-                          <Button type="button" variant="ghost" size="icon-sm" title={type.isActive ? "Tắt loại thiết bị" : "Kích hoạt loại thiết bị"} aria-label={type.isActive ? "Tắt loại thiết bị" : "Kích hoạt loại thiết bị"} isLoading={catalog.mutationTarget === `type:${type.id}`} onClick={() => void catalog.setTypeStatus(type)}><Power className="size-4" /></Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon-sm"
+                            title="Chỉnh sửa loại thiết bị"
+                            aria-label="Chỉnh sửa loại thiết bị"
+                            disabled={catalog.mutationTarget !== null}
+                            onClick={() => {
+                              catalog.clearMutationError();
+                              setTypeFormTarget(type);
+                            }}
+                          >
+                            <Edit3 className="size-4" />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon-sm"
+                            title={
+                              type.isActive
+                                ? "Tắt loại thiết bị"
+                                : "Kích hoạt loại thiết bị"
+                            }
+                            aria-label={
+                              type.isActive
+                                ? "Tắt loại thiết bị"
+                                : "Kích hoạt loại thiết bị"
+                            }
+                            isLoading={
+                              catalog.mutationTarget === `type:${type.id}`
+                            }
+                            onClick={() => void catalog.setTypeStatus(type)}
+                          >
+                            <Power className="size-4" />
+                          </Button>
                         </div>
                       ) : null}
                     </div>
@@ -224,8 +284,12 @@ export function DeviceCatalogDialog({
               <div className="relative flex-1">
                 <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
+                  aria-label="Tìm model thiết bị"
+                  type="search"
                   value={catalog.modelSearch}
-                  onChange={(event) => catalog.setModelSearch(event.target.value)}
+                  onChange={(event) =>
+                    catalog.setModelSearch(event.target.value)
+                  }
                   placeholder="Tìm model trong loại đã chọn..."
                   className="bg-card pl-9"
                   disabled={!catalog.selectedType}
@@ -247,7 +311,7 @@ export function DeviceCatalogDialog({
               ) : null}
             </div>
 
-            <div className="max-h-[460px] overflow-y-auto p-4">
+            <div className="max-h-80 overflow-y-auto p-4 md:max-h-[460px]">
               {!catalog.selectedType ? (
                 <div className="flex min-h-52 items-center justify-center text-sm text-muted-foreground">
                   Chọn một loại thiết bị để xem model.
@@ -276,7 +340,9 @@ export function DeviceCatalogDialog({
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
-                          <h3 className="truncate font-semibold">{model.name}</h3>
+                          <h3 className="truncate font-semibold">
+                            {model.name}
+                          </h3>
                           <p className="font-mono text-xs text-muted-foreground">
                             {model.code}
                           </p>
@@ -300,7 +366,9 @@ export function DeviceCatalogDialog({
                         </div>
                       </dl>
                       <div className="mt-3">
-                        <p className="text-xs text-muted-foreground">Capabilities</p>
+                        <p className="text-xs text-muted-foreground">
+                          Capabilities
+                        </p>
                         <div className="mt-1.5 flex flex-wrap gap-1">
                           {model.capabilities.length > 0 ? (
                             model.capabilities.map((capability) => (
@@ -317,8 +385,33 @@ export function DeviceCatalogDialog({
                       </div>
                       {canManage ? (
                         <div className="mt-4 flex justify-end gap-1 border-t border-border pt-3">
-                          <Button type="button" variant="ghost" size="sm" disabled={catalog.mutationTarget !== null} onClick={() => { catalog.clearMutationError(); setModelFormTarget(model); }}><Edit3 className="size-4" />Chỉnh sửa</Button>
-                          <Button type="button" variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10 hover:text-destructive" disabled={catalog.mutationTarget !== null} onClick={() => { catalog.clearMutationError(); setRetireTarget(model); }}><Trash2 className="size-4" />Ngừng sử dụng</Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            disabled={catalog.mutationTarget !== null}
+                            onClick={() => {
+                              catalog.clearMutationError();
+                              setModelFormTarget(model);
+                            }}
+                          >
+                            <Edit3 className="size-4" />
+                            Chỉnh sửa
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                            disabled={catalog.mutationTarget !== null}
+                            onClick={() => {
+                              catalog.clearMutationError();
+                              setRetireTarget(model);
+                            }}
+                          >
+                            <Trash2 className="size-4" />
+                            Ngừng sử dụng
+                          </Button>
                         </div>
                       ) : null}
                     </article>
@@ -331,7 +424,9 @@ export function DeviceCatalogDialog({
       </DialogContent>
 
       <DeviceTypeFormDialog
-        key={typeFormTarget === "new" ? "new" : typeFormTarget?.id ?? "closed"}
+        key={
+          typeFormTarget === "new" ? "new" : (typeFormTarget?.id ?? "closed")
+        }
         open={typeFormTarget !== null}
         deviceType={typeFormTarget === "new" ? null : typeFormTarget}
         isSubmitting={catalog.mutationTarget !== null}
@@ -343,7 +438,11 @@ export function DeviceCatalogDialog({
 
       {catalog.selectedType ? (
         <DeviceModelFormDialog
-          key={modelFormTarget === "new" ? `new:${catalog.selectedType.id}` : modelFormTarget?.id ?? "closed"}
+          key={
+            modelFormTarget === "new"
+              ? `new:${catalog.selectedType.id}`
+              : (modelFormTarget?.id ?? "closed")
+          }
           open={modelFormTarget !== null}
           deviceType={catalog.selectedType}
           model={modelFormTarget === "new" ? null : modelFormTarget}

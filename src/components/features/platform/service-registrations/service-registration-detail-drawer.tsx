@@ -4,20 +4,14 @@ import {
   AlertCircle,
   AlertTriangle,
   Building2,
-  Calendar,
   CheckCircle2,
   Clock,
   Eye,
   FileCheck2,
   FileText,
   LoaderCircle,
-  Mail,
-  MapPin,
-  Phone,
-  RefreshCw,
   RotateCcw,
   Shield,
-  Store,
   User,
   XCircle,
 } from "lucide-react";
@@ -65,20 +59,29 @@ export function getStatusBadge(status: ServiceRegistrationStatus) {
   switch (status) {
     case "Submitted":
       return (
-        <Badge variant="secondary" className="bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
+        <Badge
+          variant="secondary"
+          className="bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300"
+        >
           <Clock className="mr-1 size-3" /> Chờ rà soát
         </Badge>
       );
     case "UnderReview":
       return (
-        <Badge variant="default" className="bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300">
+        <Badge
+          variant="default"
+          className="bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300"
+        >
           <Eye className="mr-1 size-3" /> Đang rà soát
         </Badge>
       );
     case "Approved":
     case "Provisioned":
       return (
-        <Badge variant="default" className="bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+        <Badge
+          variant="default"
+          className="bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
+        >
           <CheckCircle2 className="mr-1 size-3" /> Đã phê duyệt
         </Badge>
       );
@@ -90,7 +93,10 @@ export function getStatusBadge(status: ServiceRegistrationStatus) {
       );
     case "ProvisioningFailed":
       return (
-        <Badge variant="destructive" className="bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300">
+        <Badge
+          variant="destructive"
+          className="bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300"
+        >
           <AlertTriangle className="mr-1 size-3" /> Lỗi cấp phát
         </Badge>
       );
@@ -99,11 +105,21 @@ export function getStatusBadge(status: ServiceRegistrationStatus) {
   }
 }
 
-function DetailRow({ label, value, mono = false }: { label: string; value?: string | number | null; mono?: boolean }) {
+function DetailRow({
+  label,
+  value,
+  mono = false,
+}: {
+  label: string;
+  value?: string | number | null;
+  mono?: boolean;
+}) {
   return (
     <div className="grid gap-1 border-b border-border/60 py-2 sm:grid-cols-[160px_1fr]">
       <dt className="text-xs font-medium text-muted-foreground">{label}</dt>
-      <dd className={`break-words text-xs font-semibold text-foreground ${mono ? "font-mono" : ""}`}>
+      <dd
+        className={`break-words text-xs font-semibold text-foreground ${mono ? "font-mono" : ""}`}
+      >
         {value !== null && value !== undefined && value !== "" ? value : "—"}
       </dd>
     </div>
@@ -133,7 +149,9 @@ export function ServiceRegistrationDetailDrawer({
                 Đơn đăng ký #{item?.referenceCode || "Chi tiết"}
               </DialogTitle>
               <DialogDescription>
-                {item ? `Nộp ngày ${formatDateTime(item.submittedAt)} • Phiên bản: v${item.revision}` : "Xem thông tin đơn"}
+                {item
+                  ? `Nộp ngày ${formatDateTime(item.submittedAt)} • Phiên bản: v${item.revision}`
+                  : "Xem thông tin đơn"}
               </DialogDescription>
             </div>
             {item ? getStatusBadge(item.status) : null}
@@ -144,7 +162,9 @@ export function ServiceRegistrationDetailDrawer({
           {loading ? (
             <div className="flex min-h-64 flex-col items-center justify-center gap-3">
               <LoaderCircle className="size-8 animate-spin text-primary" />
-              <p className="text-sm text-muted-foreground">Đang tải thông tin đơn đăng ký...</p>
+              <p className="text-sm text-muted-foreground">
+                Đang tải thông tin đơn đăng ký...
+              </p>
             </div>
           ) : error ? (
             <div className="flex min-h-64 flex-col items-center justify-center gap-3 text-center">
@@ -154,12 +174,16 @@ export function ServiceRegistrationDetailDrawer({
           ) : item ? (
             <div className="space-y-6 text-sm">
               {/* Alert nếu lỗi provisioning hoặc bị từ chối */}
-              {item.status === "ProvisioningFailed" && item.provisioningError ? (
+              {item.status === "ProvisioningFailed" &&
+              item.provisioningError ? (
                 <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3.5 space-y-1 text-destructive">
                   <div className="flex items-center gap-2 font-semibold text-xs">
-                    <AlertTriangle className="size-4" /> Lỗi cấp phát hệ thống (Provisioning Error)
+                    <AlertTriangle className="size-4" /> Lỗi cấp phát hệ thống
+                    (Provisioning Error)
                   </div>
-                  <p className="text-xs break-words">{item.provisioningError}</p>
+                  <p className="text-xs break-words">
+                    {item.provisioningError}
+                  </p>
                 </div>
               ) : null}
 
@@ -175,7 +199,8 @@ export function ServiceRegistrationDetailDrawer({
               {/* Nhóm 1: Người liên hệ */}
               <div className="space-y-2">
                 <div className="flex items-center gap-2 font-semibold text-xs text-foreground uppercase tracking-wider text-muted-foreground">
-                  <User className="size-3.5 text-primary" /> Thông tin người liên hệ
+                  <User className="size-3.5 text-primary" /> Thông tin người
+                  liên hệ
                 </div>
                 <div className="rounded-lg border bg-card/60 p-3.5 space-y-0.5">
                   <DetailRow label="Họ và tên" value={item.contactName} />
@@ -187,40 +212,76 @@ export function ServiceRegistrationDetailDrawer({
               {/* Nhóm 2: Doanh nghiệp & Điểm bán */}
               <div className="space-y-2">
                 <div className="flex items-center gap-2 font-semibold text-xs text-foreground uppercase tracking-wider text-muted-foreground">
-                  <Building2 className="size-3.5 text-primary" /> Thông tin cơ sở & Quy mô
+                  <Building2 className="size-3.5 text-primary" /> Thông tin cơ
+                  sở & Quy mô
                 </div>
                 <div className="rounded-lg border bg-card/60 p-3.5 space-y-0.5">
-                  <DetailRow label="Tên thương hiệu / Cơ sở" value={item.businessName} />
+                  <DetailRow
+                    label="Tên thương hiệu / Cơ sở"
+                    value={item.businessName}
+                  />
                   <DetailRow label="Tên pháp lý" value={item.legalName} />
                   <DetailRow label="Mã số thuế" value={item.taxCode} />
                   <DetailRow label="Địa chỉ hoạt động" value={item.address} />
-                  <DetailRow label="Điểm bán dự kiến" value={item.expectedLocationCount ? `${item.expectedLocationCount} điểm` : "—"} />
+                  <DetailRow
+                    label="Điểm bán dự kiến"
+                    value={
+                      item.expectedLocationCount
+                        ? `${item.expectedLocationCount} điểm`
+                        : "—"
+                    }
+                  />
                 </div>
               </div>
 
               {/* Nhóm 3: Lời nhắn & Điều khoản */}
               <div className="space-y-2">
                 <div className="flex items-center gap-2 font-semibold text-xs text-foreground uppercase tracking-wider text-muted-foreground">
-                  <FileText className="size-3.5 text-primary" /> Lời nhắn & Chính sách
+                  <FileText className="size-3.5 text-primary" /> Lời nhắn &
+                  Chính sách
                 </div>
                 <div className="rounded-lg border bg-card/60 p-3.5 space-y-0.5">
                   <DetailRow label="Lời nhắn đối tác" value={item.message} />
-                  <DetailRow label="Đồng ý chính sách" value={item.privacyPolicyAccepted ? "Đã đồng ý" : "Chưa đồng ý"} />
-                  <DetailRow label="Privacy Policy Revision" value={item.privacyPolicyRevisionId} mono />
+                  <DetailRow
+                    label="Đồng ý chính sách"
+                    value={
+                      item.privacyPolicyAccepted ? "Đã đồng ý" : "Chưa đồng ý"
+                    }
+                  />
+                  <DetailRow
+                    label="Privacy Policy Revision"
+                    value={item.privacyPolicyRevisionId}
+                    mono
+                  />
                 </div>
               </div>
 
               {/* Nhóm 4: Lịch sử xét duyệt & Cấp phát */}
               <div className="space-y-2">
                 <div className="flex items-center gap-2 font-semibold text-xs text-foreground uppercase tracking-wider text-muted-foreground">
-                  <Shield className="size-3.5 text-primary" /> Lịch sử xét duyệt & Cấp phát
+                  <Shield className="size-3.5 text-primary" /> Lịch sử xét duyệt
+                  & Cấp phát
                 </div>
                 <div className="rounded-lg border bg-card/60 p-3.5 space-y-0.5">
                   <DetailRow label="Người rà soát" value={item.reviewedBy} />
-                  <DetailRow label="Thời gian rà soát" value={formatDateTime(item.reviewedAt)} />
-                  <DetailRow label="Mã tổ chức tạo" value={item.provisionedOrganizationId} mono />
-                  <DetailRow label="Tài khoản Admin tạo" value={item.provisionedAdminUserId} mono />
-                  <DetailRow label="Trạng thái cấp phát" value={item.provisioningStatus} />
+                  <DetailRow
+                    label="Thời gian rà soát"
+                    value={formatDateTime(item.reviewedAt)}
+                  />
+                  <DetailRow
+                    label="Mã tổ chức tạo"
+                    value={item.provisionedOrganizationId}
+                    mono
+                  />
+                  <DetailRow
+                    label="Tài khoản Admin tạo"
+                    value={item.provisionedAdminUserId}
+                    mono
+                  />
+                  <DetailRow
+                    label="Trạng thái cấp phát"
+                    value={item.provisioningStatus}
+                  />
                 </div>
               </div>
             </div>
@@ -278,7 +339,11 @@ export function ServiceRegistrationDetailDrawer({
               </Button>
             ) : null}
 
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+            >
               Đóng
             </Button>
           </DialogFooter>

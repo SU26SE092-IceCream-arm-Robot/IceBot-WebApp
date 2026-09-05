@@ -136,7 +136,9 @@ function IngredientFormDialog({
   const [form, setForm] = useState<IngredientFormState>(() =>
     initialIngredientForm(ingredient),
   );
-  const [validationMessage, setValidationMessage] = useState<string | null>(null);
+  const [validationMessage, setValidationMessage] = useState<string | null>(
+    null,
+  );
   const setField = <K extends keyof IngredientFormState>(
     field: K,
     value: IngredientFormState[K],
@@ -172,7 +174,9 @@ function IngredientFormDialog({
     }
     if (
       shelfLifeDays !== null &&
-      (!Number.isInteger(shelfLifeDays) || shelfLifeDays < 1 || shelfLifeDays > 36500)
+      (!Number.isInteger(shelfLifeDays) ||
+        shelfLifeDays < 1 ||
+        shelfLifeDays > 36500)
     ) {
       setValidationMessage("Hạn dùng phải từ 1 đến 36500 ngày.");
       return;
@@ -181,7 +185,9 @@ function IngredientFormDialog({
       form.description.trim().length > 1000 ||
       form.storageRequirement.trim().length > 200
     ) {
-      setValidationMessage("Mô tả tối đa 1000 ký tự và yêu cầu bảo quản tối đa 200 ký tự.");
+      setValidationMessage(
+        "Mô tả tối đa 1000 ký tự và yêu cầu bảo quản tối đa 200 ký tự.",
+      );
       return;
     }
 
@@ -202,7 +208,10 @@ function IngredientFormDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={(next) => !isSubmitting && onOpenChange(next)}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => !isSubmitting && onOpenChange(next)}
+    >
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>
@@ -215,50 +224,155 @@ function IngredientFormDialog({
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
-            <label htmlFor="ingredient-code" className="text-sm font-medium">Mã nguyên liệu</label>
-            <Input id="ingredient-code" value={form.code} maxLength={50} disabled={Boolean(ingredient) || isSubmitting} onChange={(event) => setField("code", event.target.value)} placeholder="VANILLA_BASE" />
+            <label htmlFor="ingredient-code" className="text-sm font-medium">
+              Mã nguyên liệu
+            </label>
+            <Input
+              id="ingredient-code"
+              value={form.code}
+              maxLength={50}
+              disabled={Boolean(ingredient) || isSubmitting}
+              onChange={(event) => setField("code", event.target.value)}
+              placeholder="VANILLA_BASE"
+            />
           </div>
           <div className="space-y-1.5">
-            <label htmlFor="ingredient-name" className="text-sm font-medium">Tên nguyên liệu</label>
-            <Input id="ingredient-name" value={form.name} maxLength={200} disabled={isSubmitting} onChange={(event) => setField("name", event.target.value)} placeholder="Kem nền vani" />
+            <label htmlFor="ingredient-name" className="text-sm font-medium">
+              Tên nguyên liệu
+            </label>
+            <Input
+              id="ingredient-name"
+              value={form.name}
+              maxLength={200}
+              disabled={isSubmitting}
+              onChange={(event) => setField("name", event.target.value)}
+              placeholder="Kem nền vani"
+            />
           </div>
           <div className="space-y-1.5">
-            <label htmlFor="ingredient-type" className="text-sm font-medium">Loại nguyên liệu</label>
-            <Input id="ingredient-type" value={form.ingredientType} maxLength={50} disabled={isSubmitting} onChange={(event) => setField("ingredientType", event.target.value)} />
+            <label htmlFor="ingredient-type" className="text-sm font-medium">
+              Loại nguyên liệu
+            </label>
+            <Input
+              id="ingredient-type"
+              value={form.ingredientType}
+              maxLength={50}
+              disabled={isSubmitting}
+              onChange={(event) =>
+                setField("ingredientType", event.target.value)
+              }
+            />
           </div>
           <div className="space-y-1.5">
-            <label htmlFor="ingredient-unit" className="text-sm font-medium">Đơn vị</label>
-            <Input id="ingredient-unit" value={form.unit} maxLength={30} disabled={isSubmitting} onChange={(event) => setField("unit", event.target.value)} placeholder="gram" />
+            <label htmlFor="ingredient-unit" className="text-sm font-medium">
+              Đơn vị
+            </label>
+            <Input
+              id="ingredient-unit"
+              value={form.unit}
+              maxLength={30}
+              disabled={isSubmitting}
+              onChange={(event) => setField("unit", event.target.value)}
+              placeholder="gram"
+            />
           </div>
           <div className="space-y-1.5 sm:col-span-2">
-            <label htmlFor="ingredient-description" className="text-sm font-medium">Mô tả</label>
-            <textarea id="ingredient-description" value={form.description} maxLength={1000} rows={3} disabled={isSubmitting} className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50" onChange={(event) => setField("description", event.target.value)} />
+            <label
+              htmlFor="ingredient-description"
+              className="text-sm font-medium"
+            >
+              Mô tả
+            </label>
+            <textarea
+              id="ingredient-description"
+              value={form.description}
+              maxLength={1000}
+              rows={3}
+              disabled={isSubmitting}
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+              onChange={(event) => setField("description", event.target.value)}
+            />
           </div>
           <div className="space-y-1.5">
-            <label htmlFor="ingredient-storage" className="text-sm font-medium">Yêu cầu bảo quản</label>
-            <Input id="ingredient-storage" value={form.storageRequirement} maxLength={200} disabled={isSubmitting} onChange={(event) => setField("storageRequirement", event.target.value)} />
+            <label htmlFor="ingredient-storage" className="text-sm font-medium">
+              Yêu cầu bảo quản
+            </label>
+            <Input
+              id="ingredient-storage"
+              value={form.storageRequirement}
+              maxLength={200}
+              disabled={isSubmitting}
+              onChange={(event) =>
+                setField("storageRequirement", event.target.value)
+              }
+            />
           </div>
           <div className="space-y-1.5">
-            <label htmlFor="ingredient-shelf-life" className="text-sm font-medium">Hạn dùng (ngày)</label>
-            <Input id="ingredient-shelf-life" type="number" min={1} max={36500} step={1} value={form.shelfLifeDays} disabled={isSubmitting} onChange={(event) => setField("shelfLifeDays", event.target.value)} />
+            <label
+              htmlFor="ingredient-shelf-life"
+              className="text-sm font-medium"
+            >
+              Hạn dùng (ngày)
+            </label>
+            <Input
+              id="ingredient-shelf-life"
+              type="number"
+              min={1}
+              max={36500}
+              step={1}
+              value={form.shelfLifeDays}
+              disabled={isSubmitting}
+              onChange={(event) =>
+                setField("shelfLifeDays", event.target.value)
+              }
+            />
           </div>
           <label className="flex items-center gap-3 rounded-lg border border-border px-3 py-3 text-sm">
-            <input type="checkbox" checked={form.isPerishable} disabled={isSubmitting} onChange={(event) => setField("isPerishable", event.target.checked)} className="size-4 accent-primary" />
+            <input
+              type="checkbox"
+              checked={form.isPerishable}
+              disabled={isSubmitting}
+              onChange={(event) =>
+                setField("isPerishable", event.target.checked)
+              }
+              className="size-4 accent-primary"
+            />
             Dễ hỏng
           </label>
           <label className="flex items-center gap-3 rounded-lg border border-border px-3 py-3 text-sm">
-            <input type="checkbox" checked={form.isAllergen} disabled={isSubmitting} onChange={(event) => setField("isAllergen", event.target.checked)} className="size-4 accent-primary" />
+            <input
+              type="checkbox"
+              checked={form.isAllergen}
+              disabled={isSubmitting}
+              onChange={(event) => setField("isAllergen", event.target.checked)}
+              className="size-4 accent-primary"
+            />
             Có nguy cơ dị ứng
           </label>
         </div>
 
         {validationMessage || errorMessage ? (
-          <p className="text-sm text-destructive" role="alert">{validationMessage ?? errorMessage}</p>
+          <p className="text-sm text-destructive" role="alert">
+            {validationMessage ?? errorMessage}
+          </p>
         ) : null}
 
         <DialogFooter>
-          <Button type="button" variant="outline" disabled={isSubmitting} onClick={() => onOpenChange(false)}>Hủy</Button>
-          <Button type="button" isLoading={isSubmitting} onClick={() => void submit()}>{ingredient ? "Lưu thay đổi" : "Tạo nguyên liệu"}</Button>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={isSubmitting}
+            onClick={() => onOpenChange(false)}
+          >
+            Hủy
+          </Button>
+          <Button
+            type="button"
+            isLoading={isSubmitting}
+            onClick={() => void submit()}
+          >
+            {ingredient ? "Lưu thay đổi" : "Tạo nguyên liệu"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -274,8 +388,12 @@ export function IngredientCatalogDialog({
   onOpenChange: (open: boolean) => void;
   canManage: boolean;
 }) {
-  const [formTarget, setFormTarget] = useState<IngredientResult | "new" | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<IngredientResult | null>(null);
+  const [formTarget, setFormTarget] = useState<IngredientResult | "new" | null>(
+    null,
+  );
+  const [deleteTarget, setDeleteTarget] = useState<IngredientResult | null>(
+    null,
+  );
   const {
     ingredients,
     search,
@@ -314,16 +432,29 @@ export function IngredientCatalogDialog({
           <div className="relative">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
+              aria-label="Tìm nguyên liệu"
+              type="search"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Tìm theo tên hoặc mã nguyên liệu..."
               className="bg-card pl-9"
             />
           </div>
-          <Select value={status} onValueChange={(value) => setStatus(value as IngredientStatusFilter)}>
-            <SelectTrigger className="w-full bg-card">
+          <Select
+            value={status}
+            onValueChange={(value) =>
+              setStatus(value as IngredientStatusFilter)
+            }
+          >
+            <SelectTrigger
+              aria-label="Lọc trạng thái nguyên liệu"
+              className="w-full bg-card"
+            >
               <SelectValue>
-                {STATUS_OPTIONS.find((option) => option.value === status)?.label}
+                {
+                  STATUS_OPTIONS.find((option) => option.value === status)
+                    ?.label
+                }
               </SelectValue>
             </SelectTrigger>
             <SelectContent>
@@ -350,17 +481,27 @@ export function IngredientCatalogDialog({
 
         <div className="min-h-72 overflow-y-auto">
           {isLoading ? (
-            <div className="space-y-2 p-5" aria-label="Đang tải danh mục nguyên liệu">
+            <div
+              className="space-y-2 p-5"
+              aria-label="Đang tải danh mục nguyên liệu"
+            >
               {Array.from({ length: 6 }).map((_, index) => (
-                <div key={index} className="h-12 animate-pulse rounded-lg bg-muted/40" />
+                <div
+                  key={index}
+                  className="h-12 animate-pulse rounded-lg bg-muted/40"
+                />
               ))}
             </div>
           ) : errorMessage ? (
             <div className="flex min-h-72 flex-col items-center justify-center gap-3 px-6 text-center">
               <AlertTriangle className="size-7 text-destructive" />
               <div>
-                <p className="font-medium text-destructive">Không thể tải nguyên liệu</p>
-                <p className="mt-1 max-w-lg text-sm text-muted-foreground">{errorMessage}</p>
+                <p className="font-medium text-destructive">
+                  Không thể tải nguyên liệu
+                </p>
+                <p className="mt-1 max-w-lg text-sm text-muted-foreground">
+                  {errorMessage}
+                </p>
               </div>
               <Button variant="outline" size="sm" onClick={retry}>
                 <RefreshCw className="size-4" />
@@ -376,87 +517,297 @@ export function IngredientCatalogDialog({
               </p>
             </div>
           ) : (
-            <Table className="min-w-[900px]">
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="px-5">Nguyên liệu</TableHead>
-                  <TableHead>Loại / đơn vị</TableHead>
-                  <TableHead>Đặc tính</TableHead>
-                  <TableHead>Bảo quản</TableHead>
-                  <TableHead>Trạng thái</TableHead>
-                  <TableHead className="px-5">Cập nhật</TableHead>
-                  {canManage ? <TableHead className="text-right">Thao tác</TableHead> : null}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <>
+              <ul
+                className="divide-y divide-border md:hidden"
+                aria-label="Danh sách nguyên liệu"
+              >
                 {ingredients.map((ingredient) => (
-                  <TableRow key={ingredient.id}>
-                    <TableCell className="max-w-64 px-5 py-3 whitespace-normal">
-                      <p className="font-medium">{ingredient.name}</p>
-                      <p className="font-mono text-xs text-muted-foreground">{ingredient.code}</p>
-                      {ingredient.description ? (
-                        <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
-                          {ingredient.description}
+                  <li key={ingredient.id} className="space-y-4 p-5">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="font-medium">{ingredient.name}</p>
+                        <p className="font-mono text-xs text-muted-foreground">
+                          {ingredient.code}
                         </p>
-                      ) : null}
-                    </TableCell>
-                    <TableCell>
-                      <p>{ingredient.ingredientType}</p>
-                      <p className="text-xs text-muted-foreground">{ingredient.unit}</p>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-1">
-                        {ingredient.isPerishable ? <Badge variant="secondary">Dễ hỏng</Badge> : null}
-                        {ingredient.isAllergen ? <Badge variant="destructive">Dị ứng</Badge> : null}
-                        {!ingredient.isPerishable && !ingredient.isAllergen ? (
-                          <span className="text-sm text-muted-foreground">Không ghi nhận</span>
+                        {ingredient.description ? (
+                          <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+                            {ingredient.description}
+                          </p>
                         ) : null}
                       </div>
-                    </TableCell>
-                    <TableCell className="max-w-52 whitespace-normal">
-                      <p className="text-sm">{ingredient.storageRequirement || "Chưa có yêu cầu"}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {ingredient.shelfLifeDays
-                          ? `Hạn dùng: ${ingredient.shelfLifeDays} ngày`
-                          : "Chưa có hạn dùng"}
-                      </p>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={ingredient.isActive ? "default" : "outline"}>
+                      <Badge
+                        variant={ingredient.isActive ? "default" : "outline"}
+                      >
                         {ingredient.isActive ? "Đang sử dụng" : "Đã tắt"}
                       </Badge>
-                    </TableCell>
-                    <TableCell className="px-5 text-xs text-muted-foreground">
-                      {formatDate(ingredient.updatedAt ?? ingredient.createdAt)}
-                    </TableCell>
+                    </div>
+
+                    <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+                      <div>
+                        <dt className="text-xs text-muted-foreground">Loại</dt>
+                        <dd className="mt-0.5">{ingredient.ingredientType}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-xs text-muted-foreground">
+                          Đơn vị
+                        </dt>
+                        <dd className="mt-0.5">{ingredient.unit}</dd>
+                      </div>
+                      <div className="col-span-2">
+                        <dt className="text-xs text-muted-foreground">
+                          Đặc tính
+                        </dt>
+                        <dd className="mt-1 flex flex-wrap gap-1">
+                          {ingredient.isPerishable ? (
+                            <Badge variant="secondary">Dễ hỏng</Badge>
+                          ) : null}
+                          {ingredient.isAllergen ? (
+                            <Badge variant="destructive">Dị ứng</Badge>
+                          ) : null}
+                          {!ingredient.isPerishable &&
+                          !ingredient.isAllergen ? (
+                            <span className="text-muted-foreground">
+                              Không ghi nhận
+                            </span>
+                          ) : null}
+                        </dd>
+                      </div>
+                      <div className="col-span-2">
+                        <dt className="text-xs text-muted-foreground">
+                          Bảo quản
+                        </dt>
+                        <dd className="mt-0.5">
+                          {ingredient.storageRequirement || "Chưa có yêu cầu"}
+                          <span className="block text-xs text-muted-foreground">
+                            {ingredient.shelfLifeDays
+                              ? `Hạn dùng: ${ingredient.shelfLifeDays} ngày`
+                              : "Chưa có hạn dùng"}
+                          </span>
+                        </dd>
+                      </div>
+                      <div className="col-span-2">
+                        <dt className="text-xs text-muted-foreground">
+                          Cập nhật
+                        </dt>
+                        <dd className="mt-0.5 text-muted-foreground">
+                          {formatDate(
+                            ingredient.updatedAt ?? ingredient.createdAt,
+                          )}
+                        </dd>
+                      </div>
+                    </dl>
+
                     {canManage ? (
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-1">
-                          <Button type="button" variant="ghost" size="icon-sm" title="Chỉnh sửa nguyên liệu" aria-label="Chỉnh sửa nguyên liệu" disabled={mutatingIngredientId !== null} onClick={() => { clearMutationError(); setFormTarget(ingredient); }}><Edit3 className="size-4" /></Button>
-                          <Button type="button" variant="ghost" size="icon-sm" title={ingredient.isActive ? "Tắt nguyên liệu" : "Kích hoạt nguyên liệu"} aria-label={ingredient.isActive ? "Tắt nguyên liệu" : "Kích hoạt nguyên liệu"} isLoading={mutatingIngredientId === ingredient.id} onClick={() => void setIngredientStatus(ingredient)}><Power className="size-4" /></Button>
-                          <Button type="button" variant="ghost" size="icon-sm" className="text-destructive hover:bg-destructive/10 hover:text-destructive" title="Xóa nguyên liệu" aria-label="Xóa nguyên liệu" disabled={mutatingIngredientId !== null} onClick={() => { clearMutationError(); setDeleteTarget(ingredient); }}><Trash2 className="size-4" /></Button>
-                        </div>
-                      </TableCell>
+                      <div className="flex flex-wrap justify-end gap-2 border-t border-border pt-3">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          disabled={mutatingIngredientId !== null}
+                          onClick={() => {
+                            clearMutationError();
+                            setFormTarget(ingredient);
+                          }}
+                        >
+                          <Edit3 className="size-4" />
+                          Chỉnh sửa
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          isLoading={mutatingIngredientId === ingredient.id}
+                          onClick={() => void setIngredientStatus(ingredient)}
+                        >
+                          <Power className="size-4" />
+                          {ingredient.isActive ? "Tắt" : "Kích hoạt"}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                          disabled={mutatingIngredientId !== null}
+                          onClick={() => {
+                            clearMutationError();
+                            setDeleteTarget(ingredient);
+                          }}
+                        >
+                          <Trash2 className="size-4" />
+                          Xóa
+                        </Button>
+                      </div>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+
+              <Table className="hidden min-w-[900px] md:table">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="px-5">Nguyên liệu</TableHead>
+                    <TableHead>Loại / đơn vị</TableHead>
+                    <TableHead>Đặc tính</TableHead>
+                    <TableHead>Bảo quản</TableHead>
+                    <TableHead>Trạng thái</TableHead>
+                    <TableHead className="px-5">Cập nhật</TableHead>
+                    {canManage ? (
+                      <TableHead className="text-right">Thao tác</TableHead>
                     ) : null}
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {ingredients.map((ingredient) => (
+                    <TableRow key={ingredient.id}>
+                      <TableCell className="max-w-64 px-5 py-3 whitespace-normal">
+                        <p className="font-medium">{ingredient.name}</p>
+                        <p className="font-mono text-xs text-muted-foreground">
+                          {ingredient.code}
+                        </p>
+                        {ingredient.description ? (
+                          <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+                            {ingredient.description}
+                          </p>
+                        ) : null}
+                      </TableCell>
+                      <TableCell>
+                        <p>{ingredient.ingredientType}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {ingredient.unit}
+                        </p>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-1">
+                          {ingredient.isPerishable ? (
+                            <Badge variant="secondary">Dễ hỏng</Badge>
+                          ) : null}
+                          {ingredient.isAllergen ? (
+                            <Badge variant="destructive">Dị ứng</Badge>
+                          ) : null}
+                          {!ingredient.isPerishable &&
+                          !ingredient.isAllergen ? (
+                            <span className="text-sm text-muted-foreground">
+                              Không ghi nhận
+                            </span>
+                          ) : null}
+                        </div>
+                      </TableCell>
+                      <TableCell className="max-w-52 whitespace-normal">
+                        <p className="text-sm">
+                          {ingredient.storageRequirement || "Chưa có yêu cầu"}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {ingredient.shelfLifeDays
+                            ? `Hạn dùng: ${ingredient.shelfLifeDays} ngày`
+                            : "Chưa có hạn dùng"}
+                        </p>
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={ingredient.isActive ? "default" : "outline"}
+                        >
+                          {ingredient.isActive ? "Đang sử dụng" : "Đã tắt"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="px-5 text-xs text-muted-foreground">
+                        {formatDate(
+                          ingredient.updatedAt ?? ingredient.createdAt,
+                        )}
+                      </TableCell>
+                      {canManage ? (
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-1">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon-sm"
+                              title="Chỉnh sửa nguyên liệu"
+                              aria-label="Chỉnh sửa nguyên liệu"
+                              disabled={mutatingIngredientId !== null}
+                              onClick={() => {
+                                clearMutationError();
+                                setFormTarget(ingredient);
+                              }}
+                            >
+                              <Edit3 className="size-4" />
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon-sm"
+                              title={
+                                ingredient.isActive
+                                  ? "Tắt nguyên liệu"
+                                  : "Kích hoạt nguyên liệu"
+                              }
+                              aria-label={
+                                ingredient.isActive
+                                  ? "Tắt nguyên liệu"
+                                  : "Kích hoạt nguyên liệu"
+                              }
+                              isLoading={mutatingIngredientId === ingredient.id}
+                              onClick={() =>
+                                void setIngredientStatus(ingredient)
+                              }
+                            >
+                              <Power className="size-4" />
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon-sm"
+                              className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                              title="Xóa nguyên liệu"
+                              aria-label="Xóa nguyên liệu"
+                              disabled={mutatingIngredientId !== null}
+                              onClick={() => {
+                                clearMutationError();
+                                setDeleteTarget(ingredient);
+                              }}
+                            >
+                              <Trash2 className="size-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      ) : null}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </>
           )}
         </div>
 
         <div className="flex flex-col justify-between gap-3 border-t border-border bg-muted/10 px-5 py-3 sm:flex-row sm:items-center">
           <p className="text-sm text-muted-foreground">
-            Trang <span className="font-medium text-foreground">{pagination.page}</span> /{" "}
-            <span className="font-medium text-foreground">{Math.max(pagination.totalPages, 1)}</span>
-            {" · "}{pagination.totalCount} nguyên liệu
+            Trang{" "}
+            <span className="font-medium text-foreground">
+              {pagination.page}
+            </span>{" "}
+            /{" "}
+            <span className="font-medium text-foreground">
+              {Math.max(pagination.totalPages, 1)}
+            </span>
+            {" · "}
+            {pagination.totalCount} nguyên liệu
           </p>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" disabled={!pagination.hasPrevious || isLoading} onClick={previousPage}>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={!pagination.hasPrevious || isLoading}
+              onClick={previousPage}
+            >
               <ChevronLeft className="size-4" />
               Trước
             </Button>
-            <Button variant="outline" size="sm" disabled={!pagination.hasNext || isLoading} onClick={nextPage}>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={!pagination.hasNext || isLoading}
+              onClick={nextPage}
+            >
               Sau
               <ChevronRight className="size-4" />
             </Button>
@@ -465,7 +816,7 @@ export function IngredientCatalogDialog({
       </DialogContent>
 
       <IngredientFormDialog
-        key={formTarget === "new" ? "new" : formTarget?.id ?? "closed"}
+        key={formTarget === "new" ? "new" : (formTarget?.id ?? "closed")}
         open={formTarget !== null}
         ingredient={formTarget === "new" ? null : formTarget}
         isSubmitting={mutatingIngredientId !== null}
@@ -475,16 +826,47 @@ export function IngredientCatalogDialog({
         onUpdate={update}
       />
 
-      <Dialog open={deleteTarget !== null} onOpenChange={(next) => !next && setDeleteTarget(null)}>
+      <Dialog
+        open={deleteTarget !== null}
+        onOpenChange={(next) => !next && setDeleteTarget(null)}
+      >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Xóa nguyên liệu?</DialogTitle>
-            <DialogDescription>Backend sẽ từ chối nếu nguyên liệu đang được công thức hoặc tồn kho tham chiếu.</DialogDescription>
+            <DialogDescription>
+              Backend sẽ từ chối nếu nguyên liệu đang được công thức hoặc tồn
+              kho tham chiếu.
+            </DialogDescription>
           </DialogHeader>
-          {mutationError ? <p className="text-sm text-destructive" role="alert">{mutationError}</p> : null}
+          {mutationError ? (
+            <p className="text-sm text-destructive" role="alert">
+              {mutationError}
+            </p>
+          ) : null}
           <DialogFooter>
-            <Button type="button" variant="outline" disabled={mutatingIngredientId !== null} onClick={() => setDeleteTarget(null)}>Hủy</Button>
-            <Button type="button" variant="destructive" isLoading={deleteTarget ? mutatingIngredientId === deleteTarget.id : false} onClick={async () => { if (!deleteTarget) return; const succeeded = await remove(deleteTarget); if (succeeded) setDeleteTarget(null); }}><Trash2 className="size-4" />Xóa nguyên liệu</Button>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={mutatingIngredientId !== null}
+              onClick={() => setDeleteTarget(null)}
+            >
+              Hủy
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              isLoading={
+                deleteTarget ? mutatingIngredientId === deleteTarget.id : false
+              }
+              onClick={async () => {
+                if (!deleteTarget) return;
+                const succeeded = await remove(deleteTarget);
+                if (succeeded) setDeleteTarget(null);
+              }}
+            >
+              <Trash2 className="size-4" />
+              Xóa nguyên liệu
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

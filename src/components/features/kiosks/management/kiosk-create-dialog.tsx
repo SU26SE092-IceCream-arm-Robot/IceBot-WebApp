@@ -246,7 +246,7 @@ export function KioskCreateDialog({ createKiosk }: KioskCreateDialogProps) {
                   onValueChange={handleOrganizationChange}
                   disabled={createKiosk.isSubmitting || createKiosk.isLoadingOptions}
                 >
-                  <SelectTrigger className="bg-card">
+                  <SelectTrigger className="bg-card" aria-label="Tổ chức">
                     <SelectValue>
                       {selectedOrganization
                         ? formatEntityOption(selectedOrganization)
@@ -280,7 +280,7 @@ export function KioskCreateDialog({ createKiosk }: KioskCreateDialogProps) {
                     !form.organizationId
                   }
                 >
-                  <SelectTrigger className="bg-card">
+                  <SelectTrigger className="bg-card" aria-label="Cửa hàng">
                     <SelectValue>
                       {selectedStore ? formatEntityOption(selectedStore) : "Chọn cửa hàng"}
                     </SelectValue>
@@ -341,7 +341,7 @@ export function KioskCreateDialog({ createKiosk }: KioskCreateDialogProps) {
                   }
                   disabled={createKiosk.isSubmitting}
                 >
-                  <SelectTrigger className="bg-card">
+                  <SelectTrigger className="bg-card" aria-label="Loại kiosk">
                     <SelectValue>
                       {form.kioskType === DEFAULT_KIOSK_TYPE
                         ? "Kiosk robot bán kem"

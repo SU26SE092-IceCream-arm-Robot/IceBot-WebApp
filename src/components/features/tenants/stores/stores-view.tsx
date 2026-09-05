@@ -5,6 +5,8 @@ import {
   AlertTriangle,
   ArrowRight,
   Building2,
+  CircleCheck,
+  CirclePause,
   MapPin,
   RefreshCw,
   Search,
@@ -14,10 +16,15 @@ import {
 import Link from "next/link";
 
 import { Badge } from "@/components/ui/badge";
+import { MetricStrip, MetricStripItem } from "@/components/shared/metric-strip";
+import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { useStoresList, type StoreOrganizationGroup } from "@/hooks/tenants/use-stores-list";
+import {
+  useStoresList,
+  type StoreOrganizationGroup,
+} from "@/hooks/tenants/use-stores-list";
 import type { StoreResult } from "@/types";
 
 function storeStatusLabel(status: string) {
@@ -25,8 +32,7 @@ function storeStatusLabel(status: string) {
 }
 
 export function StoresView() {
-  const { stores, groups, organizations, isLoading, errorMessage, refresh } =
-    useStoresList();
+  const { stores, groups, isLoading, errorMessage, refresh } = useStoresList();
   const [searchTerm, setSearchTerm] = useState("");
 
   const filteredGroups = useMemo<StoreOrganizationGroup[]>(() => {
@@ -59,49 +65,92 @@ export function StoresView() {
   }, [groups, searchTerm]);
 
   const totalFilteredStores = useMemo(
-    () => filteredGroups.reduce((total, group) => total + group.stores.length, 0),
+    () =>
+      filteredGroups.reduce((total, group) => total + group.stores.length, 0),
     [filteredGroups],
   );
+  const activeStoreCount = stores.filter(
+    (store) => store.status === "Active",
+  ).length;
+  const pausedStoreCount = stores.filter((store) => store.isSalesPaused).length;
 
   return (
-    <div className="space-y-6">
-      <section className="flex flex-col gap-4 border-b border-border pb-6 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-semibold tracking-tight text-foreground">
-            Cửa hàng
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Theo dõi và quản lý các cửa hàng được phân nhóm theo từng tổ chức.
+    <div className="space-y-5">
+      <PageHeader
+        title="Cửa hàng"
+        description="Theo dõi các điểm bán theo tổ chức, trạng thái vòng đời và khả năng tiếp nhận đơn hàng."
+        metadata={
+          <p className="text-xs text-muted-foreground">
+            Mở hồ sơ cửa hàng để kiểm tra lịch mở cửa, tạm dừng bán và đội kiosk
           </p>
-        </div>
-        <Button
-          variant="outline"
-          disabled={isLoading}
-          onClick={() => void refresh()}
-        >
-          <RefreshCw className="size-4" /> Làm mới
-        </Button>
-      </section>
+        }
+        actions={
+          <Button
+            variant="outline"
+            size="sm"
+            isLoading={isLoading}
+            onClick={() => void refresh()}
+          >
+            <RefreshCw className="size-4" aria-hidden="true" />
+            Làm mới
+          </Button>
+        }
+      />
+
+      <MetricStrip>
+        <MetricStripItem
+          icon={StoreIcon}
+          label="Tổng cửa hàng"
+          value={stores.length.toLocaleString("vi-VN")}
+          description="Trong phạm vi được cấp"
+          tone="primary"
+        />
+        <MetricStripItem
+          icon={Building2}
+          label="Tổ chức có cửa hàng"
+          value={groups.length.toLocaleString("vi-VN")}
+          description="Nhóm quản lý hiện tại"
+          tone="neutral"
+        />
+        <MetricStripItem
+          icon={CircleCheck}
+          label="Đang hoạt động"
+          value={activeStoreCount.toLocaleString("vi-VN")}
+          description="Vòng đời đang hoạt động"
+          tone="success"
+        />
+        <MetricStripItem
+          icon={CirclePause}
+          label="Đang tạm dừng bán"
+          value={pausedStoreCount.toLocaleString("vi-VN")}
+          description="Không tiếp nhận đơn mới"
+          tone={pausedStoreCount > 0 ? "warning" : "neutral"}
+        />
+      </MetricStrip>
 
       {/* Search & stats bar */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative max-w-md flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
+            type="search"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Tìm theo tên cửa hàng, mã code, địa chỉ, tổ chức..."
             className="h-10 pl-9 pr-8"
+            aria-label="Tìm cửa hàng"
           />
           {searchTerm ? (
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="icon-sm"
               onClick={() => setSearchTerm("")}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              className="absolute right-0 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
               aria-label="Xóa tìm kiếm"
             >
-              <X className="size-4" />
-            </button>
+              <X className="size-4" aria-hidden="true" />
+            </Button>
           ) : null}
         </div>
 
@@ -156,7 +205,10 @@ export function StoresView() {
       ) : null}
 
       {/* Empty search match state */}
-      {!isLoading && !errorMessage && stores.length > 0 && filteredGroups.length === 0 ? (
+      {!isLoading &&
+      !errorMessage &&
+      stores.length > 0 &&
+      filteredGroups.length === 0 ? (
         <Card className="border-border/80 shadow-none">
           <CardContent className="flex flex-col items-center gap-2 p-10 text-center text-muted-foreground">
             <Search className="size-6 text-muted-foreground/60" />
@@ -195,7 +247,10 @@ export function StoresView() {
                           {group.organizationName}
                         </CardTitle>
                         {group.organizationCode ? (
-                          <Badge variant="outline" className="text-[11px] font-normal">
+                          <Badge
+                            variant="outline"
+                            className="text-[11px] font-normal"
+                          >
                             {group.organizationCode}
                           </Badge>
                         ) : null}
@@ -212,7 +267,10 @@ export function StoresView() {
                     </div>
                   </div>
 
-                  <Badge variant="secondary" className="w-fit shrink-0 font-medium">
+                  <Badge
+                    variant="secondary"
+                    className="w-fit shrink-0 font-medium"
+                  >
                     {group.stores.length} cửa hàng
                   </Badge>
                 </div>
@@ -232,7 +290,10 @@ export function StoresView() {
                             {store.name}
                           </p>
                           {store.isSalesPaused ? (
-                            <Badge variant="destructive" className="text-[10px]">
+                            <Badge
+                              variant="destructive"
+                              className="text-[10px]"
+                            >
                               Tạm dừng bán
                             </Badge>
                           ) : null}
@@ -244,7 +305,12 @@ export function StoresView() {
                           <p className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
                             <MapPin className="size-3.5 shrink-0" />
                             <span className="truncate">
-                              {[store.address, store.city, store.province, store.country]
+                              {[
+                                store.address,
+                                store.city,
+                                store.province,
+                                store.country,
+                              ]
                                 .filter(Boolean)
                                 .join(", ")}
                             </span>
@@ -277,4 +343,3 @@ export function StoresView() {
     </div>
   );
 }
-

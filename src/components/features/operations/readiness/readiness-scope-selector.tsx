@@ -3,6 +3,14 @@
 import { Building2, Store } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type {
   SetupReadinessOrganizationOption,
   SetupReadinessStoreOption,
@@ -36,48 +44,85 @@ export function ReadinessScopeSelector({
   onOrganizationChange,
   onStoreChange,
 }: ReadinessScopeSelectorProps) {
-  return (
-    <Card>
-      <CardContent className="grid gap-4 md:grid-cols-2">
-        <label className="space-y-2">
-          <span className="flex items-center gap-2 text-sm font-medium text-foreground">
-            <Building2 className="size-4 text-primary" />
-            Tổ chức
-          </span>
-          <select
-            value={selectedOrganizationId ?? ""}
-            onChange={(event) => onOrganizationChange(event.target.value || null)}
-            disabled={isLoading || organizations.length === 0}
-            className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <option value="">Chọn tổ chức</option>
-            {organizations.map((organization) => (
-              <option key={organization.id} value={organization.id}>
-                {organizationLabel(organization)}
-              </option>
-            ))}
-          </select>
-        </label>
+  const selectedOrganization = organizations.find(
+    (organization) => organization.id === selectedOrganizationId,
+  );
+  const selectedStore = stores.find((store) => store.id === selectedStoreId);
 
-        <label className="space-y-2">
-          <span className="flex items-center gap-2 text-sm font-medium text-foreground">
-            <Store className="size-4 text-primary" />
-            Cửa hàng
-          </span>
-          <select
-            value={selectedStoreId ?? ""}
-            onChange={(event) => onStoreChange(event.target.value || null)}
-            disabled={isLoading || !selectedOrganizationId || stores.length === 0}
-            className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
+  return (
+    <Card className="gap-0 border-border py-0 shadow-none">
+      <CardContent className="grid gap-3 bg-muted/10 p-4 md:grid-cols-2">
+        <div className="space-y-2">
+          <Label
+            htmlFor="readiness-organization"
+            className="flex items-center gap-2"
           >
-            <option value="">Chọn cửa hàng</option>
-            {stores.map((store) => (
-              <option key={store.id} value={store.id}>
-                {storeLabel(store)}
-              </option>
-            ))}
-          </select>
-        </label>
+            <Building2 className="size-4 text-primary" aria-hidden="true" />
+            Tổ chức
+          </Label>
+          <Select
+            value={selectedOrganizationId ?? "NONE"}
+            onValueChange={(value) =>
+              onOrganizationChange(value === "NONE" ? null : value)
+            }
+            disabled={isLoading || organizations.length === 0}
+          >
+            <SelectTrigger
+              id="readiness-organization"
+              className="w-full bg-card"
+            >
+              <SelectValue placeholder="Chọn tổ chức">
+                {selectedOrganizationId
+                  ? selectedOrganization
+                    ? organizationLabel(selectedOrganization)
+                    : selectedOrganizationId
+                  : "Chọn tổ chức"}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="NONE">Chọn tổ chức</SelectItem>
+              {organizations.map((organization) => (
+                <SelectItem key={organization.id} value={organization.id}>
+                  {organizationLabel(organization)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="readiness-store" className="flex items-center gap-2">
+            <Store className="size-4 text-primary" aria-hidden="true" />
+            Cửa hàng
+          </Label>
+          <Select
+            value={selectedStoreId ?? "NONE"}
+            onValueChange={(value) =>
+              onStoreChange(value === "NONE" ? null : value)
+            }
+            disabled={
+              isLoading || !selectedOrganizationId || stores.length === 0
+            }
+          >
+            <SelectTrigger id="readiness-store" className="w-full bg-card">
+              <SelectValue placeholder="Chọn cửa hàng">
+                {selectedStoreId
+                  ? selectedStore
+                    ? storeLabel(selectedStore)
+                    : selectedStoreId
+                  : "Chọn cửa hàng"}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="NONE">Chọn cửa hàng</SelectItem>
+              {stores.map((store) => (
+                <SelectItem key={store.id} value={store.id}>
+                  {storeLabel(store)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </CardContent>
     </Card>
   );

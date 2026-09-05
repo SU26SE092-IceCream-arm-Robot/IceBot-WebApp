@@ -53,7 +53,7 @@ describe("ContentPagesListView", () => {
       screen.getByRole("heading", { name: /Quản lý trang nội dung tĩnh/i }),
     ).toBeInTheDocument();
     expect(screen.getAllByText("Chính sách bảo mật").length).toBeGreaterThan(0);
-    expect(screen.getByText("/privacy-policy")).toBeInTheDocument();
-    expect(screen.getByText(/Đã xuất bản/i)).toBeInTheDocument();
+    expect(screen.getAllByText("/privacy-policy").length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Đã xuất bản/i).length).toBeGreaterThan(0);
   });
 });

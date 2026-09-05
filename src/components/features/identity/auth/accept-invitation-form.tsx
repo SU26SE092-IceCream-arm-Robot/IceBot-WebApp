@@ -1,13 +1,22 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
-import { CheckCircle2, KeyRound, Link2Off, ShieldCheck } from "lucide-react";
+import { CheckCircle2, Link2Off, ShieldCheck } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { acceptInvitation, getInvitationErrorMessage } from "@/lib/services/identity/accounts";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  acceptInvitation,
+  getInvitationErrorMessage,
+} from "@/lib/services/identity/accounts";
+import { PasswordField } from "./password-field";
 
 const MIN_PASSWORD_LENGTH = 8;
 
@@ -17,7 +26,9 @@ export function AcceptInvitationForm() {
   const token = searchParams.get("token")?.trim() ?? "";
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [validationMessage, setValidationMessage] = useState<string | null>(null);
+  const [validationMessage, setValidationMessage] = useState<string | null>(
+    null,
+  );
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isAccepted, setIsAccepted] = useState(false);
@@ -45,7 +56,9 @@ export function AcceptInvitationForm() {
     }
 
     if (newPassword.length < MIN_PASSWORD_LENGTH) {
-      setValidationMessage(`Mật khẩu cần có ít nhất ${MIN_PASSWORD_LENGTH} ký tự.`);
+      setValidationMessage(
+        `Mật khẩu cần có ít nhất ${MIN_PASSWORD_LENGTH} ký tự.`,
+      );
       return;
     }
 
@@ -59,7 +72,9 @@ export function AcceptInvitationForm() {
     try {
       const result = await acceptInvitation({ token, newPassword });
       if (!result.accepted) {
-        setErrorMessage("Lời mời không được xác nhận. Liên kết có thể đã hết hạn hoặc bị thu hồi.");
+        setErrorMessage(
+          "Lời mời không được xác nhận. Liên kết có thể đã hết hạn hoặc bị thu hồi.",
+        );
         return;
       }
 
@@ -68,8 +83,8 @@ export function AcceptInvitationForm() {
       setErrorMessage(
         getInvitationErrorMessage(
           error,
-          "Không thể chấp nhận lời mời. Liên kết có thể đã hết hạn hoặc bị thu hồi."
-        )
+          "Không thể chấp nhận lời mời. Liên kết có thể đã hết hạn hoặc bị thu hồi.",
+        ),
       );
     } finally {
       setIsSubmitting(false);
@@ -83,9 +98,12 @@ export function AcceptInvitationForm() {
           <span className="flex size-11 items-center justify-center rounded-xl bg-destructive/10 text-destructive">
             <Link2Off className="size-5" />
           </span>
-          <CardTitle className="text-2xl font-bold tracking-tight">Liên kết không hợp lệ</CardTitle>
+          <CardTitle className="text-2xl font-bold tracking-tight">
+            Liên kết không hợp lệ
+          </CardTitle>
           <CardDescription>
-            URL không chứa token lời mời. Hãy dùng liên kết mới nhất do quản trị viên gửi.
+            URL không chứa token lời mời. Hãy dùng liên kết mới nhất do quản trị
+            viên gửi.
           </CardDescription>
         </CardHeader>
         <CardContent className="px-6 pb-6">
@@ -104,9 +122,12 @@ export function AcceptInvitationForm() {
           <span className="flex size-11 items-center justify-center rounded-xl bg-success/10 text-success">
             <CheckCircle2 className="size-5" />
           </span>
-          <CardTitle className="text-2xl font-bold tracking-tight">Tài khoản đã kích hoạt</CardTitle>
+          <CardTitle className="text-2xl font-bold tracking-tight">
+            Tài khoản đã kích hoạt
+          </CardTitle>
           <CardDescription>
-            Mật khẩu đã được thiết lập. Bạn sẽ được chuyển về trang đăng nhập trong giây lát.
+            Mật khẩu đã được thiết lập. Bạn sẽ được chuyển về trang đăng nhập
+            trong giây lát.
           </CardDescription>
         </CardHeader>
         <CardContent className="px-6 pb-6">
@@ -124,7 +145,9 @@ export function AcceptInvitationForm() {
         <span className="flex size-11 items-center justify-center rounded-xl bg-primary text-primary-foreground">
           <ShieldCheck className="size-5" />
         </span>
-        <CardTitle className="text-2xl font-bold tracking-tight">Hoàn tất tài khoản IceBot</CardTitle>
+        <CardTitle className="text-2xl font-bold tracking-tight">
+          Hoàn tất tài khoản IceBot
+        </CardTitle>
         <CardDescription>
           Tạo mật khẩu của riêng bạn để kích hoạt tài khoản được mời.
         </CardDescription>
@@ -138,33 +161,38 @@ export function AcceptInvitationForm() {
           className="space-y-4"
         >
           <div className="space-y-2">
-            <label htmlFor="newPassword" className="text-sm font-medium text-foreground">
+            <label
+              htmlFor="newPassword"
+              className="text-sm font-medium text-foreground"
+            >
               Mật khẩu mới
             </label>
-            <div className="relative">
-              <KeyRound className="pointer-events-none absolute left-3 top-3 size-4 text-muted-foreground" />
-              <Input
-                id="newPassword"
-                type="password"
-                autoComplete="new-password"
-                value={newPassword}
-                disabled={isSubmitting}
-                minLength={MIN_PASSWORD_LENGTH}
-                onChange={(event) => setNewPassword(event.target.value)}
-                className="pl-9"
-                placeholder={`Tối thiểu ${MIN_PASSWORD_LENGTH} ký tự`}
-                required
-              />
-            </div>
+            <PasswordField
+              id="newPassword"
+              label=""
+              autoComplete="new-password"
+              value={newPassword}
+              disabled={isSubmitting}
+              minLength={MIN_PASSWORD_LENGTH}
+              onChange={(event) => setNewPassword(event.target.value)}
+              placeholder={`Tối thiểu ${MIN_PASSWORD_LENGTH} ký tự`}
+              required
+              error={validationMessage || errorMessage}
+              errorId="invitation-password-error"
+              showError={false}
+            />
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="confirmPassword" className="text-sm font-medium text-foreground">
+            <label
+              htmlFor="confirmPassword"
+              className="text-sm font-medium text-foreground"
+            >
               Xác nhận mật khẩu
             </label>
-            <Input
+            <PasswordField
               id="confirmPassword"
-              type="password"
+              label=""
               autoComplete="new-password"
               value={confirmPassword}
               disabled={isSubmitting}
@@ -172,11 +200,18 @@ export function AcceptInvitationForm() {
               onChange={(event) => setConfirmPassword(event.target.value)}
               placeholder="Nhập lại mật khẩu"
               required
+              error={validationMessage || errorMessage}
+              errorId="invitation-password-error"
+              showError={false}
             />
           </div>
 
           {validationMessage || errorMessage ? (
-            <p className="rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            <p
+              id="invitation-password-error"
+              role="alert"
+              className="rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+            >
               {validationMessage || errorMessage}
             </p>
           ) : null}

@@ -97,7 +97,9 @@ export function AppSidebar({
           </span>
           {!isCollapsed ? (
             <span className="min-w-0">
-              <span className="block text-sm font-semibold tracking-tight">ICEBOT</span>
+              <span className="block text-sm font-semibold tracking-tight">
+                ICEBOT
+              </span>
               <span className="block truncate text-[11px] text-muted-foreground">
                 Vận hành và quản trị
               </span>
@@ -131,12 +133,15 @@ export function AppSidebar({
             return (
               <section key={group.key} aria-label={group.label}>
                 {isCollapsed ? (
-                  <div className="mx-2 my-2 border-t border-sidebar-border" aria-hidden="true" />
+                  <div
+                    className="mx-2 my-2 border-t border-sidebar-border"
+                    aria-hidden="true"
+                  />
                 ) : (
                   <button
                     type="button"
                     onClick={() => toggleGroup(group.key)}
-                    className="flex min-h-8 w-full items-center justify-between rounded-md px-2 text-left text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+                    className="flex min-h-11 w-full items-center justify-between rounded-md px-2 text-left text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring"
                     aria-expanded={expanded}
                   >
                     {group.label}
@@ -197,7 +202,9 @@ export function AppSidebar({
                           ) : null}
                           <Icon className="size-[18px] shrink-0" />
                           {!isCollapsed ? (
-                            <span className="min-w-0 truncate">{item.label}</span>
+                            <span className="min-w-0 truncate">
+                              {item.label}
+                            </span>
                           ) : null}
                         </Link>
                       );

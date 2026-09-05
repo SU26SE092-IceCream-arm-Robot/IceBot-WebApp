@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  ChevronLeft,
-  ChevronRight,
-  Factory,
-  RefreshCw,
-  Search,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight, RefreshCw, Search } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect } from "react";
 
@@ -15,6 +9,7 @@ import { ProductionProgramBindingsPanel } from "@/components/features/production
 import { ProductionPackageCatalogPanel } from "@/components/features/production/packages/production-package-catalog-panel";
 import { ConfigurationReleasesPanel } from "@/components/features/production/releases/configuration-releases-panel";
 import { ProductionWorkflowStepper } from "@/components/features/production/production-workflow-stepper";
+import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -41,7 +36,12 @@ function organizationLabel(name: string, code: string) {
   return name ? `${name} — ${code}` : code || "Không xác định";
 }
 
-const PRODUCTION_STAGES = ["programs", "packages", "bindings", "releases"] as const;
+const PRODUCTION_STAGES = [
+  "programs",
+  "packages",
+  "bindings",
+  "releases",
+] as const;
 type ProductionStage = (typeof PRODUCTION_STAGES)[number];
 
 function isProductionStage(value: string | null): value is ProductionStage {
@@ -186,10 +186,7 @@ export function ProductionWorkspaceView() {
 
   useEffect(() => {
     if (!selected || requestedOrganizationId === selected.id) return;
-    updateLocation(
-      { organizationId: selected.id, releaseId: null },
-      "replace",
-    );
+    updateLocation({ organizationId: selected.id, releaseId: null }, "replace");
   }, [requestedOrganizationId, selected, updateLocation]);
   const organizationScope = selected
     ? { organizationId: selected.id, storeId: null, kioskId: null }
@@ -209,31 +206,33 @@ export function ProductionWorkspaceView() {
   const canDeployReleases = organizationScope
     ? hasScopedPermission(effectiveAccess, "release.deploy", organizationScope)
     : false;
+  const currentWorkflowStep =
+    activeStage === "bindings" ? 2 : activeStage === "releases" ? 3 : 1;
+
   return (
-    <div className="space-y-6">
-      <section className="flex flex-col gap-4 border-b border-border pb-6 lg:flex-row lg:items-end lg:justify-between">
-        <div className="flex items-start gap-3">
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary">
-            <Factory className="size-5" />
-          </span>
-          <div>
-            <h1 className="text-3xl font-semibold tracking-tight">
-              Cấu hình sản xuất
-            </h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Nhập chương trình Fairino, xác nhận liên kết Recipe và phát hành
-              tài nguyên robot.
-            </p>
-          </div>
-        </div>
-        <Button
-          variant="outline"
-          disabled={scope.isLoading}
-          onClick={() => void scope.refresh()}
-        >
-          <RefreshCw className="size-4" /> Làm mới
-        </Button>
-      </section>
+    <div className="space-y-5">
+      <PageHeader
+        title="Cấu hình sản xuất"
+        description="Nhập chương trình robot, liên kết cấu hình sản phẩm, tạo bản phát hành và chuyển sang triển khai kiosk theo một luồng có kiểm soát."
+        metadata={
+          <p className="text-xs text-muted-foreground">
+            {selected
+              ? `Phạm vi: ${organizationLabel(selected.name, selected.code)}`
+              : "Chọn tổ chức để bắt đầu cấu hình"}
+          </p>
+        }
+        actions={
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={scope.isLoading}
+            onClick={() => void scope.refresh()}
+          >
+            <RefreshCw className="size-4" aria-hidden="true" />
+            Làm mới
+          </Button>
+        }
+      />
 
       {!selected ? (
         <div className="space-y-4">
@@ -274,17 +273,24 @@ export function ProductionWorkspaceView() {
 
       {selected ? (
         <div className="space-y-5">
-          <Card className="border-border/80 shadow-none">
-            <CardHeader>
-              <CardTitle className="text-base">Tổ chức đang cấu hình</CardTitle>
-              <CardDescription>
-                Đổi tổ chức sẽ tải workspace theo đúng scope được cấp quyền.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ProductionOrganizationSelector scope={scope} />
-            </CardContent>
-          </Card>
+          <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
+            <Card className="gap-0 border-border/80 py-0 shadow-none">
+              <CardHeader className="border-b border-border px-4 py-3.5">
+                <CardTitle className="text-sm">Phạm vi cấu hình</CardTitle>
+                <CardDescription>
+                  Đổi tổ chức sẽ tải lại dữ liệu theo đúng quyền được cấp.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="bg-muted/10 p-4">
+                <ProductionOrganizationSelector scope={scope} />
+              </CardContent>
+            </Card>
+            <ProductionWorkflowStepper
+              currentStep={currentWorkflowStep}
+              completedSteps={[]}
+              organizationName={organizationLabel(selected.name, selected.code)}
+            />
+          </div>
           {canRead ? (
             <Tabs
               value={activeStage}
@@ -292,11 +298,16 @@ export function ProductionWorkspaceView() {
                 const stage = isProductionStage(value) ? value : "programs";
                 updateLocation({
                   stage,
-                  releaseId: stage === "releases" ? searchParams.get("releaseId") : null,
+                  releaseId:
+                    stage === "releases" ? searchParams.get("releaseId") : null,
                 });
               }}
             >
-              <TabsList variant="line" aria-label="Các khu vực cấu hình sản xuất">
+              <TabsList
+                variant="line"
+                className="w-full border-b border-border"
+                aria-label="Các khu vực cấu hình sản xuất"
+              >
                 <TabsTrigger value="programs">Chương trình robot</TabsTrigger>
                 <TabsTrigger value="packages">Gói sản xuất</TabsTrigger>
                 <TabsTrigger value="bindings">Liên kết cấu hình</TabsTrigger>
@@ -338,10 +349,7 @@ export function ProductionWorkspaceView() {
                   canDeploy={canDeployReleases}
                   selectedReleaseId={searchParams.get("releaseId")}
                   onSelectedReleaseChange={(releaseId) =>
-                    updateLocation(
-                      { stage: "releases", releaseId },
-                      "replace",
-                    )
+                    updateLocation({ stage: "releases", releaseId }, "replace")
                   }
                 />
               </TabsContent>

@@ -14,7 +14,6 @@ import { usePathname } from "next/navigation";
 
 import { ThemeModeToggle } from "@/components/shared/theme-mode-toggle";
 import { getDashboardRouteDefinition } from "@/lib/navigation/dashboard-routes";
-import { getRoleLabel } from "@/lib/role-labels";
 import type { DashboardUser } from "@/types";
 
 interface TopbarProps {
@@ -64,7 +63,7 @@ export function Topbar({
         <button
           type="button"
           onClick={onOpenNavigation}
-          className="flex size-10 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring lg:hidden"
+          className="flex size-11 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring lg:hidden"
           aria-label="Mở menu điều hướng"
         >
           <Menu className="size-5" />
@@ -91,7 +90,7 @@ export function Topbar({
         {showAlerts ? (
           <Link
             href="/alerts"
-            className="flex size-10 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+            className="flex size-11 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
             title="Mở cảnh báo"
             aria-label="Mở cảnh báo"
           >
@@ -103,7 +102,7 @@ export function Topbar({
           <button
             type="button"
             onClick={() => setAccountMenuOpen((open) => !open)}
-            className="flex h-10 min-w-0 items-center gap-2 rounded-md px-1.5 text-left transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring sm:px-2"
+            className="flex min-h-11 min-w-0 items-center gap-2 rounded-md px-1.5 text-left transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring sm:px-2"
             aria-expanded={accountMenuOpen}
             aria-haspopup="true"
             aria-controls="account-popover"
@@ -116,7 +115,7 @@ export function Topbar({
                 {currentUser.name}
               </span>
               <span className="block max-w-36 truncate text-[11px] text-muted-foreground">
-                {getRoleLabel(currentUser.primaryRole)}
+                {currentUser.primaryRole}
               </span>
             </span>
             <ChevronDown className="hidden size-3.5 text-muted-foreground sm:block" />
@@ -128,7 +127,9 @@ export function Topbar({
               className="absolute right-0 top-full mt-2 w-72 rounded-lg border border-border bg-popover p-2 text-popover-foreground shadow-md"
             >
               <div className="border-b border-border px-2 pb-2 pt-1">
-                <p className="truncate text-sm font-semibold">{currentUser.name}</p>
+                <p className="truncate text-sm font-semibold">
+                  {currentUser.name}
+                </p>
                 <p className="truncate text-xs text-muted-foreground">
                   {currentUser.email}
                 </p>
@@ -137,7 +138,7 @@ export function Topbar({
               <Link
                 href="/profile"
                 onClick={() => setAccountMenuOpen(false)}
-                className="mt-1 flex min-h-10 items-center gap-2 rounded-md px-2.5 text-sm transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
+                className="mt-1 flex min-h-11 items-center gap-2 rounded-md px-2.5 text-sm transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <UserRound className="size-4 text-muted-foreground" />
                 Thông tin cá nhân
@@ -154,7 +155,7 @@ export function Topbar({
                 <button
                   type="button"
                   onClick={() => void onLogout()}
-                  className="flex min-h-10 w-full items-center gap-2 rounded-md px-2.5 text-sm text-destructive transition-colors hover:bg-destructive/10 focus-visible:ring-2 focus-visible:ring-ring"
+                  className="flex min-h-11 w-full items-center gap-2 rounded-md px-2.5 text-sm text-destructive transition-colors hover:bg-destructive/10 focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <LogOut className="size-4" />
                   Đăng xuất

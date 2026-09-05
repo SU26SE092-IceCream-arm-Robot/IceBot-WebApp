@@ -41,6 +41,10 @@ export function MenuItemAvailabilityPanel({ kioskId, kioskName }: { kioskId: str
   const [reason, setReason] = useState("");
   const isPausing = pendingItem?.state === "Available";
   const selectedReasonLabel = REASONS.find((option) => option.value === reasonCode)?.label;
+  const availableCount = availability.items.filter(
+    (item) => item.state === "Available",
+  ).length;
+  const pausedCount = availability.items.length - availableCount;
 
   async function confirmChange() {
     if (!pendingItem) return;
@@ -59,7 +63,7 @@ export function MenuItemAvailabilityPanel({ kioskId, kioskName }: { kioskId: str
 
   return (
     <>
-      <Card className="rounded-xl border-border shadow-none">
+      <Card className="gap-0 rounded-lg border-border py-0 shadow-none">
         <CardHeader className="border-b border-border pb-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-start gap-3">
@@ -73,6 +77,11 @@ export function MenuItemAvailabilityPanel({ kioskId, kioskName }: { kioskId: str
                 <p className="mt-1 text-sm text-muted-foreground">
                   Tạm dừng hoặc mở bán lại một món mà không thay đổi thực đơn dùng chung.
                 </p>
+                {!availability.isLoading && !availability.errorMessage ? (
+                  <p className="mt-1 text-xs text-muted-foreground" aria-live="polite">
+                    {availableCount} đang bán · {pausedCount} tạm dừng
+                  </p>
+                ) : null}
               </div>
             </div>
             <Button variant="outline" onClick={availability.refresh} isLoading={availability.isLoading}>
@@ -86,10 +95,12 @@ export function MenuItemAvailabilityPanel({ kioskId, kioskName }: { kioskId: str
             <div className="relative max-w-lg">
               <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
+                type="search"
                 className="pl-9"
                 value={availability.search}
                 onChange={(event) => availability.setSearch(event.target.value)}
                 placeholder="Tìm theo tên hoặc mã món..."
+                aria-label="Tìm món tại kiosk"
               />
             </div>
           </div>
@@ -115,8 +126,63 @@ export function MenuItemAvailabilityPanel({ kioskId, kioskName }: { kioskId: str
               </p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
+            <>
+              <div className="divide-y divide-border md:hidden">
+                {availability.items.map((item) => (
+                  <article
+                    key={`${item.menuId}-${item.menuItemId}`}
+                    className="space-y-3 p-4"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-foreground">
+                          {item.displayName}
+                        </p>
+                        <p className="mt-0.5 text-xs text-muted-foreground">
+                          {item.menuName}
+                        </p>
+                      </div>
+                      <Badge
+                        variant="secondary"
+                        className={
+                          item.state === "Available"
+                            ? "border-success/20 bg-success/10 text-success"
+                            : "border-warning/20 bg-warning/10 text-warning"
+                        }
+                      >
+                        {item.state === "Available"
+                          ? "Đang mở bán"
+                          : "Đang tạm dừng"}
+                      </Badge>
+                    </div>
+                    <p className="text-xs leading-5 text-muted-foreground">
+                      {item.reason ||
+                        (item.catalogSellable
+                          ? "Không có lý do hạn chế"
+                          : "Catalog hiện chưa khả dụng")}
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                      disabled={availability.isSubmitting}
+                      onClick={() => {
+                        availability.clearMutationError();
+                        setPendingItem(item);
+                      }}
+                    >
+                      {item.state === "Available" ? (
+                        <CirclePause className="size-4" aria-hidden="true" />
+                      ) : (
+                        <CirclePlay className="size-4" aria-hidden="true" />
+                      )}
+                      {item.state === "Available" ? "Tạm dừng bán" : "Mở bán lại"}
+                    </Button>
+                  </article>
+                ))}
+              </div>
+              <div className="hidden overflow-x-auto md:block">
+                <Table className="min-w-[820px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead className="pl-5">Món</TableHead>
@@ -163,8 +229,9 @@ export function MenuItemAvailabilityPanel({ kioskId, kioskName }: { kioskId: str
                     </TableRow>
                   ))}
                 </TableBody>
-              </Table>
-            </div>
+                </Table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
@@ -180,9 +247,9 @@ export function MenuItemAvailabilityPanel({ kioskId, kioskName }: { kioskId: str
           {isPausing ? (
             <div className="space-y-4 py-2">
               <div className="space-y-2">
-                <Label>Lý do</Label>
+                <Label htmlFor="availability-reason-code">Lý do</Label>
                 <Select value={reasonCode} onValueChange={(value) => setReasonCode(value as MenuItemOperationalAvailabilityReasonCode)}>
-                  <SelectTrigger>
+                  <SelectTrigger id="availability-reason-code">
                     <SelectValue placeholder="Chọn lý do">{selectedReasonLabel}</SelectValue>
                   </SelectTrigger>
                   <SelectContent>
@@ -196,7 +263,7 @@ export function MenuItemAvailabilityPanel({ kioskId, kioskName }: { kioskId: str
               </div>
             </div>
           ) : null}
-          {availability.mutationError ? <p className="text-sm text-destructive">{availability.mutationError}</p> : null}
+          {availability.mutationError ? <p role="alert" className="text-sm text-destructive">{availability.mutationError}</p> : null}
           <DialogFooter>
             <Button variant="outline" disabled={availability.isSubmitting} onClick={() => setPendingItem(null)}>Hủy</Button>
             <Button variant={isPausing ? "destructive" : "default"} isLoading={availability.isSubmitting} onClick={() => void confirmChange()}>
