@@ -7,6 +7,7 @@ import { useCallback, useEffect } from "react";
 import { RobotAuthoringImportsPanel } from "@/components/features/production/authoring-imports/robot-authoring-imports-panel";
 import { ProductionProgramBindingsPanel } from "@/components/features/production/bindings/production-program-bindings-panel";
 import { ProductionPackageCatalogPanel } from "@/components/features/production/packages/production-package-catalog-panel";
+import { ProductionOperationsWorkspace } from "@/components/features/production/production-operations-workspace";
 import { ConfigurationReleasesPanel } from "@/components/features/production/releases/configuration-releases-panel";
 import { ProductionWorkflowStepper } from "@/components/features/production/production-workflow-stepper";
 import { PageHeader } from "@/components/shared/page-header";
@@ -330,11 +331,14 @@ export function ProductionWorkspaceView() {
                 />
               </TabsContent>
               <TabsContent value="packages" className="pt-4">
-                <ProductionPackageCatalogPanel
-                  key={selected.id}
-                  organizationId={selected.id}
-                  canRead={canRead}
-                />
+                <div className="space-y-6">
+                  <ProductionOperationsWorkspace organizationId={selected.id} />
+                  <ProductionPackageCatalogPanel
+                    key={selected.id}
+                    organizationId={selected.id}
+                    canRead={canRead}
+                  />
+                </div>
               </TabsContent>
               <TabsContent value="bindings" className="space-y-6 pt-4">
                 <ProductionProgramBindingsPanel
