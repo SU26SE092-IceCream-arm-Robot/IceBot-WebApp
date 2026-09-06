@@ -83,6 +83,7 @@ const ORDER_OVERVIEW_SELECTION = `
         customerStatusMessage
         requiresStaffSupport
       }
+    }
 `;
 
 function buildDashboardOverviewQuery(includeOrderOverview: boolean): string {
