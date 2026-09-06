@@ -30,9 +30,7 @@ export function PlatformControlKpiGrid({
         label="Tổ chức"
         value={metrics?.organizationCount ?? null}
         description={
-          metrics
-            ? "Tổ chức hiện có trên nền tảng"
-            : "Nguồn dữ liệu chưa tải được"
+          metrics ? "Mở danh sách tổ chức" : "Nguồn dữ liệu chưa tải được"
         }
         href={organizationHref}
       />
@@ -41,9 +39,7 @@ export function PlatformControlKpiGrid({
         label="Cửa hàng"
         value={metrics?.storeCount ?? null}
         description={
-          metrics
-            ? "Cửa hàng thuộc các tổ chức"
-            : "Nguồn dữ liệu chưa tải được"
+          metrics ? "Mở danh sách cửa hàng" : "Nguồn dữ liệu chưa tải được"
         }
         href={storeHref}
       />
@@ -52,9 +48,7 @@ export function PlatformControlKpiGrid({
         label="Kiosk"
         value={metrics?.kioskCount ?? null}
         description={
-          metrics
-            ? "Kiosk trong toàn hệ thống"
-            : "Nguồn dữ liệu chưa tải được"
+          metrics ? "Mở đội kiosk toàn hệ thống" : "Nguồn dữ liệu chưa tải được"
         }
         href={kioskHref}
       />
@@ -64,7 +58,7 @@ export function PlatformControlKpiGrid({
         value={metrics?.offlineKioskCount ?? null}
         description={
           metrics
-            ? "Kiosk có trạng thái kết nối không thể truy cập"
+            ? "Connectivity đang ở trạng thái Unreachable"
             : "Nguồn dữ liệu chưa tải được"
         }
         href={kioskHref}

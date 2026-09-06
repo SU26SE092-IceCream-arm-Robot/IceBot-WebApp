@@ -18,6 +18,7 @@ import { OperationalShortcuts } from "@/components/features/dashboard/operationa
 import { PlatformControlKpiGrid } from "@/components/features/dashboard/platform-control-kpi-grid";
 import { PlatformControlShortcuts } from "@/components/features/dashboard/platform-control-shortcuts";
 import { PlatformInterventionList } from "@/components/features/dashboard/platform-intervention-list";
+import { PlatformKioskStatusOverview } from "@/components/features/dashboard/platform-kiosk-status-overview";
 import { useDashboardOverview } from "@/hooks/dashboard/use-dashboard-overview";
 import { useAuth } from "@/hooks/identity/use-auth";
 import { useDashboardRealtime } from "@/hooks/realtime/use-dashboard-realtime";
@@ -43,10 +44,11 @@ export default function DashboardPage() {
     : effectiveAccess?.effectiveScope?.storeIds?.[0]
       ? "store"
       : "organization";
-  const organizationId = effectiveAccess?.effectiveScope?.organizationIds?.[0] ?? null;
+  const organizationId =
+    effectiveAccess?.effectiveScope?.organizationIds?.[0] ?? null;
   const storeId = effectiveAccess?.effectiveScope?.storeIds?.[0] ?? null;
 
-  useDashboardRealtime({
+  const realtimeStatus = useDashboardRealtime({
     scope,
     organizationId,
     storeId,
@@ -59,9 +61,9 @@ export default function DashboardPage() {
   const visibleRoutes = new Set(getVisibleRoutes(effectiveAccess));
   const hasAllRoots = Boolean(
     data?.dashboard &&
-      data.kioskStatusOverview &&
-      data.inventorySummary &&
-      (!canViewOrders || data.orderOverview),
+    data.kioskStatusOverview &&
+    data.inventorySummary &&
+    (!canViewOrders || data.orderOverview),
   );
 
   const isEmpty =
@@ -91,6 +93,7 @@ export default function DashboardPage() {
         refreshTitle={
           isSystemAdmin ? "Làm mới dữ liệu kiểm soát nền tảng" : undefined
         }
+        realtimeStatus={isSystemAdmin ? realtimeStatus : undefined}
       />
 
       {isLoading ? (
@@ -143,84 +146,107 @@ export default function DashboardPage() {
             />
           )}
 
-          <section className="grid items-stretch gap-4 xl:grid-cols-12">
-            <div className="xl:col-span-7">
-              {isSystemAdmin ? (
-                <PlatformInterventionList
-                  metrics={data.dashboard}
-                  inventory={data.inventorySummary}
-                  visibleRoutes={visibleRoutes}
-                />
-              ) : (
-                <DashboardAttentionList
-                  metrics={data.dashboard}
-                  inventory={data.inventorySummary}
-                  visibleRoutes={visibleRoutes}
-                />
-              )}
-            </div>
-            <div className="xl:col-span-5">
-              {data.dashboard ? (
-                <DashboardScopeSummary metrics={data.dashboard} />
-              ) : (
-                <DashboardSectionUnavailable label="Phạm vi hệ thống" />
-              )}
-            </div>
-          </section>
-
-          <section
-            className={`grid items-stretch gap-4 ${
-              canViewOrders ? "xl:grid-cols-3" : "xl:grid-cols-2"
-            }`}
-          >
-            {data.kioskStatusOverview ? (
-              <>
-                <DashboardStatusDistribution
-                  title="Vòng đời kiosk"
-                  description="Trạng thái quản lý của kiosk, tách biệt với trạng thái kết nối."
-                  kind="kioskLifecycle"
-                  items={data.kioskStatusOverview.byLifecycleStatus}
-                  total={data.kioskStatusOverview.totalCount}
-                  emptyMessage="Chưa có kiosk để phân bố vòng đời."
-                />
-                <DashboardStatusDistribution
-                  title="Kết nối kiosk"
-                  description="Trạng thái từ dữ liệu connectivity do backend cung cấp."
-                  kind="kioskConnectivity"
-                  items={data.kioskStatusOverview.byConnectivityStatus}
-                  total={data.kioskStatusOverview.totalCount}
-                  emptyMessage="Chưa có dữ liệu kết nối kiosk."
-                />
-              </>
-            ) : (
-              <DashboardSectionUnavailable label="Trạng thái kiosk" />
-            )}
-            {canViewOrders && data.orderOverview ? (
-              <DashboardStatusDistribution
-                title="Phân bố trạng thái đơn hàng"
-                description="Tỷ lệ được tính từ tổng số đơn hàng hiện có."
-                kind="order"
-                items={data.orderOverview.byStatus}
-                total={data.orderOverview.totalCount}
-                emptyMessage="Chưa có đơn hàng để phân bố trạng thái."
-              />
-            ) : canViewOrders ? (
-              <DashboardSectionUnavailable label="Trạng thái đơn hàng" />
-            ) : null}
-          </section>
-
-          {canViewOrders ? (
-            data.orderOverview ? (
-              <DashboardRecentOrders orders={data.orderOverview.recentOrders} />
-            ) : (
-              <DashboardSectionUnavailable label="Đơn hàng gần đây" />
-            )
-          ) : null}
-
           {isSystemAdmin ? (
-            <PlatformControlShortcuts visibleRoutes={visibleRoutes} />
+            <>
+              <section className="grid items-start gap-4 xl:grid-cols-12">
+                <div className="xl:col-span-7">
+                  <PlatformInterventionList
+                    metrics={data.dashboard}
+                    kioskStatus={data.kioskStatusOverview}
+                    inventory={data.inventorySummary}
+                    visibleRoutes={visibleRoutes}
+                  />
+                </div>
+                <div className="xl:col-span-5">
+                  {data.kioskStatusOverview ? (
+                    <PlatformKioskStatusOverview
+                      lifecycleItems={
+                        data.kioskStatusOverview.byLifecycleStatus
+                      }
+                      connectivityItems={
+                        data.kioskStatusOverview.byConnectivityStatus
+                      }
+                      total={data.kioskStatusOverview.totalCount}
+                    />
+                  ) : (
+                    <DashboardSectionUnavailable label="Trạng thái kiosk" />
+                  )}
+                </div>
+              </section>
+              <PlatformControlShortcuts visibleRoutes={visibleRoutes} />
+            </>
           ) : (
-            <OperationalShortcuts />
+            <>
+              <section className="grid items-stretch gap-4 xl:grid-cols-12">
+                <div className="xl:col-span-7">
+                  <DashboardAttentionList
+                    metrics={data.dashboard}
+                    inventory={data.inventorySummary}
+                    visibleRoutes={visibleRoutes}
+                  />
+                </div>
+                <div className="xl:col-span-5">
+                  {data.dashboard ? (
+                    <DashboardScopeSummary metrics={data.dashboard} />
+                  ) : (
+                    <DashboardSectionUnavailable label="Phạm vi hệ thống" />
+                  )}
+                </div>
+              </section>
+
+              <section
+                className={`grid items-stretch gap-4 ${
+                  canViewOrders ? "xl:grid-cols-3" : "xl:grid-cols-2"
+                }`}
+              >
+                {data.kioskStatusOverview ? (
+                  <>
+                    <DashboardStatusDistribution
+                      title="Vòng đời kiosk"
+                      description="Trạng thái quản lý của kiosk, tách biệt với trạng thái kết nối."
+                      kind="kioskLifecycle"
+                      items={data.kioskStatusOverview.byLifecycleStatus}
+                      total={data.kioskStatusOverview.totalCount}
+                      emptyMessage="Chưa có kiosk để phân bố vòng đời."
+                    />
+                    <DashboardStatusDistribution
+                      title="Kết nối kiosk"
+                      description="Trạng thái từ dữ liệu connectivity do backend cung cấp."
+                      kind="kioskConnectivity"
+                      items={data.kioskStatusOverview.byConnectivityStatus}
+                      total={data.kioskStatusOverview.totalCount}
+                      emptyMessage="Chưa có dữ liệu kết nối kiosk."
+                    />
+                  </>
+                ) : (
+                  <DashboardSectionUnavailable label="Trạng thái kiosk" />
+                )}
+                {canViewOrders && data.orderOverview ? (
+                  <DashboardStatusDistribution
+                    title="Phân bố trạng thái đơn hàng"
+                    description="Tỷ lệ được tính từ tổng số đơn hàng hiện có."
+                    kind="order"
+                    items={data.orderOverview.byStatus}
+                    total={data.orderOverview.totalCount}
+                    emptyMessage="Chưa có đơn hàng để phân bố trạng thái."
+                  />
+                ) : canViewOrders ? (
+                  <DashboardSectionUnavailable label="Trạng thái đơn hàng" />
+                ) : null}
+              </section>
+
+              {canViewOrders ? (
+                data.orderOverview ? (
+                  <DashboardRecentOrders
+                    orders={data.orderOverview.recentOrders}
+                  />
+                ) : (
+                  <DashboardSectionUnavailable label="Đơn hàng gần đây" />
+                )
+              ) : null}
+
+              <OperationalShortcuts />
+            </>
           )}
         </>
       )}

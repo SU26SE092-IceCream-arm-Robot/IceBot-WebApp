@@ -1,92 +1,69 @@
 import Link from "next/link";
 import {
   AlertTriangle,
+  ArrowRight,
   Boxes,
   CheckCircle2,
+  CircleHelp,
   MonitorOff,
   Wrench,
   type LucideIcon,
 } from "lucide-react";
 
+import {
+  buildPlatformInterventions,
+  type PlatformInterventionKind,
+  type PlatformInterventionTone,
+} from "@/components/features/dashboard/platform-dashboard-model";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { DashboardRoutePath } from "@/types";
 import type {
   DashboardMetrics,
   InventorySummary,
+  KioskStatusOverview,
 } from "@/types/dashboard/overview";
 
-type InterventionTone = "warning" | "destructive";
-
-const TONES: Record<InterventionTone, string> = {
-  warning: "bg-warning/10 text-warning",
-  destructive: "bg-destructive/10 text-destructive",
+const TONES: Record<PlatformInterventionTone, string> = {
+  warning: "border-warning/20 bg-warning/5 text-warning",
+  destructive: "border-destructive/20 bg-destructive/5 text-destructive",
 };
 
-interface InterventionItem {
-  label: string;
-  description: string;
-  count: number;
-  href: DashboardRoutePath;
-  icon: LucideIcon;
-  tone: InterventionTone;
-}
+const ICONS: Record<PlatformInterventionKind, LucideIcon> = {
+  connectivity: MonitorOff,
+  maintenance: Wrench,
+  emptyInventory: AlertTriangle,
+  lowInventory: Boxes,
+};
 
 interface PlatformInterventionListProps {
   metrics?: DashboardMetrics | null;
+  kioskStatus?: KioskStatusOverview | null;
   inventory?: InventorySummary | null;
   visibleRoutes: ReadonlySet<DashboardRoutePath>;
 }
 
 export function PlatformInterventionList({
   metrics,
+  kioskStatus,
   inventory,
   visibleRoutes,
 }: PlatformInterventionListProps) {
-  const allItems: InterventionItem[] = [
-    {
-      label: "Kiosk mất kết nối",
-      description: "Connectivity backend ghi nhận Unreachable.",
-      count: metrics?.offlineKioskCount ?? 0,
-      href: "/kiosks",
-      icon: MonitorOff,
-      tone: "destructive",
-    },
-    {
-      label: "Kiosk đang bảo trì",
-      description: "Vòng đời kiosk đang ở trạng thái bảo trì.",
-      count: metrics?.maintenanceKioskCount ?? 0,
-      href: "/kiosks",
-      icon: Wrench,
-      tone: "warning",
-    },
-    {
-      label: "Bộ phân phối sắp hết",
-      description: "Tồn kho đã xuống mức cảnh báo thấp.",
-      count: inventory?.lowStockCount ?? 0,
-      href: "/inventory",
-      icon: Boxes,
-      tone: "warning",
-    },
-    {
-      label: "Bộ phân phối đã hết",
-      description: "Tồn kho cần được xử lý trước khi bán tiếp.",
-      count: inventory?.emptyCount ?? 0,
-      href: "/inventory",
-      icon: AlertTriangle,
-      tone: "destructive",
-    },
-  ];
-  const items = allItems.filter((item) => item.count > 0);
-  const hasUnavailableSource = !metrics || !inventory;
+  const items = buildPlatformInterventions({
+    metrics,
+    kioskStatus,
+    inventory,
+  });
+  const visibleItems = items.slice(0, 5);
+  const hasUnavailableSource = !metrics || !kioskStatus || !inventory;
 
   return (
     <Card className="h-full border-border/80 shadow-none">
       <CardHeader className="space-y-1 pb-3">
         <CardTitle className="text-base font-semibold text-foreground">
-          Can thiệp cấp nền tảng
+          Cần xử lý ngay
         </CardTitle>
         <p className="text-xs leading-5 text-muted-foreground">
-          Các điều kiện có bằng chứng và cần được định tuyến tới module sở hữu.
+          Sự cố được ưu tiên theo ảnh hưởng và bằng chứng gần nhất.
         </p>
       </CardHeader>
       <CardContent>
@@ -104,15 +81,15 @@ export function PlatformInterventionList({
             Chưa thể xác định đầy đủ vì một số nguồn dữ liệu chưa tải được.
           </div>
         ) : (
-          <div className="divide-y divide-border">
-            {items.map((item) => {
-              const Icon = item.icon;
+          <div className="space-y-2.5">
+            {visibleItems.map((item) => {
+              const Icon = ICONS[item.kind] ?? CircleHelp;
               const content = (
                 <>
                   <span
-                    className={`flex size-9 shrink-0 items-center justify-center rounded-lg ${TONES[item.tone]}`}
+                    className={`flex size-10 shrink-0 items-center justify-center rounded-lg border ${TONES[item.tone]}`}
                   >
-                    <Icon className="size-4" />
+                    <Icon className="size-4" aria-hidden="true" />
                   </span>
                   <span className="min-w-0">
                     <span className="block text-sm font-medium text-foreground group-hover:text-primary">
@@ -122,29 +99,45 @@ export function PlatformInterventionList({
                       {item.description}
                     </span>
                   </span>
-                  <span className="rounded-full bg-muted px-2.5 py-1 text-sm font-semibold tabular-nums text-foreground">
-                    {item.count.toLocaleString("vi-VN")}
+                  <span className="flex shrink-0 items-center gap-2">
+                    {item.count > 1 ? (
+                      <span className="rounded-full bg-muted px-2.5 py-1 text-sm font-semibold tabular-nums text-foreground">
+                        {item.count.toLocaleString("vi-VN")}
+                      </span>
+                    ) : null}
+                    {visibleRoutes.has(item.routePath) ? (
+                      <span className="hidden items-center gap-1 text-xs font-medium text-primary sm:inline-flex">
+                        {item.actionLabel}
+                        <ArrowRight className="size-3.5" aria-hidden="true" />
+                      </span>
+                    ) : null}
                   </span>
                 </>
               );
 
-              return visibleRoutes.has(item.href) ? (
+              return visibleRoutes.has(item.routePath) ? (
                 <Link
-                  key={item.label}
+                  key={item.id}
                   href={item.href}
-                  className="group grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 py-3 first:pt-0 last:pb-0"
+                  className="group grid min-h-16 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-lg border border-border bg-muted/5 px-3 py-2.5 transition-colors hover:border-primary/30 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   {content}
                 </Link>
               ) : (
                 <div
-                  key={item.label}
-                  className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 py-3 first:pt-0 last:pb-0"
+                  key={item.id}
+                  className="grid min-h-16 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-lg border border-border bg-muted/5 px-3 py-2.5"
                 >
                   {content}
                 </div>
               );
             })}
+            {items.length > visibleItems.length ? (
+              <p className="pt-1 text-center text-xs text-muted-foreground">
+                Còn {items.length - visibleItems.length} điều kiện khác trong
+                các module sở hữu.
+              </p>
+            ) : null}
           </div>
         )}
       </CardContent>
