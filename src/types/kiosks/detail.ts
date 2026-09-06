@@ -31,8 +31,8 @@ export interface KioskManagementDetail extends KioskFleetItem {
   kioskType: string;
   timeZone: string;
   installedAt?: string | null;
-  configurationVersion: number;
-  settingsSchemaVersion: number;
+  configurationVersion?: number | null;
+  settingsSchemaVersion?: number | null;
   storeStatus?: string | null;
 }
 

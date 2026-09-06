@@ -170,6 +170,12 @@ function formatPercent(value?: number | null): string {
     : `${value.toLocaleString("vi-VN", { maximumFractionDigits: 1 })}%`;
 }
 
+function formatVersion(value?: number | null): string {
+  return value === null || value === undefined
+    ? "Chưa có dữ liệu"
+    : value.toLocaleString("vi-VN");
+}
+
 function StatePanel({
   description,
   destructive = false,
@@ -870,8 +876,13 @@ export function KioskDetailView({ kioskId }: KioskDetailViewProps) {
         <MetricStripItem
           icon={Settings2}
           label="Phiên bản cấu hình"
-          value={kiosk.configurationVersion.toLocaleString("vi-VN")}
-          description={`Schema ${kiosk.settingsSchemaVersion.toLocaleString("vi-VN")}`}
+          value={formatVersion(kiosk.configurationVersion)}
+          description={
+            kiosk.settingsSchemaVersion === null ||
+            kiosk.settingsSchemaVersion === undefined
+              ? "Schema chưa có dữ liệu"
+              : `Schema ${formatVersion(kiosk.settingsSchemaVersion)}`
+          }
           tone="neutral"
         />
       </MetricStrip>

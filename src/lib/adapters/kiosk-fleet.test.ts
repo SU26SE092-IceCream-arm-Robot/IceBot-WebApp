@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { toKioskFleetViewModel } from "@/lib/adapters/kiosk-fleet";
+import {
+  toKioskDetailViewModel,
+  toKioskFleetViewModel,
+} from "@/lib/adapters/kiosk-fleet";
 import type { KioskResult, StoreResult } from "@/types/kiosks/management";
 
 const kiosk: KioskResult = {
@@ -39,5 +42,19 @@ describe("kiosk fleet adapter", () => {
     expect(result.operationalState).toBe("Maintenance");
     expect(result.operationalStateReason).toBe("Kiểm tra định kỳ");
     expect(result.locationName).toBe("Cửa hàng Demo");
+  });
+
+  it("normalizes missing configuration versions from the management API", () => {
+    const result = toKioskDetailViewModel(
+      {
+        ...kiosk,
+        configurationVersion: undefined,
+        settingsSchemaVersion: undefined,
+      },
+      store,
+    );
+
+    expect(result.configurationVersion).toBeNull();
+    expect(result.settingsSchemaVersion).toBeNull();
   });
 });
