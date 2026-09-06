@@ -104,6 +104,12 @@ export function PublicHeader({
                 {link.label}
               </a>
             ))}
+            <Link
+              href="/docs"
+              className={`rounded-md px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 ${isScrolled ? "text-[#475467] hover:text-[#182230]" : "text-slate-300 hover:text-white"}`}
+            >
+              Tài liệu
+            </Link>
           </nav>
         </div>
 
@@ -165,6 +171,13 @@ export function PublicHeader({
                 {link.label}
               </a>
             ))}
+            <Link
+              href="/docs"
+              className="border-b border-slate-100 px-3 py-3 text-base font-medium text-[#182230] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#175CD3]"
+              onClick={closeMobileMenu}
+            >
+              Tài liệu
+            </Link>
           </nav>
           <div className="mt-4 grid gap-2 sm:grid-cols-2">
             <Link

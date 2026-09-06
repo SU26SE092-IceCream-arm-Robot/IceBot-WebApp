@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 const quickLinks = [
+  ["Tài liệu", "/docs"],
   ["Giải pháp", "/#giai-phap"],
   ["Hành trình", "/#cach-hoat-dong"],
   ["Hệ thống", "/#he-thong"],
