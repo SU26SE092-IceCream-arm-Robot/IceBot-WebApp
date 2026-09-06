@@ -81,6 +81,7 @@ import type {
 
 interface OrganizationDetailViewProps {
   organizationId: string;
+  showOrganizationListLink?: boolean;
 }
 
 type LifecycleTarget = { kind: "store"; store: StoreResult; activate: boolean };
@@ -96,6 +97,7 @@ function DetailField({ label, value }: { label: string; value: string }) {
 
 export function OrganizationDetailView({
   organizationId,
+  showOrganizationListLink = true,
 }: OrganizationDetailViewProps) {
   const { effectiveAccess } = useAuth();
   const currentOrganizationIdRef = useRef(organizationId);
@@ -355,13 +357,15 @@ export function OrganizationDetailView({
         description="Quản lý vòng đời tổ chức, mạng lưới cửa hàng và các luồng vận hành liên quan."
         metadata={
           <div className="flex flex-wrap items-center gap-3">
-            <Link
-              href="/organizations"
-              className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
-            >
-              <ArrowLeft className="size-4" />
-              Danh sách tổ chức
-            </Link>
+            {showOrganizationListLink ? (
+              <Link
+                href="/organizations"
+                className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+              >
+                <ArrowLeft className="size-4" />
+                Danh sách tổ chức
+              </Link>
+            ) : null}
             <span className="font-mono text-xs text-muted-foreground">
               {organization.code}
             </span>
