@@ -89,7 +89,7 @@ function ScopeEditor({
   disabled: boolean;
 }) {
   return (
-    <div className="space-y-3">
+    <div className="min-w-0 space-y-3">
       <div className="flex items-center justify-between gap-3">
         <Label>Phạm vi làm việc</Label>
         <Button
@@ -111,7 +111,7 @@ function ScopeEditor({
         return (
           <div
             key={index}
-            className="grid gap-2 rounded-lg border border-border p-3 sm:grid-cols-[1fr_1fr_auto]"
+            className="grid min-w-0 gap-2 rounded-lg border border-border p-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]"
           >
             <Select
               value={scope.storeId ?? ""}
@@ -124,7 +124,10 @@ function ScopeEditor({
                 )
               }
             >
-              <SelectTrigger aria-label={`Cửa hàng cho phạm vi ${index + 1}`}>
+              <SelectTrigger
+                className="w-full min-w-0"
+                aria-label={`Cửa hàng cho phạm vi ${index + 1}`}
+              >
                 <SelectValue placeholder="Chọn cửa hàng" />
               </SelectTrigger>
               <SelectContent>
@@ -151,7 +154,10 @@ function ScopeEditor({
                 )
               }
             >
-              <SelectTrigger aria-label={`Kiosk cho phạm vi ${index + 1}`}>
+              <SelectTrigger
+                className="w-full min-w-0"
+                aria-label={`Kiosk cho phạm vi ${index + 1}`}
+              >
                 <SelectValue placeholder="Toàn cửa hàng" />
               </SelectTrigger>
               <SelectContent>
@@ -874,7 +880,7 @@ function StaffDetailForm({
   );
   if (!staff) return null;
   return (
-    <div className="space-y-5 py-2">
+    <div className="min-w-0 space-y-5 py-2">
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="staff-detail-name">Họ tên</Label>
