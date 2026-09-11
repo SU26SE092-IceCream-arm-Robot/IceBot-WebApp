@@ -49,7 +49,7 @@ describe("RegistrationForm component on Landing Page", () => {
     ).toBeInTheDocument();
   });
 
-  it("submits successfully and renders reference code on success screen", async () => {
+  it("submits without tax code and shows the email acknowledgement state", async () => {
     vi.mocked(serviceModule.submitServiceRegistration).mockResolvedValue({
       id: "sr-01",
       referenceCode: "SR-2026-000888",
@@ -58,6 +58,8 @@ describe("RegistrationForm component on Landing Page", () => {
     });
 
     render(<RegistrationForm />);
+
+    expect(screen.queryByLabelText(/Mã số thuế/i)).not.toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText(/Họ và tên/i), {
       target: { value: "Nguyễn Văn A" },
@@ -73,9 +75,17 @@ describe("RegistrationForm component on Landing Page", () => {
     fireEvent.click(screen.getByRole("button", { name: /Gửi yêu cầu đăng ký/i }));
 
     await waitFor(() => {
-      expect(screen.getByText("Đăng ký dịch vụ thành công!")).toBeInTheDocument();
+      expect(screen.getByText("Đơn đăng ký đã được tiếp nhận")).toBeInTheDocument();
     });
 
-    expect(screen.getByText("SR-2026-000888")).toBeInTheDocument();
+    expect(screen.getByText(/Vui lòng kiểm tra email xác nhận/i)).toBeInTheDocument();
+    expect(screen.getByText(/owner@example.com/i)).toBeInTheDocument();
+    expect(screen.queryByText("SR-2026-000888")).not.toBeInTheDocument();
+    expect(serviceModule.submitServiceRegistration).toHaveBeenCalledWith(
+      expect.any(Object),
+      expect.any(String),
+    );
+    const [submittedPayload] = vi.mocked(serviceModule.submitServiceRegistration).mock.calls[0];
+    expect(submittedPayload).not.toHaveProperty("taxCode");
   });
 });

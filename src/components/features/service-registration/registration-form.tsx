@@ -44,7 +44,6 @@ interface FormState {
   phoneNumber: string;
   businessName: string;
   legalName: string;
-  taxCode: string;
   address: string;
   expectedLocationCount: string;
   message: string;
@@ -58,7 +57,6 @@ const initialFormState: FormState = {
   phoneNumber: "",
   businessName: "",
   legalName: "",
-  taxCode: "",
   address: "",
   expectedLocationCount: "1",
   message: "",
@@ -151,17 +149,12 @@ export function RegistrationForm() {
       return "Tên pháp lý không được vượt quá 300 ký tự.";
     }
 
-    // 8. Optional: taxCode (max 100 chars)
-    if (data.taxCode.trim().length > 100) {
-      return "Mã số thuế không được vượt quá 100 ký tự.";
-    }
-
-    // 9. Optional: address (max 500 chars)
+    // 8. Optional: address (max 500 chars)
     if (data.address.trim().length > 500) {
       return "Địa chỉ không được vượt quá 500 ký tự.";
     }
 
-    // 10. Optional: expectedLocationCount (nullable, if present 1..10000)
+    // 9. Optional: expectedLocationCount (nullable, if present 1..10000)
     if (data.expectedLocationCount.trim()) {
       const count = Number(data.expectedLocationCount);
       if (!Number.isInteger(count) || count < 1 || count > 10000) {
@@ -169,7 +162,7 @@ export function RegistrationForm() {
       }
     }
 
-    // 11. Optional: message (max 2000 chars)
+    // 10. Optional: message (max 2000 chars)
     if (data.message.trim().length > 2000) {
       return "Nội dung lời nhắn không được vượt quá 2000 ký tự.";
     }
@@ -200,7 +193,6 @@ export function RegistrationForm() {
       phoneNumber: formData.phoneNumber.trim() || null,
       businessName: formData.businessName.trim(),
       legalName: formData.legalName.trim() || null,
-      taxCode: formData.taxCode.trim() || null,
       address: formData.address.trim() || null,
       expectedLocationCount: formData.expectedLocationCount.trim()
         ? Number(formData.expectedLocationCount)
@@ -239,33 +231,25 @@ export function RegistrationForm() {
           <CheckCircle2 className="size-10" />
         </div>
         <h3 ref={successHeadingRef} tabIndex={-1} className="text-2xl md:text-3xl font-bold mb-3 text-foreground">
-          Đăng ký dịch vụ thành công!
+          Đơn đăng ký đã được tiếp nhận
         </h3>
         <p className="text-muted-foreground mb-8 text-base md:text-lg leading-relaxed">
-          Cảm ơn bạn đã quan tâm đến giải pháp robot bán kem tự động IceBot. Chúng tôi đã tiếp nhận
-          thông tin đăng ký của bạn.
+          Cảm ơn bạn đã quan tâm đến giải pháp robot bán kem tự động IceBot. Đội ngũ IceBot sẽ xem
+          xét và phản hồi trong thời gian sớm nhất.
         </p>
 
-        <div className="rounded-xl border bg-muted/40 p-5 space-y-3 mb-8 text-left">
-          <div className="flex items-center justify-between border-b pb-2">
-            <span className="text-sm text-muted-foreground">Mã tham chiếu (Reference Code):</span>
-            <span className="font-mono text-base font-bold text-primary">
-              {submittedResult.referenceCode || "N/A"}
+        <div className="mb-8 rounded-xl border border-primary/20 bg-primary/5 p-5 text-left">
+          <div className="flex items-start gap-3">
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <Mail className="size-4" />
             </span>
-          </div>
-          <div className="flex items-center justify-between border-b pb-2">
-            <span className="text-sm text-muted-foreground">Trạng thái tiếp nhận:</span>
-            <span className="inline-flex items-center rounded-full bg-emerald-100 dark:bg-emerald-900/60 px-2.5 py-0.5 text-xs font-semibold text-emerald-800 dark:text-emerald-300">
-              {submittedResult.status || "Submitted"}
-            </span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Thời gian ghi nhận:</span>
-            <span className="text-sm font-medium text-foreground">
-              {submittedResult.submittedAt
-                ? new Date(submittedResult.submittedAt).toLocaleString("vi-VN")
-                : new Date().toLocaleString("vi-VN")}
-            </span>
+            <div className="min-w-0 space-y-1">
+              <p className="font-semibold text-foreground">Vui lòng kiểm tra email xác nhận</p>
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                IceBot dùng địa chỉ <span className="font-medium text-foreground">{formData.email}</span> để gửi
+                thông báo xác nhận. Vui lòng kiểm tra cả thư mục Spam hoặc Junk nếu chưa thấy email.
+              </p>
+            </div>
           </div>
         </div>
 
@@ -393,18 +377,6 @@ export function RegistrationForm() {
               maxLength={300}
               onChange={(e) => setFormData({ ...formData, legalName: e.target.value })}
               placeholder="Công ty TNHH..."
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="taxCode">Mã số thuế</Label>
-            <Input
-              id="taxCode"
-              name="taxCode"
-              value={formData.taxCode}
-              maxLength={100}
-              onChange={(e) => setFormData({ ...formData, taxCode: e.target.value })}
-              placeholder="0312345678"
             />
           </div>
 
