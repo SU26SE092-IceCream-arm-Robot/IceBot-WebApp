@@ -45,9 +45,11 @@ const STATUS_OPTIONS = [
   { value: "ALL", label: "Tất cả trạng thái" },
   { value: "Submitted", label: "Chờ rà soát (Submitted)" },
   { value: "UnderReview", label: "Đang rà soát (UnderReview)" },
-  { value: "Approved", label: "Đã phê duyệt (Approved)" },
   { value: "Rejected", label: "Đã từ chối (Rejected)" },
+  { value: "Provisioning", label: "Đang cấp phát (Provisioning)" },
   { value: "ProvisioningFailed", label: "Lỗi cấp phát (ProvisioningFailed)" },
+  { value: "Provisioned", label: "Đã cấp phát (Provisioned)" },
+  { value: "Cancelled", label: "Đã hủy (Cancelled)" },
 ];
 
 export function ServiceRegistrationsView() {
@@ -209,7 +211,7 @@ export function ServiceRegistrationsView() {
                               Ngày nộp
                             </dt>
                             <dd className="mt-1 text-xs tabular-nums">
-                              {formatDateTime(item.submittedAt)}
+                              {formatDateTime(item.createdAt)}
                             </dd>
                           </div>
                           <div className="col-span-2">
@@ -347,7 +349,7 @@ export function ServiceRegistrationsView() {
                             {getStatusBadge(item.status)}
                           </TableCell>
                           <TableCell className="text-center text-xs text-muted-foreground">
-                            {formatDateTime(item.submittedAt)}
+                            {formatDateTime(item.createdAt)}
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-1">

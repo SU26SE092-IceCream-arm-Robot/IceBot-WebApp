@@ -2,6 +2,11 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ServiceRegistrationsView } from "@/components/features/platform/service-registrations/service-registrations-view";
+import { ServiceRegistrationApproveDialog } from "@/components/features/platform/service-registrations/service-registration-approve-dialog";
+import {
+  getPrivacyPolicyAcceptanceLabel,
+  getServiceRegistrationStatusLabel,
+} from "@/components/features/platform/service-registrations/service-registration-detail-drawer";
 import * as serviceModule from "@/lib/services/service-registrations";
 import type {
   ManagementServiceRegistrationDetail,
@@ -36,9 +41,39 @@ const mockItem: ManagementServiceRegistrationDetail = {
   message: "Test registration",
   privacyPolicyAccepted: true,
   privacyPolicyRevisionId: "b8387063-e4d0-4d51-aefc-f1797cfae4f2",
-  submittedAt: "2026-08-17T04:00:00Z",
   createdAt: "2026-08-17T04:00:00Z",
 };
+
+describe("service registration presentation", () => {
+  it("distinguishes every provisioning state", () => {
+    expect(getServiceRegistrationStatusLabel("Provisioning")).toBe(
+      "Đang cấp phát",
+    );
+    expect(getServiceRegistrationStatusLabel("ProvisioningFailed")).toBe(
+      "Lỗi cấp phát",
+    );
+    expect(getServiceRegistrationStatusLabel("Provisioned")).toBe(
+      "Đã cấp phát",
+    );
+  });
+
+  it("uses the required policy revision when the API omits the legacy boolean", () => {
+    expect(
+      getPrivacyPolicyAcceptanceLabel({
+        privacyPolicyRevisionId: "policy-revision-id",
+      }),
+    ).toBe("Đã đồng ý");
+    expect(
+      getPrivacyPolicyAcceptanceLabel({
+        privacyPolicyAccepted: false,
+        privacyPolicyRevisionId: "policy-revision-id",
+      }),
+    ).toBe("Chưa đồng ý");
+    expect(
+      getPrivacyPolicyAcceptanceLabel({ privacyPolicyRevisionId: "" }),
+    ).toBe("Không xác định");
+  });
+});
 
 describe("ServiceRegistrationsView component", () => {
   beforeEach(() => {
@@ -109,5 +144,61 @@ describe("ServiceRegistrationsView component", () => {
       expect(screen.getByText(/Thông tin cơ sở & Quy mô/i)).toBeInTheDocument();
       expect(screen.getByText("Công ty Kem A")).toBeInTheDocument();
     });
+  });
+
+  it("uses the policy revision as acceptance evidence when the API omits the legacy boolean", async () => {
+    const paged: ServiceRegistrationsPagedResult = {
+      succeeded: true,
+      statusCode: 200,
+      data: [mockItem],
+      pagination: {
+        page: 1,
+        pageSize: 20,
+        totalCount: 1,
+        totalPages: 1,
+        hasNext: false,
+        hasPrevious: false,
+      },
+    };
+    const detailWithoutAcceptanceBoolean = {
+      ...mockItem,
+      privacyPolicyAccepted: undefined,
+    };
+
+    vi.mocked(
+      serviceModule.listManagementServiceRegistrations,
+    ).mockResolvedValue(paged);
+    vi.mocked(serviceModule.getManagementServiceRegistration).mockResolvedValue(
+      detailWithoutAcceptanceBoolean,
+    );
+
+    render(<ServiceRegistrationsView />);
+
+    const [refLink] = await screen.findAllByRole("button", {
+      name: "SR-2026-0001",
+    });
+    fireEvent.click(refLink);
+
+    expect(await screen.findByText("Đã đồng ý")).toBeInTheDocument();
+    expect(screen.queryByText("Chưa đồng ý")).not.toBeInTheDocument();
+  });
+
+  it("uses business-facing approval wording and explains the internal reference", () => {
+    render(
+      <ServiceRegistrationApproveDialog
+        open
+        onOpenChange={vi.fn()}
+        item={mockItem}
+        loading={false}
+        onApprove={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText("Mã hồ sơ đăng ký:")).toBeInTheDocument();
+    expect(
+      screen.getByText("Dùng để tra cứu và đối chiếu nội bộ."),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Tài khoản Quản trị viên tổ chức")).toBeInTheDocument();
+    expect(screen.queryByText(/OrgAdmin/)).not.toBeInTheDocument();
   });
 });

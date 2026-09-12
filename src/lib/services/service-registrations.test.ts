@@ -61,9 +61,7 @@ const mockDetail: ManagementServiceRegistrationDetail = {
   status: "UnderReview",
   revision: 3,
   message: "Muốn đặt 2 máy kiosk",
-  privacyPolicyAccepted: true,
   privacyPolicyRevisionId: "b8387063-e4d0-4d51-aefc-f1797cfae4f2",
-  submittedAt: "2026-08-17T04:00:00Z",
   createdAt: "2026-08-17T04:00:00Z",
 };
 
@@ -226,12 +224,12 @@ describe("management service registration contract", () => {
       data: {
         succeeded: true,
         statusCode: 200,
-        data: { ...mockDetail, status: "Approved" },
+        data: { ...mockDetail, status: "Provisioned" },
       },
     } as AxiosResponse);
 
     const updated = await approveServiceRegistration("sr-123", approvePayload);
-    expect(updated.status).toBe("Approved");
+    expect(updated.status).toBe("Provisioned");
     expect(axiosClient.post).toHaveBeenCalledWith(
       "/api/v1/management/service-registrations/sr-123/approve",
       approvePayload,
@@ -251,7 +249,7 @@ describe("management service registration contract", () => {
         data: {
           ...mockDetail,
           status: "Rejected",
-          rejectionReason: "Thông tin không chính xác",
+          reviewReason: "Thông tin không chính xác",
         },
       },
     } as AxiosResponse);
@@ -269,12 +267,12 @@ describe("management service registration contract", () => {
       data: {
         succeeded: true,
         statusCode: 200,
-        data: { ...mockDetail, status: "Approved" },
+        data: { ...mockDetail, status: "Provisioned" },
       },
     } as AxiosResponse);
 
     const updated = await retryProvisioningServiceRegistration("sr-123", 3);
-    expect(updated.status).toBe("Approved");
+    expect(updated.status).toBe("Provisioned");
     expect(axiosClient.post).toHaveBeenCalledWith(
       "/api/v1/management/service-registrations/sr-123/retry-provisioning",
       { expectedRevision: 3 },

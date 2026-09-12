@@ -13,6 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { TimeZoneInput } from "@/components/shared/time-zone-input";
 import {
   Select,
   SelectContent,
@@ -21,10 +22,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { UseCreateKioskResult } from "@/hooks/kiosks/use-create-kiosk";
+import { DEFAULT_TIME_ZONE, isValidIanaTimeZone } from "@/lib/time-zones";
 import type { CreateKioskRequest } from "@/types/kiosks/management";
 
 const DEFAULT_KIOSK_TYPE = "RoboticVending";
-const DEFAULT_TIME_ZONE = "Asia/Ho_Chi_Minh";
 
 interface KioskCreateDialogProps {
   createKiosk: UseCreateKioskResult;
@@ -108,6 +109,9 @@ function validateForm(form: FormState): string | null {
   if (name.length === 0) return "Vui lòng nhập tên kiosk.";
   if (name.length > 200) return "Tên kiosk không được vượt quá 200 ký tự.";
   if (timeZone.length === 0) return "Vui lòng nhập múi giờ.";
+  if (!isValidIanaTimeZone(timeZone)) {
+    return "Múi giờ không hợp lệ. Hãy dùng định dạng IANA, ví dụ Asia/Ho_Chi_Minh.";
+  }
 
   return (
     getNumberError("Vĩ độ", form.latitude, -90, 90) ??
@@ -369,13 +373,18 @@ export function KioskCreateDialog({ createKiosk }: KioskCreateDialogProps) {
 
               <label className="space-y-2">
                 <span className="text-sm font-medium text-foreground">Múi giờ</span>
-                <Input
+                <TimeZoneInput
+                  id="kiosk-time-zone"
                   value={form.timeZone}
                   onChange={(event) => setField("timeZone", event.target.value)}
                   placeholder={DEFAULT_TIME_ZONE}
                   disabled={createKiosk.isSubmitting}
                   className="bg-card"
                 />
+                <span className="block text-xs text-muted-foreground">
+                  Mặc định Việt Nam: {DEFAULT_TIME_ZONE}. Có thể nhập timezone
+                  IANA khác.
+                </span>
               </label>
 
               <label className="space-y-2">

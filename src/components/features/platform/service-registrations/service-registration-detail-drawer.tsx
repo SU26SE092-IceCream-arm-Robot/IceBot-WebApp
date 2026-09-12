@@ -44,13 +44,48 @@ interface Props {
 
 export function formatDateTime(value?: string | null): string {
   if (!value) return "—";
-  return new Date(value).toLocaleString("vi-VN", {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleString("vi-VN", {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+export function getPrivacyPolicyAcceptanceLabel(
+  item: Pick<
+    ManagementServiceRegistrationDetail,
+    "privacyPolicyAccepted" | "privacyPolicyRevisionId"
+  >,
+): string {
+  if (item.privacyPolicyAccepted === false) return "Chưa đồng ý";
+  if (
+    item.privacyPolicyAccepted === true ||
+    item.privacyPolicyRevisionId?.trim().length > 0
+  ) {
+    return "Đã đồng ý";
+  }
+  return "Không xác định";
+}
+
+export function getServiceRegistrationStatusLabel(
+  status: ServiceRegistrationStatus,
+): string {
+  const labels: Record<string, string> = {
+    Submitted: "Chờ rà soát",
+    UnderReview: "Đang rà soát",
+    Approved: "Đã phê duyệt",
+    Rejected: "Đã từ chối",
+    Provisioning: "Đang cấp phát",
+    ProvisioningFailed: "Lỗi cấp phát",
+    Provisioned: "Đã cấp phát",
+    Cancelled: "Đã hủy",
+  };
+
+  return labels[status] ?? status;
 }
 
 export function getStatusBadge(status: ServiceRegistrationStatus) {
@@ -73,14 +108,31 @@ export function getStatusBadge(status: ServiceRegistrationStatus) {
           <Eye className="mr-1 size-3" /> Đang rà soát
         </Badge>
       );
-    case "Approved":
     case "Provisioned":
       return (
         <Badge
           variant="default"
           className="bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
         >
+          <CheckCircle2 className="mr-1 size-3" /> Đã cấp phát
+        </Badge>
+      );
+    case "Approved":
+      return (
+        <Badge
+          variant="default"
+          className="bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
+        >
           <CheckCircle2 className="mr-1 size-3" /> Đã phê duyệt
+        </Badge>
+      );
+    case "Provisioning":
+      return (
+        <Badge
+          variant="default"
+          className="bg-violet-100 text-violet-800 dark:bg-violet-950/60 dark:text-violet-300"
+        >
+          <LoaderCircle className="mr-1 size-3" /> Đang cấp phát
         </Badge>
       );
     case "Rejected":
@@ -98,6 +150,8 @@ export function getStatusBadge(status: ServiceRegistrationStatus) {
           <AlertTriangle className="mr-1 size-3" /> Lỗi cấp phát
         </Badge>
       );
+    case "Cancelled":
+      return <Badge variant="outline">Đã hủy</Badge>;
     default:
       return <Badge variant="outline">{status}</Badge>;
   }
@@ -143,11 +197,11 @@ export function ServiceRegistrationDetailDrawer({
             <div className="space-y-1">
               <DialogTitle className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
                 <FileCheck2 className="size-5 text-primary" />
-                Đơn đăng ký #{item?.referenceCode || "Chi tiết"}
+                Hồ sơ đăng ký {item?.referenceCode || "Chi tiết"}
               </DialogTitle>
               <DialogDescription className="text-sm">
                 {item
-                  ? `Nộp ${formatDateTime(item.submittedAt)} · Đánh giá hồ sơ và quyết định cấp phát.`
+                  ? `Mã hồ sơ dùng để tra cứu nội bộ. Nộp ${formatDateTime(item.createdAt)} · Đánh giá hồ sơ và quyết định cấp phát.`
                   : "Đánh giá hồ sơ đăng ký"}
               </DialogDescription>
             </div>
@@ -173,24 +227,26 @@ export function ServiceRegistrationDetailDrawer({
               {/* Alert nếu lỗi provisioning hoặc bị từ chối */}
               <div className="space-y-6">
               {item.status === "ProvisioningFailed" &&
-              item.provisioningError ? (
+              item.provisioningFailureMessage ? (
                 <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3.5 space-y-1 text-destructive">
                   <div className="flex items-center gap-2 font-semibold text-xs">
                     <AlertTriangle className="size-4" /> Lỗi cấp phát hệ thống
-                    (Provisioning Error)
                   </div>
                   <p className="text-xs break-words">
-                    {item.provisioningError}
+                    {item.provisioningFailureCode
+                      ? `${item.provisioningFailureCode}: `
+                      : ""}
+                    {item.provisioningFailureMessage}
                   </p>
                 </div>
               ) : null}
 
-              {item.status === "Rejected" && item.rejectionReason ? (
+              {item.status === "Rejected" && item.reviewReason ? (
                 <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3.5 space-y-1 text-destructive">
                   <div className="flex items-center gap-2 font-semibold text-xs">
                     <XCircle className="size-4" /> Lý do từ chối
                   </div>
-                  <p className="text-xs break-words">{item.rejectionReason}</p>
+                  <p className="text-xs break-words">{item.reviewReason}</p>
                 </div>
               ) : null}
 
@@ -252,9 +308,7 @@ export function ServiceRegistrationDetailDrawer({
                   <DetailRow label="Lời nhắn đối tác" value={item.message} />
                   <DetailRow
                     label="Đồng ý chính sách"
-                    value={
-                      item.privacyPolicyAccepted ? "Đã đồng ý" : "Chưa đồng ý"
-                    }
+                    value={getPrivacyPolicyAcceptanceLabel(item)}
                   />
                 </div>
               </div>
@@ -262,7 +316,11 @@ export function ServiceRegistrationDetailDrawer({
               <details className="group rounded-lg border bg-card/60 p-3.5">
                 <summary className="cursor-pointer list-none text-xs font-semibold uppercase tracking-wider text-muted-foreground">Audit và cấp phát</summary>
                 <dl className="mt-3 space-y-0.5">
-                  <DetailRow label="Người rà soát" value={item.reviewedBy} />
+                  <DetailRow
+                    label="Người rà soát"
+                    value={item.reviewedByAccountId}
+                    mono
+                  />
                   <DetailRow
                     label="Thời gian rà soát"
                     value={formatDateTime(item.reviewedAt)}
@@ -273,15 +331,20 @@ export function ServiceRegistrationDetailDrawer({
                     mono
                   />
                   <DetailRow
-                    label="Tài khoản Admin tạo"
-                    value={item.provisionedAdminUserId}
+                    label="Tài khoản quản trị được tạo"
+                    value={item.provisionedOrgAdminAccountId}
+                    mono
+                  />
+                  <DetailRow
+                    label="Lời mời được tạo"
+                    value={item.provisionedInvitationId}
                     mono
                   />
                   <DetailRow
                     label="Trạng thái cấp phát"
-                    value={item.provisioningStatus}
+                    value={getServiceRegistrationStatusLabel(item.status)}
                   />
-                  <DetailRow label="Policy revision" value={item.privacyPolicyRevisionId} mono />
+                  <DetailRow label="Phiên bản chính sách" value={item.privacyPolicyRevisionId} mono />
                 </dl>
               </details>
               </aside>

@@ -25,10 +25,11 @@ export interface ServiceRegistrationResult {
 export type ServiceRegistrationStatus =
   | "Submitted"
   | "UnderReview"
-  | "Approved"
   | "Rejected"
+  | "Provisioning"
   | "ProvisioningFailed"
   | "Provisioned"
+  | "Cancelled"
   | (string & {});
 
 export interface ManagementServiceRegistrationItem {
@@ -42,24 +43,25 @@ export interface ManagementServiceRegistrationItem {
   taxCode?: string | null;
   address?: string | null;
   expectedLocationCount?: number | null;
+  message?: string | null;
+  privacyPolicyRevisionId: string;
   status: ServiceRegistrationStatus;
-  revision: number;
-  submittedAt: string;
+  reviewReason?: string | null;
+  reviewedByAccountId?: string | null;
   reviewedAt?: string | null;
-  reviewedBy?: string | null;
+  provisionedOrganizationId?: string | null;
+  provisionedOrgAdminAccountId?: string | null;
+  provisionedInvitationId?: string | null;
+  provisioningFailureCode?: string | null;
+  provisioningFailureMessage?: string | null;
+  revision: number;
   createdAt: string;
   updatedAt?: string | null;
 }
 
 export interface ManagementServiceRegistrationDetail extends ManagementServiceRegistrationItem {
-  message?: string | null;
-  privacyPolicyAccepted: boolean;
-  privacyPolicyRevisionId: string;
-  rejectionReason?: string | null;
-  provisioningStatus?: string | null;
-  provisioningError?: string | null;
-  provisionedOrganizationId?: string | null;
-  provisionedAdminUserId?: string | null;
+  /** Legacy/forward-compatible field. Current API proves consent via a required policy revision. */
+  privacyPolicyAccepted?: boolean;
 }
 
 export interface ManagementServiceRegistrationsQuery {
