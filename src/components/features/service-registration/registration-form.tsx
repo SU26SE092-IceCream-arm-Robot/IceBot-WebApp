@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, type FormEvent } from "react";
+import React, { useEffect, useRef, useState, type FormEvent } from "react";
 import {
   Building2,
   CheckCircle2,
@@ -11,7 +11,6 @@ import {
   Phone,
   RotateCcw,
   ShieldCheck,
-  Store,
   User,
 } from "lucide-react";
 import Link from "next/link";
@@ -45,7 +44,6 @@ interface FormState {
   phoneNumber: string;
   businessName: string;
   legalName: string;
-  taxCode: string;
   address: string;
   expectedLocationCount: string;
   message: string;
@@ -59,7 +57,6 @@ const initialFormState: FormState = {
   phoneNumber: "",
   businessName: "",
   legalName: "",
-  taxCode: "",
   address: "",
   expectedLocationCount: "1",
   message: "",
@@ -70,9 +67,35 @@ const initialFormState: FormState = {
 export function RegistrationForm() {
   const [formData, setFormData] = useState<FormState>(initialFormState);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [invalidField, setInvalidField] = useState<string | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedResult, setSubmittedResult] = useState<ServiceRegistrationResult | null>(null);
+  const idempotencyKeyRef = useRef<string | null>(null);
+  const successHeadingRef = useRef<HTMLHeadingElement>(null);
+
+  useEffect(() => {
+    if (submittedResult) successHeadingRef.current?.focus();
+  }, [submittedResult]);
+
+  function getIdempotencyKey() {
+    if (!idempotencyKeyRef.current) {
+      idempotencyKeyRef.current =
+        typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+          ? crypto.randomUUID()
+          : `sr-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    }
+    return idempotencyKeyRef.current;
+  }
+
+  function getInvalidField(message: string) {
+    if (message.includes("họ và tên")) return "contactName";
+    if (message.includes("Email") || message.includes("email")) return "email";
+    if (message.includes("thương hiệu") || message.includes("cơ sở kinh doanh")) return "businessName";
+    if (message.includes("đồng ý")) return "privacyPolicyAccepted";
+    if (message.includes("Số lượng")) return "expectedLocationCount";
+    return null;
+  }
 
   function validate(data: FormState): string | null {
     // 1. contactName: required, max 200 chars
@@ -126,17 +149,12 @@ export function RegistrationForm() {
       return "Tên pháp lý không được vượt quá 300 ký tự.";
     }
 
-    // 8. Optional: taxCode (max 100 chars)
-    if (data.taxCode.trim().length > 100) {
-      return "Mã số thuế không được vượt quá 100 ký tự.";
-    }
-
-    // 9. Optional: address (max 500 chars)
+    // 8. Optional: address (max 500 chars)
     if (data.address.trim().length > 500) {
       return "Địa chỉ không được vượt quá 500 ký tự.";
     }
 
-    // 10. Optional: expectedLocationCount (nullable, if present 1..10000)
+    // 9. Optional: expectedLocationCount (nullable, if present 1..10000)
     if (data.expectedLocationCount.trim()) {
       const count = Number(data.expectedLocationCount);
       if (!Number.isInteger(count) || count < 1 || count > 10000) {
@@ -144,7 +162,7 @@ export function RegistrationForm() {
       }
     }
 
-    // 11. Optional: message (max 2000 chars)
+    // 10. Optional: message (max 2000 chars)
     if (data.message.trim().length > 2000) {
       return "Nội dung lời nhắn không được vượt quá 2000 ký tự.";
     }
@@ -155,11 +173,15 @@ export function RegistrationForm() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setValidationError(null);
+    setInvalidField(null);
     setApiError(null);
 
     const error = validate(formData);
     if (error) {
       setValidationError(error);
+      const field = getInvalidField(error);
+      setInvalidField(field);
+      if (field) requestAnimationFrame(() => document.getElementById(field)?.focus());
       return;
     }
 
@@ -171,7 +193,6 @@ export function RegistrationForm() {
       phoneNumber: formData.phoneNumber.trim() || null,
       businessName: formData.businessName.trim(),
       legalName: formData.legalName.trim() || null,
-      taxCode: formData.taxCode.trim() || null,
       address: formData.address.trim() || null,
       expectedLocationCount: formData.expectedLocationCount.trim()
         ? Number(formData.expectedLocationCount)
@@ -182,7 +203,7 @@ export function RegistrationForm() {
     };
 
     try {
-      const result = await submitServiceRegistration(payload);
+      const result = await submitServiceRegistration(payload, getIdempotencyKey());
       setSubmittedResult(result);
       toast.success("Gửi yêu cầu đăng ký dịch vụ thành công!");
     } catch (err) {
@@ -197,8 +218,10 @@ export function RegistrationForm() {
   function handleReset() {
     setFormData(initialFormState);
     setValidationError(null);
+    setInvalidField(null);
     setApiError(null);
     setSubmittedResult(null);
+    idempotencyKeyRef.current = null;
   }
 
   if (submittedResult) {
@@ -207,34 +230,26 @@ export function RegistrationForm() {
         <div className="size-20 bg-emerald-100 dark:bg-emerald-950/60 rounded-full flex items-center justify-center mx-auto mb-6 text-emerald-600 dark:text-emerald-400">
           <CheckCircle2 className="size-10" />
         </div>
-        <h3 className="text-2xl md:text-3xl font-bold mb-3 text-foreground">
-          Đăng ký dịch vụ thành công!
+        <h3 ref={successHeadingRef} tabIndex={-1} className="text-2xl md:text-3xl font-bold mb-3 text-foreground">
+          Đơn đăng ký đã được tiếp nhận
         </h3>
         <p className="text-muted-foreground mb-8 text-base md:text-lg leading-relaxed">
-          Cảm ơn bạn đã quan tâm đến giải pháp robot bán kem tự động IceBot. Chúng tôi đã tiếp nhận
-          thông tin đăng ký của bạn.
+          Cảm ơn bạn đã quan tâm đến giải pháp robot bán kem tự động IceBot. Đội ngũ IceBot sẽ xem
+          xét và phản hồi trong thời gian sớm nhất.
         </p>
 
-        <div className="rounded-xl border bg-muted/40 p-5 space-y-3 mb-8 text-left">
-          <div className="flex items-center justify-between border-b pb-2">
-            <span className="text-sm text-muted-foreground">Mã tham chiếu (Reference Code):</span>
-            <span className="font-mono text-base font-bold text-primary">
-              {submittedResult.referenceCode || "N/A"}
+        <div className="mb-8 rounded-xl border border-primary/20 bg-primary/5 p-5 text-left">
+          <div className="flex items-start gap-3">
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <Mail className="size-4" />
             </span>
-          </div>
-          <div className="flex items-center justify-between border-b pb-2">
-            <span className="text-sm text-muted-foreground">Trạng thái tiếp nhận:</span>
-            <span className="inline-flex items-center rounded-full bg-emerald-100 dark:bg-emerald-900/60 px-2.5 py-0.5 text-xs font-semibold text-emerald-800 dark:text-emerald-300">
-              {submittedResult.status || "Submitted"}
-            </span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Thời gian ghi nhận:</span>
-            <span className="text-sm font-medium text-foreground">
-              {submittedResult.submittedAt
-                ? new Date(submittedResult.submittedAt).toLocaleString("vi-VN")
-                : new Date().toLocaleString("vi-VN")}
-            </span>
+            <div className="min-w-0 space-y-1">
+              <p className="font-semibold text-foreground">Vui lòng kiểm tra email xác nhận</p>
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                IceBot dùng địa chỉ <span className="font-medium text-foreground">{formData.email}</span> để gửi
+                thông báo xác nhận. Vui lòng kiểm tra cả thư mục Spam hoặc Junk nếu chưa thấy email.
+              </p>
+            </div>
           </div>
         </div>
 
@@ -282,6 +297,8 @@ export function RegistrationForm() {
                 placeholder="Nhập họ và tên"
                 className="pl-9"
                 required
+                aria-invalid={invalidField === "contactName"}
+                aria-describedby={invalidField === "contactName" ? "registration-error-summary" : undefined}
               />
             </div>
           </div>
@@ -302,6 +319,8 @@ export function RegistrationForm() {
                 placeholder="owner@example.com"
                 className="pl-9"
                 required
+                aria-invalid={invalidField === "email"}
+                aria-describedby={invalidField === "email" ? "registration-error-summary" : undefined}
               />
             </div>
           </div>
@@ -344,6 +363,8 @@ export function RegistrationForm() {
               onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
               placeholder="VD: Kem Tự Động IceBot Center"
               required
+              aria-invalid={invalidField === "businessName"}
+              aria-describedby={invalidField === "businessName" ? "registration-error-summary" : undefined}
             />
           </div>
 
@@ -360,18 +381,6 @@ export function RegistrationForm() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="taxCode">Mã số thuế</Label>
-            <Input
-              id="taxCode"
-              name="taxCode"
-              value={formData.taxCode}
-              maxLength={100}
-              onChange={(e) => setFormData({ ...formData, taxCode: e.target.value })}
-              placeholder="0312345678"
-            />
-          </div>
-
-          <div className="space-y-2">
             <Label htmlFor="expectedLocationCount">Số lượng điểm bán dự kiến (1 - 10,000)</Label>
             <Input
               id="expectedLocationCount"
@@ -384,6 +393,8 @@ export function RegistrationForm() {
                 setFormData({ ...formData, expectedLocationCount: e.target.value })
               }
               placeholder="1"
+              aria-invalid={invalidField === "expectedLocationCount"}
+              aria-describedby={invalidField === "expectedLocationCount" ? "registration-error-summary" : undefined}
             />
           </div>
 
@@ -438,14 +449,16 @@ export function RegistrationForm() {
             }
             className="mt-1 size-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
             required
+            aria-invalid={invalidField === "privacyPolicyAccepted"}
+            aria-describedby={invalidField === "privacyPolicyAccepted" ? "registration-error-summary" : undefined}
           />
           <div className="space-y-1 leading-snug">
             <Label
               htmlFor="privacyPolicyAccepted"
               className="text-sm font-normal text-muted-foreground cursor-pointer select-none"
             >
-              Tôi đồng ý với <span className="font-semibold text-foreground">Điều khoản Dịch vụ</span>{" "}
-              và <span className="font-semibold text-foreground">Chính sách Bảo mật</span> của IceBot.{" "}
+              Tôi đồng ý với <Link href="/terms-of-use" className="font-semibold text-foreground underline underline-offset-2">Điều khoản Dịch vụ</Link>{" "}
+              và <Link href="/privacy-policy" className="font-semibold text-foreground underline underline-offset-2">Chính sách Bảo mật</Link> của IceBot.{" "}
               <span className="text-destructive">*</span>
             </Label>
           </div>
@@ -454,7 +467,7 @@ export function RegistrationForm() {
 
       {/* Error Message Display */}
       {validationError || apiError ? (
-        <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-4 text-sm text-destructive font-medium">
+        <div id="registration-error-summary" role="alert" className="rounded-lg border border-destructive/20 bg-destructive/10 p-4 text-sm text-destructive font-medium">
           {validationError || apiError}
         </div>
       ) : null}

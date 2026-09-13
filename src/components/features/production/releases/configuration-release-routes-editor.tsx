@@ -9,6 +9,7 @@ import {
   type ConfigurationReleaseRouteDraft,
   validateConfigurationReleaseRouteDrafts,
 } from "@/components/features/production/releases/configuration-release-routes";
+import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -65,6 +66,9 @@ export function ConfigurationReleaseRoutesEditor({
     () => release.routes[0]?.id ?? "",
   );
   const [validation, setValidation] = useState<string | null>(null);
+  const [confirmation, setConfirmation] = useState<"close" | "delete" | null>(
+    null,
+  );
   const [initialSnapshot] = useState(() =>
     JSON.stringify(
       toConfigurationReleaseRouteRequests(
@@ -90,18 +94,24 @@ export function ConfigurationReleaseRoutesEditor({
     () => productionProgramBindings ?? [],
     [productionProgramBindings],
   );
-  const activeProductionProgramBindings = availableProductionProgramBindings.filter(
-    (binding) => binding.status === "Active",
-  );
+  const activeProductionProgramBindings =
+    availableProductionProgramBindings.filter(
+      (binding) => binding.status === "Active",
+    );
   const formatRecipe = (
     recipe: ConfigurationReleaseAuthoringOptions["recipes"][number],
   ) =>
-    [recipe.productName, recipe.productVariantName, `${recipe.name} v${recipe.version}`]
+    [
+      recipe.productName,
+      recipe.productVariantName,
+      `${recipe.name} v${recipe.version}`,
+    ]
       .filter(Boolean)
       .join(" · ");
   const selectedProductionBinding = availableProductionProgramBindings.find(
     (binding) =>
-      binding.id === selectedRoute?.robotBindings[0]?.productionProgramBindingId,
+      binding.id ===
+      selectedRoute?.robotBindings[0]?.productionProgramBindingId,
   );
   const useProductionBindings =
     requireProductionBindings || availableProductionProgramBindings.length > 0;
@@ -165,9 +175,15 @@ export function ConfigurationReleaseRoutesEditor({
           (candidate) => candidate.id === binding.productionProgramBindingId,
         ),
       )
-      .filter((binding): binding is ProductionProgramBindingResult => Boolean(binding));
+      .filter((binding): binding is ProductionProgramBindingResult =>
+        Boolean(binding),
+      );
     const capabilityCodes = [
-      ...new Set(bindings.flatMap((binding) => binding.requiredCapabilityCodes).filter(Boolean)),
+      ...new Set(
+        bindings
+          .flatMap((binding) => binding.requiredCapabilityCodes)
+          .filter(Boolean),
+      ),
     ];
     const supportedOptionCodes = [
       ...new Set(bindings.flatMap((binding) => binding.supportedOptionCodes)),
@@ -183,7 +199,9 @@ export function ConfigurationReleaseRoutesEditor({
   };
 
   const formatProductionBinding = (binding: ProductionProgramBindingResult) => {
-    const recipe = options?.recipes.find((item) => item.id === binding.recipeId);
+    const recipe = options?.recipes.find(
+      (item) => item.id === binding.recipeId,
+    );
     const program = options?.robotPrograms.find(
       (item) => item.id === binding.robotProgramId,
     );
@@ -249,7 +267,10 @@ export function ConfigurationReleaseRoutesEditor({
       routeCode: nextRouteCode(),
       priority: routes.length,
       requiredCapabilities: productionBinding
-        ? productionBinding.requiredCapabilityCodes.map((code) => ({ code, required: true }))
+        ? productionBinding.requiredCapabilityCodes.map((code) => ({
+            code,
+            required: true,
+          }))
         : [],
       supportedOptionCodes: [],
       robotBindings: [
@@ -257,26 +278,39 @@ export function ConfigurationReleaseRoutesEditor({
           productionProgramBindingId: productionBinding?.id,
           robotProgramId: program?.id ?? "",
           bindingOrder: 1,
-          requiredWorkcellCapabilityCode: productionBinding?.requiredCapabilityCodes[0] ?? "",
+          requiredWorkcellCapabilityCode:
+            productionBinding?.requiredCapabilityCodes[0] ?? "",
         },
       ],
     };
     setRoutes((items) => [
       ...items,
-      productionBinding ? applyProductionBinding(route, productionBinding) : route,
+      productionBinding
+        ? applyProductionBinding(route, productionBinding)
+        : route,
     ]);
     setSelectedKey(clientKey);
     setValidation(null);
   };
 
   const requestClose = () => {
-    if (
-      isDirty &&
-      !window.confirm("Bạn có thay đổi chưa lưu. Đóng trình soạn thảo?")
-    ) {
+    if (isDirty) {
+      setConfirmation("close");
       return;
     }
     onClose();
+  };
+
+  const deleteSelectedRoute = () => {
+    if (!selectedRoute) return;
+    const next = routes.filter(
+      (item) => item.clientKey !== selectedRoute.clientKey,
+    );
+    setRoutes(next);
+    setSelectedKey(
+      next[Math.min(selectedIndex, next.length - 1)]?.clientKey ?? "",
+    );
+    setConfirmation(null);
   };
 
   const submit = async () => {
@@ -290,33 +324,34 @@ export function ConfigurationReleaseRoutesEditor({
   };
 
   return (
-    <section
-      className="space-y-5 rounded-lg border bg-card p-4 sm:p-5"
-      aria-labelledby="configuration-release-editor-title"
-    >
-      <header className="flex flex-col gap-3 border-b pb-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h3
-            id="configuration-release-editor-title"
-            className="font-semibold"
+    <>
+      <section
+        className="space-y-5 rounded-lg border bg-card p-4 sm:p-5"
+        aria-labelledby="configuration-release-editor-title"
+      >
+        <header className="flex flex-col gap-3 border-b pb-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h3
+              id="configuration-release-editor-title"
+              className="font-semibold"
+            >
+              Cấu hình món cho phiên bản nháp {release.releaseNumber}
+            </h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Chọn cấu hình sản xuất đã liên kết. Recipe, chương trình robot,
+              yêu cầu thiết bị và tùy chọn sản xuất sẽ được lấy từ liên kết đó.
+            </p>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={requestClose}
+            disabled={isSubmitting}
           >
-            Cấu hình món cho phiên bản nháp {release.releaseNumber}
-          </h3>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Chọn cấu hình sản xuất đã liên kết. Recipe, chương trình robot, yêu cầu
-            thiết bị và tùy chọn sản xuất sẽ được lấy từ liên kết đó.
-          </p>
-        </div>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={requestClose}
-          disabled={isSubmitting}
-        >
-          <X className="size-4" />
-          Đóng trình soạn
-        </Button>
-      </header>
+            <X className="size-4" />
+            Đóng trình soạn
+          </Button>
+        </header>
 
         {!options ? (
           <div className="space-y-3 rounded-md border border-dashed p-5 text-sm text-muted-foreground">
@@ -463,22 +498,7 @@ export function ConfigurationReleaseRoutesEditor({
                       title="Xóa tuyến"
                       aria-label="Xóa tuyến"
                       disabled={isSubmitting}
-                      onClick={() => {
-                        if (
-                          !window.confirm(
-                            `Xóa tuyến ${selectedRoute.routeCode || "đang chọn"}?`,
-                          )
-                        )
-                          return;
-                        const next = routes.filter(
-                          (item) => item.clientKey !== selectedRoute.clientKey,
-                        );
-                        setRoutes(next);
-                        setSelectedKey(
-                          next[Math.min(selectedIndex, next.length - 1)]
-                            ?.clientKey ?? "",
-                        );
-                      }}
+                      onClick={() => setConfirmation("delete")}
                     >
                       <Trash2 className="size-4 text-destructive" />
                     </Button>
@@ -487,95 +507,96 @@ export function ConfigurationReleaseRoutesEditor({
 
                 <div className="grid gap-4 sm:grid-cols-2">
                   {!useProductionBindings ? (
-                  <div className="space-y-1.5 sm:col-span-2">
-                    <Label>Recipe đã phát hành</Label>
-                    <Select
-                      value={selectedRoute.recipeId}
-                      onValueChange={(value) => {
-                        const recipeId = value ?? "";
-                        const binding = activeBindingsForRecipe(recipeId)[0];
-                        updateSelected((route) => ({
-                          ...route,
-                          recipeId,
-                          supportedOptionCodes:
-                            binding?.supportedOptionCodes ?? [],
-                          robotBindings: binding
-                            ? [
-                                {
-                                  productionProgramBindingId: binding.id,
-                                  robotProgramId: binding.robotProgramId,
-                                  bindingOrder: 1,
-                                  requiredWorkcellCapabilityCode:
-                                    binding.requiredCapabilityCodes[0] ?? "",
-                                },
-                              ]
-                            : [],
-                          requiredCapabilities: binding
-                            ? binding.requiredCapabilityCodes.map((code) => ({
-                                code,
-                                required: true,
-                              }))
-                            : [],
-                        }));
-                      }}
-                      disabled={isSubmitting}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue>
-                          {selectedRecipe
-                            ? formatRecipe(selectedRecipe)
-                            : "Chọn Recipe"}
-                        </SelectValue>
-                      </SelectTrigger>
-                      <SelectContent>
-                        {options.recipes.map((recipe) => (
-                          <SelectItem key={recipe.id} value={recipe.id}>
-                            {formatRecipe(recipe)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                    <div className="space-y-1.5 sm:col-span-2">
+                      <Label>Recipe đã phát hành</Label>
+                      <Select
+                        value={selectedRoute.recipeId}
+                        onValueChange={(value) => {
+                          const recipeId = value ?? "";
+                          const binding = activeBindingsForRecipe(recipeId)[0];
+                          updateSelected((route) => ({
+                            ...route,
+                            recipeId,
+                            supportedOptionCodes:
+                              binding?.supportedOptionCodes ?? [],
+                            robotBindings: binding
+                              ? [
+                                  {
+                                    productionProgramBindingId: binding.id,
+                                    robotProgramId: binding.robotProgramId,
+                                    bindingOrder: 1,
+                                    requiredWorkcellCapabilityCode:
+                                      binding.requiredCapabilityCodes[0] ?? "",
+                                  },
+                                ]
+                              : [],
+                            requiredCapabilities: binding
+                              ? binding.requiredCapabilityCodes.map((code) => ({
+                                  code,
+                                  required: true,
+                                }))
+                              : [],
+                          }));
+                        }}
+                        disabled={isSubmitting}
+                      >
+                        <SelectTrigger className="w-full" aria-label="Recipe đã phát hành">
+                          <SelectValue>
+                            {selectedRecipe
+                              ? formatRecipe(selectedRecipe)
+                              : "Chọn Recipe"}
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                          {options.recipes.map((recipe) => (
+                            <SelectItem key={recipe.id} value={recipe.id}>
+                              {formatRecipe(recipe)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   ) : null}
                   {!useProductionBindings ? (
                     <div className="space-y-1.5">
-                    <Label htmlFor="release-route-code">Mã tuyến</Label>
-                    <Input
-                      id="release-route-code"
-                      maxLength={100}
-                      value={selectedRoute.routeCode}
-                      disabled={isSubmitting}
-                      onChange={(event) =>
-                        updateSelected((route) => ({
-                          ...route,
-                          routeCode: event.target.value,
-                        }))
-                      }
-                    />
+                      <Label htmlFor="release-route-code">Mã tuyến</Label>
+                      <Input
+                        id="release-route-code"
+                        maxLength={100}
+                        value={selectedRoute.routeCode}
+                        disabled={isSubmitting}
+                        onChange={(event) =>
+                          updateSelected((route) => ({
+                            ...route,
+                            routeCode: event.target.value,
+                          }))
+                        }
+                      />
                     </div>
                   ) : null}
                   {selectedRecipeRouteCount > 1 ? (
                     <div className="space-y-1.5">
-                    <Label htmlFor="release-route-priority">Độ ưu tiên</Label>
-                    <Input
-                      id="release-route-priority"
-                      type="number"
-                      min={0}
-                      step={1}
-                      value={selectedRoute.priority}
-                      disabled={isSubmitting}
-                      onChange={(event) =>
-                        updateSelected((route) => ({
-                          ...route,
-                          priority: Number(event.target.value),
-                        }))
-                      }
-                    />
+                      <Label htmlFor="release-route-priority">Độ ưu tiên</Label>
+                      <Input
+                        id="release-route-priority"
+                        type="number"
+                        min={0}
+                        step={1}
+                        value={selectedRoute.priority}
+                        disabled={isSubmitting}
+                        onChange={(event) =>
+                          updateSelected((route) => ({
+                            ...route,
+                            priority: Number(event.target.value),
+                          }))
+                        }
+                      />
                     </div>
                   ) : null}
                 </div>
 
-                {useProductionBindings && selectedRoute.robotBindings.length <= 1 ? (
+                {useProductionBindings &&
+                selectedRoute.robotBindings.length <= 1 ? (
                   <div className="space-y-1.5">
                     <Label>Cấu hình sản xuất đã liên kết</Label>
                     <Select
@@ -583,15 +604,21 @@ export function ConfigurationReleaseRoutesEditor({
                         selectedRoute.robotBindings[0]
                           ?.productionProgramBindingId ?? ""
                       }
-                      disabled={isSubmitting || activeProductionProgramBindings.length === 0}
+                      disabled={
+                        isSubmitting ||
+                        activeProductionProgramBindings.length === 0
+                      }
                       onValueChange={(value) => {
                         const binding = activeProductionProgramBindings.find(
                           (item) => item.id === value,
                         );
-                        if (binding) updateSelected((route) => applyProductionBinding(route, binding));
+                        if (binding)
+                          updateSelected((route) =>
+                            applyProductionBinding(route, binding),
+                          );
                       }}
                     >
-                      <SelectTrigger className="w-full">
+                      <SelectTrigger className="w-full" aria-label="Cấu hình sản xuất đã liên kết">
                         <SelectValue>
                           {selectedProductionBinding
                             ? formatProductionBinding(selectedProductionBinding)
@@ -608,7 +635,8 @@ export function ConfigurationReleaseRoutesEditor({
                     </Select>
                     {activeProductionProgramBindings.length === 0 ? (
                       <p className="text-sm text-warning">
-                        Chưa có cấu hình đã liên kết. Hoàn thành bước Bind Configuration trước khi thêm món vào phiên bản.
+                        Chưa có cấu hình đã liên kết. Hoàn thành bước Bind
+                        Configuration trước khi thêm món vào phiên bản.
                       </p>
                     ) : null}
                   </div>
@@ -733,17 +761,21 @@ export function ConfigurationReleaseRoutesEditor({
                     </p>
                     {hasMissingCapabilityEvidence ? (
                       <p className="mt-1 text-warning">
-                        Bundle chưa cung cấp đủ bằng chứng yêu cầu thiết bị. Có thể phát hành, nhưng bước triển khai kiosk không thể xác minh tương thích tự động.
+                        Bundle chưa cung cấp đủ bằng chứng yêu cầu thiết bị. Có
+                        thể phát hành, nhưng bước triển khai kiosk không thể xác
+                        minh tương thích tự động.
                       </p>
                     ) : (
                       <p className="mt-1 text-muted-foreground">
-                        Yêu cầu thiết bị đã được lấy từ chương trình robot đã liên kết.
+                        Yêu cầu thiết bị đã được lấy từ chương trình robot đã
+                        liên kết.
                       </p>
                     )}
                   </div>
                 ) : null}
 
-                {useProductionBindings && selectedRoute.robotBindings.length > 1 ? (
+                {useProductionBindings &&
+                selectedRoute.robotBindings.length > 1 ? (
                   <div className="space-y-3 rounded-md border p-3">
                     <div className="flex items-center justify-between gap-2">
                       <div>
@@ -829,7 +861,9 @@ export function ConfigurationReleaseRoutesEditor({
                                 className="grid gap-3 p-3 sm:grid-cols-[minmax(0,1fr)_auto]"
                               >
                                 <div className="space-y-1.5">
-                                  <Label>Chương trình #{bindingIndex + 1}</Label>
+                                  <Label>
+                                    Chương trình #{bindingIndex + 1}
+                                  </Label>
                                   <Select
                                     value={
                                       binding.productionProgramBindingId ?? ""
@@ -855,7 +889,9 @@ export function ConfigurationReleaseRoutesEditor({
                                                       robotProgramId:
                                                         candidate.robotProgramId,
                                                       requiredWorkcellCapabilityCode:
-                                                        candidate.requiredCapabilityCodes[0] ?? "",
+                                                        candidate
+                                                          .requiredCapabilityCodes[0] ??
+                                                        "",
                                                     }
                                                   : item,
                                             ),
@@ -863,7 +899,10 @@ export function ConfigurationReleaseRoutesEditor({
                                       );
                                     }}
                                   >
-                                    <SelectTrigger className="w-full">
+                                    <SelectTrigger
+                                      className="w-full"
+                                      aria-label={`Chương trình ${bindingIndex + 1}`}
+                                    >
                                       <SelectValue>
                                         {selectedBinding && program
                                           ? `${program.name} · ${program.code}`
@@ -906,7 +945,10 @@ export function ConfigurationReleaseRoutesEditor({
                                   {selectedBinding?.capabilityEvidenceStatus ===
                                   "Missing" ? (
                                     <p className="text-xs text-warning">
-                                      Liên kết này chưa có bằng chứng yêu cầu thiết bị từ bundle. Có thể tạo release, nhưng khi triển khai hệ thống không thể xác minh kiosk tương thích.
+                                      Liên kết này chưa có bằng chứng yêu cầu
+                                      thiết bị từ bundle. Có thể tạo release,
+                                      nhưng khi triển khai hệ thống không thể
+                                      xác minh kiosk tương thích.
                                     </p>
                                   ) : null}
                                 </div>
@@ -1063,7 +1105,10 @@ export function ConfigurationReleaseRoutesEditor({
                                   }
                                   disabled={isSubmitting}
                                 >
-                                  <SelectTrigger className="w-full">
+                                  <SelectTrigger
+                                    className="w-full"
+                                    aria-label={`Chương trình ${bindingIndex + 1}`}
+                                  >
                                     <SelectValue>
                                       {program
                                         ? `${program.name} — ${program.code}`
@@ -1100,7 +1145,10 @@ export function ConfigurationReleaseRoutesEditor({
                                   }
                                   disabled={isSubmitting}
                                 >
-                                  <SelectTrigger className="w-full">
+                                  <SelectTrigger
+                                    className="w-full"
+                                    aria-label={`Yêu cầu thiết bị sản xuất cho chương trình ${bindingIndex + 1}`}
+                                  >
                                     <SelectValue>
                                       {binding.requiredWorkcellCapabilityCode ||
                                         "Chọn năng lực"}
@@ -1216,6 +1264,29 @@ export function ConfigurationReleaseRoutesEditor({
             {isSubmitting ? "Đang lưu..." : `Lưu ${routes.length} tuyến`}
           </Button>
         </footer>
-    </section>
+      </section>
+      <ConfirmationDialog
+        open={confirmation === "close"}
+        onOpenChange={(open) => {
+          if (!open) setConfirmation(null);
+        }}
+        title="Bỏ các thay đổi chưa lưu?"
+        description="Các chỉnh sửa tuyến trong phiên soạn thảo này sẽ bị mất. Bản nháp đã lưu trước đó không thay đổi."
+        confirmLabel="Bỏ thay đổi"
+        destructive
+        onConfirm={onClose}
+      />
+      <ConfirmationDialog
+        open={confirmation === "delete"}
+        onOpenChange={(open) => {
+          if (!open) setConfirmation(null);
+        }}
+        title={`Xóa tuyến ${selectedRoute?.routeCode || "đang chọn"}?`}
+        description="Tuyến sẽ bị xóa khỏi bản nháp đang soạn. Thay đổi chỉ được gửi lên hệ thống sau khi bạn bấm Lưu."
+        confirmLabel="Xóa tuyến"
+        destructive
+        onConfirm={deleteSelectedRoute}
+      />
+    </>
   );
 }

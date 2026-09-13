@@ -52,12 +52,24 @@ describe("LoginForm Firebase Google login", () => {
   it("exchanges the Firebase ID token through the IceBot Google login API", async () => {
     render(<LoginForm />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Đăng nhập bằng Google" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Đăng nhập bằng Google" }),
+    );
 
     await waitFor(() => {
       expect(signInWithFirebaseGoogle).toHaveBeenCalledTimes(1);
       expect(googleLogin).toHaveBeenCalledWith("firebase-id-token");
       expect(replace).toHaveBeenCalledWith("/dashboard");
     });
+  });
+
+  it("keeps the password value when visibility changes", () => {
+    render(<LoginForm />);
+    const password = screen.getByLabelText("Mật khẩu", { selector: "input" });
+    fireEvent.change(password, { target: { value: "Password123" } });
+    fireEvent.click(screen.getByRole("button", { name: "Hiện mật khẩu" }));
+
+    expect(password).toHaveAttribute("type", "text");
+    expect(password).toHaveValue("Password123");
   });
 });

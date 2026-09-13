@@ -5,6 +5,7 @@ import { useDashboardRealtime } from "@/hooks/realtime/use-dashboard-realtime";
 
 const signalR = vi.hoisted(() => {
   const eventHandlers = new Map<string, (payload: unknown) => void>();
+  let reconnectingHandler: (() => void) | undefined;
   let reconnectedHandler: (() => void) | undefined;
   let closeHandler: (() => void) | undefined;
 
@@ -17,6 +18,9 @@ const signalR = vi.hoisted(() => {
     }),
     onclose: vi.fn((handler: () => void) => {
       closeHandler = handler;
+    }),
+    onreconnecting: vi.fn((handler: () => void) => {
+      reconnectingHandler = handler;
     }),
     onreconnected: vi.fn((handler: () => void) => {
       reconnectedHandler = handler;
@@ -33,12 +37,16 @@ const signalR = vi.hoisted(() => {
     reconnect() {
       reconnectedHandler?.();
     },
+    reconnecting() {
+      reconnectingHandler?.();
+    },
     close() {
       connection.state = "Disconnected";
       closeHandler?.();
     },
     reset() {
       eventHandlers.clear();
+      reconnectingHandler = undefined;
       reconnectedHandler = undefined;
       closeHandler = undefined;
       connection.state = "Disconnected";
@@ -46,6 +54,7 @@ const signalR = vi.hoisted(() => {
       connection.off.mockClear();
       connection.on.mockClear();
       connection.onclose.mockClear();
+      connection.onreconnecting.mockClear();
       connection.onreconnected.mockClear();
       connection.start.mockReset().mockImplementation(async () => {
         connection.state = "Connected";
@@ -84,7 +93,9 @@ vi.mock("@/lib/auth-session", () => ({
 }));
 
 vi.mock("@/lib/realtime/hub-urls", () => ({
-  getManagementDashboardHubUrl: vi.fn(() => "/api/backend/hubs/management-dashboard"),
+  getManagementDashboardHubUrl: vi.fn(
+    () => "/api/backend/hubs/management-dashboard",
+  ),
 }));
 
 async function flushPromises() {
@@ -106,7 +117,7 @@ describe("useDashboardRealtime", () => {
 
   it("joins dashboard group with system scope and triggers onInvalidated", async () => {
     const onInvalidated = vi.fn();
-    renderHook(() =>
+    const { result } = renderHook(() =>
       useDashboardRealtime({
         scope: "system",
         onInvalidated,
@@ -114,6 +125,7 @@ describe("useDashboardRealtime", () => {
     );
     await flushPromises();
 
+    expect(result.current).toBe("connected");
     expect(signalR.connection.start).toHaveBeenCalledTimes(1);
     expect(signalR.connection.invoke).toHaveBeenCalledWith(
       "JoinDashboard",
@@ -137,7 +149,10 @@ describe("useDashboardRealtime", () => {
 
     expect(onInvalidated).toHaveBeenCalledTimes(1);
     expect(onInvalidated).toHaveBeenCalledWith(
-      expect.objectContaining({ scope: "system", reason: "OrderItemFulfillmentChanged" }),
+      expect.objectContaining({
+        scope: "system",
+        reason: "OrderItemFulfillmentChanged",
+      }),
     );
   });
 
@@ -188,5 +203,51 @@ describe("useDashboardRealtime", () => {
     });
 
     expect(onInvalidated).toHaveBeenCalledTimes(1);
+  });
+
+  it("reports reconnecting and connected states", async () => {
+    const { result } = renderHook(() =>
+      useDashboardRealtime({ scope: "system", onInvalidated: vi.fn() }),
+    );
+    await flushPromises();
+
+    expect(result.current).toBe("connected");
+
+    act(() => signalR.reconnecting());
+    expect(result.current).toBe("reconnecting");
+
+    act(() => signalR.reconnect());
+    await flushPromises();
+    expect(result.current).toBe("connected");
+  });
+
+  it("waits for a pending start before stopping on unmount", async () => {
+    let resolveStart: (() => void) | undefined;
+    signalR.connection.start.mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveStart = () => {
+            signalR.connection.state = "Connected";
+            resolve();
+          };
+        }),
+    );
+
+    const { unmount } = renderHook(() =>
+      useDashboardRealtime({ scope: "system", onInvalidated: vi.fn() }),
+    );
+
+    expect(signalR.connection.start).toHaveBeenCalledTimes(1);
+    unmount();
+    expect(signalR.connection.stop).not.toHaveBeenCalled();
+
+    await act(async () => {
+      resolveStart?.();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(signalR.connection.invoke).not.toHaveBeenCalled();
+    expect(signalR.connection.stop).toHaveBeenCalledTimes(1);
   });
 });

@@ -38,6 +38,8 @@ let refreshRequest: Promise<string> | null = null;
 
 function redirectToLogin(): void {
   if (typeof window !== "undefined" && window.location.pathname !== "/login") {
+    // This module runs outside React; a full reload also clears stale authenticated UI state.
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination
     window.location.assign("/login");
   }
 }

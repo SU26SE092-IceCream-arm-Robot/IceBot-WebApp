@@ -2,7 +2,14 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { ChevronRight, Clock, FileQuestion, Home, RefreshCw, ShieldCheck } from "lucide-react";
+import {
+  ChevronRight,
+  Clock,
+  FileQuestion,
+  Home,
+  RefreshCw,
+  ShieldCheck,
+} from "lucide-react";
 import axios from "axios";
 
 import { PublicHeader } from "@/components/features/service-registration/public-header";
@@ -31,10 +38,10 @@ export function PublicContentPageView({ slug }: PublicContentPageViewProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const staticMeta =
-    STATIC_CONTENT_PAGE_METADATA[slug as StaticContentPageKey];
+  const staticMeta = STATIC_CONTENT_PAGE_METADATA[slug as StaticContentPageKey];
   const fallbackTitle = staticMeta?.defaultTitle || staticMeta?.label || slug;
 
+  const [retryKey, setRetryKey] = useState(0);
   useEffect(() => {
     let isMounted = true;
     const controller = new AbortController();
@@ -52,7 +59,9 @@ export function PublicContentPageView({ slug }: PublicContentPageViewProps) {
         if (axios.isCancel(err) || controller.signal.aborted) return;
         if (isMounted) {
           const message =
-            err instanceof Error ? err.message : "Không thể tải nội dung trang.";
+            err instanceof Error
+              ? err.message
+              : "Không thể tải nội dung trang.";
           setError(message);
         }
       } finally {
@@ -68,16 +77,22 @@ export function PublicContentPageView({ slug }: PublicContentPageViewProps) {
       isMounted = false;
       controller.abort();
     };
-  }, [slug]);
+  }, [slug, retryKey]);
 
   const pageTitle = content?.title || fallbackTitle;
   const publishedDate = formatDate(content?.publishedAt);
 
   return (
     <div className="min-h-screen flex flex-col bg-background font-sans selection:bg-primary/20">
-      <PublicHeader />
+      <a
+        href="#public-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[60] focus:rounded-md focus:bg-primary focus:px-4 focus:py-3 focus:text-primary-foreground"
+      >
+        Bỏ qua điều hướng, tới nội dung
+      </a>
+      <PublicHeader rootQualifiedAnchors />
 
-      <main className="flex-grow pt-24 pb-20">
+      <main id="public-content" tabIndex={-1} className="flex-grow pt-24 pb-20">
         <div className="container mx-auto px-4 max-w-4xl">
           {/* Breadcrumb Navigation */}
           <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-8">
@@ -118,9 +133,20 @@ export function PublicContentPageView({ slug }: PublicContentPageViewProps) {
                 Nội dung đang được cập nhật
               </h2>
               <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                Trang <strong>{staticMeta?.label || slug}</strong> hiện chưa có phiên bản xuất bản chính thức hoặc đang được quản trị viên hoàn thiện.
+                Trang <strong>{staticMeta?.label || slug}</strong> hiện chưa có
+                phiên bản xuất bản chính thức hoặc đang được quản trị viên hoàn
+                thiện.
               </p>
               <div className="pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setRetryKey((key) => key + 1)}
+                  className="mr-2"
+                >
+                  <RefreshCw className="size-4" />
+                  Thử lại
+                </Button>
                 <Link
                   href="/"
                   className={buttonVariants({ variant: "outline" })}

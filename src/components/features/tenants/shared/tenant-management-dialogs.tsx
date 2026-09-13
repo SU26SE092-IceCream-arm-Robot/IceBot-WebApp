@@ -13,8 +13,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { TimeZoneInput } from "@/components/shared/time-zone-input";
 import { isValidOpeningHoursRange } from "@/lib/presenters/sales-admission";
 import { hasDuplicateStoreName } from "@/lib/tenant-identity";
+import { DEFAULT_TIME_ZONE, isValidIanaTimeZone } from "@/lib/time-zones";
 import type { StoreResult } from "@/types/kiosks/management";
 import type {
   CreateOrganizationRequest,
@@ -258,7 +260,9 @@ export function StoreFormDialog({
   const [city, setCity] = useState(store?.city ?? "");
   const [province, setProvince] = useState(store?.province ?? "");
   const [country, setCountry] = useState(store?.country ?? "Việt Nam");
-  const [timeZone, setTimeZone] = useState(store?.timeZone ?? "Asia/Bangkok");
+  const [timeZone, setTimeZone] = useState(
+    store?.timeZone ?? DEFAULT_TIME_ZONE,
+  );
   const [latitude, setLatitude] = useState(store?.latitude?.toString() ?? "");
   const [longitude, setLongitude] = useState(store?.longitude?.toString() ?? "");
   const [phoneNumber, setPhoneNumber] = useState(store?.phoneNumber ?? "");
@@ -284,6 +288,12 @@ export function StoreFormDialog({
     }
     if (!timeZone.trim()) {
       setValidationMessage("Múi giờ là bắt buộc.");
+      return;
+    }
+    if (!isValidIanaTimeZone(timeZone)) {
+      setValidationMessage(
+        "Múi giờ không hợp lệ. Hãy dùng định dạng IANA, ví dụ Asia/Ho_Chi_Minh.",
+      );
       return;
     }
     if (!isValidEmail(email)) {
@@ -355,7 +365,7 @@ export function StoreFormDialog({
         <DialogHeader>
           <div className="flex items-start gap-3 pr-8">
             <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary"><MapPinned className="size-5" /></span>
-            <div className="space-y-1"><DialogTitle>{isCreate ? "Tạo cửa hàng" : "Chỉnh sửa cửa hàng"}</DialogTitle><DialogDescription>{organizationName}</DialogDescription></div>
+            <div className="space-y-1"><DialogTitle>{isCreate ? "Tạo cửa hàng" : "Chỉnh sửa cửa hàng"}</DialogTitle><DialogDescription>{isCreate ? `${organizationName}. Đây là thao tác tạo riêng lẻ, không khởi động quy trình Thiết lập nhanh điểm bán.` : organizationName}</DialogDescription></div>
           </div>
         </DialogHeader>
         <form
@@ -368,7 +378,7 @@ export function StoreFormDialog({
             {isCreate ? <div className="space-y-1.5"><label htmlFor="store-code" className="text-sm font-medium">Mã cửa hàng <span className="text-destructive">*</span></label><Input id="store-code" value={code} maxLength={50} disabled={isSubmitting} className="h-10 font-mono uppercase" onChange={(event) => setCode(event.target.value)} /></div> : null}
             <div className="space-y-1.5"><label htmlFor="store-name" className="text-sm font-medium">Tên cửa hàng <span className="text-destructive">*</span></label><Input id="store-name" value={name} maxLength={200} disabled={isSubmitting} className="h-10" onChange={(event) => setName(event.target.value)} /></div>
             <div className="space-y-1.5"><label htmlFor="store-type" className="text-sm font-medium">Loại cửa hàng</label><Input id="store-type" value={storeType} disabled={isSubmitting} className="h-10" onChange={(event) => setStoreType(event.target.value)} /></div>
-            <div className="space-y-1.5"><label htmlFor="store-timezone" className="text-sm font-medium">Múi giờ <span className="text-destructive">*</span></label><Input id="store-timezone" value={timeZone} disabled={isSubmitting} className="h-10 font-mono" onChange={(event) => setTimeZone(event.target.value)} /></div>
+            <div className="space-y-1.5"><label htmlFor="store-timezone" className="text-sm font-medium">Múi giờ <span className="text-destructive">*</span></label><TimeZoneInput id="store-timezone" value={timeZone} disabled={isSubmitting} className="h-10 font-mono" onChange={(event) => setTimeZone(event.target.value)} /><p className="text-xs text-muted-foreground">Mặc định Việt Nam: {DEFAULT_TIME_ZONE}. Có thể nhập timezone IANA khác.</p></div>
             <div className="space-y-1.5 sm:col-span-2"><label htmlFor="store-address" className="text-sm font-medium">Địa chỉ</label><Input id="store-address" value={address} disabled={isSubmitting} className="h-10" onChange={(event) => setAddress(event.target.value)} /></div>
             <div className="space-y-1.5"><label htmlFor="store-city" className="text-sm font-medium">Thành phố</label><Input id="store-city" value={city} disabled={isSubmitting} className="h-10" onChange={(event) => setCity(event.target.value)} /></div>
             <div className="space-y-1.5"><label htmlFor="store-province" className="text-sm font-medium">Tỉnh/Thành</label><Input id="store-province" value={province} disabled={isSubmitting} className="h-10" onChange={(event) => setProvince(event.target.value)} /></div>
@@ -380,8 +390,8 @@ export function StoreFormDialog({
             <div className="space-y-3 sm:col-span-2">
               <div className="flex flex-col gap-2 rounded-lg border border-border bg-muted/15 p-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <p className="text-sm font-medium">Lịch mở cửa</p>
-                  <p className="text-xs text-muted-foreground">Tắt lịch để không giới hạn thời gian bán theo ngày. Giờ đóng sớm hơn giờ mở được hiểu là đóng vào ngày hôm sau.</p>
+                  <p className="text-sm font-medium">Giới hạn thời gian bán</p>
+                  <p className="text-xs text-muted-foreground">Không bật: cửa hàng không bị giới hạn theo ngày. Bật: đơn mới chỉ được tiếp nhận trong lịch bên dưới. Giờ đóng sớm hơn giờ mở được hiểu là ngày hôm sau.</p>
                 </div>
                 <label className="flex items-center gap-2 text-sm font-medium">
                   <input
@@ -391,7 +401,7 @@ export function StoreFormDialog({
                     className="size-4 accent-primary"
                     onChange={(event) => setUsesOpeningHours(event.target.checked)}
                   />
-                  Áp dụng lịch
+                  Giới hạn theo lịch
                 </label>
               </div>
               <div className="space-y-2">

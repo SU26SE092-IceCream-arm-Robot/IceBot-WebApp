@@ -135,8 +135,9 @@ function RecipeForm({
         <div className="grid gap-4 sm:grid-cols-2">
           {!recipe ? (
             <div className="space-y-1.5">
-              <Label>Mã công thức</Label>
+              <Label htmlFor="recipe-code">Mã công thức</Label>
               <Input
+                id="recipe-code"
                 value={code}
                 maxLength={50}
                 onChange={(e) => setCode(e.target.value)}
@@ -144,16 +145,18 @@ function RecipeForm({
             </div>
           ) : null}
           <div className="space-y-1.5">
-            <Label>Tên công thức</Label>
+            <Label htmlFor="recipe-name">Tên công thức</Label>
             <Input
+              id="recipe-name"
               value={name}
               maxLength={200}
               onChange={(e) => setName(e.target.value)}
             />
           </div>
           <div className="space-y-1.5">
-            <Label>Sản lượng</Label>
+            <Label htmlFor="recipe-yield">Sản lượng</Label>
             <Input
+              id="recipe-yield"
               type="number"
               min="0.000001"
               step="any"
@@ -162,16 +165,18 @@ function RecipeForm({
             />
           </div>
           <div className="space-y-1.5">
-            <Label>Đơn vị</Label>
+            <Label htmlFor="recipe-unit">Đơn vị</Label>
             <Input
+              id="recipe-unit"
               value={unit}
               maxLength={30}
               onChange={(e) => setUnit(e.target.value)}
             />
           </div>
           <div className="space-y-1.5">
-            <Label>Thời gian ước tính (giây)</Label>
+            <Label htmlFor="recipe-duration">Thời gian ước tính (giây)</Label>
             <Input
+              id="recipe-duration"
               type="number"
               min="1"
               max="86400"
@@ -188,16 +193,18 @@ function RecipeForm({
             <span className="text-sm">Công thức mặc định</span>
           </label>
           <div className="space-y-1.5">
-            <Label>Hiệu lực từ</Label>
+            <Label htmlFor="recipe-effective-from">Hiệu lực từ</Label>
             <Input
+              id="recipe-effective-from"
               type="datetime-local"
               value={effectiveFrom}
               onChange={(e) => setEffectiveFrom(e.target.value)}
             />
           </div>
           <div className="space-y-1.5">
-            <Label>Hiệu lực đến</Label>
+            <Label htmlFor="recipe-effective-to">Hiệu lực đến</Label>
             <Input
+              id="recipe-effective-to"
               type="datetime-local"
               value={effectiveTo}
               onChange={(e) => setEffectiveTo(e.target.value)}
@@ -292,6 +299,8 @@ function RecipeItemsForm({
         </DialogHeader>
         <div className="flex gap-2">
           <Input
+            aria-label="Tìm nguyên liệu cho công thức"
+            type="search"
             value={ingredients.search}
             onChange={(e) => ingredients.setSearch(e.target.value)}
             placeholder="Tìm nguyên liệu..."
@@ -326,7 +335,10 @@ function RecipeItemsForm({
                     });
                   }}
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger
+                    aria-label={`Chọn nguyên liệu dòng ${item.displayOrder}`}
+                    className="w-full"
+                  >
                     <SelectValue>
                       {selected
                         ? `${selected.name} — ${selected.code}`
@@ -388,6 +400,7 @@ function RecipeItemsForm({
                   ×
                 </Button>
                 <Input
+                  aria-label={`Ghi chú nguyên liệu dòng ${item.displayOrder}`}
                   className="md:col-span-6"
                   value={item.notes ?? ""}
                   placeholder="Ghi chú"

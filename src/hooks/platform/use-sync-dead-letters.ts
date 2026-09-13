@@ -31,6 +31,7 @@ function errorMessage(error: unknown, fallback: string): string {
 export function useSyncDeadLetters() {
   const detailAbortRef = useRef<AbortController | null>(null);
   const detailRequestIdRef = useRef(0);
+  const detailTargetIdRef = useRef<string | null>(null);
   const [page, setPage] = useState(1);
   const [items, setItems] = useState<SyncDeadLetterResult[]>([]);
   const [pagination, setPagination] = useState(EMPTY_PAGINATION);
@@ -41,25 +42,30 @@ export function useSyncDeadLetters() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState<string | null>(null);
 
-  const load = useCallback(async (currentPage: number, signal?: AbortSignal) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const result = await listSyncDeadLetters(
-        { pageNumber: currentPage, pageSize: PAGE_SIZE },
-        signal,
-      );
-      if (signal?.aborted) return;
-      setItems(result.data ?? []);
-      setPagination(result.pagination);
-    } catch (loadError) {
-      if (axios.isCancel(loadError) || signal?.aborted) return;
-      setItems([]);
-      setError(errorMessage(loadError, "Không thể tải danh sách sự cố đồng bộ."));
-    } finally {
-      if (!signal?.aborted) setIsLoading(false);
-    }
-  }, []);
+  const load = useCallback(
+    async (currentPage: number, signal?: AbortSignal) => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const result = await listSyncDeadLetters(
+          { pageNumber: currentPage, pageSize: PAGE_SIZE },
+          signal,
+        );
+        if (signal?.aborted) return;
+        setItems(result.data ?? []);
+        setPagination(result.pagination);
+      } catch (loadError) {
+        if (axios.isCancel(loadError) || signal?.aborted) return;
+        setItems([]);
+        setError(
+          errorMessage(loadError, "Không thể tải danh sách sự cố đồng bộ."),
+        );
+      } finally {
+        if (!signal?.aborted) setIsLoading(false);
+      }
+    },
+    [],
+  );
 
   useEffect(() => {
     const controller = new AbortController();
@@ -81,21 +87,31 @@ export function useSyncDeadLetters() {
     const controller = new AbortController();
     detailAbortRef.current = controller;
     const requestId = ++detailRequestIdRef.current;
+    detailTargetIdRef.current = id;
     setDetailOpen(true);
     setSelected(null);
     setDetailError(null);
     setDetailLoading(true);
     try {
       const detail = await getSyncDeadLetter(id, controller.signal);
-      if (controller.signal.aborted || requestId !== detailRequestIdRef.current) return;
+      if (controller.signal.aborted || requestId !== detailRequestIdRef.current)
+        return;
       setSelected(detail);
     } catch (detailLoadError) {
       if (axios.isCancel(detailLoadError) || controller.signal.aborted) return;
       if (requestId === detailRequestIdRef.current) {
-        setDetailError(errorMessage(detailLoadError, "Không thể tải chi tiết sự cố đồng bộ."));
+        setDetailError(
+          errorMessage(
+            detailLoadError,
+            "Không thể tải chi tiết sự cố đồng bộ.",
+          ),
+        );
       }
     } finally {
-      if (!controller.signal.aborted && requestId === detailRequestIdRef.current) {
+      if (
+        !controller.signal.aborted &&
+        requestId === detailRequestIdRef.current
+      ) {
         setDetailLoading(false);
       }
     }
@@ -106,6 +122,7 @@ export function useSyncDeadLetters() {
     if (!open) {
       detailRequestIdRef.current += 1;
       detailAbortRef.current?.abort();
+      detailTargetIdRef.current = null;
       setSelected(null);
       setDetailError(null);
       setDetailLoading(false);
@@ -122,6 +139,11 @@ export function useSyncDeadLetters() {
     detailLoading,
     detailError,
     openDetail,
+    retryDetail: () => {
+      if (detailTargetIdRef.current) {
+        void openDetail(detailTargetIdRef.current);
+      }
+    },
     setDetailOpen: setDetailOpenSafely,
     refresh: () => void load(page),
     previousPage: () => setPage((current) => Math.max(1, current - 1)),

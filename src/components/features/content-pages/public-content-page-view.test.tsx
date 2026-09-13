@@ -1,6 +1,6 @@
 import React from "react";
-import { render, screen, waitFor } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { PublicContentPageView } from "@/components/features/content-pages/public-content-page-view";
 import { getPublicContentPage } from "@/lib/services/platform/content-pages";
@@ -8,6 +8,7 @@ import { getPublicContentPage } from "@/lib/services/platform/content-pages";
 vi.mock("@/lib/services/platform/content-pages");
 
 describe("PublicContentPageView", () => {
+  beforeEach(() => vi.clearAllMocks());
   it("renders published content title and body HTML for public visitors", async () => {
     vi.mocked(getPublicContentPage).mockResolvedValue({
       slug: "about-us",
@@ -47,5 +48,16 @@ describe("PublicContentPageView", () => {
     expect(
       screen.getByRole("link", { name: "Quay về Trang chủ" }),
     ).toBeInTheDocument();
+
+    vi.mocked(getPublicContentPage).mockResolvedValueOnce({
+      slug: "privacy-policy",
+      title: "Chính sách bảo mật",
+      bodyHtml: "<p>Nội dung đã tải lại.</p>",
+      publishedAt: null,
+      revisionNumber: 1,
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Thử lại" }));
+    expect(await screen.findByText("Nội dung đã tải lại.")).toBeInTheDocument();
+    expect(getPublicContentPage).toHaveBeenCalledTimes(2);
   });
 });

@@ -1,51 +1,127 @@
 "use client";
 
-import { RefreshCw, ShieldAlert } from "lucide-react";
+import {
+  KeyRound,
+  RefreshCw,
+  Shield,
+  ShieldAlert,
+  SlidersHorizontal,
+} from "lucide-react";
+import Link from "next/link";
 
 import { PermissionMatrixView } from "@/components/features/identity/roles/permission-matrix-view";
 import { RolesTable } from "@/components/features/identity/roles/roles-table";
-import { Button } from "@/components/ui/button";
-import { useRoles } from "@/hooks/identity/use-roles";
+import { MetricStrip, MetricStripItem } from "@/components/shared/metric-strip";
+import { PageHeader } from "@/components/shared/page-header";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useRoles } from "@/hooks/identity/use-roles";
 
 export default function RolesPage() {
-  const { roles, permissionMatrix, isLoading, errorMessage, refresh } = useRoles();
+  const { roles, permissionMatrix, isLoading, errorMessage, refresh } =
+    useRoles();
+  const matrix = permissionMatrix ?? [];
+  const scopedPermissionCount = matrix.filter(
+    (permission) => permission.scopeRequired,
+  ).length;
+  const systemRoleCount = roles.filter((role) => role.isSystemRole).length;
 
   return (
-    <div className="flex-1 space-y-4 p-4 pt-6 md:p-8">
-      <div className="flex items-center justify-between space-y-2">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">Vai Trò & Quyền Hạn</h2>
-          <p className="text-muted-foreground mt-1">
-            Danh sách vai trò và ma trận phân quyền từ hệ thống
+    <div className="space-y-5">
+      <PageHeader
+        title="Role và quyền truy cập"
+        description="Tra cứu role hệ thống được phép làm gì và quyền đó áp dụng trong phạm vi nào. Việc cấp hoặc thay đổi role được thực hiện tại trang Tài khoản."
+        metadata={
+          <p className="text-xs text-muted-foreground">
+            Tên role và mã policy được giữ nguyên để đối chiếu chính xác với
+            backend
           </p>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Button variant="outline" size="sm" onClick={() => void refresh()} disabled={isLoading}>
-            <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
-            Làm mới
-          </Button>
-        </div>
-      </div>
+        }
+        actions={
+          <>
+            <Link
+              href="/users"
+              className={buttonVariants({ variant: "outline", size: "sm" })}
+            >
+              Mở trang Tài khoản
+            </Link>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => void refresh()}
+              isLoading={isLoading}
+            >
+              <RefreshCw className="size-4" aria-hidden="true" />
+              Làm mới
+            </Button>
+          </>
+        }
+      />
 
-      {errorMessage && (
-        <div className="rounded-md bg-destructive/15 p-4 flex items-center gap-3 border border-destructive/20 text-destructive">
-          <ShieldAlert className="h-5 w-5 shrink-0" />
-          <p className="text-sm font-medium">{errorMessage}</p>
+      {errorMessage ? (
+        <div
+          role="alert"
+          className="flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive"
+        >
+          <ShieldAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+          <div>
+            <p className="font-semibold">Không thể tải dữ liệu phân quyền</p>
+            <p className="mt-1">{errorMessage}</p>
+          </div>
         </div>
-      )}
+      ) : null}
+
+      <MetricStrip>
+        <MetricStripItem
+          icon={Shield}
+          label="Role hệ thống"
+          value={roles.length.toLocaleString("vi-VN")}
+          description={`${systemRoleCount} role nền tảng`}
+          tone="primary"
+        />
+        <MetricStripItem
+          icon={KeyRound}
+          label="Quyền được khai báo"
+          value={matrix.length.toLocaleString("vi-VN")}
+          description="Từ ma trận policy hiện tại"
+          tone="neutral"
+        />
+        <MetricStripItem
+          icon={SlidersHorizontal}
+          label="Quyền cần phạm vi"
+          value={scopedPermissionCount.toLocaleString("vi-VN")}
+          description="Yêu cầu tổ chức, cửa hàng hoặc kiosk"
+          tone="warning"
+        />
+        <MetricStripItem
+          icon={ShieldAlert}
+          label="Quyền không cần phạm vi"
+          value={(matrix.length - scopedPermissionCount).toLocaleString(
+            "vi-VN",
+          )}
+          description="Không yêu cầu chọn scope khi cấp"
+          tone="neutral"
+        />
+      </MetricStrip>
 
       <Tabs defaultValue="roles" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="roles">Danh sách Vai trò</TabsTrigger>
-          <TabsTrigger value="matrix">Ma trận Phân quyền</TabsTrigger>
+        <TabsList
+          variant="line"
+          className="w-full border-b border-border"
+          aria-label="Nội dung role và quyền truy cập"
+        >
+          <TabsTrigger value="roles">Danh sách role</TabsTrigger>
+          <TabsTrigger value="matrix">Quyền theo nhóm nghiệp vụ</TabsTrigger>
         </TabsList>
         <TabsContent value="roles" className="space-y-4">
           {isLoading && roles.length === 0 ? (
-            <div className="space-y-2 px-2 py-4">
-              <div className="h-8 w-full animate-pulse rounded bg-muted/50" />
-              <div className="h-20 w-full animate-pulse rounded bg-muted/30" />
-              <div className="h-20 w-full animate-pulse rounded bg-muted/30" />
+            <div className="space-y-2 py-2" aria-label="Đang tải role">
+              {Array.from({ length: 4 }).map((_, index) => (
+                <div
+                  key={`role-loading-${index}`}
+                  className="h-20 animate-pulse rounded-lg border border-border bg-muted/20"
+                />
+              ))}
             </div>
           ) : (
             <RolesTable roles={roles} />
@@ -53,9 +129,12 @@ export default function RolesPage() {
         </TabsContent>
         <TabsContent value="matrix" className="space-y-4">
           {isLoading && !permissionMatrix ? (
-            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="h-[250px] animate-pulse rounded-xl bg-muted/30 border" />
+            <div className="space-y-3 py-2" aria-label="Đang tải ma trận quyền">
+              {Array.from({ length: 4 }).map((_, index) => (
+                <div
+                  key={`permission-loading-${index}`}
+                  className="h-28 animate-pulse rounded-lg border border-border bg-muted/20"
+                />
               ))}
             </div>
           ) : permissionMatrix ? (

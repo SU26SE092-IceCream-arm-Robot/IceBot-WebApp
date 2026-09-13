@@ -53,8 +53,22 @@ vi.mock("@/hooks/dashboard/use-dashboard-overview", () => ({
         lowStockDispenserCount: 0,
         latestDeviceEventCount: 0,
       },
-      kioskStatusOverview: null,
-      inventorySummary: null,
+      kioskStatusOverview: authState.isSystemAdmin
+        ? {
+            totalCount: 1,
+            byLifecycleStatus: [{ status: "Active", count: 1 }],
+            byConnectivityStatus: [{ status: "Online", count: 1 }],
+            items: [],
+          }
+        : null,
+      inventorySummary: authState.isSystemAdmin
+        ? {
+            totalDispenserCount: 0,
+            lowStockCount: 0,
+            emptyCount: 0,
+            items: [],
+          }
+        : null,
       orderOverview: null,
     },
     warnings: ["Không thể tải một số nguồn tổng quan."],
@@ -64,6 +78,10 @@ vi.mock("@/hooks/dashboard/use-dashboard-overview", () => ({
     errorMessage: null,
     refresh: vi.fn(),
   }),
+}));
+
+vi.mock("@/hooks/realtime/use-dashboard-realtime", () => ({
+  useDashboardRealtime: () => "connected",
 }));
 
 describe("DashboardPage partial data", () => {
@@ -78,15 +96,21 @@ describe("DashboardPage partial data", () => {
 
     expect(screen.getByText("Tổng số kiosk")).toBeInTheDocument();
     expect(screen.getByText("Phạm vi hệ thống")).toBeInTheDocument();
-    expect(screen.getByText("Trạng thái kiosk chưa tải được")).toBeInTheDocument();
+    expect(
+      screen.getByText("Trạng thái kiosk chưa tải được"),
+    ).toBeInTheDocument();
     expect(
       screen.getByText("Trạng thái đơn hàng chưa tải được"),
     ).toBeInTheDocument();
-    expect(screen.getByText("Đơn hàng gần đây chưa tải được")).toBeInTheDocument();
+    expect(
+      screen.getByText("Đơn hàng gần đây chưa tải được"),
+    ).toBeInTheDocument();
     expect(
       screen.getByText("Một phần dữ liệu tổng quan chưa tải được"),
     ).toBeInTheDocument();
-    expect(screen.queryByText("Hệ thống chưa có dữ liệu")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Hệ thống chưa có dữ liệu"),
+    ).not.toBeInTheDocument();
   });
 
   it("composes a platform control workspace for SystemAdmin", () => {
@@ -102,13 +126,22 @@ describe("DashboardPage partial data", () => {
 
     render(<DashboardPage />);
 
-    expect(screen.getByRole("heading", { name: "Kiểm soát nền tảng" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Kiểm soát nền tảng" }),
+    ).toBeInTheDocument();
     expect(screen.getAllByText("Tổ chức").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Kiosk đã kích hoạt").length).toBeGreaterThan(0);
-    expect(screen.getByText("Can thiệp cấp nền tảng")).toBeInTheDocument();
-    expect(screen.getByText("Quản trị nền tảng")).toBeInTheDocument();
+    expect(screen.getByText("Realtime đã kết nối")).toBeInTheDocument();
+    expect(screen.getByText("Cần xử lý ngay")).toBeInTheDocument();
+    expect(screen.getByText("Vòng đời kiosk")).toBeInTheDocument();
+    expect(screen.getByText("Trạng thái kết nối")).toBeInTheDocument();
+    expect(screen.getByText("Hoạt động quản trị")).toBeInTheDocument();
     expect(screen.getByText("Doanh thu tổ chức")).toBeInTheDocument();
-    expect(screen.queryByText("Đơn hàng gần đây chưa tải được")).not.toBeInTheDocument();
-    expect(screen.queryByText("Trạng thái đơn hàng chưa tải được")).not.toBeInTheDocument();
+    expect(screen.queryByText("Phạm vi hệ thống")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Đơn hàng gần đây chưa tải được"),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Trạng thái đơn hàng chưa tải được"),
+    ).not.toBeInTheDocument();
   });
 });

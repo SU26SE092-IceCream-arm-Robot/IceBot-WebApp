@@ -2,7 +2,14 @@ import { Activity } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import type { ReportActivityItem } from "@/types/operations/reports";
 
 const TYPE_LABELS: Record<ReportActivityItem["type"], string> = {
@@ -62,7 +69,11 @@ function formatDate(value: string) {
   return `${getPart("hour")}:${getPart("minute")} · ${getPart("day")}/${getPart("month")}/${getPart("year")}`;
 }
 
-export function RecentActivityTable({ items }: { items: ReportActivityItem[] }) {
+export function RecentActivityTable({
+  items,
+}: {
+  items: ReportActivityItem[];
+}) {
   return (
     <Card className="rounded-xl border border-border bg-card shadow-none">
       <CardHeader className="border-b border-border pb-4">
@@ -76,41 +87,90 @@ export function RecentActivityTable({ items }: { items: ReportActivityItem[] }) 
         </div>
       </CardHeader>
       {items.length === 0 ? (
-        <CardContent className="p-10 text-center text-sm text-muted-foreground">Chưa có hoạt động trong khoảng thời gian này.</CardContent>
+        <CardContent className="p-10 text-center text-sm text-muted-foreground">
+          Chưa có hoạt động trong khoảng thời gian này.
+        </CardContent>
       ) : (
-        <Table className="min-w-[860px]">
-          <TableHeader className="bg-muted/40">
-            <TableRow className="hover:bg-transparent">
-              <TableHead className="pl-5">Thời gian</TableHead>
-              <TableHead className="text-center">Loại</TableHead>
-              <TableHead>Đối tượng</TableHead>
-              <TableHead>Nội dung</TableHead>
-              <TableHead className="pr-5 text-center">Trạng thái</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
+        <>
+          <div className="grid gap-3 p-4 md:hidden">
             {items.map((item) => (
-              <TableRow key={item.id}>
-                <TableCell className="py-3 pl-5 text-muted-foreground">{formatDate(item.occurredAt)}</TableCell>
-                <TableCell className="text-center">
-                  <Badge variant="outline" className="h-6 rounded-full border-border bg-muted/20 px-2.5 text-muted-foreground">
-                    {TYPE_LABELS[item.type]}
-                  </Badge>
-                </TableCell>
-                <TableCell className="font-medium text-foreground">{item.entity}</TableCell>
-                <TableCell className="max-w-md whitespace-normal text-muted-foreground">{item.summary}</TableCell>
-                <TableCell className="pr-5 text-center">
+              <article
+                key={item.id}
+                className="space-y-3 rounded-lg border border-border p-4"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="font-medium text-foreground">{item.entity}</p>
+                    <p className="mt-1 text-xs tabular-nums text-muted-foreground">
+                      {formatDate(item.occurredAt)}
+                    </p>
+                  </div>
                   <Badge
                     variant="outline"
-                    className={`h-6 rounded-full px-2.5 ${STATUS_CLASS_NAMES[item.tone]}`}
+                    className="shrink-0 border-border bg-muted/20"
+                  >
+                    {TYPE_LABELS[item.type]}
+                  </Badge>
+                </div>
+                <p className="break-words text-sm text-muted-foreground">
+                  {item.summary}
+                </p>
+                <div className="flex justify-end border-t border-border pt-3">
+                  <Badge
+                    variant="outline"
+                    className={STATUS_CLASS_NAMES[item.tone]}
                   >
                     {STATUS_LABELS[item.status] ?? item.status}
                   </Badge>
-                </TableCell>
-              </TableRow>
+                </div>
+              </article>
             ))}
-          </TableBody>
-        </Table>
+          </div>
+          <div className="hidden md:block">
+            <Table className="min-w-[860px]">
+              <TableHeader className="bg-muted/40">
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="pl-5">Thời gian</TableHead>
+                  <TableHead className="text-center">Loại</TableHead>
+                  <TableHead>Đối tượng</TableHead>
+                  <TableHead>Nội dung</TableHead>
+                  <TableHead className="pr-5 text-center">Trạng thái</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {items.map((item) => (
+                  <TableRow key={item.id}>
+                    <TableCell className="py-3 pl-5 text-muted-foreground">
+                      {formatDate(item.occurredAt)}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Badge
+                        variant="outline"
+                        className="h-6 rounded-full border-border bg-muted/20 px-2.5 text-muted-foreground"
+                      >
+                        {TYPE_LABELS[item.type]}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="font-medium text-foreground">
+                      {item.entity}
+                    </TableCell>
+                    <TableCell className="max-w-md whitespace-normal text-muted-foreground">
+                      {item.summary}
+                    </TableCell>
+                    <TableCell className="pr-5 text-center">
+                      <Badge
+                        variant="outline"
+                        className={`h-6 rounded-full px-2.5 ${STATUS_CLASS_NAMES[item.tone]}`}
+                      >
+                        {STATUS_LABELS[item.status] ?? item.status}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </>
       )}
     </Card>
   );

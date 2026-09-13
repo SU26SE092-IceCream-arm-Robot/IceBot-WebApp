@@ -3,7 +3,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
+  AlertTriangle,
   ArrowLeft,
+  CircleCheck,
   CirclePause,
   CirclePlay,
   Eye,
@@ -32,6 +34,8 @@ import {
 } from "@/components/features/tenants/shared/tenant-ui";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { MetricStrip, MetricStripItem } from "@/components/shared/metric-strip";
+import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -158,7 +162,9 @@ export function StoreDetailView({ storeId }: StoreDetailViewProps) {
     currentStoreIdRef.current = storeId;
   }, [storeId]);
   const [store, setStore] = useState<StoreResult | null>(null);
-  const [organization, setOrganization] = useState<OrganizationResult | null>(null);
+  const [organization, setOrganization] = useState<OrganizationResult | null>(
+    null,
+  );
   const [kiosks, setKiosks] = useState<KioskResult[]>([]);
   const [siblingStores, setSiblingStores] = useState<StoreResult[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -168,87 +174,85 @@ export function StoreDetailView({ storeId }: StoreDetailViewProps) {
   const [lifecycleOpen, setLifecycleOpen] = useState(false);
   const [salesActionOpen, setSalesActionOpen] = useState(false);
 
-  const loadData = useCallback(async (
-    signal?: AbortSignal,
-    propagateError = false,
-    targetStoreId = storeId,
-  ) => {
-    if (targetStoreId !== currentStoreIdRef.current) return;
-    setIsLoading(true);
-    if (!propagateError) {
-      setErrorMessage(null);
-      setWarningMessage(null);
-    }
-    try {
-      const storeResult = await getManagementStoreById(targetStoreId, signal);
-      if (
-        signal?.aborted ||
-        targetStoreId !== currentStoreIdRef.current
-      ) {
-        return;
+  const loadData = useCallback(
+    async (
+      signal?: AbortSignal,
+      propagateError = false,
+      targetStoreId = storeId,
+    ) => {
+      if (targetStoreId !== currentStoreIdRef.current) return;
+      setIsLoading(true);
+      if (!propagateError) {
+        setErrorMessage(null);
+        setWarningMessage(null);
       }
-      setStore(storeResult);
-      const [organizationResult, kioskResult, siblingStoresResult] = await Promise.allSettled([
-        getManagementOrganizationById(storeResult.organizationId, signal),
-        getManagementKiosks({ storeId: storeResult.id }, signal),
-        getManagementStores({ organizationId: storeResult.organizationId }, signal),
-      ]);
-      if (
-        signal?.aborted ||
-        targetStoreId !== currentStoreIdRef.current
-      ) {
-        return;
+      try {
+        const storeResult = await getManagementStoreById(targetStoreId, signal);
+        if (signal?.aborted || targetStoreId !== currentStoreIdRef.current) {
+          return;
+        }
+        setStore(storeResult);
+        const [organizationResult, kioskResult, siblingStoresResult] =
+          await Promise.allSettled([
+            getManagementOrganizationById(storeResult.organizationId, signal),
+            getManagementKiosks({ storeId: storeResult.id }, signal),
+            getManagementStores(
+              { organizationId: storeResult.organizationId },
+              signal,
+            ),
+          ]);
+        if (signal?.aborted || targetStoreId !== currentStoreIdRef.current) {
+          return;
+        }
+        const warnings: string[] = [];
+        if (organizationResult.status === "fulfilled") {
+          setOrganization(organizationResult.value);
+        } else {
+          setOrganization(null);
+          warnings.push(
+            getOrganizationsErrorMessage(
+              organizationResult.reason,
+              "Không thể tải thông tin tổ chức cha.",
+            ),
+          );
+        }
+        if (kioskResult.status === "fulfilled") {
+          setKiosks(kioskResult.value);
+        } else {
+          setKiosks([]);
+          warnings.push(
+            getKioskManagementErrorMessage(
+              kioskResult.reason,
+              "Không thể tải danh sách kiosk của cửa hàng.",
+            ),
+          );
+        }
+        if (siblingStoresResult.status === "fulfilled") {
+          setSiblingStores(siblingStoresResult.value);
+        } else {
+          setSiblingStores([]);
+          warnings.push(
+            getStoresErrorMessage(
+              siblingStoresResult.reason,
+              "Không thể kiểm tra cửa hàng trùng tên trong tổ chức.",
+            ),
+          );
+        }
+        setWarningMessage(warnings.length > 0 ? warnings.join(" ") : null);
+      } catch (error) {
+        if (!signal?.aborted) {
+          if (propagateError) throw error;
+          setStore(null);
+          setErrorMessage(getStoresErrorMessage(error));
+        }
+      } finally {
+        if (!signal?.aborted && targetStoreId === currentStoreIdRef.current) {
+          setIsLoading(false);
+        }
       }
-      const warnings: string[] = [];
-      if (organizationResult.status === "fulfilled") {
-        setOrganization(organizationResult.value);
-      } else {
-        setOrganization(null);
-        warnings.push(
-          getOrganizationsErrorMessage(
-            organizationResult.reason,
-            "Không thể tải thông tin tổ chức cha.",
-          ),
-        );
-      }
-      if (kioskResult.status === "fulfilled") {
-        setKiosks(kioskResult.value);
-      } else {
-        setKiosks([]);
-        warnings.push(
-          getKioskManagementErrorMessage(
-            kioskResult.reason,
-            "Không thể tải danh sách kiosk của cửa hàng.",
-          ),
-        );
-      }
-      if (siblingStoresResult.status === "fulfilled") {
-        setSiblingStores(siblingStoresResult.value);
-      } else {
-        setSiblingStores([]);
-        warnings.push(
-          getStoresErrorMessage(
-            siblingStoresResult.reason,
-            "Không thể kiểm tra cửa hàng trùng tên trong tổ chức.",
-          ),
-        );
-      }
-      setWarningMessage(warnings.length > 0 ? warnings.join(" ") : null);
-    } catch (error) {
-      if (!signal?.aborted) {
-        if (propagateError) throw error;
-        setStore(null);
-        setErrorMessage(getStoresErrorMessage(error));
-      }
-    } finally {
-      if (
-        !signal?.aborted &&
-        targetStoreId === currentStoreIdRef.current
-      ) {
-        setIsLoading(false);
-      }
-    }
-  }, [storeId]);
+    },
+    [storeId],
+  );
 
   const mutationState = useTenantMutationRefresh(
     ({ storeId: targetStoreId }: { storeId: string }) =>
@@ -258,7 +262,10 @@ export function StoreDetailView({ storeId }: StoreDetailViewProps) {
 
   useEffect(() => {
     const controller = new AbortController();
-    const timeoutId = window.setTimeout(() => void loadData(controller.signal), 0);
+    const timeoutId = window.setTimeout(
+      () => void loadData(controller.signal),
+      0,
+    );
     return () => {
       window.clearTimeout(timeoutId);
       controller.abort();
@@ -309,7 +316,8 @@ export function StoreDetailView({ storeId }: StoreDetailViewProps) {
   const resumeSales = async () => {
     if (!store) return false;
     return mutationState.runMutation({
-      mutation: () => resumeManagementStoreSales(store.organizationId, store.id),
+      mutation: () =>
+        resumeManagementStoreSales(store.organizationId, store.id),
       refreshContext: { storeId },
       successMessage: `Đã tiếp tục nhận đơn mới tại ${store.name}.`,
       getErrorMessage: (error) =>
@@ -318,9 +326,15 @@ export function StoreDetailView({ storeId }: StoreDetailViewProps) {
     });
   };
 
-  if (isLoading) return <TenantLoadingState label="Đang tải thông tin cửa hàng..." />;
+  if (isLoading)
+    return <TenantLoadingState label="Đang tải thông tin cửa hàng..." />;
   if (!store) {
-    return <TenantErrorState message={errorMessage ?? "Không tìm thấy cửa hàng."} onRetry={() => void loadData()} />;
+    return (
+      <TenantErrorState
+        message={errorMessage ?? "Không tìm thấy cửa hàng."}
+        onRetry={() => void loadData()}
+      />
+    );
   }
 
   const scope = {
@@ -328,7 +342,11 @@ export function StoreDetailView({ storeId }: StoreDetailViewProps) {
     storeId: store.id,
   };
   const canEdit = hasScopedPermission(effectiveAccess, "stores.update", scope);
-  const canManage = hasScopedPermission(effectiveAccess, "stores.manage", scope);
+  const canManage = hasScopedPermission(
+    effectiveAccess,
+    "stores.manage",
+    scope,
+  );
 
   const location = [store.address, store.city, store.province, store.country]
     .filter(Boolean)
@@ -342,6 +360,10 @@ export function StoreDetailView({ storeId }: StoreDetailViewProps) {
         : openingState === "UNRESTRICTED"
           ? "Không giới hạn theo lịch"
           : "Chưa thể xác định";
+  const operationalKioskCount = kiosks.filter(
+    (kiosk) => kiosk.operationalState === "Operational",
+  ).length;
+  const attentionKioskCount = kiosks.length - operationalKioskCount;
 
   return (
     <div className="space-y-7">
@@ -350,22 +372,358 @@ export function StoreDetailView({ storeId }: StoreDetailViewProps) {
         isRetrying={mutationState.isRefreshRetrying}
         onRetry={() => void mutationState.retryRefresh()}
       />
-      {warningMessage ? <div className="rounded-lg border border-warning/30 bg-warning/5 px-4 py-3 text-sm text-warning">{warningMessage}</div> : null}
+      {warningMessage ? (
+        <div className="rounded-lg border border-warning/30 bg-warning/5 px-4 py-3 text-sm text-warning">
+          {warningMessage}
+        </div>
+      ) : null}
 
-      <section className="flex flex-col gap-4 border-b border-border pb-6 lg:flex-row lg:items-end lg:justify-between">
-        <div className="space-y-3"><Link href={`/organizations/${store.organizationId}`} className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="size-4" />{organization?.name ?? "Tổ chức"}</Link><div className="flex flex-wrap items-center gap-3"><h1 className="text-3xl font-semibold tracking-tight">{store.name}</h1><TenantStatusBadge status={store.status} /></div><p className="font-mono text-sm text-muted-foreground">{store.code}</p></div>
-        <div className="flex flex-wrap gap-2">{canEdit ? <Button variant="outline" onClick={() => { mutationState.clearError(); setFormOpen(true); }}><Pencil className="size-4" />Chỉnh sửa</Button> : null}{canManage && (store.status === "Active" || store.isSalesPaused) ? <Button variant={store.isSalesPaused ? "default" : "outline"} onClick={() => { mutationState.clearError(); setSalesActionOpen(true); }}>{store.isSalesPaused ? <CirclePlay className="size-4" /> : <CirclePause className="size-4" />}{store.isSalesPaused ? "Tiếp tục nhận đơn" : "Tạm dừng nhận đơn"}</Button> : null}{canManage ? <Button variant={store.status === "Active" ? "destructive" : "default"} onClick={() => { mutationState.clearError(); setLifecycleOpen(true); }}>{store.status === "Active" ? <PowerOff className="size-4" /> : <Power className="size-4" />}{store.status === "Active" ? "Vô hiệu hóa" : "Kích hoạt"}</Button> : null}<Button variant="outline" onClick={() => void loadData()}><RefreshCw className="size-4" />Làm mới</Button></div>
-      </section>
+      <PageHeader
+        title={store.name}
+        description="Theo dõi khả năng nhận đơn, lịch hoạt động và đội kiosk tại cửa hàng."
+        metadata={
+          <div className="flex flex-wrap items-center gap-3">
+            <Link
+              href={`/organizations/${store.organizationId}`}
+              className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+            >
+              <ArrowLeft className="size-4" />
+              {organization?.name ?? "Tổ chức"}
+            </Link>
+            <span className="font-mono text-xs text-muted-foreground">
+              {store.code}
+            </span>
+            <TenantStatusBadge status={store.status} />
+          </div>
+        }
+        actions={
+          <>
+            {canEdit ? (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  mutationState.clearError();
+                  setFormOpen(true);
+                }}
+              >
+                <Pencil className="size-4" />
+                Chỉnh sửa
+              </Button>
+            ) : null}
+            {canManage && (store.status === "Active" || store.isSalesPaused) ? (
+              <Button
+                variant={store.isSalesPaused ? "default" : "outline"}
+                onClick={() => {
+                  mutationState.clearError();
+                  setSalesActionOpen(true);
+                }}
+              >
+                {store.isSalesPaused ? (
+                  <CirclePlay className="size-4" />
+                ) : (
+                  <CirclePause className="size-4" />
+                )}
+                {store.isSalesPaused
+                  ? "Tiếp tục nhận đơn"
+                  : "Tạm dừng nhận đơn"}
+              </Button>
+            ) : null}
+            {canManage ? (
+              <Button
+                variant={store.status === "Active" ? "destructive" : "default"}
+                onClick={() => {
+                  mutationState.clearError();
+                  setLifecycleOpen(true);
+                }}
+              >
+                {store.status === "Active" ? (
+                  <PowerOff className="size-4" />
+                ) : (
+                  <Power className="size-4" />
+                )}
+                {store.status === "Active" ? "Vô hiệu hóa" : "Kích hoạt"}
+              </Button>
+            ) : null}
+            <Button variant="outline" onClick={() => void loadData()}>
+              <RefreshCw className="size-4" />
+              Làm mới
+            </Button>
+          </>
+        }
+      />
 
-      <Card className="border border-border/80 shadow-none"><CardHeader className="border-b border-border"><CardTitle>Trạng thái tiếp nhận đơn</CardTitle><p className="text-sm text-muted-foreground">Vòng đời cửa hàng, lịch mở cửa và tạm dừng nhận đơn là các điều kiện riêng biệt.</p></CardHeader><CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"><DetailField label="Vòng đời cửa hàng" value={store.status === "Active" ? "Đang hoạt động" : "Không hoạt động"} /><DetailField label="Lịch mở cửa hiện tại" value={openingStateLabel} /><DetailField label="Nhận đơn mới" value={store.isSalesPaused ? "Đang tạm dừng" : "Không bị tạm dừng"} /><DetailField label="Lý do tạm dừng" value={store.salesPauseReason || "Không có"} /><DetailField label="Tạm dừng từ" value={formatTenantDate(store.salesPausedAt)} /><DetailField label="Tự tiếp tục lúc" value={formatTenantDate(store.salesPausedUntil)} /></CardContent><div className="border-t border-border px-6 py-3 text-xs text-muted-foreground">Dừng nhận đơn mới không hủy đơn đã thanh toán hoặc công việc đang xử lý.</div></Card>
+      <MetricStrip>
+        <MetricStripItem
+          icon={Monitor}
+          label="Tổng kiosk"
+          value={kiosks.length}
+          description="Thiết bị thuộc cửa hàng"
+        />
+        <MetricStripItem
+          icon={CircleCheck}
+          label="Kiosk vận hành"
+          value={operationalKioskCount}
+          description="Trạng thái Operational"
+          tone="success"
+        />
+        <MetricStripItem
+          icon={AlertTriangle}
+          label="Kiosk cần chú ý"
+          value={attentionKioskCount}
+          description="Không ở trạng thái Operational"
+          tone={attentionKioskCount > 0 ? "warning" : "neutral"}
+        />
+        <MetricStripItem
+          icon={store.isSalesPaused ? CirclePause : CirclePlay}
+          label="Tiếp nhận đơn"
+          value={store.isSalesPaused ? "Tạm dừng" : "Đang nhận"}
+          description={openingStateLabel}
+          tone={store.isSalesPaused ? "warning" : "primary"}
+        />
+      </MetricStrip>
 
-      <Card className="border border-border/80 shadow-none"><CardHeader className="border-b border-border"><div className="flex items-center gap-3"><span className="flex size-10 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary"><StoreIcon className="size-5" /></span><CardTitle>Thông tin cửa hàng</CardTitle></div></CardHeader><CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"><DetailField label="Tổ chức" value={organization?.name ?? "Không xác định"} /><DetailField label="Loại cửa hàng" value={store.storeType} /><DetailField label="Múi giờ" value={formatTimeZoneDisplay(store.timeZone)} /><DetailField label="Email" value={store.email || "Chưa có"} /><DetailField label="Số điện thoại" value={store.phoneNumber || "Chưa có"} /><DetailField label="Địa chỉ" value={location || "Chưa có"} /><DetailField label="Vĩ độ" value={store.latitude?.toString() ?? "Chưa có"} /><DetailField label="Kinh độ" value={store.longitude?.toString() ?? "Chưa có"} /><DetailField label="Cập nhật" value={formatTenantDate(store.updatedAt ?? store.createdAt)} /><DetailField label="Lịch mở cửa" value={formatOpeningHours(store)} /></CardContent></Card>
+      <Card className="border border-border/80 shadow-none">
+        <CardHeader className="border-b border-border">
+          <CardTitle>Trạng thái tiếp nhận đơn</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Vòng đời cửa hàng, lịch mở cửa và tạm dừng nhận đơn là các điều kiện
+            riêng biệt.
+          </p>
+        </CardHeader>
+        <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <DetailField
+            label="Vòng đời cửa hàng"
+            value={
+              store.status === "Active" ? "Đang hoạt động" : "Không hoạt động"
+            }
+          />
+          <DetailField label="Lịch mở cửa hiện tại" value={openingStateLabel} />
+          <DetailField
+            label="Nhận đơn mới"
+            value={store.isSalesPaused ? "Đang tạm dừng" : "Không bị tạm dừng"}
+          />
+          <DetailField
+            label="Lý do tạm dừng"
+            value={store.salesPauseReason || "Không có"}
+          />
+          <DetailField
+            label="Tạm dừng từ"
+            value={formatTenantDate(store.salesPausedAt)}
+          />
+          <DetailField
+            label="Tự tiếp tục lúc"
+            value={formatTenantDate(store.salesPausedUntil)}
+          />
+        </CardContent>
+        <div className="border-t border-border px-6 py-3 text-xs text-muted-foreground">
+          Dừng nhận đơn mới không hủy đơn đã thanh toán hoặc công việc đang xử
+          lý.
+        </div>
+      </Card>
 
-      <Card className="gap-0 border border-border/80 py-0 shadow-none"><CardHeader className="border-b border-border py-4"><div className="flex items-center gap-3"><span className="flex size-10 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary"><Monitor className="size-5" /></span><div><CardTitle>Kiosk tại cửa hàng</CardTitle><p className="text-sm text-muted-foreground">{kiosks.length} kiosk</p></div></div></CardHeader>{kiosks.length === 0 ? <TenantEmptyState title="Chưa có kiosk" description="Cửa hàng này chưa có kiosk liên quan." /> : <Table className="min-w-[760px] table-fixed"><TableHeader><TableRow><TableHead className="w-[32%] px-4">Kiosk</TableHead><TableHead className="w-[22%] text-center">Trạng thái</TableHead><TableHead className="w-[28%]">Địa chỉ</TableHead><TableHead className="w-[18%] px-4 text-center">Thao tác</TableHead></TableRow></TableHeader><TableBody>{kiosks.map((kiosk) => <TableRow key={kiosk.id}><TableCell className="px-4 py-3"><p className="font-medium">{kiosk.name}</p><p className="font-mono text-xs text-muted-foreground">{kiosk.code}</p></TableCell><TableCell className="text-center"><div className="flex flex-col items-center gap-1"><KioskStatusBadge status={kiosk.status} /><KioskOperationalStateBadge state={kiosk.operationalState} /></div></TableCell><TableCell><span className="inline-flex items-center gap-2 text-muted-foreground"><MapPin className="size-4" />{kiosk.address || "Chưa có địa chỉ"}</span></TableCell><TableCell className="px-4 text-center"><Link href={`/kiosks/${kiosk.id}`} className={cn(buttonVariants({ variant: "ghost", size: "icon-sm" }), "rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground")} title={`Xem kiosk ${kiosk.name}`} aria-label={`Xem kiosk ${kiosk.name}`}><Eye className="size-4" /></Link></TableCell></TableRow>)}</TableBody></Table>}</Card>
+      <Card className="border border-border/80 shadow-none">
+        <CardHeader className="border-b border-border">
+          <div className="flex items-center gap-3">
+            <span className="flex size-10 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
+              <StoreIcon className="size-5" />
+            </span>
+            <CardTitle>Thông tin cửa hàng</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <DetailField
+            label="Tổ chức"
+            value={organization?.name ?? "Không xác định"}
+          />
+          <DetailField label="Loại cửa hàng" value={store.storeType} />
+          <DetailField
+            label="Múi giờ"
+            value={formatTimeZoneDisplay(store.timeZone)}
+          />
+          <DetailField label="Email" value={store.email || "Chưa có"} />
+          <DetailField
+            label="Số điện thoại"
+            value={store.phoneNumber || "Chưa có"}
+          />
+          <DetailField label="Địa chỉ" value={location || "Chưa có"} />
+          <DetailField
+            label="Vĩ độ"
+            value={store.latitude?.toString() ?? "Chưa có"}
+          />
+          <DetailField
+            label="Kinh độ"
+            value={store.longitude?.toString() ?? "Chưa có"}
+          />
+          <DetailField
+            label="Cập nhật"
+            value={formatTenantDate(store.updatedAt ?? store.createdAt)}
+          />
+          <DetailField label="Lịch mở cửa" value={formatOpeningHours(store)} />
+        </CardContent>
+      </Card>
 
-      {formOpen ? <StoreFormDialog organizationName={organization?.name ?? "Tổ chức"} store={store} open isSubmitting={mutationState.isSubmitting} errorMessage={mutationState.errorMessage} onOpenChange={(open) => { if (!mutationState.mutationRef.current) setFormOpen(open); }} onCreate={async () => false} onUpdate={submitUpdate} existingStores={siblingStores} /> : null}
-      {lifecycleOpen ? <LifecycleConfirmDialog entityLabel="cửa hàng" entityName={store.name} activate={store.status !== "Active"} open isSubmitting={mutationState.isSubmitting} errorMessage={mutationState.errorMessage} onOpenChange={(open) => { if (!mutationState.mutationRef.current) setLifecycleOpen(open); }} onConfirm={confirmLifecycle} /> : null}
-      {salesActionOpen ? <StoreSalesAdmissionDialog storeName={store.name} isPaused={store.isSalesPaused} open isSubmitting={mutationState.isSubmitting} errorMessage={mutationState.errorMessage} onOpenChange={(open) => { if (!mutationState.mutationRef.current) setSalesActionOpen(open); }} onPause={pauseSales} onResume={resumeSales} /> : null}
+      <Card className="gap-0 border border-border/80 py-0 shadow-none">
+        <CardHeader className="border-b border-border py-4">
+          <div className="flex items-center gap-3">
+            <span className="flex size-10 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
+              <Monitor className="size-5" />
+            </span>
+            <div>
+              <CardTitle>Kiosk tại cửa hàng</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                {kiosks.length} kiosk
+              </p>
+            </div>
+          </div>
+        </CardHeader>
+        {kiosks.length === 0 ? (
+          <TenantEmptyState
+            title="Chưa có kiosk"
+            description="Cửa hàng này chưa có kiosk liên quan."
+          />
+        ) : (
+          <>
+            <div className="grid gap-3 p-4 md:hidden">
+              {kiosks.map((kiosk) => (
+                <article
+                  key={kiosk.id}
+                  className="space-y-3 rounded-lg border border-border bg-card p-4"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate font-medium">{kiosk.name}</p>
+                      <p className="font-mono text-xs text-muted-foreground">
+                        {kiosk.code}
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 flex-col items-end gap-1">
+                      <KioskStatusBadge status={kiosk.status} />
+                      <KioskOperationalStateBadge
+                        state={kiosk.operationalState}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2 text-sm text-muted-foreground">
+                    <MapPin className="mt-0.5 size-4 shrink-0" />
+                    <span className="break-words">
+                      {kiosk.address || "Chưa có địa chỉ"}
+                    </span>
+                  </div>
+                  <div className="flex justify-end border-t border-border pt-3">
+                    <Link
+                      href={`/kiosks/${kiosk.id}`}
+                      className={buttonVariants({
+                        variant: "outline",
+                        size: "sm",
+                      })}
+                    >
+                      <Eye className="size-4" />
+                      Xem kiosk
+                    </Link>
+                  </div>
+                </article>
+              ))}
+            </div>
+            <Table className="hidden min-w-[760px] table-fixed md:table">
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[32%] px-4">Kiosk</TableHead>
+                  <TableHead className="w-[22%] text-center">
+                    Trạng thái
+                  </TableHead>
+                  <TableHead className="w-[28%]">Địa chỉ</TableHead>
+                  <TableHead className="w-[18%] px-4 text-center">
+                    Thao tác
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {kiosks.map((kiosk) => (
+                  <TableRow key={kiosk.id}>
+                    <TableCell className="px-4 py-3">
+                      <p className="font-medium">{kiosk.name}</p>
+                      <p className="font-mono text-xs text-muted-foreground">
+                        {kiosk.code}
+                      </p>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <div className="flex flex-col items-center gap-1">
+                        <KioskStatusBadge status={kiosk.status} />
+                        <KioskOperationalStateBadge
+                          state={kiosk.operationalState}
+                        />
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <span className="inline-flex items-center gap-2 text-muted-foreground">
+                        <MapPin className="size-4" />
+                        {kiosk.address || "Chưa có địa chỉ"}
+                      </span>
+                    </TableCell>
+                    <TableCell className="px-4 text-center">
+                      <Link
+                        href={`/kiosks/${kiosk.id}`}
+                        className={cn(
+                          buttonVariants({ variant: "ghost", size: "icon-sm" }),
+                          "rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground",
+                        )}
+                        title={`Xem kiosk ${kiosk.name}`}
+                        aria-label={`Xem kiosk ${kiosk.name}`}
+                      >
+                        <Eye className="size-4" />
+                      </Link>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </>
+        )}
+      </Card>
+
+      {formOpen ? (
+        <StoreFormDialog
+          organizationName={organization?.name ?? "Tổ chức"}
+          store={store}
+          open
+          isSubmitting={mutationState.isSubmitting}
+          errorMessage={mutationState.errorMessage}
+          onOpenChange={(open) => {
+            if (!mutationState.mutationRef.current) setFormOpen(open);
+          }}
+          onCreate={async () => false}
+          onUpdate={submitUpdate}
+          existingStores={siblingStores}
+        />
+      ) : null}
+      {lifecycleOpen ? (
+        <LifecycleConfirmDialog
+          entityLabel="cửa hàng"
+          entityName={store.name}
+          activate={store.status !== "Active"}
+          open
+          isSubmitting={mutationState.isSubmitting}
+          errorMessage={mutationState.errorMessage}
+          onOpenChange={(open) => {
+            if (!mutationState.mutationRef.current) setLifecycleOpen(open);
+          }}
+          onConfirm={confirmLifecycle}
+        />
+      ) : null}
+      {salesActionOpen ? (
+        <StoreSalesAdmissionDialog
+          storeName={store.name}
+          isPaused={store.isSalesPaused}
+          open
+          isSubmitting={mutationState.isSubmitting}
+          errorMessage={mutationState.errorMessage}
+          onOpenChange={(open) => {
+            if (!mutationState.mutationRef.current) setSalesActionOpen(open);
+          }}
+          onPause={pauseSales}
+          onResume={resumeSales}
+        />
+      ) : null}
     </div>
   );
 }

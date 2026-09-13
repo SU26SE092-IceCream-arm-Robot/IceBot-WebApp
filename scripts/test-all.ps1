@@ -28,6 +28,7 @@ if (-not $SkipUnit) {
 }
 
 Invoke-NpmStep -Label "ESLint" -Arguments @("run", "lint")
+Invoke-NpmStep -Label "Feature Architecture Check" -Arguments @("run", "check:architecture")
 
 if (-not $SkipBuild) {
     Invoke-NpmStep -Label "Production build" -Arguments @("run", "build")

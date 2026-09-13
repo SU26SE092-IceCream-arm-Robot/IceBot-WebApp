@@ -29,12 +29,18 @@ export default async function globalSetup(config: FullConfig) {
     },
   ];
 
+  const hasAnyAuth = accounts.some(
+    (candidate) => candidate.username && candidate.password,
+  );
+
+  if (!hasAnyAuth) {
+    console.warn(
+      "[E2E Setup] Chưa cung cấp credentials đăng nhập (ICEBOT_E2E_USERNAME/PASSWORD). Bỏ qua khởi tạo session xác thực. Các bài test công khai (Public Landing Page) vẫn hoạt động.",
+    );
+    return;
+  }
+
   for (const account of accounts) {
-    if (account.required && (!account.username || !account.password)) {
-      throw new Error(
-        "Thiếu credential E2E SystemAdmin. Hãy đặt ICEBOT_E2E_SYSTEM_ADMIN_USERNAME/PASSWORD hoặc cặp ICEBOT_E2E_USERNAME/PASSWORD tương thích cũ.",
-      );
-    }
     if (Boolean(account.username) !== Boolean(account.password)) {
       throw new Error(
         `Credential E2E ${account.slug} chưa đủ username/password.`,

@@ -89,9 +89,12 @@ const TRIGGER_LABELS: Record<string, string> = {
 type ActionMode = "inspection" | "resolution" | "complete" | null;
 
 function statusTone(status: ProductionIncidentStatus) {
-  if (status === "Resolved") return "border-success/20 bg-success/10 text-success";
-  if (status === "Cancelled") return "border-border bg-muted/20 text-muted-foreground";
-  if (status === "AwaitingInspection") return "border-warning/20 bg-warning/10 text-warning";
+  if (status === "Resolved")
+    return "border-success/20 bg-success/10 text-success";
+  if (status === "Cancelled")
+    return "border-border bg-muted/20 text-muted-foreground";
+  if (status === "AwaitingInspection")
+    return "border-warning/20 bg-warning/10 text-warning";
   return "border-destructive/20 bg-destructive/10 text-destructive";
 }
 
@@ -100,11 +103,14 @@ export function ProductionIncidentsPanel({ enabled }: { enabled: boolean }) {
   const [actionMode, setActionMode] = useState<ActionMode>(null);
   const [inspectionOutcome, setInspectionOutcome] =
     useState<ProductionInspectionOutcome>("ConfirmedGood");
-  const [resolution, setResolution] =
-    useState<ProductionIncidentResolution>("AwaitTechnicalReview");
+  const [resolution, setResolution] = useState<ProductionIncidentResolution>(
+    "AwaitTechnicalReview",
+  );
   const [reason, setReason] = useState("");
   const [clientError, setClientError] = useState<string | null>(null);
-  const [resolutionRequestId, setResolutionRequestId] = useState<string | null>(null);
+  const [resolutionRequestId, setResolutionRequestId] = useState<string | null>(
+    null,
+  );
 
   const safeResolutions = useMemo(() => {
     const outcome = incidents.selectedIncident?.inspectionOutcome;
@@ -148,7 +154,10 @@ export function ProductionIncidentsPanel({ enabled }: { enabled: boolean }) {
 
     let succeeded = false;
     if (actionMode === "inspection") {
-      succeeded = await incidents.inspect({ outcome: inspectionOutcome, reason: normalizedReason });
+      succeeded = await incidents.inspect({
+        outcome: inspectionOutcome,
+        reason: normalizedReason,
+      });
     } else if (actionMode === "resolution") {
       succeeded = await incidents.resolve({
         resolutionRequestId: resolutionRequestId ?? crypto.randomUUID(),
@@ -167,7 +176,9 @@ export function ProductionIncidentsPanel({ enabled }: { enabled: boolean }) {
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-base font-semibold text-foreground">Sự cố sản xuất</h2>
+          <h2 className="text-base font-semibold text-foreground">
+            Sự cố sản xuất
+          </h2>
           <p className="text-sm text-muted-foreground">
             Kiểm tra đầu ra và xử lý theo đúng đơn vị sản xuất bị ảnh hưởng.
           </p>
@@ -179,19 +190,30 @@ export function ProductionIncidentsPanel({ enabled }: { enabled: boolean }) {
               incidents.setStatus(value as ProductionIncidentStatus | "ALL")
             }
           >
-            <SelectTrigger className="w-52">
+            <SelectTrigger
+              aria-label="Lọc trạng thái sự cố sản xuất"
+              className="w-full sm:w-52"
+            >
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="ALL">Tất cả trạng thái</SelectItem>
-              {(Object.entries(STATUS_LABELS) as Array<[ProductionIncidentStatus, string]>).map(
-                ([value, label]) => (
-                  <SelectItem key={value} value={value}>{label}</SelectItem>
-                ),
-              )}
+              {(
+                Object.entries(STATUS_LABELS) as Array<
+                  [ProductionIncidentStatus, string]
+                >
+              ).map(([value, label]) => (
+                <SelectItem key={value} value={value}>
+                  {label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
-          <Button variant="outline" onClick={() => void incidents.refresh()} isLoading={incidents.isLoading}>
+          <Button
+            variant="outline"
+            onClick={() => void incidents.refresh()}
+            isLoading={incidents.isLoading}
+          >
             <RefreshCw className="size-4" />
             Làm mới
           </Button>
@@ -204,102 +226,204 @@ export function ProductionIncidentsPanel({ enabled }: { enabled: boolean }) {
             <AlertTriangle className="mt-0.5 size-4 shrink-0" />
             <p>{incidents.errorMessage}</p>
           </div>
-          <Button variant="outline" size="sm" onClick={() => void incidents.refresh()}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => void incidents.refresh()}
+          >
             Thử lại
           </Button>
         </div>
       ) : incidents.isLoading ? (
         <div className="space-y-2">
           {Array.from({ length: 5 }).map((_, index) => (
-            <div key={index} className="h-14 animate-pulse rounded-lg bg-muted/40" />
+            <div
+              key={index}
+              className="h-14 animate-pulse rounded-lg bg-muted/40"
+            />
           ))}
         </div>
       ) : incidents.incidents.length === 0 ? (
         <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-border py-12 text-center">
           <CheckCircle2 className="size-8 text-success" />
           <p className="font-medium text-foreground">Không có sự cố phù hợp</p>
-          <p className="text-sm text-muted-foreground">Không có đơn vị sản xuất nào cần xử lý trong phạm vi hiện tại.</p>
+          <p className="text-sm text-muted-foreground">
+            Không có đơn vị sản xuất nào cần xử lý trong phạm vi hiện tại.
+          </p>
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-border">
-          <Table className="min-w-[900px]">
-            <TableHeader>
-              <TableRow>
-                <TableHead>Đơn hàng / sản phẩm</TableHead>
-                <TableHead className="text-center">Đơn vị bị ảnh hưởng</TableHead>
-                <TableHead className="text-center">Đầu ra</TableHead>
-                <TableHead className="text-center">Trạng thái</TableHead>
-                <TableHead className="text-center">Thời điểm</TableHead>
-                <TableHead className="text-center">Thao tác</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {incidents.incidents.map((incident) => (
-                <TableRow key={incident.id}>
-                  <TableCell>
-                    <p className="font-medium text-foreground">{incident.orderNumber}</p>
-                    <p className="text-xs text-muted-foreground">
+        <>
+          <div className="grid gap-3 md:hidden">
+            {incidents.incidents.map((incident) => (
+              <article
+                key={incident.id}
+                className="space-y-3 rounded-lg border border-border bg-card p-4"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="font-medium text-foreground">
+                      {incident.orderNumber}
+                    </p>
+                    <p className="mt-1 break-words text-xs text-muted-foreground">
                       {incident.productName} · {incident.productVariantName}
                     </p>
-                  </TableCell>
-                  <TableCell className="text-center tabular-nums">
-                    #{incident.productionUnitNo}
-                    {incident.productionUnitQuantity > 1
-                      ? ` - #${incident.productionUnitNo + incident.productionUnitQuantity - 1}`
-                      : ""}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    {PHYSICAL_OUTPUT_LABELS[incident.physicalOutputState] ?? incident.physicalOutputState}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <Badge variant="outline" className={statusTone(incident.status)}>
-                      {STATUS_LABELS[incident.status]}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-center text-xs text-muted-foreground">
-                    {formatTransactionDate(incident.createdAt)}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon-sm"
-                      aria-label={`Xem sự cố của đơn ${incident.orderNumber}`}
-                      title={`Xem sự cố của đơn ${incident.orderNumber}`}
-                      onClick={() => void incidents.openDetail(incident)}
-                    >
-                      <Eye className="size-4" />
-                    </Button>
-                  </TableCell>
+                  </div>
+                  <Badge
+                    variant="outline"
+                    className={statusTone(incident.status)}
+                  >
+                    {STATUS_LABELS[incident.status]}
+                  </Badge>
+                </div>
+                <dl className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <dt className="text-xs text-muted-foreground">
+                      Đơn vị bị ảnh hưởng
+                    </dt>
+                    <dd className="mt-1 tabular-nums">
+                      #{incident.productionUnitNo}
+                      {incident.productionUnitQuantity > 1
+                        ? ` - #${incident.productionUnitNo + incident.productionUnitQuantity - 1}`
+                        : ""}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs text-muted-foreground">Đầu ra</dt>
+                    <dd className="mt-1">
+                      {PHYSICAL_OUTPUT_LABELS[incident.physicalOutputState] ??
+                        incident.physicalOutputState}
+                    </dd>
+                  </div>
+                  <div className="col-span-2">
+                    <dt className="text-xs text-muted-foreground">Thời điểm</dt>
+                    <dd className="mt-1 tabular-nums">
+                      {formatTransactionDate(incident.createdAt)}
+                    </dd>
+                  </div>
+                </dl>
+                <div className="flex justify-end border-t border-border pt-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => void incidents.openDetail(incident)}
+                  >
+                    <Eye className="size-4" />
+                    Xem chi tiết
+                  </Button>
+                </div>
+              </article>
+            ))}
+          </div>
+          <div className="hidden overflow-x-auto rounded-lg border border-border md:block">
+            <Table className="min-w-[900px]">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Đơn hàng / sản phẩm</TableHead>
+                  <TableHead className="text-center">
+                    Đơn vị bị ảnh hưởng
+                  </TableHead>
+                  <TableHead className="text-center">Đầu ra</TableHead>
+                  <TableHead className="text-center">Trạng thái</TableHead>
+                  <TableHead className="text-center">Thời điểm</TableHead>
+                  <TableHead className="text-center">Thao tác</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+              </TableHeader>
+              <TableBody>
+                {incidents.incidents.map((incident) => (
+                  <TableRow key={incident.id}>
+                    <TableCell>
+                      <p className="font-medium text-foreground">
+                        {incident.orderNumber}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {incident.productName} · {incident.productVariantName}
+                      </p>
+                    </TableCell>
+                    <TableCell className="text-center tabular-nums">
+                      #{incident.productionUnitNo}
+                      {incident.productionUnitQuantity > 1
+                        ? ` - #${incident.productionUnitNo + incident.productionUnitQuantity - 1}`
+                        : ""}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      {PHYSICAL_OUTPUT_LABELS[incident.physicalOutputState] ??
+                        incident.physicalOutputState}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Badge
+                        variant="outline"
+                        className={statusTone(incident.status)}
+                      >
+                        {STATUS_LABELS[incident.status]}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-center text-xs text-muted-foreground">
+                      {formatTransactionDate(incident.createdAt)}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon-sm"
+                        aria-label={`Xem sự cố của đơn ${incident.orderNumber}`}
+                        title={`Xem sự cố của đơn ${incident.orderNumber}`}
+                        onClick={() => void incidents.openDetail(incident)}
+                      >
+                        <Eye className="size-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </>
       )}
 
       <div className="flex items-center justify-between text-sm text-muted-foreground">
         <span>{incidents.pagination.totalCount} sự cố</span>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" disabled={!incidents.pagination.hasPrevious} onClick={incidents.previousPage}>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={!incidents.pagination.hasPrevious}
+            onClick={incidents.previousPage}
+          >
             <ChevronLeft className="size-4" /> Trước
           </Button>
-          <Button variant="outline" size="sm" disabled={!incidents.pagination.hasNext} onClick={incidents.nextPage}>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={!incidents.pagination.hasNext}
+            onClick={incidents.nextPage}
+          >
             Sau <ChevronRight className="size-4" />
           </Button>
         </div>
       </div>
 
-      <Dialog open={incidents.isDetailOpen} onOpenChange={incidents.setDetailOpen}>
+      <Dialog
+        open={incidents.isDetailOpen}
+        onOpenChange={incidents.setDetailOpen}
+      >
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
           <DialogHeader>
             <DialogTitle>Chi tiết sự cố sản xuất</DialogTitle>
             <DialogDescription>
-              Bằng chứng đầu ra theo đúng đơn vị sản xuất, không phải retry toàn bộ đơn.
+              Bằng chứng đầu ra theo đúng đơn vị sản xuất, không phải retry toàn
+              bộ đơn.
             </DialogDescription>
           </DialogHeader>
           {incidents.isDetailLoading ? (
-            <div className="space-y-2">{Array.from({ length: 5 }).map((_, index) => <div key={index} className="h-12 animate-pulse rounded bg-muted/40" />)}</div>
+            <div className="space-y-2">
+              {Array.from({ length: 5 }).map((_, index) => (
+                <div
+                  key={index}
+                  className="h-12 animate-pulse rounded bg-muted/40"
+                />
+              ))}
+            </div>
           ) : incidents.detailErrorMessage ? (
             <div className="flex flex-col items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
               <div className="flex gap-2">
@@ -310,7 +434,9 @@ export function ProductionIncidentsPanel({ enabled }: { enabled: boolean }) {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => void incidents.openDetail(incidents.selectedIncident!)}
+                  onClick={() =>
+                    void incidents.openDetail(incidents.selectedIncident!)
+                  }
                 >
                   Thử lại
                 </Button>
@@ -319,14 +445,55 @@ export function ProductionIncidentsPanel({ enabled }: { enabled: boolean }) {
           ) : incidents.selectedIncident ? (
             <div className="space-y-4">
               <div className="grid gap-3 sm:grid-cols-2">
-                <Info label="Đơn hàng" value={incidents.selectedIncident.orderNumber} />
-                <Info label="Sản phẩm" value={`${incidents.selectedIncident.productName} · ${incidents.selectedIncident.productVariantName}`} />
-                <Info label="Đơn vị sản xuất" value={`Từ #${incidents.selectedIncident.productionUnitNo}, số lượng ${incidents.selectedIncident.productionUnitQuantity}`} />
-                <Info label="Nguyên nhân" value={TRIGGER_LABELS[incidents.selectedIncident.trigger] ?? incidents.selectedIncident.trigger} />
-                <Info label="Đầu ra vật lý" value={PHYSICAL_OUTPUT_LABELS[incidents.selectedIncident.physicalOutputState] ?? incidents.selectedIncident.physicalOutputState} />
-                <Info label="Kết quả kiểm tra" value={incidents.selectedIncident.inspectionOutcome ? INSPECTION_LABELS[incidents.selectedIncident.inspectionOutcome] : "Chưa kiểm tra"} />
-                <Info label="Hướng xử lý" value={incidents.selectedIncident.resolution ? RESOLUTION_LABELS[incidents.selectedIncident.resolution] : "Chưa chọn"} />
-                <Info label="Trạng thái" value={STATUS_LABELS[incidents.selectedIncident.status]} />
+                <Info
+                  label="Đơn hàng"
+                  value={incidents.selectedIncident.orderNumber}
+                />
+                <Info
+                  label="Sản phẩm"
+                  value={`${incidents.selectedIncident.productName} · ${incidents.selectedIncident.productVariantName}`}
+                />
+                <Info
+                  label="Đơn vị sản xuất"
+                  value={`Từ #${incidents.selectedIncident.productionUnitNo}, số lượng ${incidents.selectedIncident.productionUnitQuantity}`}
+                />
+                <Info
+                  label="Nguyên nhân"
+                  value={
+                    TRIGGER_LABELS[incidents.selectedIncident.trigger] ??
+                    incidents.selectedIncident.trigger
+                  }
+                />
+                <Info
+                  label="Đầu ra vật lý"
+                  value={
+                    PHYSICAL_OUTPUT_LABELS[
+                      incidents.selectedIncident.physicalOutputState
+                    ] ?? incidents.selectedIncident.physicalOutputState
+                  }
+                />
+                <Info
+                  label="Kết quả kiểm tra"
+                  value={
+                    incidents.selectedIncident.inspectionOutcome
+                      ? INSPECTION_LABELS[
+                          incidents.selectedIncident.inspectionOutcome
+                        ]
+                      : "Chưa kiểm tra"
+                  }
+                />
+                <Info
+                  label="Hướng xử lý"
+                  value={
+                    incidents.selectedIncident.resolution
+                      ? RESOLUTION_LABELS[incidents.selectedIncident.resolution]
+                      : "Chưa chọn"
+                  }
+                />
+                <Info
+                  label="Trạng thái"
+                  value={STATUS_LABELS[incidents.selectedIncident.status]}
+                />
               </div>
 
               {incidents.selectedIncident.errorMessage ? (
@@ -336,16 +503,27 @@ export function ProductionIncidentsPanel({ enabled }: { enabled: boolean }) {
               ) : null}
 
               <div className="rounded-lg border border-border p-3">
-                <p className="mb-2 text-sm font-medium text-foreground">Lịch sử xử lý</p>
+                <p className="mb-2 text-sm font-medium text-foreground">
+                  Lịch sử xử lý
+                </p>
                 {incidents.selectedIncident.history.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Chưa có lịch sử.</p>
+                  <p className="text-sm text-muted-foreground">
+                    Chưa có lịch sử.
+                  </p>
                 ) : (
                   <div className="space-y-2">
                     {incidents.selectedIncident.history.map((entry) => (
-                      <div key={entry.id} className="border-b border-border pb-2 text-sm last:border-0 last:pb-0">
+                      <div
+                        key={entry.id}
+                        className="border-b border-border pb-2 text-sm last:border-0 last:pb-0"
+                      >
                         <div className="flex flex-col gap-1 sm:flex-row sm:justify-between">
-                          <span className="font-medium text-foreground">{entry.action}</span>
-                          <span className="text-xs text-muted-foreground">{formatTransactionDate(entry.occurredAt)}</span>
+                          <span className="font-medium text-foreground">
+                            {entry.action}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {formatTransactionDate(entry.occurredAt)}
+                          </span>
                         </div>
                         <p className="text-muted-foreground">{entry.reason}</p>
                       </div>
@@ -355,14 +533,26 @@ export function ProductionIncidentsPanel({ enabled }: { enabled: boolean }) {
               </div>
 
               <DialogFooter className="flex-wrap">
-                {(incidents.selectedIncident.status === "Open" || incidents.selectedIncident.status === "AwaitingInspection") ? (
-                  <Button variant="outline" onClick={() => openAction("inspection")}>Ghi nhận kiểm tra</Button>
+                {incidents.selectedIncident.status === "Open" ||
+                incidents.selectedIncident.status === "AwaitingInspection" ? (
+                  <Button
+                    variant="outline"
+                    onClick={() => openAction("inspection")}
+                  >
+                    Ghi nhận kiểm tra
+                  </Button>
                 ) : null}
-                {incidents.selectedIncident.inspectionOutcome && incidents.selectedIncident.status === "Open" ? (
-                  <Button onClick={() => openAction("resolution")}>Chọn hướng xử lý</Button>
+                {incidents.selectedIncident.inspectionOutcome &&
+                incidents.selectedIncident.status === "Open" ? (
+                  <Button onClick={() => openAction("resolution")}>
+                    Chọn hướng xử lý
+                  </Button>
                 ) : null}
-                {incidents.selectedIncident.status === "ResolutionInProgress" ? (
-                  <Button onClick={() => openAction("complete")}>Hoàn tất xử lý</Button>
+                {incidents.selectedIncident.status ===
+                "ResolutionInProgress" ? (
+                  <Button onClick={() => openAction("complete")}>
+                    Hoàn tất xử lý
+                  </Button>
                 ) : null}
               </DialogFooter>
             </div>
@@ -370,31 +560,56 @@ export function ProductionIncidentsPanel({ enabled }: { enabled: boolean }) {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={actionMode !== null} onOpenChange={(open) => { if (!open) closeAction(); }}>
+      <Dialog
+        open={actionMode !== null}
+        onOpenChange={(open) => {
+          if (!open) closeAction();
+        }}
+      >
         <DialogContent showCloseButton={!incidents.isMutating}>
           <DialogHeader>
             <span className="flex size-10 items-center justify-center rounded-xl border border-warning/20 bg-warning/10 text-warning">
               <ShieldAlert className="size-5" />
             </span>
             <DialogTitle>
-              {actionMode === "inspection" ? "Ghi nhận kết quả kiểm tra" : actionMode === "resolution" ? "Chọn hướng xử lý" : "Hoàn tất sự cố"}
+              {actionMode === "inspection"
+                ? "Ghi nhận kết quả kiểm tra"
+                : actionMode === "resolution"
+                  ? "Chọn hướng xử lý"
+                  : "Hoàn tất sự cố"}
             </DialogTitle>
             <DialogDescription>
-              Thao tác chỉ áp dụng cho đơn vị #{incidents.selectedIncident?.productionUnitNo}
-              {incidents.selectedIncident && incidents.selectedIncident.productionUnitQuantity > 1
+              Thao tác chỉ áp dụng cho đơn vị #
+              {incidents.selectedIncident?.productionUnitNo}
+              {incidents.selectedIncident &&
+              incidents.selectedIncident.productionUnitQuantity > 1
                 ? ` đến #${incidents.selectedIncident.productionUnitNo + incidents.selectedIncident.productionUnitQuantity - 1}`
-                : ""}.
+                : ""}
+              .
             </DialogDescription>
           </DialogHeader>
 
           {actionMode === "inspection" ? (
             <div className="space-y-2">
               <Label>Kết quả kiểm tra</Label>
-              <Select value={inspectionOutcome} onValueChange={(value) => setInspectionOutcome(value as ProductionInspectionOutcome)}>
-                <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+              <Select
+                value={inspectionOutcome}
+                onValueChange={(value) =>
+                  setInspectionOutcome(value as ProductionInspectionOutcome)
+                }
+              >
+                <SelectTrigger className="w-full" aria-label="Kết quả kiểm tra">
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
-                  {(Object.entries(INSPECTION_LABELS) as Array<[ProductionInspectionOutcome, string]>).map(([value, label]) => (
-                    <SelectItem key={value} value={value}>{label}</SelectItem>
+                  {(
+                    Object.entries(INSPECTION_LABELS) as Array<
+                      [ProductionInspectionOutcome, string]
+                    >
+                  ).map(([value, label]) => (
+                    <SelectItem key={value} value={value}>
+                      {label}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -404,24 +619,36 @@ export function ProductionIncidentsPanel({ enabled }: { enabled: boolean }) {
           {actionMode === "resolution" ? (
             <div className="space-y-2">
               <Label>Hướng xử lý</Label>
-              <Select value={resolution} onValueChange={(value) => setResolution(value as ProductionIncidentResolution)}>
-                <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+              <Select
+                value={resolution}
+                onValueChange={(value) =>
+                  setResolution(value as ProductionIncidentResolution)
+                }
+              >
+                <SelectTrigger className="w-full" aria-label="Hướng xử lý">
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   {safeResolutions.map((value) => (
-                    <SelectItem key={value} value={value}>{RESOLUTION_LABELS[value]}</SelectItem>
+                    <SelectItem key={value} value={value}>
+                      {RESOLUTION_LABELS[value]}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
               {resolution === "RequestRemake" ? (
                 <p className="text-xs leading-5 text-warning">
-                  Backend sẽ làm lại đúng unit range của sự cố. Các đầu ra thành công khác được giữ nguyên.
+                  Backend sẽ làm lại đúng unit range của sự cố. Các đầu ra thành
+                  công khác được giữ nguyên.
                 </p>
               ) : null}
             </div>
           ) : null}
 
           <div className="space-y-2">
-            <Label htmlFor="incident-reason">{actionMode === "complete" ? "Ghi chú hoàn tất" : "Lý do"}</Label>
+            <Label htmlFor="incident-reason">
+              {actionMode === "complete" ? "Ghi chú hoàn tất" : "Lý do"}
+            </Label>
             <textarea
               id="incident-reason"
               value={reason}
@@ -432,12 +659,29 @@ export function ProductionIncidentsPanel({ enabled }: { enabled: boolean }) {
             />
           </div>
 
-          {clientError ? <p className="text-sm text-destructive">{clientError}</p> : null}
-          {incidents.detailErrorMessage ? <p className="text-sm text-destructive">{incidents.detailErrorMessage}</p> : null}
+          {clientError ? (
+            <p className="text-sm text-destructive">{clientError}</p>
+          ) : null}
+          {incidents.detailErrorMessage ? (
+            <p className="text-sm text-destructive">
+              {incidents.detailErrorMessage}
+            </p>
+          ) : null}
 
           <DialogFooter>
-            <Button variant="outline" disabled={incidents.isMutating} onClick={closeAction}>Hủy</Button>
-            <Button isLoading={incidents.isMutating} onClick={() => void submitAction()}>Xác nhận</Button>
+            <Button
+              variant="outline"
+              disabled={incidents.isMutating}
+              onClick={closeAction}
+            >
+              Hủy
+            </Button>
+            <Button
+              isLoading={incidents.isMutating}
+              onClick={() => void submitAction()}
+            >
+              Xác nhận
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

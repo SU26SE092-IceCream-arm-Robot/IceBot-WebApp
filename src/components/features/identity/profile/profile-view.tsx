@@ -48,7 +48,6 @@ import {
 } from "@/components/ui/select";
 import { useAuth } from "@/hooks/identity/use-auth";
 import { useProfile } from "@/hooks/identity/use-profile";
-import { getRoleLabel, isBackendRoleCode } from "@/lib/role-labels";
 import type {
   CurrentAccountNotificationDevice,
   CurrentAccountProfile,
@@ -76,7 +75,9 @@ function getStatusLabel(status: string): string {
 }
 
 function getGenderLabel(gender: string): string {
-  return GENDER_OPTIONS.find((option) => option.value === gender)?.label ?? gender;
+  return (
+    GENDER_OPTIONS.find((option) => option.value === gender)?.label ?? gender
+  );
 }
 
 function getPlatformLabel(platform: string): string {
@@ -173,7 +174,7 @@ function ProfileForm({
             disabled={isSaving}
             onValueChange={(value) => value && setGender(value)}
           >
-            <SelectTrigger className="h-9 w-full">
+            <SelectTrigger className="h-9 w-full" aria-label="Giới tính">
               <SelectValue>{getGenderLabel(gender)}</SelectValue>
             </SelectTrigger>
             <SelectContent>
@@ -202,17 +203,24 @@ function PasswordForm({
 }: {
   disabled: boolean;
   isChangingPassword: boolean;
-  onChangePassword: (currentPassword: string, newPassword: string) => Promise<void>;
+  onChangePassword: (
+    currentPassword: string,
+    newPassword: string,
+  ) => Promise<void>;
 }) {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [validationMessage, setValidationMessage] = useState<string | null>(null);
+  const [validationMessage, setValidationMessage] = useState<string | null>(
+    null,
+  );
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!currentPassword || !newPassword) {
-      setValidationMessage("Vui lòng nhập đầy đủ mật khẩu hiện tại và mật khẩu mới.");
+      setValidationMessage(
+        "Vui lòng nhập đầy đủ mật khẩu hiện tại và mật khẩu mới.",
+      );
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -275,7 +283,11 @@ function PasswordForm({
         </p>
       ) : null}
       <div className="flex justify-end border-t border-border pt-4">
-        <Button type="submit" isLoading={isChangingPassword} disabled={disabled}>
+        <Button
+          type="submit"
+          isLoading={isChangingPassword}
+          disabled={disabled}
+        >
           <KeyRound className="size-4" />
           Đổi mật khẩu
         </Button>
@@ -307,19 +319,31 @@ function NotificationDevicesCard({
           Thiết bị nhận thông báo
         </CardTitle>
         <CardDescription>
-          Quản lý các ứng dụng đang đăng ký nhận thông báo cho tài khoản này. Đây không phải danh sách phiên đăng nhập.
+          Quản lý các ứng dụng đang đăng ký nhận thông báo cho tài khoản này.
+          Đây không phải danh sách phiên đăng nhập.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
         {isLoading ? (
-          <div className="space-y-3" aria-label="Đang tải thiết bị nhận thông báo">
+          <div
+            className="space-y-3"
+            aria-label="Đang tải thiết bị nhận thông báo"
+          >
             <div className="h-16 animate-pulse rounded-lg bg-muted" />
             <div className="h-16 animate-pulse rounded-lg bg-muted" />
           </div>
         ) : errorMessage ? (
-          <div className="flex flex-col gap-3 rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive" role="alert">
+          <div
+            className="flex flex-col gap-3 rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive"
+            role="alert"
+          >
             <span>{errorMessage}</span>
-            <Button variant="outline" size="sm" className="w-fit" onClick={() => void onRetry()}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-fit"
+              onClick={() => void onRetry()}
+            >
               <RefreshCw className="size-4" />
               Thử lại
             </Button>
@@ -329,23 +353,32 @@ function NotificationDevicesCard({
             <Smartphone className="mx-auto mb-3 size-5 text-muted-foreground" />
             <p className="font-medium">Chưa có thiết bị nhận thông báo</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              Thiết bị sẽ xuất hiện sau khi một ứng dụng hỗ trợ thông báo đăng ký với tài khoản này.
+              Thiết bị sẽ xuất hiện sau khi một ứng dụng hỗ trợ thông báo đăng
+              ký với tài khoản này.
             </p>
           </div>
         ) : (
           <div className="divide-y divide-border rounded-lg border border-border">
             {devices.map((device) => (
-              <div key={device.installationId} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+              <div
+                key={device.installationId}
+                className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between"
+              >
                 <div className="flex min-w-0 gap-3">
                   <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
                     <Smartphone className="size-4" />
                   </span>
                   <div className="min-w-0">
-                    <p className="truncate font-medium">{device.deviceName?.trim() || getPlatformLabel(device.platform)}</p>
+                    <p className="truncate font-medium">
+                      {device.deviceName?.trim() ||
+                        getPlatformLabel(device.platform)}
+                    </p>
                     <p className="text-sm text-muted-foreground">
                       {getPlatformLabel(device.platform)}
                       {device.appVersion ? ` · ${device.appVersion}` : ""}
-                      {device.lastSeenAt ? ` · Hoạt động gần nhất ${formatDateTime(device.lastSeenAt)}` : ""}
+                      {device.lastSeenAt
+                        ? ` · Hoạt động gần nhất ${formatDateTime(device.lastSeenAt)}`
+                        : ""}
                     </p>
                   </div>
                 </div>
@@ -358,7 +391,9 @@ function NotificationDevicesCard({
                       variant="outline"
                       size="sm"
                       disabled={unregisteringInstallationId !== null}
-                      isLoading={unregisteringInstallationId === device.installationId}
+                      isLoading={
+                        unregisteringInstallationId === device.installationId
+                      }
                       onClick={() => onUnregister(device)}
                     >
                       Ngừng nhận
@@ -404,7 +439,8 @@ export function ActiveSessionsCard({
             Phiên đăng nhập đang hoạt động
           </CardTitle>
           <CardDescription>
-            Danh sách các phiên còn có thể làm mới đăng nhập. Hệ thống không hiển thị token.
+            Danh sách các phiên còn có thể làm mới đăng nhập. Hệ thống không
+            hiển thị token.
           </CardDescription>
         </div>
         <Button
@@ -428,9 +464,17 @@ export function ActiveSessionsCard({
             <div className="h-16 animate-pulse rounded-lg bg-muted" />
           </div>
         ) : errorMessage ? (
-          <div className="flex flex-col gap-3 rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive" role="alert">
+          <div
+            className="flex flex-col gap-3 rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive"
+            role="alert"
+          >
             <span>{errorMessage}</span>
-            <Button variant="outline" size="sm" className="w-fit" onClick={() => void onRetry()}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-fit"
+              onClick={() => void onRetry()}
+            >
               <RefreshCw className="size-4" />
               Thử lại
             </Button>
@@ -438,9 +482,12 @@ export function ActiveSessionsCard({
         ) : sessions.length === 0 ? (
           <div className="rounded-lg border border-dashed border-border px-4 py-8 text-center">
             <Laptop className="mx-auto mb-3 size-5 text-muted-foreground" />
-            <p className="font-medium">Không có phiên đăng nhập đang hoạt động</p>
+            <p className="font-medium">
+              Không có phiên đăng nhập đang hoạt động
+            </p>
             <p className="mt-1 text-sm text-muted-foreground">
-              Phiên mới sẽ xuất hiện sau khi tài khoản đăng nhập và nhận refresh token.
+              Phiên mới sẽ xuất hiện sau khi tài khoản đăng nhập và nhận refresh
+              token.
             </p>
           </div>
         ) : (
@@ -462,14 +509,16 @@ export function ActiveSessionsCard({
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="truncate font-medium">
-                          {session.deviceName?.trim() || "Thiết bị chưa xác định"}
+                          {session.deviceName?.trim() ||
+                            "Thiết bị chưa xác định"}
                         </p>
                         {isCurrentSession ? (
                           <Badge variant="secondary">Phiên hiện tại</Badge>
                         ) : null}
                       </div>
                       <p className="truncate text-sm text-muted-foreground">
-                        {session.userAgent?.trim() || "Không có thông tin trình duyệt"}
+                        {session.userAgent?.trim() ||
+                          "Không có thông tin trình duyệt"}
                       </p>
                       <p className="text-sm text-muted-foreground">
                         {session.ipAddress?.trim() || "Không có địa chỉ IP"}
@@ -509,7 +558,8 @@ export function ProfileView() {
   const router = useRouter();
   const [notificationDeviceToUnregister, setNotificationDeviceToUnregister] =
     useState<CurrentAccountNotificationDevice | null>(null);
-  const [isRevokeAllSessionsDialogOpen, setIsRevokeAllSessionsDialogOpen] = useState(false);
+  const [isRevokeAllSessionsDialogOpen, setIsRevokeAllSessionsDialogOpen] =
+    useState(false);
   const [sessionToRevoke, setSessionToRevoke] =
     useState<CurrentAccountSession | null>(null);
   const { effectiveAccess } = useAuth();
@@ -556,7 +606,9 @@ export function ProfileView() {
       <Card className="mx-auto max-w-lg">
         <CardHeader>
           <CardTitle>Không thể tải thông tin cá nhân</CardTitle>
-          <CardDescription>{errorMessage ?? "Vui lòng thử lại sau."}</CardDescription>
+          <CardDescription>
+            {errorMessage ?? "Vui lòng thử lại sau."}
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <Button onClick={() => void loadProfile()}>
@@ -570,7 +622,7 @@ export function ProfileView() {
 
   const roleLabels = Array.from(
     new Set(profile.roles.map((role) => role.roleCode)),
-  ).map((role) => (isBackendRoleCode(role) ? getRoleLabel(role) : role));
+  );
   const scopeSummary = effectiveAccess
     ? getScopeSummary(
         effectiveAccess.isSystemAdmin,
@@ -584,8 +636,12 @@ export function ProfileView() {
     <div className="mx-auto w-full max-w-6xl space-y-6">
       <header className="flex flex-col gap-4 border-b border-border pb-6 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="mb-1 text-sm font-medium text-primary">Tài khoản của tôi</p>
-          <h1 className="text-3xl font-bold tracking-tight">Thông tin cá nhân</h1>
+          <p className="mb-1 text-sm font-medium text-primary">
+            Tài khoản của tôi
+          </p>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Thông tin cá nhân
+          </h1>
           <p className="mt-2 text-sm text-muted-foreground">
             Quản lý thông tin liên hệ và bảo mật cho tài khoản đang đăng nhập.
           </p>
@@ -597,7 +653,10 @@ export function ProfileView() {
       </header>
 
       {errorMessage ? (
-        <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive" role="alert">
+        <div
+          className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive"
+          role="alert"
+        >
           {errorMessage}
         </div>
       ) : null}
@@ -610,7 +669,8 @@ export function ProfileView() {
               Hồ sơ cá nhân
             </CardTitle>
             <CardDescription>
-              Email và tên đăng nhập do hệ thống quản lý; các thông tin còn lại có thể cập nhật.
+              Email và tên đăng nhập do hệ thống quản lý; các thông tin còn lại
+              có thể cập nhật.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -628,7 +688,11 @@ export function ProfileView() {
                   });
                   toast.success("Đã cập nhật thông tin cá nhân.");
                 } catch (error) {
-                  toast.error(error instanceof Error ? error.message : "Không thể cập nhật hồ sơ.");
+                  toast.error(
+                    error instanceof Error
+                      ? error.message
+                      : "Không thể cập nhật hồ sơ.",
+                  );
                 }
               }}
             />
@@ -641,16 +705,24 @@ export function ProfileView() {
               <ShieldCheck className="size-5 text-primary" />
               Tài khoản và quyền
             </CardTitle>
-            <CardDescription>Thông tin nhận diện và phạm vi hiện tại.</CardDescription>
+            <CardDescription>
+              Thông tin nhận diện và phạm vi hiện tại.
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
             <div className="flex items-center gap-3">
               <span className="flex size-12 items-center justify-center rounded-lg bg-primary/10 text-sm font-bold text-primary">
-                {(profile.fullName || profile.userName).slice(0, 2).toUpperCase()}
+                {(profile.fullName || profile.userName)
+                  .slice(0, 2)
+                  .toUpperCase()}
               </span>
               <div className="min-w-0">
-                <p className="truncate font-semibold">{profile.fullName || profile.userName}</p>
-                <p className="truncate text-sm text-muted-foreground">@{profile.userName}</p>
+                <p className="truncate font-semibold">
+                  {profile.fullName || profile.userName}
+                </p>
+                <p className="truncate text-sm text-muted-foreground">
+                  @{profile.userName}
+                </p>
               </div>
             </div>
             <dl className="space-y-3 text-sm">
@@ -665,7 +737,9 @@ export function ProfileView() {
                 <Phone className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
                 <div>
                   <dt className="text-muted-foreground">Số điện thoại</dt>
-                  <dd className="font-medium">{profile.phoneNumber || "Chưa cập nhật"}</dd>
+                  <dd className="font-medium">
+                    {profile.phoneNumber || "Chưa cập nhật"}
+                  </dd>
                 </div>
               </div>
               <div className="flex gap-3">
@@ -679,14 +753,22 @@ export function ProfileView() {
                 <CalendarClock className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
                 <div>
                   <dt className="text-muted-foreground">Đăng nhập gần nhất</dt>
-                  <dd className="font-medium">{formatDateTime(profile.lastLoginAt)}</dd>
+                  <dd className="font-medium">
+                    {formatDateTime(profile.lastLoginAt)}
+                  </dd>
                 </div>
               </div>
             </dl>
             <div className="space-y-2 border-t border-border pt-4">
-              <p className="text-xs font-medium uppercase text-muted-foreground">Vai trò</p>
+              <p className="text-xs font-medium uppercase text-muted-foreground">
+                Vai trò
+              </p>
               <div className="flex flex-wrap gap-2">
-                {roleLabels.map((role) => <Badge key={role} variant="secondary">{role}</Badge>)}
+                {roleLabels.map((role) => (
+                  <Badge key={role} variant="secondary">
+                    {role}
+                  </Badge>
+                ))}
               </div>
             </div>
             <div className="flex flex-wrap gap-2 border-t border-border pt-4">
@@ -695,7 +777,9 @@ export function ProfileView() {
                 {getStatusLabel(profile.status)}
               </Badge>
               <Badge variant="outline">
-                {profile.emailConfirmed ? "Email đã xác minh" : "Email chưa xác minh"}
+                {profile.emailConfirmed
+                  ? "Email đã xác minh"
+                  : "Email chưa xác minh"}
               </Badge>
             </div>
           </CardContent>
@@ -709,7 +793,8 @@ export function ProfileView() {
             Bảo mật tài khoản
           </CardTitle>
           <CardDescription>
-            Sau khi đổi mật khẩu, hệ thống sẽ đăng xuất tài khoản và yêu cầu đăng nhập lại.
+            Sau khi đổi mật khẩu, hệ thống sẽ đăng xuất tài khoản và yêu cầu
+            đăng nhập lại.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -719,10 +804,16 @@ export function ProfileView() {
             onChangePassword={async (currentPassword, newPassword) => {
               try {
                 await changePassword({ currentPassword, newPassword });
-                toast.success("Đổi mật khẩu thành công. Vui lòng đăng nhập lại.");
+                toast.success(
+                  "Đổi mật khẩu thành công. Vui lòng đăng nhập lại.",
+                );
                 router.replace("/login");
               } catch (error) {
-                toast.error(error instanceof Error ? error.message : "Không thể đổi mật khẩu.");
+                toast.error(
+                  error instanceof Error
+                    ? error.message
+                    : "Không thể đổi mật khẩu.",
+                );
               }
             }}
           />
@@ -762,7 +853,8 @@ export function ProfileView() {
           <DialogHeader>
             <DialogTitle>Đăng xuất khỏi mọi thiết bị?</DialogTitle>
             <DialogDescription>
-              Tất cả phiên đăng nhập đang hoạt động sẽ bị thu hồi, bao gồm phiên hiện tại. Bạn sẽ cần đăng nhập lại.
+              Tất cả phiên đăng nhập đang hoạt động sẽ bị thu hồi, bao gồm phiên
+              hiện tại. Bạn sẽ cần đăng nhập lại.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -781,11 +873,17 @@ export function ProfileView() {
               onClick={() => {
                 void revokeAllSessions()
                   .then((revokedCount) => {
-                    toast.success(`Đã thu hồi ${revokedCount} phiên đăng nhập.`);
+                    toast.success(
+                      `Đã thu hồi ${revokedCount} phiên đăng nhập.`,
+                    );
                     router.replace("/login");
                   })
                   .catch((error) => {
-                    toast.error(error instanceof Error ? error.message : "Không thể đăng xuất khỏi các phiên.");
+                    toast.error(
+                      error instanceof Error
+                        ? error.message
+                        : "Không thể đăng xuất khỏi các phiên.",
+                    );
                   });
               }}
             >
@@ -807,7 +905,9 @@ export function ProfileView() {
           <DialogHeader>
             <DialogTitle>Đăng xuất thiết bị này?</DialogTitle>
             <DialogDescription>
-              Phiên trên {sessionToRevoke?.deviceName?.trim() || "thiết bị chưa xác định"} sẽ bị thu hồi.
+              Phiên trên{" "}
+              {sessionToRevoke?.deviceName?.trim() || "thiết bị chưa xác định"}{" "}
+              sẽ bị thu hồi.
               {sessionToRevoke?.isCurrentSession ||
               sessionToRevoke?.sessionId === currentSessionId
                 ? " Đây là phiên hiện tại nên bạn sẽ được chuyển về trang đăng nhập."
@@ -864,7 +964,12 @@ export function ProfileView() {
           <DialogHeader>
             <DialogTitle>Ngừng nhận thông báo?</DialogTitle>
             <DialogDescription>
-              {notificationDeviceToUnregister?.deviceName?.trim() || getPlatformLabel(notificationDeviceToUnregister?.platform ?? "")} sẽ không còn nhận thông báo từ tài khoản này. Thao tác này không đăng xuất thiết bị.
+              {notificationDeviceToUnregister?.deviceName?.trim() ||
+                getPlatformLabel(
+                  notificationDeviceToUnregister?.platform ?? "",
+                )}{" "}
+              sẽ không còn nhận thông báo từ tài khoản này. Thao tác này không
+              đăng xuất thiết bị.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -882,13 +987,19 @@ export function ProfileView() {
               isLoading={unregisteringInstallationId !== null}
               onClick={() => {
                 if (!notificationDeviceToUnregister) return;
-                void unregisterNotificationDevice(notificationDeviceToUnregister.installationId)
+                void unregisterNotificationDevice(
+                  notificationDeviceToUnregister.installationId,
+                )
                   .then(() => {
                     toast.success("Đã ngừng nhận thông báo trên thiết bị.");
                     setNotificationDeviceToUnregister(null);
                   })
                   .catch((error) => {
-                    toast.error(error instanceof Error ? error.message : "Không thể ngừng nhận thông báo.");
+                    toast.error(
+                      error instanceof Error
+                        ? error.message
+                        : "Không thể ngừng nhận thông báo.",
+                    );
                   });
               }}
             >

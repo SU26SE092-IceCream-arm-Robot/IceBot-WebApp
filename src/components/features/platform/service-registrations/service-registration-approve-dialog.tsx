@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { Building2, CheckCircle, Shield, User } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -23,19 +23,24 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   item: ManagementServiceRegistrationDetail | null;
   loading: boolean;
-  onApprove: (id: string, request: ApproveServiceRegistrationRequest) => Promise<void>;
+  onApprove: (
+    id: string,
+    request: ApproveServiceRegistrationRequest,
+  ) => Promise<void>;
 }
 
 function generateOrgCode(name?: string): string {
   if (!name) return "ORG";
-  return name
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-zA-Z0-9\s]/g, "")
-    .trim()
-    .toUpperCase()
-    .replace(/\s+/g, "-")
-    .slice(0, 30) || "ORG";
+  return (
+    name
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-zA-Z0-9\s]/g, "")
+      .trim()
+      .toUpperCase()
+      .replace(/\s+/g, "-")
+      .slice(0, 30) || "ORG"
+  );
 }
 
 function generateAdminUsername(email?: string, name?: string): string {
@@ -61,23 +66,18 @@ export function ServiceRegistrationApproveDialog({
   loading,
   onApprove,
 }: Props) {
-  const [organizationCode, setOrganizationCode] = useState("");
-  const [organizationName, setOrganizationName] = useState("");
-  const [adminUserName, setAdminUserName] = useState("");
-  const [adminEmail, setAdminEmail] = useState("");
+  const [organizationCode, setOrganizationCode] = useState(() =>
+    generateOrgCode(item?.businessName),
+  );
+  const [organizationName, setOrganizationName] = useState(
+    () => item?.businessName || "",
+  );
+  const [adminUserName, setAdminUserName] = useState(() =>
+    generateAdminUsername(item?.email, item?.contactName),
+  );
+  const [adminEmail, setAdminEmail] = useState(() => item?.email || "");
   const [googleLoginEnabled, setGoogleLoginEnabled] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (item) {
-      setOrganizationCode(generateOrgCode(item.businessName));
-      setOrganizationName(item.businessName || "");
-      setAdminUserName(generateAdminUsername(item.email, item.contactName));
-      setAdminEmail(item.email || "");
-      setGoogleLoginEnabled(true);
-      setError(null);
-    }
-  }, [item]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -86,15 +86,15 @@ export function ServiceRegistrationApproveDialog({
     if (!item) return;
 
     if (!organizationCode.trim()) {
-      setError("Vui lòng nhập mã tổ chức (Organization Code).");
+      setError("Vui lòng nhập mã tổ chức.");
       return;
     }
     if (!organizationName.trim()) {
-      setError("Vui lòng nhập tên tổ chức (Organization Name).");
+      setError("Vui lòng nhập tên tổ chức.");
       return;
     }
     if (!adminUserName.trim()) {
-      setError("Vui lòng nhập tên đăng nhập quản trị viên (Admin Username).");
+      setError("Vui lòng nhập tên đăng nhập quản trị viên.");
       return;
     }
     if (!adminEmail.trim() || !adminEmail.includes("@")) {
@@ -127,24 +127,31 @@ export function ServiceRegistrationApproveDialog({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-xl font-bold text-foreground">
               <CheckCircle className="size-5 text-emerald-600" />
-              Phê duyệt Đơn đăng ký & Cấp phát
+              Phê duyệt đơn đăng ký & cấp phát
             </DialogTitle>
             <DialogDescription>
-              Hệ thống sẽ tự động tạo Tổ chức mới (Organization), tài khoản OrgAdmin và gửi
-              thông tin đăng nhập tới email đối tác.
+              Hệ thống sẽ tự động tạo tổ chức và tài khoản Quản trị viên tổ
+              chức, sau đó gửi thông tin đăng nhập tới email đối tác.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-5 py-4">
             {/* Reference info */}
-            <div className="rounded-lg border bg-muted/40 p-3 text-xs flex items-center justify-between">
+            <div className="flex flex-col gap-2 rounded-lg border bg-muted/40 p-3 text-xs sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <span className="text-muted-foreground">Mã đơn: </span>
-                <span className="font-mono font-bold text-foreground">{item.referenceCode}</span>
+                <span className="text-muted-foreground">Mã hồ sơ đăng ký: </span>
+                <span className="font-mono font-bold text-foreground">
+                  {item.referenceCode}
+                </span>
+                <p className="mt-1 text-muted-foreground">
+                  Dùng để tra cứu và đối chiếu nội bộ.
+                </p>
               </div>
-              <div>
-                <span className="text-muted-foreground">Revision: </span>
-                <span className="font-semibold text-primary">v{item.revision}</span>
+              <div className="shrink-0">
+                <span className="text-muted-foreground">Phiên bản dữ liệu: </span>
+                <span className="font-semibold text-primary">
+                  v{item.revision}
+                </span>
               </div>
             </div>
 
@@ -152,26 +159,34 @@ export function ServiceRegistrationApproveDialog({
             <div className="space-y-3">
               <div className="flex items-center gap-2 text-sm font-semibold text-foreground border-b pb-1">
                 <Building2 className="size-4 text-primary" />
-                Thông tin Tổ chức (Organization)
+                Thông tin tổ chức
               </div>
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div className="space-y-1">
-                  <label htmlFor="orgCode" className="text-xs font-medium text-foreground">
+                  <label
+                    htmlFor="orgCode"
+                    className="text-xs font-medium text-foreground"
+                  >
                     Mã tổ chức <span className="text-destructive">*</span>
                   </label>
                   <Input
                     id="orgCode"
                     value={organizationCode}
                     maxLength={50}
-                    onChange={(e) => setOrganizationCode(e.target.value.toUpperCase())}
+                    onChange={(e) =>
+                      setOrganizationCode(e.target.value.toUpperCase())
+                    }
                     placeholder="VD: KEM-A"
                     required
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label htmlFor="orgName" className="text-xs font-medium text-foreground">
+                  <label
+                    htmlFor="orgName"
+                    className="text-xs font-medium text-foreground"
+                  >
                     Tên tổ chức <span className="text-destructive">*</span>
                   </label>
                   <Input
@@ -190,12 +205,15 @@ export function ServiceRegistrationApproveDialog({
             <div className="space-y-3">
               <div className="flex items-center gap-2 text-sm font-semibold text-foreground border-b pb-1">
                 <User className="size-4 text-primary" />
-                Tài khoản Quản trị viên (OrgAdmin)
+                Tài khoản Quản trị viên tổ chức
               </div>
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div className="space-y-1">
-                  <label htmlFor="adminUser" className="text-xs font-medium text-foreground">
+                  <label
+                    htmlFor="adminUser"
+                    className="text-xs font-medium text-foreground"
+                  >
                     Tên đăng nhập <span className="text-destructive">*</span>
                   </label>
                   <Input
@@ -209,7 +227,10 @@ export function ServiceRegistrationApproveDialog({
                 </div>
 
                 <div className="space-y-1">
-                  <label htmlFor="adminMail" className="text-xs font-medium text-foreground">
+                  <label
+                    htmlFor="adminMail"
+                    className="text-xs font-medium text-foreground"
+                  >
                     Email quản trị <span className="text-destructive">*</span>
                   </label>
                   <Input
@@ -232,7 +253,9 @@ export function ServiceRegistrationApproveDialog({
                 Phương thức đăng nhập cho phép
               </div>
               <div className="flex flex-wrap gap-5 text-sm">
-                <span className="text-muted-foreground">Mật khẩu nội bộ luôn bật; mật khẩu tạm được gửi qua email.</span>
+                <span className="text-muted-foreground">
+                  Mật khẩu nội bộ luôn bật; mật khẩu tạm được gửi qua email.
+                </span>
                 <label className="flex items-center gap-2 cursor-pointer select-none">
                   <input
                     type="checkbox"
@@ -261,8 +284,12 @@ export function ServiceRegistrationApproveDialog({
             >
               Hủy
             </Button>
-            <Button type="submit" isLoading={loading} className="bg-emerald-600 hover:bg-emerald-700">
-              Xác nhận Duyệt & Cấp phát
+            <Button
+              type="submit"
+              isLoading={loading}
+              className="bg-emerald-600 hover:bg-emerald-700"
+            >
+              Xác nhận phê duyệt & cấp phát
             </Button>
           </DialogFooter>
         </form>

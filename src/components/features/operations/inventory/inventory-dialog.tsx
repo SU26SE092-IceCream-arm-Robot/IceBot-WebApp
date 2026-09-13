@@ -691,7 +691,7 @@ export function InventoryMutationDialog({
                   }
                 }}
               >
-                <SelectTrigger className="h-10 w-full">
+                <SelectTrigger className="h-10 w-full" aria-label="Mức tồn sau điều chỉnh">
                   <SelectValue>
                     {reportedLevelAfter === "UNCHANGED"
                       ? "Giữ nguyên trạng thái hiện tại"

@@ -118,6 +118,9 @@ describe("dashboard GraphQL partial-root contract", () => {
       variables: Record<string, unknown>;
     };
     expect(payload.query).toContain("orderOverview(take: $orderTake)");
+    expect(payload.query.match(/{/g)).toHaveLength(
+      payload.query.match(/}/g)?.length ?? 0,
+    );
     expect(payload.variables).toEqual({ orderTake: 8 });
   });
 });

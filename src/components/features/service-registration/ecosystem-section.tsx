@@ -1,52 +1,56 @@
-import React from 'react';
-import { Cloud, MonitorSmartphone, Monitor, Cpu, Bot, CreditCard } from 'lucide-react';
+import { Bot, Boxes, Cloud, Monitor, MonitorSmartphone } from "lucide-react";
+
+const layers = [
+  { icon: Monitor, label: "Simulation", eyebrow: "Design", description: "FaiRobot Studio mô phỏng và xuất workflow.", tone: "from-cyan-300/20 to-cyan-300/[0.03]" },
+  { icon: MonitorSmartphone, label: "Commerce", eyebrow: "Sell", description: "Kiosk, đơn hàng và thanh toán tạo giao dịch.", tone: "from-blue-400/20 to-blue-400/[0.03]" },
+  { icon: Bot, label: "Execution", eyebrow: "Make", description: "Máy biên kết nối workflow với robot tại điểm bán.", tone: "from-indigo-400/20 to-indigo-400/[0.03]" },
+  { icon: Boxes, label: "Operations", eyebrow: "Operate", description: "Tồn kho, cảnh báo và bảo trì khép kín vòng vận hành.", tone: "from-violet-400/20 to-violet-400/[0.03]" },
+];
 
 export function EcosystemSection() {
-  const nodes = [
-    { label: 'Admin Web', icon: <Monitor className="w-6 h-6 text-primary" />, position: 'top-0 left-1/2 -translate-x-1/2 -translate-y-1/2' },
-    { label: 'Customer Kiosk', icon: <MonitorSmartphone className="w-6 h-6 text-primary" />, position: 'top-1/4 right-0 translate-x-1/2' },
-    { label: 'PayOS', icon: <CreditCard className="w-6 h-6 text-primary" />, position: 'bottom-1/4 right-0 translate-x-1/2' },
-    { label: 'Fairino Robot', icon: <Bot className="w-6 h-6 text-primary" />, position: 'bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2' },
-    { label: 'Local Edge', icon: <Cpu className="w-6 h-6 text-primary" />, position: 'bottom-1/4 left-0 -translate-x-1/2' },
-    { label: 'Cloud Backend', icon: <Cloud className="w-6 h-6 text-primary" />, position: 'top-1/4 left-0 -translate-x-1/2' },
-  ];
-
   return (
-    <section id="he-thong" className="py-24 bg-background overflow-hidden">
-      <div className="container mx-auto px-4">
-        <div className="text-center mb-20 max-w-2xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
-            Hệ sinh thái IceBot
-          </h2>
-          <p className="text-muted-foreground text-lg">
-            Một kiến trúc toàn diện kết nối phần mềm quản trị, thiết bị tự phục vụ, và robot công nghiệp.
+    <section id="he-thong" className="scroll-mt-20 overflow-hidden bg-[#070A10] py-20 text-white sm:py-24 lg:py-32" data-landing-reveal>
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="grid gap-10 lg:grid-cols-12 lg:items-end">
+          <div className="max-w-3xl lg:col-span-8">
+            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-cyan-300">Một hệ thống, bốn lớp</p>
+            <h2 className="mt-5 text-4xl font-semibold tracking-[-0.05em] sm:text-5xl lg:text-6xl">
+              Từ ý tưởng trên canvas<br /><span className="text-slate-500">đến chuyển động ngoài đời.</span>
+            </h2>
+          </div>
+          <p className="max-w-md text-base leading-7 text-slate-400 lg:col-span-4">
+            IceBot kết nối các lớp cần thiết để một workflow có thể tham gia vào hoạt động bán hàng thực tế.
           </p>
         </div>
 
-        <div className="relative max-w-3xl mx-auto h-[400px] md:h-[500px]">
-          {/* Connecting Lines (Circle) */}
-          <div className="absolute inset-8 md:inset-16 rounded-full border-2 border-dashed border-primary/20" />
-          
-          {/* Central Platform Node */}
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20">
-            <div className="bg-primary text-primary-foreground rounded-2xl p-6 md:p-8 shadow-xl shadow-primary/20 flex flex-col items-center justify-center min-w-[200px] text-center border border-primary-foreground/20">
-              <span className="text-2xl md:text-3xl font-bold tracking-tight mb-1">ICEBOT</span>
-              <span className="text-sm md:text-base font-medium opacity-90">Platform</span>
-            </div>
+        <div className="relative mt-16 lg:mt-20">
+          <div className="absolute bottom-0 left-1/2 h-32 w-4/5 -translate-x-1/2 bg-indigo-500/20 blur-[90px]" aria-hidden="true" />
+          <ol className="relative grid gap-3 lg:grid-cols-4 lg:items-end">
+            {layers.map(({ description, eyebrow, icon: Icon, label, tone }, index) => (
+              <li
+                key={label}
+                className={`relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-b ${tone} p-6`}
+                style={{ minHeight: `${280 + index * 28}px` }}
+                data-reveal-item
+              >
+                <div className="flex items-start justify-between">
+                  <span className="font-mono text-xs text-slate-500">0{index + 1}</span>
+                  <div className="flex size-11 items-center justify-center rounded-xl border border-white/10 bg-black/20 text-cyan-200">
+                    <Icon className="size-5" aria-hidden="true" />
+                  </div>
+                </div>
+                <div className="absolute inset-x-6 bottom-6">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{eyebrow}</p>
+                  <h3 className="mt-2 text-2xl font-semibold tracking-tight">{label}</h3>
+                  <p className="mt-3 text-sm leading-6 text-slate-400">{description}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+          <div className="relative mt-3 flex items-center justify-between rounded-2xl border border-cyan-300/20 bg-cyan-300/[0.07] px-5 py-4 text-xs sm:text-sm" data-reveal-item>
+            <span className="flex items-center gap-2 font-semibold text-cyan-100"><Cloud className="size-4" aria-hidden="true" />IceBot orchestration layer</span>
+            <span className="hidden text-slate-500 sm:block">Cấu hình · Quan sát · Điều phối</span>
           </div>
-
-          {/* Surrounding Nodes */}
-          {nodes.map((node, index) => (
-            <div
-              key={index}
-              className={`absolute ${node.position} z-10 bg-card border border-border shadow-md rounded-xl p-3 md:p-4 flex flex-col items-center justify-center min-w-[120px] md:min-w-[140px] text-center hover:scale-105 transition-transform duration-300`}
-            >
-              <div className="bg-primary/10 p-2 md:p-3 rounded-full mb-2 md:mb-3">
-                {node.icon}
-              </div>
-              <span className="font-semibold text-sm md:text-base">{node.label}</span>
-            </div>
-          ))}
         </div>
       </div>
     </section>

@@ -14,7 +14,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type { RefundResult, RefundStatus } from "@/types/transactions/transactions";
+import type {
+  RefundResult,
+  RefundStatus,
+} from "@/types/transactions/transactions";
 
 export const REFUND_STATUS_LABELS: Record<RefundStatus, string> = {
   Requested: "Đã yêu cầu",
@@ -57,66 +60,129 @@ interface RefundsTableProps {
 
 export function RefundsTable({ refunds, onViewDetail }: RefundsTableProps) {
   return (
-    <Table className="min-w-[1080px] table-fixed">
-      <TableHeader className="bg-muted/40">
-        <TableRow className="hover:bg-transparent">
-          <TableHead className="w-[20%] px-4">Hoàn tiền</TableHead>
-          <TableHead className="w-[18%] text-center">Đơn hàng</TableHead>
-          <TableHead className="w-[13%] text-center">Trạng thái</TableHead>
-          <TableHead className="w-[13%] text-right">Số tiền</TableHead>
-          <TableHead className="w-[16%] text-center">Phương thức</TableHead>
-          <TableHead className="w-[13%] text-center">Yêu cầu lúc</TableHead>
-          <TableHead className="w-[7%] px-4 text-center">Chi tiết</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
+    <>
+      <div className="grid gap-3 p-4 md:hidden">
         {refunds.map((refund) => (
-          <TableRow key={refund.id} className="hover:bg-muted/30">
-            <TableCell className="h-16 px-4 py-2.5">
-              <div className="min-w-0 space-y-0.5">
-                <p className="truncate font-mono text-[13px] font-medium text-foreground">
+          <article
+            key={refund.id}
+            className="space-y-3 rounded-lg border border-border bg-card p-4"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="truncate font-mono text-sm font-medium text-foreground">
                   {refund.refundNumber}
                 </p>
-                <p className="truncate text-xs text-muted-foreground">
-                  {refund.reason}
+                <p className="mt-1 truncate font-mono text-xs text-muted-foreground">
+                  Đơn {refund.orderNumber}
                 </p>
               </div>
-            </TableCell>
-            <TableCell className="py-2.5 text-center">
-              <span className="font-mono text-xs tabular-nums text-muted-foreground">
-                {refund.orderNumber}
-              </span>
-            </TableCell>
-            <TableCell className="py-2.5 text-center">
-              <div className="flex justify-center">
-                <RefundStatusBadge status={refund.status} />
+              <p className="shrink-0 font-medium tabular-nums">
+                {formatTransactionMoney(refund.amount, refund.currency)}
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <RefundStatusBadge status={refund.status} />
+              <Badge
+                variant="outline"
+                className="bg-muted/20 text-muted-foreground"
+              >
+                {REFUND_METHOD_LABELS[refund.refundMethod] ??
+                  refund.refundMethod}
+              </Badge>
+            </div>
+            <dl className="grid gap-3 text-sm">
+              <div>
+                <dt className="text-xs text-muted-foreground">Lý do</dt>
+                <dd className="mt-1 break-words">{refund.reason}</dd>
               </div>
-            </TableCell>
-            <TableCell className="py-2.5 text-right font-medium tabular-nums">
-              {formatTransactionMoney(refund.amount, refund.currency)}
-            </TableCell>
-            <TableCell className="py-2.5 text-center text-sm text-muted-foreground">
-              {REFUND_METHOD_LABELS[refund.refundMethod] ?? refund.refundMethod}
-            </TableCell>
-            <TableCell className="py-2.5 text-center text-xs tabular-nums text-muted-foreground">
-              {formatTransactionDate(refund.requestedAt)}
-            </TableCell>
-            <TableCell className="px-4 py-2.5 text-center">
+              <div>
+                <dt className="text-xs text-muted-foreground">Yêu cầu lúc</dt>
+                <dd className="mt-1 tabular-nums">
+                  {formatTransactionDate(refund.requestedAt)}
+                </dd>
+              </div>
+            </dl>
+            <div className="flex justify-end border-t border-border pt-3">
               <Button
                 type="button"
-                variant="ghost"
-                size="icon-sm"
-                className="rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
-                title={`Xem chi tiết ${refund.refundNumber}`}
-                aria-label={`Xem chi tiết ${refund.refundNumber}`}
+                variant="outline"
+                size="sm"
                 onClick={() => onViewDetail(refund.id)}
               >
                 <Eye className="size-4" />
+                Xem chi tiết
               </Button>
-            </TableCell>
-          </TableRow>
+            </div>
+          </article>
         ))}
-      </TableBody>
-    </Table>
+      </div>
+
+      <div className="hidden md:block">
+        <Table className="min-w-[1080px] table-fixed">
+          <TableHeader className="bg-muted/40">
+            <TableRow className="hover:bg-transparent">
+              <TableHead className="w-[20%] px-4">Hoàn tiền</TableHead>
+              <TableHead className="w-[18%] text-center">Đơn hàng</TableHead>
+              <TableHead className="w-[13%] text-center">Trạng thái</TableHead>
+              <TableHead className="w-[13%] text-right">Số tiền</TableHead>
+              <TableHead className="w-[16%] text-center">Phương thức</TableHead>
+              <TableHead className="w-[13%] text-center">Yêu cầu lúc</TableHead>
+              <TableHead className="w-[7%] px-4 text-center">
+                Chi tiết
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {refunds.map((refund) => (
+              <TableRow key={refund.id} className="hover:bg-muted/30">
+                <TableCell className="h-16 px-4 py-2.5">
+                  <div className="min-w-0 space-y-0.5">
+                    <p className="truncate font-mono text-[13px] font-medium text-foreground">
+                      {refund.refundNumber}
+                    </p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {refund.reason}
+                    </p>
+                  </div>
+                </TableCell>
+                <TableCell className="py-2.5 text-center">
+                  <span className="font-mono text-xs tabular-nums text-muted-foreground">
+                    {refund.orderNumber}
+                  </span>
+                </TableCell>
+                <TableCell className="py-2.5 text-center">
+                  <div className="flex justify-center">
+                    <RefundStatusBadge status={refund.status} />
+                  </div>
+                </TableCell>
+                <TableCell className="py-2.5 text-right font-medium tabular-nums">
+                  {formatTransactionMoney(refund.amount, refund.currency)}
+                </TableCell>
+                <TableCell className="py-2.5 text-center text-sm text-muted-foreground">
+                  {REFUND_METHOD_LABELS[refund.refundMethod] ??
+                    refund.refundMethod}
+                </TableCell>
+                <TableCell className="py-2.5 text-center text-xs tabular-nums text-muted-foreground">
+                  {formatTransactionDate(refund.requestedAt)}
+                </TableCell>
+                <TableCell className="px-4 py-2.5 text-center">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
+                    className="rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
+                    title={`Xem chi tiết ${refund.refundNumber}`}
+                    aria-label={`Xem chi tiết ${refund.refundNumber}`}
+                    onClick={() => onViewDetail(refund.id)}
+                  >
+                    <Eye className="size-4" />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    </>
   );
 }

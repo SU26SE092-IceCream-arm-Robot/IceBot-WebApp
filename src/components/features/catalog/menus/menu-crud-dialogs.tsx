@@ -249,7 +249,7 @@ export function MenuFormDialog({
             <div className="space-y-1.5">
               <label className="text-sm font-medium">Phạm vi trong tổ chức</label>
               <Select value={scopeType} disabled={isSubmitting || !isCreate} onValueChange={handleScopeTypeChange}>
-                <SelectTrigger className="h-10 w-full"><SelectValue>{getScopeTypeLabel(scopeType)}</SelectValue></SelectTrigger>
+                <SelectTrigger className="h-10 w-full" aria-label="Phạm vi trong tổ chức"><SelectValue>{getScopeTypeLabel(scopeType)}</SelectValue></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Organization">Tổ chức</SelectItem>
                   <SelectItem value="Store">Cửa hàng</SelectItem>
@@ -516,7 +516,7 @@ export function MenuItemFormDialog({
             <div className="space-y-1.5">
               <label className="text-sm font-medium">Sản phẩm <span className="text-destructive">*</span></label>
               <Select value={productId} disabled={isSubmitting || !isCreate} onValueChange={(val) => { setProductId(val || ""); setProductVariantId(""); setRecipeId(""); setProductOptionIds([]); }}>
-                <SelectTrigger className="h-10 w-full"><SelectValue placeholder="Chọn sản phẩm..." /></SelectTrigger>
+                <SelectTrigger className="h-10 w-full" aria-label="Sản phẩm"><SelectValue placeholder="Chọn sản phẩm..." /></SelectTrigger>
                 <SelectContent>
                   {products.map(p => (
                     <SelectItem key={p.id} value={p.id}>{getProductOptionLabel(p)}</SelectItem>
@@ -528,7 +528,7 @@ export function MenuItemFormDialog({
             <div className="space-y-1.5">
               <label className="text-sm font-medium">Phiên bản sản phẩm <span className="text-destructive">*</span></label>
               <Select value={productVariantId} disabled={isSubmitting || !productId || !isCreate} onValueChange={handleVariantSelect}>
-                <SelectTrigger className="h-10 w-full"><SelectValue placeholder="Chọn phiên bản..." /></SelectTrigger>
+                <SelectTrigger className="h-10 w-full" aria-label="Phiên bản sản phẩm"><SelectValue placeholder="Chọn phiên bản..." /></SelectTrigger>
                 <SelectContent>
                   {variants.map(v => (
                     <SelectItem key={v.id} value={v.id}>{getVariantOptionLabel(v)}</SelectItem>
@@ -544,7 +544,7 @@ export function MenuItemFormDialog({
                 disabled={isSubmitting || !productVariantId || recipeOptions.isLoading}
                 onValueChange={(value) => setRecipeId(value === "__none__" || !value ? "" : value)}
               >
-                <SelectTrigger className="h-10 w-full">
+                <SelectTrigger className="h-10 w-full" aria-label="Công thức">
                   <SelectValue placeholder={recipeOptions.isLoading ? "Đang tải công thức..." : "Chọn công thức"}>
                     {recipeId
                       ? recipeOptions.recipes.find((recipe) => recipe.id === recipeId)?.name || "Công thức hiện tại"

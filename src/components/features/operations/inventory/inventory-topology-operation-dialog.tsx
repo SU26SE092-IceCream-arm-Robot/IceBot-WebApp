@@ -280,7 +280,7 @@ export function InventoryTopologyOperationDialog({
                 <div className="space-y-2">
                   <Label>Thiết bị</Label>
                   <Select value={deviceId} onValueChange={(value) => setDeviceId(value ?? "")} disabled={isSubmitting}>
-                    <SelectTrigger className="w-full"><SelectValue placeholder="Chọn thiết bị" /></SelectTrigger>
+                    <SelectTrigger className="w-full" aria-label="Thiết bị"><SelectValue placeholder="Chọn thiết bị" /></SelectTrigger>
                     <SelectContent>
                       {availableDevices.map((device) => (
                         <SelectItem key={device.deviceId} value={device.deviceId}>
@@ -293,7 +293,7 @@ export function InventoryTopologyOperationDialog({
                 <div className="space-y-2">
                   <Label>Nguyên liệu</Label>
                   <Select value={ingredientId} onValueChange={(value) => setIngredientId(value ?? "")} disabled={isSubmitting || isLoadingIngredients}>
-                    <SelectTrigger className="w-full"><SelectValue placeholder={isLoadingIngredients ? "Đang tải..." : "Chọn nguyên liệu"} /></SelectTrigger>
+                    <SelectTrigger className="w-full" aria-label="Nguyên liệu"><SelectValue placeholder={isLoadingIngredients ? "Đang tải..." : "Chọn nguyên liệu"} /></SelectTrigger>
                     <SelectContent>
                       {ingredients.map((ingredient) => (
                         <SelectItem key={ingredient.id} value={ingredient.id}>
@@ -348,7 +348,7 @@ export function InventoryTopologyOperationDialog({
               <div className="space-y-2">
                 <Label>Xử lý lượng tồn ước tính hiện tại</Label>
                 <Select value={estimateDisposition} onValueChange={(value) => { if (value) setEstimateDisposition(value as InventoryEstimateDisposition); }} disabled={isSubmitting}>
-                  <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="w-full" aria-label="Xử lý lượng tồn ước tính hiện tại"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {canTransferEstimate ? <SelectItem value="Transfer">Chuyển sang liên kết mới</SelectItem> : null}
                     <SelectItem value="Discard">Ghi nhận loại bỏ</SelectItem>

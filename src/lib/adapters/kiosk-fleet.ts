@@ -52,8 +52,8 @@ export function toKioskDetailViewModel(
     kioskType: metadata.kioskType,
     timeZone: metadata.timeZone,
     installedAt: metadata.installedAt ?? null,
-    configurationVersion: metadata.configurationVersion,
-    settingsSchemaVersion: metadata.settingsSchemaVersion,
+    configurationVersion: metadata.configurationVersion ?? null,
+    settingsSchemaVersion: metadata.settingsSchemaVersion ?? null,
     storeStatus: store?.status ?? null,
   };
 }

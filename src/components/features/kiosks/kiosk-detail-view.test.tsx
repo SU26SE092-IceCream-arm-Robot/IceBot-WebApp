@@ -149,6 +149,21 @@ describe("KioskDetailView tab persistence", () => {
     expect(screen.getByText("Danh sách thiết bị thử nghiệm")).toBeInTheDocument();
   });
 
+  it("renders missing configuration versions without crashing", () => {
+    mocks.detail = {
+      ...readyDetail(),
+      kiosk: {
+        ...kiosk,
+        configurationVersion: null,
+        settingsSchemaVersion: undefined,
+      },
+    };
+
+    render(<KioskDetailView kioskId="kiosk-1" />);
+
+    expect(screen.getByText("Schema chưa có dữ liệu")).toBeInTheDocument();
+  });
+
   it("does not expose device management from a Manager assignment outside the kiosk scope", () => {
     mocks.access = {
       accountId: "manager-1",

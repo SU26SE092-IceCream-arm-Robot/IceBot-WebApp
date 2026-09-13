@@ -1,7 +1,7 @@
 "use client";
 
 import { HubConnectionState } from "@microsoft/signalr";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { getManagementDashboardHubUrl } from "@/lib/realtime/hub-urls";
 import { createHubConnection } from "@/lib/realtime/signalr-client";
@@ -22,15 +22,19 @@ export interface UseDashboardRealtimeOptions {
   enabled?: boolean;
 }
 
+export type DashboardRealtimeStatus =
+  "connecting" | "connected" | "reconnecting" | "disconnected";
+
 export function useDashboardRealtime({
   scope,
   organizationId = null,
   storeId = null,
   onInvalidated,
   enabled = true,
-}: UseDashboardRealtimeOptions) {
+}: UseDashboardRealtimeOptions): DashboardRealtimeStatus {
   const onInvalidatedRef = useRef(onInvalidated);
-  const scopeKey = `${scope}:${organizationId ?? ""}:${storeId ?? ""}:${enabled}`;
+  const [connectionStatus, setConnectionStatus] =
+    useState<DashboardRealtimeStatus>("connecting");
 
   useEffect(() => {
     onInvalidatedRef.current = onInvalidated;
@@ -43,6 +47,7 @@ export function useDashboardRealtime({
     let retryAttempt = 0;
     let retryTimer: ReturnType<typeof setTimeout> | null = null;
     let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+    let startPromise: Promise<void> | null = null;
 
     const connection = createHubConnection({
       url: getManagementDashboardHubUrl(),
@@ -73,6 +78,8 @@ export function useDashboardRealtime({
     const scheduleConnectionRetry = () => {
       if (disposed || retryTimer) return;
 
+      setConnectionStatus("reconnecting");
+
       const delay = Math.min(
         INITIAL_RETRY_DELAY_MS * 2 ** retryAttempt,
         MAX_RETRY_DELAY_MS,
@@ -84,15 +91,38 @@ export function useDashboardRealtime({
       }, delay);
     };
 
-    const connectAndJoin = async () => {
+    const ensureStarted = async () => {
+      if (startPromise) {
+        await startPromise;
+        return;
+      }
+      if (connection.state !== HubConnectionState.Disconnected) return;
+
+      const pendingStart = connection.start();
+      startPromise = pendingStart;
       try {
-        if (connection.state === HubConnectionState.Disconnected) {
-          await connection.start();
-        }
+        await pendingStart;
+      } finally {
+        if (startPromise === pendingStart) startPromise = null;
+      }
+    };
+
+    const connectAndJoin = async (
+      pendingStatus: Extract<
+        DashboardRealtimeStatus,
+        "connecting" | "reconnecting"
+      > = retryAttempt > 0 ? "reconnecting" : "connecting",
+    ) => {
+      if (!disposed) {
+        setConnectionStatus(pendingStatus);
+      }
+      try {
+        await ensureStarted();
         if (disposed) return;
 
         await joinGroup();
         retryAttempt = 0;
+        setConnectionStatus("connected");
       } catch {
         scheduleConnectionRetry();
       }
@@ -105,15 +135,27 @@ export function useDashboardRealtime({
       },
     );
 
+    connection.onreconnecting(() => {
+      if (!disposed) setConnectionStatus("reconnecting");
+    });
+
     connection.onreconnected(() => {
-      void connectAndJoin().then(() => {
+      void connectAndJoin("reconnecting").then(() => {
         if (!retryTimer) {
-          triggerInvalidated({ scope, organizationId, storeId, reason: "Reconnected" });
+          triggerInvalidated({
+            scope,
+            organizationId,
+            storeId,
+            reason: "Reconnected",
+          });
         }
       });
     });
 
-    connection.onclose(() => scheduleConnectionRetry());
+    connection.onclose(() => {
+      if (!disposed) setConnectionStatus("disconnected");
+      scheduleConnectionRetry();
+    });
 
     void connectAndJoin();
 
@@ -122,7 +164,23 @@ export function useDashboardRealtime({
       if (retryTimer) clearTimeout(retryTimer);
       if (debounceTimer) clearTimeout(debounceTimer);
       connection.off("DashboardInvalidated");
-      void connection.stop();
+      const pendingStart = startPromise;
+      void (async () => {
+        if (pendingStart) {
+          try {
+            await pendingStart;
+          } catch {
+            // A failed start still needs a best-effort stop below.
+          }
+        }
+        try {
+          await connection.stop();
+        } catch {
+          // Cleanup must not create an unhandled rejection during unmount.
+        }
+      })();
     };
-  }, [scopeKey]);
+  }, [enabled, organizationId, scope, storeId]);
+
+  return enabled ? connectionStatus : "disconnected";
 }

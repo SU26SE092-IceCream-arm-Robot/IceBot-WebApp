@@ -1,8 +1,35 @@
 "use client";
 
-import { RefreshCw } from "lucide-react";
+import { Circle, RefreshCw } from "lucide-react";
 
+import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+
+type DashboardRealtimeStatus =
+  "connecting" | "connected" | "reconnecting" | "disconnected";
+
+const REALTIME_PRESENTATION: Record<
+  DashboardRealtimeStatus,
+  { label: string; className: string }
+> = {
+  connecting: {
+    label: "Realtime đang kết nối",
+    className: "text-primary",
+  },
+  connected: {
+    label: "Realtime đã kết nối",
+    className: "text-success",
+  },
+  reconnecting: {
+    label: "Realtime đang kết nối lại",
+    className: "text-warning",
+  },
+  disconnected: {
+    label: "Realtime đã ngắt kết nối",
+    className: "text-destructive",
+  },
+};
 
 function formatLastUpdated(value: Date | null) {
   if (!value) {
@@ -25,6 +52,7 @@ interface DashboardHeaderProps {
   title?: string;
   description?: string;
   refreshTitle?: string;
+  realtimeStatus?: DashboardRealtimeStatus;
 }
 
 export function DashboardHeader({
@@ -34,35 +62,50 @@ export function DashboardHeader({
   title = "Tổng quan vận hành",
   description = "Theo dõi nhanh trạng thái kiosk, đơn hàng, hoàn tiền và tồn kho trong phạm vi quản lý.",
   refreshTitle = "Làm mới dữ liệu tổng quan",
+  realtimeStatus,
 }: DashboardHeaderProps) {
-  return (
-    <section className="flex flex-col gap-4 border-b border-border pb-6 lg:flex-row lg:items-end lg:justify-between">
-      <div className="max-w-2xl space-y-2">
-        <h1 className="text-3xl font-semibold tracking-tight text-foreground">
-          {title}
-        </h1>
-        <p className="text-sm leading-6 text-muted-foreground">
-          {description}
-        </p>
-      </div>
+  const realtimePresentation = realtimeStatus
+    ? REALTIME_PRESENTATION[realtimeStatus]
+    : null;
 
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-        <p className="text-xs text-muted-foreground">
-          Cập nhật lần cuối:{" "}
-          <span className="font-medium text-foreground">
-            {formatLastUpdated(lastUpdatedAt)}
-          </span>
-        </p>
-        <Button
-          variant="outline"
-          onClick={onRefresh}
-          isLoading={isRefreshing}
-          title={refreshTitle}
-        >
-          <RefreshCw className="size-4" />
-          Làm mới
-        </Button>
-      </div>
-    </section>
+  return (
+    <PageHeader
+      title={title}
+      description={description}
+      actions={
+        <>
+          <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1 text-xs">
+            {realtimePresentation ? (
+              <p
+                className={cn(
+                  "inline-flex items-center gap-1.5 font-medium",
+                  realtimePresentation.className,
+                )}
+                role="status"
+              >
+                <Circle className="size-2 fill-current" aria-hidden="true" />
+                {realtimePresentation.label}
+              </p>
+            ) : null}
+            <p className="text-muted-foreground">
+              Cập nhật lần cuối:{" "}
+              <span className="font-medium text-foreground">
+                {formatLastUpdated(lastUpdatedAt)}
+              </span>
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onRefresh}
+            isLoading={isRefreshing}
+            title={refreshTitle}
+          >
+            <RefreshCw className="size-4" />
+            Làm mới
+          </Button>
+        </>
+      }
+    />
   );
 }

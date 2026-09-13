@@ -449,7 +449,7 @@ export function MaintenanceEditorDialog({
             <div className="space-y-1.5">
               <label className="text-sm font-medium">Kiosk <span className="text-destructive">*</span></label>
               <Select value={kioskId || null} disabled={isSubmitting} onValueChange={(value) => setKioskId(value ?? "")}>
-                <SelectTrigger className="h-10 w-full">
+                <SelectTrigger className="h-10 w-full" aria-label="Kiosk">
                   <SelectValue placeholder="Chọn kiosk">
                     {kiosks.find((item) => item.id === kioskId)?.name ?? "Chọn kiosk"}
                   </SelectValue>
@@ -488,7 +488,7 @@ export function MaintenanceEditorDialog({
                   setPriority(value as MaintenancePriority);
                 }
               }}>
-                <SelectTrigger className="h-10 w-full"><SelectValue>{PRIORITY_OPTIONS.find((option) => option.value === priority)?.label}</SelectValue></SelectTrigger>
+                <SelectTrigger className="h-10 w-full" aria-label="Mức độ ưu tiên"><SelectValue>{PRIORITY_OPTIONS.find((option) => option.value === priority)?.label}</SelectValue></SelectTrigger>
                 <SelectContent>{PRIORITY_OPTIONS.map((option) => <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>)}</SelectContent>
               </Select>
             </div>
@@ -503,7 +503,7 @@ export function MaintenanceEditorDialog({
                   }
                 }}
               >
-                <SelectTrigger className="h-10 w-full">
+                <SelectTrigger className="h-10 w-full" aria-label="Ảnh hưởng vận hành">
                   <SelectValue>
                     {IMPACT_OPTIONS.find(
                       (option) => option.value === operationalImpact,
@@ -642,7 +642,7 @@ export function MaintenanceWorkflowDialog({
                 disabled={isSubmitting || isAssigneesLoading || assignees.length === 0}
                 onValueChange={(value) => setAccountId(value ?? "")}
               >
-                <SelectTrigger className="h-10 w-full">
+                <SelectTrigger className="h-10 w-full" aria-label="Người phụ trách">
                   <SelectValue placeholder="Chọn người phụ trách">
                     {selectedAssignee
                       ? selectedAssignee.displayName

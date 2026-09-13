@@ -6,7 +6,10 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { READINESS_OVERALL_LABELS } from "@/lib/readiness/readiness-labels";
 import { cn } from "@/lib/utils";
-import type { ReadinessOverallStatus, ReadinessSummary } from "@/types/operations/readiness";
+import type {
+  ReadinessOverallStatus,
+  ReadinessSummary,
+} from "@/types/operations/readiness";
 
 interface ReadinessSummaryCardProps {
   summary: ReadinessSummary;
@@ -57,7 +60,9 @@ export function ReadinessSummaryCard({ summary }: ReadinessSummaryCardProps) {
   const Icon = tone.icon;
   const progress =
     summary.totalApplicableCount > 0
-      ? Math.round((summary.completedCount / summary.totalApplicableCount) * 100)
+      ? Math.round(
+          (summary.completedCount / summary.totalApplicableCount) * 100,
+        )
       : 0;
 
   return (
@@ -65,7 +70,9 @@ export function ReadinessSummaryCard({ summary }: ReadinessSummaryCardProps) {
       <CardHeader className="grid-cols-[1fr_auto]">
         <div className="space-y-1">
           <CardTitle>Tổng quan thiết lập</CardTitle>
-          <p className="text-sm text-muted-foreground">Tóm tắt các điều kiện bắt buộc.</p>
+          <p className="text-sm text-muted-foreground">
+            Tóm tắt các điều kiện bắt buộc.
+          </p>
         </div>
         <div
           className={cn(
@@ -84,12 +91,16 @@ export function ReadinessSummaryCard({ summary }: ReadinessSummaryCardProps) {
           <div className="space-y-2">
             <div className="flex items-center justify-between gap-3 text-sm">
               <span className="font-medium text-foreground">
-                {summary.completedCount}/{summary.totalApplicableCount} điều kiện đã hoàn tất
+                {summary.completedCount}/{summary.totalApplicableCount} điều
+                kiện đã hoàn tất
               </span>
             </div>
             <div className="h-2 overflow-hidden rounded-full bg-muted">
               <div
-                className={cn("h-full rounded-full transition-all", tone.progressClassName)}
+                className={cn(
+                  "h-full rounded-full transition-[width] duration-300",
+                  tone.progressClassName,
+                )}
                 style={{ width: `${progress}%` }}
               />
             </div>
@@ -104,7 +115,9 @@ export function ReadinessSummaryCard({ summary }: ReadinessSummaryCardProps) {
             </p>
           </div>
           <div className="rounded-lg border border-border bg-background p-3">
-            <p className="text-xs text-muted-foreground">Đã có, cần kích hoạt</p>
+            <p className="text-xs text-muted-foreground">
+              Đã có, cần kích hoạt
+            </p>
             <p className="text-2xl font-semibold text-foreground">
               {summary.warningCount}
             </p>

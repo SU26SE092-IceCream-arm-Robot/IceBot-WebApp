@@ -37,9 +37,7 @@ const PROGRESS_CLASS_NAMES: Record<IngredientLevelStatus, string> = {
   Full: "bg-success",
 };
 
-export function getInventoryLevelLabel(
-  status: IngredientLevelStatus,
-): string {
+export function getInventoryLevelLabel(status: IngredientLevelStatus): string {
   return LEVEL_LABELS[status];
 }
 
@@ -100,11 +98,7 @@ export function formatInventoryDate(value: string | null | undefined): string {
   }).format(date);
 }
 
-function InventoryLevelBadge({
-  status,
-}: {
-  status: IngredientLevelStatus;
-}) {
+function InventoryLevelBadge({ status }: { status: IngredientLevelStatus }) {
   return (
     <Badge
       variant="outline"
@@ -119,7 +113,9 @@ function InventoryProgress({ state }: { state: DispenserStateResult }) {
   const percentage = getInventoryPercentage(state);
 
   if (percentage === null) {
-    return <span className="text-xs text-muted-foreground">Chưa có dữ liệu</span>;
+    return (
+      <span className="text-xs text-muted-foreground">Chưa có dữ liệu</span>
+    );
   }
 
   return (
@@ -162,148 +158,247 @@ export function InventoryTable({
   onAdjustEstimate,
 }: InventoryTableProps) {
   return (
-    <Table className="min-w-[1120px] table-fixed">
-      <TableHeader className="bg-muted/40">
-        <TableRow className="hover:bg-transparent">
-          <TableHead className="w-[22%] px-4 text-xs text-muted-foreground">
-            Nguyên liệu
-          </TableHead>
-          <TableHead className="w-[15%] text-xs text-muted-foreground">
-            Kiosk
-          </TableHead>
-          <TableHead className="w-[12%] text-right text-xs text-muted-foreground">
-            Hiện tại
-          </TableHead>
-          <TableHead className="w-[12%] text-right text-xs text-muted-foreground">
-            Sức chứa
-          </TableHead>
-          <TableHead className="w-[16%] text-xs text-muted-foreground">
-            Tỷ lệ
-          </TableHead>
-          <TableHead className="w-[11%] text-center text-xs text-muted-foreground">
-            Trạng thái
-          </TableHead>
-          <TableHead className="w-[9%] text-center text-xs text-muted-foreground">
-            Cập nhật
-          </TableHead>
-          <TableHead className="w-[11%] px-4 text-center text-xs text-muted-foreground">
-            Thao tác
-          </TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
+    <>
+      <div className="divide-y divide-border md:hidden">
         {dispensers.map((dispenser) => (
-          <TableRow key={dispenser.id} className="hover:bg-muted/40">
-            <TableCell className="h-16 px-4 py-2.5">
-              <div className="min-w-0 space-y-0.5">
-                <p className="truncate font-medium text-foreground">
+          <article key={dispenser.id} className="space-y-4 p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-foreground">
                   {dispenser.ingredientName}
                 </p>
-                <p className="truncate font-mono text-xs text-muted-foreground">
+                <p className="mt-0.5 truncate font-mono text-xs text-muted-foreground">
                   {dispenser.ingredientCode} · {dispenser.containerCode}
                 </p>
               </div>
-            </TableCell>
-            <TableCell className="py-2.5">
-              <div className="min-w-0 space-y-0.5">
-                <p className="truncate text-sm text-foreground">
+              <InventoryLevelBadge status={dispenser.currentLevelStatus} />
+            </div>
+
+            <InventoryProgress state={dispenser} />
+
+            <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-xs">
+              <div>
+                <dt className="text-muted-foreground">Kiosk</dt>
+                <dd className="mt-0.5 truncate font-medium text-foreground">
                   {dispenser.kioskName?.trim() || "Chưa gán kiosk"}
-                </p>
-                <p className="truncate font-mono text-xs text-muted-foreground">
+                </dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">Thiết bị</dt>
+                <dd className="mt-0.5 truncate font-mono text-foreground">
                   {dispenser.deviceCode}
-                </p>
+                </dd>
               </div>
-            </TableCell>
-            <TableCell className="py-2.5 text-right tabular-nums">
-              {formatInventoryQuantity(
-                dispenser.estimatedQuantity,
-                dispenser.unit,
-              )}
-            </TableCell>
-            <TableCell className="py-2.5 text-right tabular-nums text-muted-foreground">
-              {formatInventoryQuantity(
-                dispenser.capacityQuantity,
-                dispenser.unit,
-              )}
-            </TableCell>
-            <TableCell className="py-2.5">
-              <InventoryProgress state={dispenser} />
-            </TableCell>
-            <TableCell className="py-2.5 text-center">
-              <div className="flex flex-col items-center justify-center gap-1">
-                <InventoryLevelBadge status={dispenser.currentLevelStatus} />
-                <span
-                  className={
-                    dispenser.isActive
-                      ? "text-[11px] text-success"
-                      : "text-[11px] text-muted-foreground"
-                  }
-                >
-                  {dispenser.isActive
-                    ? "Đang sử dụng"
-                    : "Đã ngừng sử dụng"}
-                </span>
+              <div>
+                <dt className="text-muted-foreground">Hiện tại</dt>
+                <dd className="mt-0.5 font-medium tabular-nums text-foreground">
+                  {formatInventoryQuantity(
+                    dispenser.estimatedQuantity,
+                    dispenser.unit,
+                  )}
+                </dd>
               </div>
-            </TableCell>
-            <TableCell className="py-2.5 text-center text-xs tabular-nums text-muted-foreground">
-              {formatInventoryDate(dispenser.lastMeasuredAt)}
-            </TableCell>
-            <TableCell className="px-4 py-2.5 text-center">
-              <div className="flex items-center justify-center gap-1">
-                {canManageInventory && dispenser.isActive ? (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon-sm"
-                    className="rounded-lg text-success hover:bg-success/10 hover:text-success"
-                    title={`Ghi nhận nạp thêm ${dispenser.ingredientName}`}
-                    aria-label={`Ghi nhận nạp thêm ${dispenser.ingredientName}`}
-                    onClick={() => onRefill(dispenser)}
-                  >
-                    <PackagePlus className="size-4" />
-                  </Button>
-                ) : null}
-                {canManageInventory && dispenser.isActive ? (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon-sm"
-                    className="rounded-lg text-primary hover:bg-primary/10 hover:text-primary"
-                    title={`Điều chỉnh lượng ước tính ${dispenser.ingredientName}`}
-                    aria-label={`Điều chỉnh lượng ước tính ${dispenser.ingredientName}`}
-                    onClick={() => onAdjustEstimate(dispenser)}
-                  >
-                    <SlidersHorizontal className="size-4" />
-                  </Button>
-                ) : null}
+              <div>
+                <dt className="text-muted-foreground">Sức chứa</dt>
+                <dd className="mt-0.5 tabular-nums text-foreground">
+                  {formatInventoryQuantity(
+                    dispenser.capacityQuantity,
+                    dispenser.unit,
+                  )}
+                </dd>
+              </div>
+            </dl>
+
+            <div className="grid grid-cols-2 gap-2">
+              {canManageInventory && dispenser.isActive ? (
                 <Button
                   type="button"
-                  variant="ghost"
-                  size="icon-sm"
-                  className="rounded-lg text-warning hover:bg-warning/10 hover:text-warning"
-                  title={`Xem lịch sử ${dispenser.ingredientName}`}
-                  aria-label={`Xem lịch sử ${dispenser.ingredientName}`}
-                  onClick={() => onViewHistory(dispenser)}
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onRefill(dispenser)}
                 >
-                  <History className="size-4" />
+                  <PackagePlus className="size-4" aria-hidden="true" />
+                  Nạp thêm
                 </Button>
+              ) : null}
+              {canManageInventory && dispenser.isActive ? (
                 <Button
                   type="button"
-                  variant="ghost"
-                  size="icon-sm"
-                  className="rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
-                  title={`Xem chi tiết ${dispenser.ingredientName}`}
-                  aria-label={`Xem chi tiết ${dispenser.ingredientName}`}
-                  onClick={() => onViewDetail(dispenser)}
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onAdjustEstimate(dispenser)}
                 >
-                  <Eye className="size-4" />
+                  <SlidersHorizontal className="size-4" aria-hidden="true" />
+                  Điều chỉnh
                 </Button>
-              </div>
-            </TableCell>
-          </TableRow>
+              ) : null}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => onViewHistory(dispenser)}
+              >
+                <History className="size-4" aria-hidden="true" />
+                Lịch sử
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => onViewDetail(dispenser)}
+              >
+                <Eye className="size-4" aria-hidden="true" />
+                Chi tiết
+              </Button>
+            </div>
+          </article>
         ))}
-      </TableBody>
-    </Table>
+      </div>
+      <div className="hidden overflow-x-auto md:block">
+        <Table className="min-w-[1120px] table-fixed">
+          <TableHeader className="bg-muted/40">
+            <TableRow className="hover:bg-transparent">
+              <TableHead className="w-[22%] px-4 text-xs text-muted-foreground">
+                Nguyên liệu
+              </TableHead>
+              <TableHead className="w-[15%] text-xs text-muted-foreground">
+                Kiosk
+              </TableHead>
+              <TableHead className="w-[12%] text-right text-xs text-muted-foreground">
+                Hiện tại
+              </TableHead>
+              <TableHead className="w-[12%] text-right text-xs text-muted-foreground">
+                Sức chứa
+              </TableHead>
+              <TableHead className="w-[16%] text-xs text-muted-foreground">
+                Tỷ lệ
+              </TableHead>
+              <TableHead className="w-[11%] text-center text-xs text-muted-foreground">
+                Trạng thái
+              </TableHead>
+              <TableHead className="w-[9%] text-center text-xs text-muted-foreground">
+                Cập nhật
+              </TableHead>
+              <TableHead className="w-[11%] px-4 text-center text-xs text-muted-foreground">
+                Thao tác
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {dispensers.map((dispenser) => (
+              <TableRow key={dispenser.id} className="hover:bg-muted/40">
+                <TableCell className="h-16 px-4 py-2.5">
+                  <div className="min-w-0 space-y-0.5">
+                    <p className="truncate font-medium text-foreground">
+                      {dispenser.ingredientName}
+                    </p>
+                    <p className="truncate font-mono text-xs text-muted-foreground">
+                      {dispenser.ingredientCode} · {dispenser.containerCode}
+                    </p>
+                  </div>
+                </TableCell>
+                <TableCell className="py-2.5">
+                  <div className="min-w-0 space-y-0.5">
+                    <p className="truncate text-sm text-foreground">
+                      {dispenser.kioskName?.trim() || "Chưa gán kiosk"}
+                    </p>
+                    <p className="truncate font-mono text-xs text-muted-foreground">
+                      {dispenser.deviceCode}
+                    </p>
+                  </div>
+                </TableCell>
+                <TableCell className="py-2.5 text-right tabular-nums">
+                  {formatInventoryQuantity(
+                    dispenser.estimatedQuantity,
+                    dispenser.unit,
+                  )}
+                </TableCell>
+                <TableCell className="py-2.5 text-right tabular-nums text-muted-foreground">
+                  {formatInventoryQuantity(
+                    dispenser.capacityQuantity,
+                    dispenser.unit,
+                  )}
+                </TableCell>
+                <TableCell className="py-2.5">
+                  <InventoryProgress state={dispenser} />
+                </TableCell>
+                <TableCell className="py-2.5 text-center">
+                  <div className="flex flex-col items-center justify-center gap-1">
+                    <InventoryLevelBadge
+                      status={dispenser.currentLevelStatus}
+                    />
+                    <span
+                      className={
+                        dispenser.isActive
+                          ? "text-[11px] text-success"
+                          : "text-[11px] text-muted-foreground"
+                      }
+                    >
+                      {dispenser.isActive ? "Đang sử dụng" : "Đã ngừng sử dụng"}
+                    </span>
+                  </div>
+                </TableCell>
+                <TableCell className="py-2.5 text-center text-xs tabular-nums text-muted-foreground">
+                  {formatInventoryDate(dispenser.lastMeasuredAt)}
+                </TableCell>
+                <TableCell className="px-4 py-2.5 text-center">
+                  <div className="flex items-center justify-center gap-1">
+                    {canManageInventory && dispenser.isActive ? (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon-sm"
+                        className="rounded-lg text-success hover:bg-success/10 hover:text-success"
+                        title={`Ghi nhận nạp thêm ${dispenser.ingredientName}`}
+                        aria-label={`Ghi nhận nạp thêm ${dispenser.ingredientName}`}
+                        onClick={() => onRefill(dispenser)}
+                      >
+                        <PackagePlus className="size-4" />
+                      </Button>
+                    ) : null}
+                    {canManageInventory && dispenser.isActive ? (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon-sm"
+                        className="rounded-lg text-primary hover:bg-primary/10 hover:text-primary"
+                        title={`Điều chỉnh lượng ước tính ${dispenser.ingredientName}`}
+                        aria-label={`Điều chỉnh lượng ước tính ${dispenser.ingredientName}`}
+                        onClick={() => onAdjustEstimate(dispenser)}
+                      >
+                        <SlidersHorizontal className="size-4" />
+                      </Button>
+                    ) : null}
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      className="rounded-lg text-warning hover:bg-warning/10 hover:text-warning"
+                      title={`Xem lịch sử ${dispenser.ingredientName}`}
+                      aria-label={`Xem lịch sử ${dispenser.ingredientName}`}
+                      onClick={() => onViewHistory(dispenser)}
+                    >
+                      <History className="size-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      className="rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
+                      title={`Xem chi tiết ${dispenser.ingredientName}`}
+                      aria-label={`Xem chi tiết ${dispenser.ingredientName}`}
+                      onClick={() => onViewDetail(dispenser)}
+                    >
+                      <Eye className="size-4" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    </>
   );
 }
 
@@ -313,62 +408,125 @@ export function StockMovementsTable({
   movements: StockMovementResult[];
 }) {
   return (
-    <Table className="min-w-[860px] table-fixed">
-      <TableHeader className="bg-muted/40">
-        <TableRow className="hover:bg-transparent">
-          <TableHead className="w-[25%] px-4 text-xs text-muted-foreground">
-            Nguyên liệu
-          </TableHead>
-          <TableHead className="w-[18%] text-xs text-muted-foreground">
-            Kiosk
-          </TableHead>
-          <TableHead className="w-[15%] text-center text-xs text-muted-foreground">
-            Loại biến động
-          </TableHead>
-          <TableHead className="w-[14%] text-right text-xs text-muted-foreground">
-            Số lượng
-          </TableHead>
-          <TableHead className="w-[14%] text-right text-xs text-muted-foreground">
-            Sau biến động
-          </TableHead>
-          <TableHead className="w-[14%] px-4 text-center text-xs text-muted-foreground">
-            Thời gian
-          </TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
+    <>
+      <div className="divide-y divide-border md:hidden">
         {movements.map((movement) => (
-          <TableRow key={movement.id} className="hover:bg-muted/40">
-            <TableCell className="h-14 px-4 py-2">
-              <div className="space-y-0.5">
-                <p className="truncate font-medium text-foreground">
-                  {movement.ingredientName?.trim() || "Không có tên nguyên liệu"}
+          <article key={movement.id} className="space-y-3 p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-foreground">
+                  {movement.ingredientName?.trim() ||
+                    "Không có tên nguyên liệu"}
                 </p>
-                <p className="truncate font-mono text-xs text-muted-foreground">
+                <p className="mt-0.5 truncate font-mono text-xs text-muted-foreground">
                   {movement.containerCode}
                 </p>
               </div>
-            </TableCell>
-            <TableCell className="truncate py-2 text-muted-foreground">
-              {movement.kioskName?.trim() || "Chưa gán kiosk"}
-            </TableCell>
-            <TableCell className="py-2 text-center">
-              <Badge variant="outline" className="bg-background font-mono text-xs">
+              <Badge
+                variant="outline"
+                className="shrink-0 bg-background font-mono text-xs"
+              >
                 {movement.movementType}
               </Badge>
-            </TableCell>
-            <TableCell className="py-2 text-right font-medium tabular-nums">
-              {formatInventoryQuantity(movement.quantity, movement.unit)}
-            </TableCell>
-            <TableCell className="py-2 text-right tabular-nums text-muted-foreground">
-              {formatInventoryQuantity(movement.balanceAfter, movement.unit)}
-            </TableCell>
-            <TableCell className="px-4 py-2 text-center text-xs tabular-nums text-muted-foreground">
-              {formatInventoryDate(movement.occurredAt)}
-            </TableCell>
-          </TableRow>
+            </div>
+            <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-xs">
+              <div>
+                <dt className="text-muted-foreground">Kiosk</dt>
+                <dd className="mt-0.5 truncate font-medium text-foreground">
+                  {movement.kioskName?.trim() || "Chưa gán kiosk"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">Thời gian</dt>
+                <dd className="mt-0.5 tabular-nums text-foreground">
+                  {formatInventoryDate(movement.occurredAt)}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">Số lượng</dt>
+                <dd className="mt-0.5 font-medium tabular-nums text-foreground">
+                  {formatInventoryQuantity(movement.quantity, movement.unit)}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">Sau biến động</dt>
+                <dd className="mt-0.5 tabular-nums text-foreground">
+                  {formatInventoryQuantity(
+                    movement.balanceAfter,
+                    movement.unit,
+                  )}
+                </dd>
+              </div>
+            </dl>
+          </article>
         ))}
-      </TableBody>
-    </Table>
+      </div>
+      <div className="hidden overflow-x-auto md:block">
+        <Table className="min-w-[860px] table-fixed">
+          <TableHeader className="bg-muted/40">
+            <TableRow className="hover:bg-transparent">
+              <TableHead className="w-[25%] px-4 text-xs text-muted-foreground">
+                Nguyên liệu
+              </TableHead>
+              <TableHead className="w-[18%] text-xs text-muted-foreground">
+                Kiosk
+              </TableHead>
+              <TableHead className="w-[15%] text-center text-xs text-muted-foreground">
+                Loại biến động
+              </TableHead>
+              <TableHead className="w-[14%] text-right text-xs text-muted-foreground">
+                Số lượng
+              </TableHead>
+              <TableHead className="w-[14%] text-right text-xs text-muted-foreground">
+                Sau biến động
+              </TableHead>
+              <TableHead className="w-[14%] px-4 text-center text-xs text-muted-foreground">
+                Thời gian
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {movements.map((movement) => (
+              <TableRow key={movement.id} className="hover:bg-muted/40">
+                <TableCell className="h-14 px-4 py-2">
+                  <div className="space-y-0.5">
+                    <p className="truncate font-medium text-foreground">
+                      {movement.ingredientName?.trim() ||
+                        "Không có tên nguyên liệu"}
+                    </p>
+                    <p className="truncate font-mono text-xs text-muted-foreground">
+                      {movement.containerCode}
+                    </p>
+                  </div>
+                </TableCell>
+                <TableCell className="truncate py-2 text-muted-foreground">
+                  {movement.kioskName?.trim() || "Chưa gán kiosk"}
+                </TableCell>
+                <TableCell className="py-2 text-center">
+                  <Badge
+                    variant="outline"
+                    className="bg-background font-mono text-xs"
+                  >
+                    {movement.movementType}
+                  </Badge>
+                </TableCell>
+                <TableCell className="py-2 text-right font-medium tabular-nums">
+                  {formatInventoryQuantity(movement.quantity, movement.unit)}
+                </TableCell>
+                <TableCell className="py-2 text-right tabular-nums text-muted-foreground">
+                  {formatInventoryQuantity(
+                    movement.balanceAfter,
+                    movement.unit,
+                  )}
+                </TableCell>
+                <TableCell className="px-4 py-2 text-center text-xs tabular-nums text-muted-foreground">
+                  {formatInventoryDate(movement.occurredAt)}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    </>
   );
 }

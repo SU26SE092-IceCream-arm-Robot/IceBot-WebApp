@@ -27,12 +27,16 @@ const INVENTORY_REFRESH_DEBOUNCE_MS = 300;
 export interface KioskOperationsRealtimeCallbacks {
   onInventoryChanged?: (event?: InventoryChangedEvent) => void;
   onKioskStatusChanged?: (event: KioskStatusChangedEvent) => void;
-  onOperationalStateChanged?: (event: KioskOperationalStateChangedEvent) => void;
+  onOperationalStateChanged?: (
+    event: KioskOperationalStateChangedEvent,
+  ) => void;
   onReadinessChanged?: (event: ExecutionReadinessChangedEvent) => void;
   onAlertChanged?: (event: AlertChangedEvent) => void;
   onMaintenanceTicketChanged?: (event: MaintenanceTicketChangedEvent) => void;
   onDeviceEventCreated?: (event: DeviceEventCreatedEvent) => void;
-  onOrderItemFulfillmentChanged?: (event: OrderItemFulfillmentChangedEvent) => void;
+  onOrderItemFulfillmentChanged?: (
+    event: OrderItemFulfillmentChangedEvent,
+  ) => void;
 }
 
 export interface UseKioskOperationsRealtimeOptions extends KioskOperationsRealtimeCallbacks {
@@ -51,13 +55,19 @@ export function useKioskOperationsRealtime(
   kioskIdsOrOptions: readonly string[] | UseKioskOperationsRealtimeOptions,
   legacyCallback?: () => void,
 ): void {
-  const isLegacy = Array.isArray(kioskIdsOrOptions);
-  const kioskIds = isLegacy ? kioskIdsOrOptions : (kioskIdsOrOptions.kioskIds ?? []);
-  const enabled = isLegacy ? true : (kioskIdsOrOptions.enabled ?? true);
+  const options: UseKioskOperationsRealtimeOptions = Array.isArray(
+    kioskIdsOrOptions,
+  )
+    ? {
+        kioskIds: kioskIdsOrOptions,
+        enabled: true,
+        onInventoryChanged: legacyCallback,
+      }
+    : (kioskIdsOrOptions as UseKioskOperationsRealtimeOptions);
 
-  const callbacks: KioskOperationsRealtimeCallbacks = isLegacy
-    ? { onInventoryChanged: legacyCallback }
-    : kioskIdsOrOptions;
+  const kioskIds = options.kioskIds ?? [];
+  const enabled = options.enabled ?? true;
+  const callbacks: KioskOperationsRealtimeCallbacks = options;
 
   const callbacksRef = useRef(callbacks);
   const kioskKey = [...new Set(kioskIds)].sort().join(",");
@@ -76,6 +86,7 @@ export function useKioskOperationsRealtime(
     let retryAttempt = 0;
     let retryTimer: ReturnType<typeof setTimeout> | null = null;
     let refreshTimer: ReturnType<typeof setTimeout> | null = null;
+    let startPromise: Promise<void> | null = null;
 
     const connection = new HubConnectionBuilder()
       .withUrl(getOperationsHubUrl(), {
@@ -86,7 +97,9 @@ export function useKioskOperationsRealtime(
       .build();
 
     const joinTargets = async () => {
-      await Promise.all(targets.map((kioskId) => connection.invoke("JoinKiosk", kioskId)));
+      await Promise.all(
+        targets.map((kioskId) => connection.invoke("JoinKiosk", kioskId)),
+      );
     };
 
     const scheduleInventoryRefresh = (event?: InventoryChangedEvent) => {
@@ -114,11 +127,25 @@ export function useKioskOperationsRealtime(
       }, delay);
     };
 
+    const ensureStarted = async () => {
+      if (startPromise) {
+        await startPromise;
+        return;
+      }
+      if (connection.state !== HubConnectionState.Disconnected) return;
+
+      const pendingStart = connection.start();
+      startPromise = pendingStart;
+      try {
+        await pendingStart;
+      } finally {
+        if (startPromise === pendingStart) startPromise = null;
+      }
+    };
+
     const connectAndJoin = async () => {
       try {
-        if (connection.state === HubConnectionState.Disconnected) {
-          await connection.start();
-        }
+        await ensureStarted();
         if (disposed) return;
 
         await joinTargets();
@@ -139,17 +166,23 @@ export function useKioskOperationsRealtime(
       }
     });
 
-    connection.on("KioskOperationalStateChanged", (event: KioskOperationalStateChangedEvent) => {
-      if (targetSet.has(event?.kioskId)) {
-        callbacksRef.current.onOperationalStateChanged?.(event);
-      }
-    });
+    connection.on(
+      "KioskOperationalStateChanged",
+      (event: KioskOperationalStateChangedEvent) => {
+        if (targetSet.has(event?.kioskId)) {
+          callbacksRef.current.onOperationalStateChanged?.(event);
+        }
+      },
+    );
 
-    connection.on("ExecutionReadinessChanged", (event: ExecutionReadinessChangedEvent) => {
-      if (targetSet.has(event?.kioskId)) {
-        callbacksRef.current.onReadinessChanged?.(event);
-      }
-    });
+    connection.on(
+      "ExecutionReadinessChanged",
+      (event: ExecutionReadinessChangedEvent) => {
+        if (targetSet.has(event?.kioskId)) {
+          callbacksRef.current.onReadinessChanged?.(event);
+        }
+      },
+    );
 
     connection.on("AlertChanged", (event: AlertChangedEvent) => {
       if (!event?.kioskId || targetSet.has(event.kioskId)) {
@@ -157,11 +190,14 @@ export function useKioskOperationsRealtime(
       }
     });
 
-    connection.on("MaintenanceTicketChanged", (event: MaintenanceTicketChangedEvent) => {
-      if (!event?.kioskId || targetSet.has(event.kioskId)) {
-        callbacksRef.current.onMaintenanceTicketChanged?.(event);
-      }
-    });
+    connection.on(
+      "MaintenanceTicketChanged",
+      (event: MaintenanceTicketChangedEvent) => {
+        if (!event?.kioskId || targetSet.has(event.kioskId)) {
+          callbacksRef.current.onMaintenanceTicketChanged?.(event);
+        }
+      },
+    );
 
     connection.on("DeviceEventCreated", (event: DeviceEventCreatedEvent) => {
       if (targetSet.has(event?.kioskId)) {
@@ -169,11 +205,14 @@ export function useKioskOperationsRealtime(
       }
     });
 
-    connection.on("OrderItemFulfillmentChanged", (event: OrderItemFulfillmentChangedEvent) => {
-      if (!event?.kioskId || targetSet.has(event.kioskId)) {
-        callbacksRef.current.onOrderItemFulfillmentChanged?.(event);
-      }
-    });
+    connection.on(
+      "OrderItemFulfillmentChanged",
+      (event: OrderItemFulfillmentChangedEvent) => {
+        if (!event?.kioskId || targetSet.has(event.kioskId)) {
+          callbacksRef.current.onOrderItemFulfillmentChanged?.(event);
+        }
+      },
+    );
 
     connection.onreconnected(() => {
       void connectAndJoin().then(() => {
@@ -196,7 +235,21 @@ export function useKioskOperationsRealtime(
       connection.off("MaintenanceTicketChanged");
       connection.off("DeviceEventCreated");
       connection.off("OrderItemFulfillmentChanged");
-      void connection.stop();
+      const pendingStart = startPromise;
+      void (async () => {
+        if (pendingStart) {
+          try {
+            await pendingStart;
+          } catch {
+            // A failed start still needs a best-effort stop below.
+          }
+        }
+        try {
+          await connection.stop();
+        } catch {
+          // Cleanup must not create an unhandled rejection during unmount.
+        }
+      })();
     };
   }, [kioskKey, enabled]);
 }

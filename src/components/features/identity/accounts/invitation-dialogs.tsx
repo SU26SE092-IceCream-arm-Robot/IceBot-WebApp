@@ -88,28 +88,17 @@ function isValidEmail(value: string): boolean {
 }
 
 function getRoleDisplayLabel(role: ManagementRoleResult): string {
-  const labelByCode: Record<string, string> = {
-    SystemAdmin: "Quản trị hệ thống",
-    OrgAdmin: "Quản trị tổ chức",
-    Manager: "Quản lý",
-    Staff: "Nhân viên",
-    Technician: "Kỹ thuật viên",
-  };
-  return labelByCode[role.code] ?? role.name ?? role.code;
+  return role.code;
 }
 
 function getRoleDescription(role: ManagementRoleResult): string | null {
-  const descriptionByCode: Record<string, string> = {
-    SystemAdmin: "Toàn quyền quản trị hệ thống.",
-    OrgAdmin: "Quản trị dữ liệu trong phạm vi tổ chức được phân quyền.",
-    Manager: "Quản lý vận hành trong phạm vi được phân quyền.",
-    Staff: "Nhân sự vận hành với quyền thao tác giới hạn.",
-    Technician: "Kỹ thuật viên phụ trách bảo trì và xử lý sự cố.",
-  };
-  return descriptionByCode[role.code] ?? role.description ?? null;
+  return role.description ?? null;
 }
 
-function formatScopeOptionLabel(name?: string | null, code?: string | null): string {
+function formatScopeOptionLabel(
+  name?: string | null,
+  code?: string | null,
+): string {
   const safeName = name?.trim();
   const safeCode = code?.trim();
   if (safeName && safeCode) return `${safeName} — ${safeCode}`;
@@ -119,7 +108,7 @@ function formatScopeOptionLabel(name?: string | null, code?: string | null): str
 }
 
 function isAssignableScopeType(
-  value: string | null
+  value: string | null,
 ): value is AssignableScopeType {
   return value === "Organization" || value === "Store" || value === "Kiosk";
 }
@@ -172,8 +161,12 @@ function CheckboxField({
         className="mt-0.5 size-4 accent-primary"
       />
       <span className="space-y-0.5">
-        <span className="block text-sm font-medium text-foreground">{label}</span>
-        <span className="block text-xs leading-5 text-muted-foreground">{description}</span>
+        <span className="block text-sm font-medium text-foreground">
+          {label}
+        </span>
+        <span className="block text-xs leading-5 text-muted-foreground">
+          {description}
+        </span>
       </span>
     </label>
   );
@@ -203,16 +196,20 @@ export function CreateAccountDialog({
   const [kioskId, setKioskId] = useState("");
   const [googleLoginEnabled, setGoogleLoginEnabled] = useState(false);
   const [googleEmail, setGoogleEmail] = useState("");
-  const [validationMessage, setValidationMessage] = useState<string | null>(null);
+  const [validationMessage, setValidationMessage] = useState<string | null>(
+    null,
+  );
 
   const selectedRole =
     managementRoles.find((role) => role.code === roleCode) ?? null;
-  const selectableScopeTypes = (roleScopeOptions?.allowedScopeTypes ?? []).filter(
-    (scope): scope is AssignableScopeType => isAssignableScopeType(scope)
+  const selectableScopeTypes = (
+    roleScopeOptions?.allowedScopeTypes ?? []
+  ).filter((scope): scope is AssignableScopeType =>
+    isAssignableScopeType(scope),
   );
   const selectedOrganization =
     roleScopeOptions?.organizations.find(
-      (organization) => organization.id === organizationId
+      (organization) => organization.id === organizationId,
     ) ?? null;
   const availableStores = selectedOrganization?.stores ?? [];
   const selectedStore =
@@ -315,8 +312,7 @@ export function CreateAccountDialog({
       }
 
       if (
-        (effectiveScopeType === "Store" ||
-          effectiveScopeType === "Kiosk") &&
+        (effectiveScopeType === "Store" || effectiveScopeType === "Kiosk") &&
         !storeId
       ) {
         setValidationMessage("Vui lòng chọn cửa hàng.");
@@ -349,8 +345,7 @@ export function CreateAccountDialog({
               ? organizationId
               : null,
           storeId:
-            effectiveScopeType === "Store" ||
-            effectiveScopeType === "Kiosk"
+            effectiveScopeType === "Store" || effectiveScopeType === "Kiosk"
               ? storeId
               : null,
           kioskId: effectiveScopeType === "Kiosk" ? kioskId : null,
@@ -365,14 +360,18 @@ export function CreateAccountDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl" showCloseButton={!isSubmitting}>
+      <DialogContent
+        className="max-h-[90vh] overflow-y-auto sm:max-w-xl"
+        showCloseButton={!isSubmitting}
+      >
         <DialogHeader>
           <span className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
             <UserPlus className="size-5" />
           </span>
           <DialogTitle>Tạo tài khoản</DialogTitle>
           <DialogDescription>
-            Hệ thống tạo mật khẩu tạm và gửi thông tin đăng nhập tới email người dùng. Người dùng có thể đổi mật khẩu sau khi đăng nhập.
+            Hệ thống tạo mật khẩu tạm và gửi thông tin đăng nhập tới email người
+            dùng. Người dùng có thể đổi mật khẩu sau khi đăng nhập.
           </DialogDescription>
         </DialogHeader>
 
@@ -422,7 +421,11 @@ export function CreateAccountDialog({
             <FormField htmlFor="roleCode" label="Vai trò">
               <Select
                 value={roleCode || null}
-                disabled={isSubmitting || isRoleCatalogLoading || managementRoles.length === 0}
+                disabled={
+                  isSubmitting ||
+                  isRoleCatalogLoading ||
+                  managementRoles.length === 0
+                }
                 onValueChange={(value) => {
                   if (value) {
                     resetScopeSelection();
@@ -507,7 +510,8 @@ export function CreateAccountDialog({
                   <Select
                     value={organizationId || null}
                     disabled={
-                      isSubmitting || roleScopeOptions.organizations.length === 0
+                      isSubmitting ||
+                      roleScopeOptions.organizations.length === 0
                     }
                     onValueChange={(value) => {
                       setOrganizationId(value ?? "");
@@ -521,8 +525,14 @@ export function CreateAccountDialog({
                     </SelectTrigger>
                     <SelectContent>
                       {roleScopeOptions.organizations.map((organization) => (
-                        <SelectItem key={organization.id} value={organization.id}>
-                          {formatScopeOptionLabel(organization.name, organization.code)}
+                        <SelectItem
+                          key={organization.id}
+                          value={organization.id}
+                        >
+                          {formatScopeOptionLabel(
+                            organization.name,
+                            organization.code,
+                          )}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -585,13 +595,15 @@ export function CreateAccountDialog({
             </div>
           ) : scopeOptionsReady ? (
             <p className="rounded-lg border border-border bg-muted/20 p-3 text-xs text-muted-foreground sm:col-span-2">
-              Vai trò này áp dụng toàn hệ thống và không yêu cầu phạm vi tổ chức, cửa hàng hoặc kiosk.
+              Vai trò này áp dụng toàn hệ thống và không yêu cầu phạm vi tổ
+              chức, cửa hàng hoặc kiosk.
             </p>
           ) : null}
 
           <div className="space-y-3 sm:col-span-2">
             <div className="rounded-lg border border-border bg-muted/20 p-3 text-sm text-muted-foreground">
-              Đăng nhập bằng mật khẩu luôn được bật. Mật khẩu tạm sẽ được gửi tới email đã nhập.
+              Đăng nhập bằng mật khẩu luôn được bật. Mật khẩu tạm sẽ được gửi
+              tới email đã nhập.
             </div>
             <CheckboxField
               id="googleLoginEnabled"
@@ -633,7 +645,11 @@ export function CreateAccountDialog({
         </form>
 
         <DialogFooter>
-          <Button variant="outline" disabled={isSubmitting} onClick={() => handleOpenChange(false)}>
+          <Button
+            variant="outline"
+            disabled={isSubmitting}
+            onClick={() => handleOpenChange(false)}
+          >
             Hủy
           </Button>
           <Button
@@ -661,7 +677,8 @@ export function RegenerateInvitationDialog({
   onOpenChange,
   onSendEmailChange,
 }: RegenerateInvitationDialogProps) {
-  const accountName = account?.fullName?.trim() || account?.userName || "tài khoản này";
+  const accountName =
+    account?.fullName?.trim() || account?.userName || "tài khoản này";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -672,7 +689,8 @@ export function RegenerateInvitationDialog({
           </span>
           <DialogTitle>Tạo lại lời mời?</DialogTitle>
           <DialogDescription>
-            Tạo token mới cho <span className="font-medium text-foreground">{accountName}</span>.
+            Tạo token mới cho{" "}
+            <span className="font-medium text-foreground">{accountName}</span>.
             Các lời mời cũ đang hoạt động sẽ bị thu hồi.
           </DialogDescription>
         </DialogHeader>
@@ -694,7 +712,11 @@ export function RegenerateInvitationDialog({
         ) : null}
 
         <DialogFooter>
-          <Button variant="outline" disabled={isSubmitting} onClick={() => onOpenChange(false)}>
+          <Button
+            variant="outline"
+            disabled={isSubmitting}
+            onClick={() => onOpenChange(false)}
+          >
             Hủy
           </Button>
           <Button isLoading={isSubmitting} onClick={onConfirm}>
@@ -751,12 +773,16 @@ export function InvitationResultDialog({
       await navigator.clipboard.writeText(value);
       setCopyMessage(successMessage);
     } catch {
-      setCopyMessage("Không thể tự động sao chép. Hãy chọn nội dung bên dưới để sao chép thủ công.");
+      setCopyMessage(
+        "Không thể tự động sao chép. Hãy chọn nội dung bên dưới để sao chép thủ công.",
+      );
     }
   }
 
-  const title = mode === "regenerated" ? "Đã tạo lại lời mời" : "Tài khoản đã được tạo";
-  const accountName = account?.fullName?.trim() || account?.userName || "tài khoản";
+  const title =
+    mode === "regenerated" ? "Đã tạo lại lời mời" : "Tài khoản đã được tạo";
+  const accountName =
+    account?.fullName?.trim() || account?.userName || "tài khoản";
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -767,7 +793,8 @@ export function InvitationResultDialog({
           </span>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>
-            Lưu liên kết lời mời cho {accountName}. Thông tin lời mời chỉ hiển thị một lần — đóng màn hình này sau khi đã sao chép.
+            Lưu liên kết lời mời cho {accountName}. Thông tin lời mời chỉ hiển
+            thị một lần — đóng màn hình này sau khi đã sao chép.
           </DialogDescription>
         </DialogHeader>
 
@@ -795,32 +822,49 @@ export function InvitationResultDialog({
             ) : null}
 
             <div className="space-y-2">
-              <label htmlFor="invitationLink" className="text-sm font-medium text-foreground">
+              <label
+                htmlFor="invitationLink"
+                className="text-sm font-medium text-foreground"
+              >
                 Liên kết lời mời
               </label>
               <div className="flex gap-2">
-                <Input id="invitationLink" value={invitationLink} readOnly className="font-mono text-xs" />
+                <Input
+                  id="invitationLink"
+                  value={invitationLink}
+                  readOnly
+                  className="font-mono text-xs"
+                />
                 <Button
                   type="button"
                   variant="outline"
                   size="icon"
                   aria-label="Sao chép liên kết lời mời"
                   disabled={!invitationLink}
-                  onClick={() => void copyValue(invitationLink, "Đã sao chép liên kết lời mời.")}
+                  onClick={() =>
+                    void copyValue(
+                      invitationLink,
+                      "Đã sao chép liên kết lời mời.",
+                    )
+                  }
                 >
                   <Clipboard className="size-4" />
                 </Button>
               </div>
               {!result.invitationUrl ? (
                 <p className="text-xs text-muted-foreground">
-                  Liên kết được tạo từ địa chỉ web hiện tại. Liên hệ quản trị hệ thống nếu cần liên kết chính thức.
+                  Liên kết được tạo từ địa chỉ web hiện tại. Liên hệ quản trị hệ
+                  thống nếu cần liên kết chính thức.
                 </p>
               ) : null}
             </div>
 
             {token ? (
               <div className="space-y-2">
-                <label htmlFor="invitationToken" className="text-sm font-medium text-foreground">
+                <label
+                  htmlFor="invitationToken"
+                  className="text-sm font-medium text-foreground"
+                >
                   Token dự phòng
                 </label>
                 <div className="flex gap-2">
@@ -835,7 +879,9 @@ export function InvitationResultDialog({
                     variant="outline"
                     size="icon"
                     aria-label="Sao chép token lời mời"
-                    onClick={() => void copyValue(token, "Đã sao chép token lời mời.")}
+                    onClick={() =>
+                      void copyValue(token, "Đã sao chép token lời mời.")
+                    }
                   >
                     <Clipboard className="size-4" />
                   </Button>
@@ -844,7 +890,10 @@ export function InvitationResultDialog({
             ) : null}
 
             <p className="text-xs text-muted-foreground">
-              Hết hạn: <span className="tabular-nums text-foreground">{formatDateTime(result.expiresAt)}</span>
+              Hết hạn:{" "}
+              <span className="tabular-nums text-foreground">
+                {formatDateTime(result.expiresAt)}
+              </span>
             </p>
 
             {copyMessage ? (
@@ -859,7 +908,10 @@ export function InvitationResultDialog({
         ) : (
           <div className="flex gap-3 rounded-lg border border-warning/30 bg-warning/5 p-3 text-warning">
             <AlertTriangle className="mt-0.5 size-4 shrink-0" />
-            <p className="text-sm">Không nhận được thông tin lời mời. Thử lại hoặc liên hệ quản trị hệ thống.</p>
+            <p className="text-sm">
+              Không nhận được thông tin lời mời. Thử lại hoặc liên hệ quản trị
+              hệ thống.
+            </p>
           </div>
         )}
 

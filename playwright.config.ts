@@ -4,11 +4,11 @@ const baseURL = process.env.ICEBOT_E2E_BASE_URL ?? "http://localhost:3000";
 const useExternalWebServer = process.env.ICEBOT_E2E_EXTERNAL_WEB === "1";
 const hasOrgAdminCredentials = Boolean(
   process.env.ICEBOT_E2E_ORG_ADMIN_USERNAME &&
-    process.env.ICEBOT_E2E_ORG_ADMIN_PASSWORD,
+  process.env.ICEBOT_E2E_ORG_ADMIN_PASSWORD,
 );
 const hasManagerCredentials = Boolean(
   process.env.ICEBOT_E2E_MANAGER_USERNAME &&
-    process.env.ICEBOT_E2E_MANAGER_PASSWORD,
+  process.env.ICEBOT_E2E_MANAGER_PASSWORD,
 );
 
 export default defineConfig({
@@ -27,7 +27,7 @@ export default defineConfig({
     baseURL,
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
-    video: "retain-on-failure",
+    video: "off",
   },
   webServer: useExternalWebServer
     ? undefined
@@ -39,7 +39,44 @@ export default defineConfig({
       },
   projects: [
     {
+      name: "public-desktop",
+      testMatch: /.*(landing|public-auth).*\.spec\.ts/,
+      use: {
+        ...devices["Desktop Chrome"],
+        channel: "chrome",
+        viewport: { width: 1440, height: 900 },
+      },
+    },
+    {
+      name: "public-mobile",
+      testMatch: /.*(landing|public-auth).*\.spec\.ts/,
+      use: {
+        ...devices["Pixel 7"],
+        channel: "chrome",
+        viewport: { width: 375, height: 812 },
+      },
+    },
+    {
+      name: "public-tablet",
+      testMatch: /.*public-auth.*\.spec\.ts/,
+      use: {
+        ...devices["Desktop Chrome"],
+        channel: "chrome",
+        viewport: { width: 768, height: 1024 },
+      },
+    },
+    {
+      name: "public-laptop",
+      testMatch: /.*public-auth.*\.spec\.ts/,
+      use: {
+        ...devices["Desktop Chrome"],
+        channel: "chrome",
+        viewport: { width: 1024, height: 768 },
+      },
+    },
+    {
       name: "system-admin-desktop",
+      testIgnore: /.*(landing|public-auth).*\.spec\.ts/,
       use: {
         ...devices["Desktop Chrome"],
         viewport: { width: 1440, height: 900 },
@@ -48,6 +85,7 @@ export default defineConfig({
     },
     {
       name: "system-admin-tablet",
+      testIgnore: /.*(landing|public-auth).*\.spec\.ts/,
       use: {
         ...devices["Desktop Chrome"],
         viewport: { width: 1024, height: 768 },

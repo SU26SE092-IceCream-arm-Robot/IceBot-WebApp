@@ -113,9 +113,7 @@ describe("useKioskOperationsRealtime", () => {
         signalR.connection.state = "Connected";
       });
 
-    renderHook(() =>
-      useKioskOperationsRealtime(["kiosk-1"], vi.fn()),
-    );
+    renderHook(() => useKioskOperationsRealtime(["kiosk-1"], vi.fn()));
     await flushPromises();
 
     expect(signalR.connection.start).toHaveBeenCalledTimes(1);
@@ -183,9 +181,7 @@ describe("useKioskOperationsRealtime", () => {
   });
 
   it("starts a new connection attempt after reconnect retries are exhausted", async () => {
-    renderHook(() =>
-      useKioskOperationsRealtime(["kiosk-1"], vi.fn()),
-    );
+    renderHook(() => useKioskOperationsRealtime(["kiosk-1"], vi.fn()));
     await flushPromises();
     signalR.connection.start.mockClear();
 
@@ -218,6 +214,36 @@ describe("useKioskOperationsRealtime", () => {
 
     expect(onInventoryChanged).not.toHaveBeenCalled();
     expect(signalR.connection.off).toHaveBeenCalledWith("InventoryChanged");
+    expect(signalR.connection.stop).toHaveBeenCalledTimes(1);
+  });
+
+  it("waits for a pending start before stopping on unmount", async () => {
+    let resolveStart: (() => void) | undefined;
+    signalR.connection.start.mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveStart = () => {
+            signalR.connection.state = "Connected";
+            resolve();
+          };
+        }),
+    );
+
+    const { unmount } = renderHook(() =>
+      useKioskOperationsRealtime(["kiosk-1"], vi.fn()),
+    );
+
+    expect(signalR.connection.start).toHaveBeenCalledTimes(1);
+    unmount();
+    expect(signalR.connection.stop).not.toHaveBeenCalled();
+
+    await act(async () => {
+      resolveStart?.();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(signalR.connection.invoke).not.toHaveBeenCalled();
     expect(signalR.connection.stop).toHaveBeenCalledTimes(1);
   });
 });

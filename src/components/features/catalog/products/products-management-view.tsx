@@ -3,8 +3,6 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import {
-  CircleCheckBig,
-  ShoppingBag,
   LayoutTemplate,
   ListTree,
   Plus,
@@ -17,7 +15,6 @@ import {
   CatalogOrganizationSelector,
   CatalogRefreshWarning,
   CatalogSearchBar,
-  CatalogStatCard,
   ProductsPanel,
 } from "@/components/features/catalog/shared/catalog-page-ui";
 import {
@@ -31,6 +28,7 @@ import { ProductOptionsCatalogDialog } from "@/components/features/catalog/optio
 import { ProductOptionAuthoringDialog } from "@/components/features/catalog/options/product-option-authoring-dialog";
 import { ProductTemplatesDialog } from "@/components/features/catalog/templates/product-templates-dialog";
 import { RecipeAuthoringDialog } from "@/components/features/catalog/recipes/recipe-authoring-dialog";
+import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/identity/use-auth";
 import { useCatalogOrganization } from "@/hooks/catalog/use-catalog-organization";
@@ -146,7 +144,6 @@ export function ProductsManagementView() {
   });
   const productCategories = useProductCategories(true);
   const menuScopeOptions = useMenuScopeOptions(selectedOrganizationId);
-  const availableProductsOnPage = products.data.filter((product) => product.isAvailable).length;
 
   const handleOrganizationChange = useCallback((organizationId: string | null) => {
     setSelectedOrganizationId(organizationId);
@@ -175,36 +172,69 @@ export function ProductsManagementView() {
   }, [isProductDetailOpen, openProductDetail, requestedProductId, selectedOrganizationId]);
 
   return (
-    <div className="space-y-7">
-      <section className="flex flex-col gap-4 border-b border-border pb-6 lg:flex-row lg:items-end lg:justify-between">
-        <div className="max-w-2xl space-y-2">
-          <h1 className="text-3xl font-semibold tracking-tight text-foreground">Sản phẩm</h1>
-          <p className="text-sm leading-6 text-muted-foreground">
-            Quản lý danh mục, phiên bản, tuỳ chọn và công thức sản phẩm dùng lại trong các thực đơn.
+    <div className="space-y-5">
+      <PageHeader
+        title="Sản phẩm"
+        description="Quản lý thông tin bán hàng, phiên bản, tuỳ chọn và công thức trước khi đưa sản phẩm vào thực đơn."
+        metadata={
+          <p className="text-xs text-muted-foreground">
+            {selectedOrganization
+              ? `Phạm vi: ${selectedOrganization.name || selectedOrganization.code}`
+              : "Chọn tổ chức để tải danh mục sản phẩm"}
           </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="outline" className="h-10" onClick={() => void refresh()} isLoading={products.isLoading}>
-            <RefreshCw className="size-4" />Làm mới
-          </Button>
-          <Button variant="outline" className="h-10" onClick={() => setProductCategoriesOpen(true)}>
-            <ListTree className="size-4" />Danh mục
-          </Button>
-          <Button variant="outline" className="h-10" disabled={!selectedOrganizationId} onClick={() => setProductOptionsOpen(true)}>
-            <SlidersHorizontal className="size-4" />Tuỳ chọn
-          </Button>
-          {canManage ? (
-            <>
-              <Button variant="outline" className="h-10" disabled={!selectedOrganizationId} onClick={() => productTemplates.setOpen(true)}>
-                <LayoutTemplate className="size-4" />Tạo từ mẫu
-              </Button>
-              <Button className="h-10" disabled={!selectedOrganizationId} onClick={productCrud.openProductCreate}>
-                <Plus className="size-4" />Tạo sản phẩm
-              </Button>
-            </>
-          ) : null}
-        </div>
-      </section>
+        }
+        actions={
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => void refresh()}
+              isLoading={products.isLoading}
+            >
+              <RefreshCw className="size-4" aria-hidden="true" />
+              Làm mới
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setProductCategoriesOpen(true)}
+            >
+              <ListTree className="size-4" aria-hidden="true" />
+              Danh mục
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={!selectedOrganizationId}
+              onClick={() => setProductOptionsOpen(true)}
+            >
+              <SlidersHorizontal className="size-4" aria-hidden="true" />
+              Tuỳ chọn
+            </Button>
+            {canManage ? (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={!selectedOrganizationId}
+                  onClick={() => productTemplates.setOpen(true)}
+                >
+                  <LayoutTemplate className="size-4" aria-hidden="true" />
+                  Tạo từ mẫu
+                </Button>
+                <Button
+                  size="sm"
+                  disabled={!selectedOrganizationId}
+                  onClick={productCrud.openProductCreate}
+                >
+                  <Plus className="size-4" aria-hidden="true" />
+                  Tạo sản phẩm
+                </Button>
+              </>
+            ) : null}
+          </>
+        }
+      />
 
       <CatalogRefreshWarning
         message={productCrud.refreshWarningMessage}
@@ -226,11 +256,6 @@ export function ProductsManagementView() {
         noun="Sản phẩm"
         onChange={handleOrganizationChange}
       />
-
-      <section className="grid gap-4 sm:grid-cols-2">
-        <CatalogStatCard icon={ShoppingBag} label="Tổng sản phẩm" value={products.pagination.totalCount} tone="primary" />
-        <CatalogStatCard icon={CircleCheckBig} label="Khả dụng trên trang" value={availableProductsOnPage} tone="success" />
-      </section>
 
       <CatalogSearchBar
         value={searchTerm}

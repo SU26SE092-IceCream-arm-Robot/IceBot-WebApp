@@ -5,13 +5,21 @@ import { useState, type FormEvent } from "react";
 import { CheckCircle2, Mail } from "lucide-react";
 
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { requestPasswordReset } from "@/lib/services/identity/auth";
 
 export function ForgotPasswordForm() {
   const [emailOrUserName, setEmailOrUserName] = useState("");
-  const [validationMessage, setValidationMessage] = useState<string | null>(null);
+  const [validationMessage, setValidationMessage] = useState<string | null>(
+    null,
+  );
   const [requestError, setRequestError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -47,11 +55,15 @@ export function ForgotPasswordForm() {
           </span>
           <CardTitle>Kiểm tra email của bạn</CardTitle>
           <CardDescription>
-            Nếu tài khoản phù hợp tồn tại, hệ thống đã gửi liên kết đặt lại mật khẩu.
+            Nếu tài khoản phù hợp tồn tại, hệ thống đã gửi liên kết đặt lại mật
+            khẩu.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Link href="/login" className={buttonVariants({ className: "w-full" })}>
+          <Link
+            href="/login"
+            className={buttonVariants({ className: "w-full" })}
+          >
             Về trang đăng nhập
           </Link>
         </CardContent>
@@ -63,16 +75,26 @@ export function ForgotPasswordForm() {
     <Card className="w-full max-w-md rounded-xl">
       <CardHeader>
         <CardTitle>Quên mật khẩu</CardTitle>
-        <CardDescription>Nhập email hoặc tên đăng nhập để nhận liên kết đặt lại mật khẩu.</CardDescription>
+        <CardDescription>
+          Nhập email hoặc tên đăng nhập để nhận liên kết đặt lại mật khẩu.
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4" noValidate>
           <div className="space-y-2">
-            <label htmlFor="emailOrUserName" className="text-sm font-medium">Email hoặc tên đăng nhập</label>
+            <label htmlFor="emailOrUserName" className="text-sm font-medium">
+              Email hoặc tên đăng nhập
+            </label>
             <div className="relative">
               <Mail className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 id="emailOrUserName"
+                aria-invalid={Boolean(validationMessage || requestError)}
+                aria-describedby={
+                  validationMessage || requestError
+                    ? "forgot-password-error"
+                    : undefined
+                }
                 autoComplete="username"
                 value={emailOrUserName}
                 onChange={(event) => setEmailOrUserName(event.target.value)}
@@ -81,9 +103,25 @@ export function ForgotPasswordForm() {
               />
             </div>
           </div>
-          {validationMessage || requestError ? <p className="text-sm text-destructive">{validationMessage || requestError}</p> : null}
-          <Button type="submit" className="w-full" isLoading={isSubmitting}>Gửi liên kết</Button>
-          <Link href="/login" className={buttonVariants({ variant: "ghost", className: "w-full" })}>
+          {validationMessage || requestError ? (
+            <p
+              id="forgot-password-error"
+              role="alert"
+              className="rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+            >
+              {validationMessage || requestError}
+            </p>
+          ) : null}
+          <Button type="submit" className="w-full" isLoading={isSubmitting}>
+            Gửi liên kết
+          </Button>
+          <Link
+            href="/login"
+            className={buttonVariants({
+              variant: "ghost",
+              className: "w-full",
+            })}
+          >
             Quay lại đăng nhập
           </Link>
         </form>

@@ -237,7 +237,7 @@ export function ProductionOperationsPanel(
                       state.clearPreviews();
                     }}
                   >
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger className="w-full" aria-label="Bản phát hành cấu hình">
                       <SelectValue>
                         {selectedRelease
                           ? `Phiên bản ${selectedRelease.releaseNumber} · ${statusLabels[selectedRelease.status] ?? selectedRelease.status}`
@@ -289,7 +289,7 @@ export function ProductionOperationsPanel(
                         setSelectedEndpointId(value ?? "")
                       }
                     >
-                      <SelectTrigger className="w-full">
+                      <SelectTrigger className="w-full" aria-label="Điểm thực thi">
                         <SelectValue>
                           {eligibleEndpoint
                             ? `${eligibleEndpoint.endpointCode} — ${profileLabels[eligibleEndpoint.executionProfile] ?? eligibleEndpoint.executionProfile}`

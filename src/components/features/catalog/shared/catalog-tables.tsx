@@ -139,7 +139,74 @@ export function MenusTable({
   onView,
 }: MenusTableProps) {
   return (
-    <Table className="min-w-[1080px] table-fixed">
+    <>
+      <div className="divide-y divide-border md:hidden">
+        {menus.map((menu) => {
+          const nextStatus = getNextMenuStatus(menu.status);
+          return (
+            <article key={menu.id} className="space-y-3 p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-foreground">
+                    {menu.name}
+                  </p>
+                  <p className="mt-0.5 font-mono text-xs text-muted-foreground">
+                    {menu.code}
+                  </p>
+                </div>
+                <MenuStatusBadge status={menu.status} />
+              </div>
+              <dl className="grid grid-cols-2 gap-3 text-xs">
+                <div>
+                  <dt className="text-muted-foreground">Phạm vi</dt>
+                  <dd className="mt-0.5 font-medium text-foreground">
+                    {getScopeLabel(menu.scopeType)}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">Số món</dt>
+                  <dd className="mt-0.5 font-medium tabular-nums text-foreground">
+                    {menu.items.length}
+                  </dd>
+                </div>
+                <div className="col-span-2">
+                  <dt className="text-muted-foreground">Hiệu lực</dt>
+                  <dd className="mt-0.5 tabular-nums text-foreground">
+                    {formatDate(menu.effectiveFrom)} → {formatDate(menu.effectiveTo)}
+                  </dd>
+                </div>
+              </dl>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onView(menu.id)}
+                >
+                  <Eye className="size-4" aria-hidden="true" />
+                  Chi tiết
+                </Button>
+                {canManage && nextStatus ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    isLoading={menuActionId === menu.id}
+                    onClick={() => onToggleStatus(menu, nextStatus)}
+                  >
+                    {nextStatus === "Active" ? (
+                      <CirclePlay className="size-4" aria-hidden="true" />
+                    ) : (
+                      <CirclePause className="size-4" aria-hidden="true" />
+                    )}
+                    {nextStatus === "Active" ? "Kích hoạt" : "Tạm dừng"}
+                  </Button>
+                ) : null}
+              </div>
+            </article>
+          );
+        })}
+      </div>
+      <div className="hidden overflow-x-auto md:block">
+        <Table className="min-w-[1080px] table-fixed">
       <TableHeader>
         <TableRow className="hover:bg-transparent">
           <TableHead className="w-[27%] px-5">Thực đơn</TableHead>
@@ -234,7 +301,9 @@ export function MenusTable({
           </TableRow>
         ))}
       </TableBody>
-    </Table>
+        </Table>
+      </div>
+    </>
   );
 }
 
@@ -256,7 +325,98 @@ export function ProductsTable({
   onView,
 }: ProductsTableProps) {
   return (
-    <Table className="min-w-[1160px] table-fixed">
+    <>
+      <div className="divide-y divide-border md:hidden">
+        {products.map((product) => {
+          const readinessIssues = getProductReadinessIssues(product);
+          const category = categories.find(
+            (item) => item.id === product.categoryId,
+          );
+          const productName = product.displayName?.trim() || product.name;
+          return (
+            <article key={product.id} className="space-y-3 p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-foreground">
+                    {productName}
+                  </p>
+                  <p className="mt-0.5 font-mono text-xs text-muted-foreground">
+                    {product.code}
+                  </p>
+                </div>
+                <Badge
+                  className={
+                    product.isAvailable
+                      ? "border-0 bg-success/10 text-success"
+                      : "border border-border bg-muted/20 text-muted-foreground"
+                  }
+                >
+                  {product.isAvailable ? "Đang bán" : "Ngừng bán"}
+                </Badge>
+              </div>
+              <dl className="grid grid-cols-2 gap-3 text-xs">
+                <div>
+                  <dt className="text-muted-foreground">Danh mục</dt>
+                  <dd className="mt-0.5 font-medium text-foreground">
+                    {category?.name ?? "Chưa phân loại"}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">Phạm vi</dt>
+                  <dd className="mt-0.5 font-medium text-foreground">
+                    {getScopeLabel(product.scopeType)}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">Phiên bản</dt>
+                  <dd className="mt-0.5 font-medium tabular-nums text-foreground">
+                    {product.variants.length}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">Giá cơ bản</dt>
+                  <dd className="mt-0.5 font-medium tabular-nums text-foreground">
+                    {formatMoney(product.basePrice, product.currency)}
+                  </dd>
+                </div>
+              </dl>
+              {readinessIssues.length > 0 ? (
+                <p className="flex items-start gap-2 rounded-md bg-warning/10 px-3 py-2 text-xs text-warning">
+                  <AlertTriangle className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
+                  Còn {readinessIssues.length} thiết lập cần hoàn thiện
+                </p>
+              ) : null}
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onView(product.id)}
+                >
+                  <Eye className="size-4" aria-hidden="true" />
+                  Chi tiết
+                </Button>
+                {canManage ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    isLoading={productActionId === product.id}
+                    onClick={() => onToggleAvailability(product)}
+                  >
+                    {product.isAvailable ? (
+                      <CirclePause className="size-4" aria-hidden="true" />
+                    ) : (
+                      <CirclePlay className="size-4" aria-hidden="true" />
+                    )}
+                    {product.isAvailable ? "Tắt bán" : "Bật bán"}
+                  </Button>
+                ) : null}
+              </div>
+            </article>
+          );
+        })}
+      </div>
+      <div className="hidden overflow-x-auto md:block">
+        <Table className="min-w-[1160px] table-fixed">
       <TableHeader>
         <TableRow className="hover:bg-transparent">
           <TableHead className="w-[21%] px-5">Sản phẩm</TableHead>
@@ -397,7 +557,9 @@ export function ProductsTable({
           </TableRow>;
         })}
       </TableBody>
-    </Table>
+        </Table>
+      </div>
+    </>
   );
 }
 

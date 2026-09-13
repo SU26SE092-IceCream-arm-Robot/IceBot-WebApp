@@ -40,8 +40,8 @@ export interface KioskResult {
   longitude?: number | null;
   installedAt?: string | null;
   lastOnlineAt?: string | null;
-  configurationVersion: number;
-  settingsSchemaVersion: number;
+  configurationVersion?: number | null;
+  settingsSchemaVersion?: number | null;
   settingsJson?: string | null;
   createdAt: string;
   updatedAt?: string | null;
