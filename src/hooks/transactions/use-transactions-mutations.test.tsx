@@ -109,7 +109,7 @@ describe("useTransactions mutation refresh outcomes", () => {
   });
 
   it("loads orders without requesting refunds when refund management is unavailable", async () => {
-    renderHook(() => useTransactions({ canManageRefunds: false }));
+    renderHook(() => useTransactions({ canViewRefunds: false }));
 
     await waitFor(() => {
       expect(listManagementOrders).toHaveBeenCalledOnce();

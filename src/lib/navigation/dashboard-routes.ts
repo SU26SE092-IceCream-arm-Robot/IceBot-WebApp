@@ -99,7 +99,7 @@ export const DASHBOARD_NAVIGATION_ITEMS: readonly DashboardNavigationItem[] = [
   { routePath: "/alerts", group: "operations", label: "Cảnh báo", icon: Bell },
   { routePath: "/readiness", group: "operations", label: "Kiểm tra thiết lập", icon: ClipboardCheck },
   { routePath: "/transactions", query: { tab: "orders" }, group: "commerce", label: "Đơn hàng và giao dịch", icon: ReceiptText },
-  { routePath: "/transactions", requiredPermission: "refunds.manage", query: { tab: "refunds" }, group: "commerce", label: "Hoàn tiền", icon: RefreshCcw },
+  { routePath: "/transactions", requiredPermission: "refunds.view", query: { tab: "refunds" }, group: "commerce", label: "Hoàn tiền", icon: RefreshCcw },
   { routePath: "/reports", group: "commerce", label: "Báo cáo", icon: BarChart3 },
   { routePath: "/products", group: "catalog", label: "Sản phẩm", icon: ShoppingBag },
   { routePath: "/menus", group: "catalog", label: "Thực đơn", icon: BookOpen },
