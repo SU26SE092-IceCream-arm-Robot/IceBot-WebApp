@@ -137,11 +137,11 @@ export interface UseTransactionsResult {
 }
 
 interface UseTransactionsOptions {
-  canManageRefunds: boolean;
+  canViewRefunds: boolean;
 }
 
 export function useTransactions(
-  { canManageRefunds }: UseTransactionsOptions = { canManageRefunds: true },
+  { canViewRefunds }: UseTransactionsOptions = { canViewRefunds: true },
 ): UseTransactionsResult {
   const orderDetailAbortRef = useRef<AbortController | null>(null);
   const orderDetailRequestIdRef = useRef(0);
@@ -324,7 +324,7 @@ export function useTransactions(
 
   const fetchRefunds = useCallback(
     async (signal?: AbortSignal, propagateError = false) => {
-      if (!canManageRefunds) {
+      if (!canViewRefunds) {
         setRefunds({
           data: [],
           pagination: emptyPagination(1, REFUNDS_PAGE_SIZE),
@@ -381,7 +381,7 @@ export function useTransactions(
         }
       }
     },
-    [canManageRefunds, refundFilters.searchTerm, refundFilters.status, refundPage],
+    [canViewRefunds, refundFilters.searchTerm, refundFilters.status, refundPage],
   );
 
   useEffect(() => {
@@ -406,7 +406,7 @@ export function useTransactions(
       window.clearTimeout(timeoutId);
       controller.abort();
     };
-  }, [canManageRefunds, fetchRefunds]);
+  }, [canViewRefunds, fetchRefunds]);
 
   useEffect(() => {
     if (!selectedOrderId || !isDetailOpen) {
@@ -1021,7 +1021,7 @@ export function useTransactions(
     refresh: async () => {
       await Promise.all([
         fetchOrders(),
-        ...(canManageRefunds ? [fetchRefunds()] : []),
+        ...(canViewRefunds ? [fetchRefunds()] : []),
       ]);
       if (selectedOrderId && isDetailOpen) {
         await fetchStatusHistory(selectedOrderId);

@@ -129,6 +129,7 @@ export function PaymentStatusBadge({ status }: { status: PaymentStatus }) {
 interface TransactionsTableProps {
   orders: ManagementOrderListItemResult[];
   canManageOrders: boolean;
+  canRequestRefund: boolean;
   onCancelOrder: (order: ManagementOrderListItemResult) => void;
   onMarkRefundRequired: (order: ManagementOrderListItemResult) => void;
   onViewDetail: (orderId: string) => void;
@@ -137,6 +138,7 @@ interface TransactionsTableProps {
 export function TransactionsTable({
   orders,
   canManageOrders,
+  canRequestRefund,
   onCancelOrder,
   onMarkRefundRequired,
   onViewDetail,
@@ -189,7 +191,7 @@ export function TransactionsTable({
                   <Eye className="size-4" />
                   Chi tiết
                 </Button>
-                {canManageOrders &&
+                {canRequestRefund &&
                 order.paymentStatus === "Paid" &&
                 order.status !== "Completed" &&
                 order.status !== "Cancelled" &&
@@ -306,7 +308,7 @@ export function TransactionsTable({
                     >
                       <Eye className="size-4" />
                     </Button>
-                    {canManageOrders &&
+                    {canRequestRefund &&
                     order.paymentStatus === "Paid" &&
                     order.status !== "Completed" &&
                     order.status !== "Cancelled" &&

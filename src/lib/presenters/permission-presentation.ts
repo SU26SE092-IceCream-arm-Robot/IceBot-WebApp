@@ -149,7 +149,7 @@ const PERMISSIONS: Record<string, PermissionPresentation> = {
     "Xem đơn hàng",
     "Theo dõi đơn hàng, tiến trình thực hiện và giao dịch liên quan.",
   ),
-  "orders.manage": entry(
+  "orders.intervention.manage": entry(
     "Đơn hàng & thanh toán",
     "Xử lý đơn hàng",
     "Thực hiện các thao tác quản lý trên đơn hàng.",
@@ -159,7 +159,7 @@ const PERMISSIONS: Record<string, PermissionPresentation> = {
     "Xử lý thanh toán",
     "Kiểm tra và can thiệp các giao dịch thanh toán.",
   ),
-  "refunds.manage": entry(
+  "refunds.process": entry(
     "Đơn hàng & thanh toán",
     "Xử lý hoàn tiền",
     "Tạo, phê duyệt hoặc theo dõi yêu cầu hoàn tiền.",

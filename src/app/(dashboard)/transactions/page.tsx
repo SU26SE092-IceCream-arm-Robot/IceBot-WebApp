@@ -133,11 +133,23 @@ export default function TransactionsPage() {
   const [isRejectRefundOpen, setIsRejectRefundOpen] = useState(false);
   const [isCancelRefundOpen, setIsCancelRefundOpen] = useState(false);
   const { effectiveAccess } = useAuth();
-  const canManageRefunds = hasPermission(effectiveAccess, "refunds.manage");
+  const canViewRefunds = hasPermission(effectiveAccess, "refunds.view");
+  const canRequestRefund =
+    hasPermission(effectiveAccess, "orders.refund-flag") &&
+    hasPermission(effectiveAccess, "refunds.request");
+  const canProcessRefunds = hasPermission(effectiveAccess, "refunds.process");
+  const canManageOrderInterventions = hasPermission(
+    effectiveAccess,
+    "orders.intervention.manage",
+  );
+  const canManageFulfillment = hasPermission(
+    effectiveAccess,
+    "orders.fulfillment.manage",
+  );
   const canManagePayments = hasPermission(effectiveAccess, "payments.manage");
   const requestedTab = searchParams.get("tab");
   const activeTab: TransactionsTab =
-    requestedTab === "refunds" && canManageRefunds
+    requestedTab === "refunds" && canViewRefunds
       ? "refunds"
       : requestedTab === "incidents"
         ? "incidents"
@@ -205,9 +217,8 @@ export default function TransactionsPage() {
     clearActionSuccessMessage,
     applyOrderUpdate,
     refresh,
-  } = useTransactions({ canManageRefunds });
+  } = useTransactions({ canViewRefunds });
   const fulfillment = useOrderItemFulfillment(applyOrderUpdate);
-  const canManageOrders = hasPermission(effectiveAccess, "orders.manage");
   return (
     <div className="space-y-7">
       {actionSuccessMessage ? (
@@ -282,7 +293,7 @@ export default function TransactionsPage() {
         >
           Đơn hàng
         </button>
-        {canManageRefunds ? (
+        {canViewRefunds ? (
           <button
             type="button"
             aria-pressed={activeTab === "refunds"}
@@ -553,7 +564,8 @@ export default function TransactionsPage() {
             ) : activeTab === "orders" ? (
               <TransactionsTable
                 orders={orders.data}
-                canManageOrders={canManageOrders}
+                canManageOrders={canManageOrderInterventions}
+                canRequestRefund={canRequestRefund}
                 onCancelOrder={requestCancelOrder}
                 onMarkRefundRequired={requestRefundRequired}
                 onViewDetail={(orderId) => void openOrderDetail(orderId)}
@@ -626,8 +638,8 @@ export default function TransactionsPage() {
       )}
 
       <TransactionDetailDialog
-        canRequestRefund={canManageRefunds}
-        canManageFulfillment={canManageOrders}
+        canRequestRefund={canRequestRefund}
+        canManageFulfillment={canManageFulfillment}
         order={selectedOrder}
         errorMessage={detailErrorMessage}
         isLoading={isDetailLoading}
@@ -656,7 +668,7 @@ export default function TransactionsPage() {
       />
 
       <RefundDetailDialog
-        canManageRefunds={canManageRefunds}
+        canManageRefunds={canProcessRefunds}
         open={isRefundDetailOpen}
         refund={selectedRefund}
         isLoading={isRefundDetailLoading}

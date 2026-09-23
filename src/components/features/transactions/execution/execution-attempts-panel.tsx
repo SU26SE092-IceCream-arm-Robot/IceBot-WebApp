@@ -166,7 +166,7 @@ export function ExecutionAttemptsPanel({ orderId }: { orderId: string }) {
     effectiveAccess,
     "operations.diagnostics",
   );
-  const canManageOrders = hasPermission(effectiveAccess, "orders.manage");
+  const canManageOrders = hasPermission(effectiveAccess, "orders.intervention.manage");
   const state = useExecutionAttempts(orderId, canViewDiagnostics);
   const mutationRef = useRef(false);
   const [action, setAction] = useState<"redispatch" | "incident" | null>(null);
