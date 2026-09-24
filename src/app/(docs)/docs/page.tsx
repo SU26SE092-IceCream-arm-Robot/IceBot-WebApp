@@ -6,7 +6,7 @@ import { getDocsPage } from "@/lib/docs/content";
 export const metadata: Metadata = {
   title: "Tài liệu IceBot",
   description:
-    "Tài liệu kỹ thuật về nền tảng, vận hành, API và realtime của IceBot.",
+    "Hướng dẫn sử dụng Kiosk, Admin Web, Full Edge và FaiRobot Studio cùng tài liệu kỹ thuật IceBot.",
 };
 
 export default function DocsHomePage() {

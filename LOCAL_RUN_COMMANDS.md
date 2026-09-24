@@ -13,11 +13,14 @@ Use these local values:
 ```env
 NEXT_PUBLIC_API_URL=/api/backend
 ICEBOT_BACKEND_URL=http://localhost:51967
+# API_BASE_URL for the RAG chatbot integration.
+NEXT_PUBLIC_CHAT_API_URL=
 # Optional. Use the same Google OAuth web client configured by Backend.
 NEXT_PUBLIC_GOOGLE_CLIENT_ID=
 ```
 
 - `NEXT_PUBLIC_API_URL` is browser-visible and uses the same-origin Next.js proxy.
+- `NEXT_PUBLIC_CHAT_API_URL` is the browser-visible API_BASE_URL for the Chat API.
 - `ICEBOT_BACKEND_URL` is read by `next.config.ts` on the Next.js server.
 - Restart `npm run dev` after changing environment variables.
 - Never commit `.env.local` or production credentials.

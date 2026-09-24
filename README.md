@@ -78,6 +78,8 @@ Create `.env.local` without committing it:
 ```env
 NEXT_PUBLIC_API_URL=/api/backend
 ICEBOT_BACKEND_URL=http://localhost:5000
+# API_BASE_URL for the public RAG chatbot. Do not hard-code its domain in source.
+NEXT_PUBLIC_CHAT_API_URL=
 # Firebase Web configuration. Google login is shown only when all values exist.
 NEXT_PUBLIC_FIREBASE_API_KEY=
 NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=
@@ -94,6 +96,10 @@ npm run dev
 ```
 
 Open `http://localhost:3000`. The Next.js proxy forwards REST and GraphQL requests to `ICEBOT_BACKEND_URL`.
+
+The public Docs chatbot calls `${NEXT_PUBLIC_CHAT_API_URL}/v1/chat/completions`.
+The API must receive RAG-enabled requests; leave the value empty only when the
+chatbot service is intentionally unavailable in a local environment.
 
 ## Verification
 

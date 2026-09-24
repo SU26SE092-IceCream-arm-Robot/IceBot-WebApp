@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 
 import { DocsChatWidget } from "@/components/features/docs/docs-chat-widget";
+import { sendDocsChatMessage } from "@/lib/services/docs/chat";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -260,7 +261,7 @@ export function DocsShell({ children }: { children: ReactNode }) {
         </div>
       ) : null}
 
-      <DocsChatWidget />
+      <DocsChatWidget onSendMessage={sendDocsChatMessage} />
     </div>
   );
 }

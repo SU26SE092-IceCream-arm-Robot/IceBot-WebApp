@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowLeft, ArrowRight, CircleAlert, Info } from "lucide-react";
 
 import { DocsCodeBlock } from "@/components/features/docs/docs-code-block";
@@ -25,6 +26,19 @@ export function DocsArticle({ page }: { page: DocsPageDefinition }) {
         <p className="mt-4 text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
           {page.readingTime}
         </p>
+        {page.audience?.length ? (
+          <div className="mt-5 flex flex-wrap items-center gap-2" aria-label="Đối tượng sử dụng">
+            <span className="text-xs font-medium text-muted-foreground">Phù hợp với:</span>
+            {page.audience.map((audience) => (
+              <span
+                key={audience}
+                className="rounded-full border border-primary/20 bg-primary/5 px-2.5 py-1 text-xs font-medium text-primary"
+              >
+                {audience}
+              </span>
+            ))}
+          </div>
+        ) : null}
       </header>
 
       <div className="pt-4">
@@ -68,6 +82,22 @@ export function DocsArticle({ page }: { page: DocsPageDefinition }) {
             ) : null}
 
             {section.codeExample ? <DocsCodeBlock {...section.codeExample} /> : null}
+
+            {section.figures?.map((figure) => (
+              <figure key={figure.src} className="mt-6 max-w-4xl overflow-hidden rounded-2xl border border-border bg-card">
+                <Image
+                  src={figure.src}
+                  alt={figure.alt}
+                  width={figure.width}
+                  height={figure.height}
+                  sizes="(max-width: 768px) 100vw, 48rem"
+                  className="h-auto w-full"
+                />
+                <figcaption className="border-t border-border px-4 py-3 text-sm leading-6 text-muted-foreground">
+                  {figure.caption}
+                </figcaption>
+              </figure>
+            ))}
 
             {section.callout ? (
               <aside

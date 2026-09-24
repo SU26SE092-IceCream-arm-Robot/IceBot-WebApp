@@ -3,17 +3,24 @@
 import { FormEvent, KeyboardEvent, useEffect, useRef, useState } from "react";
 import { Bot, LoaderCircle, MessageCircle, Send, X } from "lucide-react";
 
+import { DocsMarkdown } from "@/components/features/docs/docs-markdown";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import type { DocsChatApiMessage } from "@/types/docs/chat";
 
 export interface DocsChatMessage {
   id: string;
   role: "assistant" | "user";
   content: string;
+  retryContent?: string;
 }
 
-export type DocsChatAdapter = (message: string) => Promise<string>;
+export type DocsChatAdapter = (
+  message: string,
+  history: DocsChatApiMessage[],
+  signal?: AbortSignal,
+) => Promise<string>;
 
 interface DocsChatWidgetProps {
   onSendMessage?: DocsChatAdapter;
@@ -23,13 +30,16 @@ const initialMessage: DocsChatMessage = {
   id: "welcome",
   role: "assistant",
   content:
-    "Xin chào! Tôi có thể giúp bạn tìm nhanh nội dung trong tài liệu IceBot. Trợ lý hiện đang ở chế độ xem trước và chưa kết nối API.",
+    "Xin chào! Tôi có thể giúp bạn tìm thông tin trong tài liệu IceBot và hướng dẫn bạn tới đúng thao tác.",
 };
 
 const suggestedQuestions = [
-  "Bắt đầu tích hợp từ đâu?",
-  "Realtime được dùng như thế nào?",
+  "Cài đặt IceBot Kiosk thế nào?",
+  "Kiểm tra kiosk trên Admin Web ra sao?",
 ];
+
+const unavailableMessage =
+  "Trợ lý hiện chưa thể trả lời. Vui lòng thử lại sau hoặc mở nội dung tài liệu trong menu bên trái.";
 
 export function DocsChatWidget({ onSendMessage }: DocsChatWidgetProps) {
   const [open, setOpen] = useState(false);
@@ -38,7 +48,10 @@ export function DocsChatWidget({ onSendMessage }: DocsChatWidgetProps) {
   const [sending, setSending] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const messageEndRef = useRef<HTMLDivElement>(null);
+  const requestControllerRef = useRef<AbortController | null>(null);
   const messageSequenceRef = useRef(0);
+
+  useEffect(() => () => requestControllerRef.current?.abort(), []);
 
   useEffect(() => {
     if (!open) return;
@@ -68,11 +81,17 @@ export function DocsChatWidget({ onSendMessage }: DocsChatWidgetProps) {
     setMessages((current) => [...current, userMessage]);
     setDraft("");
     setSending(true);
+    requestControllerRef.current?.abort();
+    const requestController = new AbortController();
+    requestControllerRef.current = requestController;
+    const history: DocsChatApiMessage[] = messages
+      .filter((message) => message.id !== initialMessage.id)
+      .map(({ role, content }) => ({ role, content }));
 
     try {
       const reply = onSendMessage
-        ? await onSendMessage(normalizedMessage)
-        : "Đây là phản hồi demo cục bộ. Khi kết nối API, truyền hàm onSendMessage để thay nội dung này bằng câu trả lời thật.";
+        ? await onSendMessage(normalizedMessage, history, requestController.signal)
+        : "Trợ lý hiện chưa được kết nối. Bạn có thể tiếp tục đọc nội dung tài liệu trong menu bên trái.";
 
       setMessages((current) => [
         ...current,
@@ -82,17 +101,22 @@ export function DocsChatWidget({ onSendMessage }: DocsChatWidgetProps) {
           content: reply,
         },
       ]);
-    } catch {
+    } catch (error) {
+      if (error instanceof Error && error.name === "AbortError") return;
+
       setMessages((current) => [
         ...current,
         {
           id: `assistant-error-${messageSequence}`,
           role: "assistant",
-          content:
-            "Chưa thể nhận phản hồi từ trợ lý. Vui lòng thử lại sau hoặc tiếp tục đọc tài liệu.",
+          content: unavailableMessage,
+          retryContent: normalizedMessage,
         },
       ]);
     } finally {
+      if (requestControllerRef.current === requestController) {
+        requestControllerRef.current = null;
+      }
       setSending(false);
     }
   }
@@ -124,7 +148,7 @@ export function DocsChatWidget({ onSendMessage }: DocsChatWidgetProps) {
               </span>
               <div className="min-w-0">
                 <h2 className="truncate text-sm font-semibold text-foreground">Trợ lý tài liệu</h2>
-                <p className="text-xs text-muted-foreground">Chế độ giao diện xem trước</p>
+                <p className="text-xs text-muted-foreground">Hỏi về cách sử dụng IceBot</p>
               </div>
             </div>
             <Button
@@ -152,7 +176,20 @@ export function DocsChatWidget({ onSendMessage }: DocsChatWidgetProps) {
                       : "rounded-bl-md border border-border bg-card text-foreground",
                   )}
                 >
-                  {message.content}
+                  {message.role === "assistant" ? (
+                    <DocsMarkdown content={message.content} />
+                  ) : (
+                    <span className="whitespace-pre-wrap">{message.content}</span>
+                  )}
+                  {message.retryContent && !sending ? (
+                    <button
+                      type="button"
+                      className="mt-2 text-xs font-semibold text-primary underline-offset-2 hover:underline"
+                      onClick={() => void sendMessage(message.retryContent ?? "")}
+                    >
+                      Thử lại
+                    </button>
+                  ) : null}
                 </div>
               </div>
             ))}
@@ -208,7 +245,7 @@ export function DocsChatWidget({ onSendMessage }: DocsChatWidgetProps) {
               </Button>
             </div>
             <p className="mt-2 text-center text-[11px] text-muted-foreground">
-              Câu trả lời AI có thể cần được kiểm chứng lại.
+              Kiểm tra lại thông tin quan trọng trước khi thực hiện.
             </p>
           </form>
         </section>
