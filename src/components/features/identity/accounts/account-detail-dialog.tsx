@@ -392,18 +392,21 @@ export function AccountDetailDialog({
                             "Tổ chức",
                             accountActions.effectiveAccess.effectiveScope
                               .organizationIds,
+                            accountActions.effectiveScopeLabels.organizations,
                           ],
                           [
                             "Cửa hàng",
                             accountActions.effectiveAccess.effectiveScope
                               .storeIds,
+                            accountActions.effectiveScopeLabels.stores,
                           ],
                           [
                             "Kiosk",
                             accountActions.effectiveAccess.effectiveScope
                               .kioskIds,
+                            accountActions.effectiveScopeLabels.kiosks,
                           ],
-                        ].map(([label, ids]) => (
+                        ].map(([label, ids, labels]) => (
                           <div
                             key={label as string}
                             className="rounded-xl border border-border p-3"
@@ -416,9 +419,9 @@ export function AccountDetailDialog({
                                 {(ids as string[]).map((id) => (
                                   <p
                                     key={id}
-                                    className="break-all font-mono text-[11px] text-foreground"
+                                    className="break-words text-[11px] text-foreground"
                                   >
-                                    {id}
+                                    {(labels as Record<string, string>)[id] ?? id}
                                   </p>
                                 ))}
                               </div>

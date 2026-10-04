@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { PackageInstallDialog } from "@/components/features/production/packages/package-install-dialog";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,18 @@ import type { KioskResult } from "@/types/kiosks/management";
 function InstallationWorkspace({ organizationId, storeId, kioskId }: { organizationId: string; storeId: string; kioskId: string }) {
   const operations = useProductionOperations({ organizationId, storeId, kioskId });
   const [installOpen, setInstallOpen] = useState(false);
+  const packageVersionLabels = useMemo(
+    () =>
+      new Map(
+        operations.packages.flatMap((pkg) =>
+          pkg.versions.map((version) => [
+            version.id,
+            `${pkg.name} — phiên bản ${version.version}`,
+          ] as const),
+        ),
+      ),
+    [operations.packages],
+  );
 
   return (
     <div className="space-y-4">
@@ -28,7 +40,7 @@ function InstallationWorkspace({ organizationId, storeId, kioskId }: { organizat
         <Card><CardContent className="py-8 text-sm text-muted-foreground">Kiosk chưa có gói sản xuất. Chọn “Cài gói” để xem trước trước khi xác nhận.</CardContent></Card>
       ) : operations.installations.map((installation) => (
         <Card key={installation.id}>
-          <CardHeader className="flex-row items-center justify-between py-3"><CardTitle className="text-sm">{installation.packageVersionId}</CardTitle><span className="text-xs text-muted-foreground">{installation.status}</span></CardHeader>
+          <CardHeader className="flex-row items-center justify-between py-3"><CardTitle className="text-sm">{packageVersionLabels.get(installation.packageVersionId) ?? installation.packageVersionId}</CardTitle><span className="text-xs text-muted-foreground">{installation.status}</span></CardHeader>
           {installation.status === "Failed" ? <CardContent className="flex items-center justify-between gap-3 pt-0 text-sm text-destructive"><span>{installation.failureMessage ?? "Cài đặt không hoàn tất."}</span><div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => void operations.recoverInstallation(installation.id, "repair")}>Sửa</Button><Button size="sm" onClick={() => void operations.recoverInstallation(installation.id, "retry")}>Thử lại</Button></div></CardContent> : null}
         </Card>
       ))}

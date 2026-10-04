@@ -978,6 +978,7 @@ export function KioskDetailView({ kioskId }: KioskDetailViewProps) {
                 <ProductionOperationsPanel
                   organizationId={kiosk.organizationId}
                   kioskId={kiosk.managementId}
+                  kioskLabel={kiosk.name?.trim() || undefined}
                   initialReleaseId={searchParams?.get("releaseId")}
                   canDeploy={canDeploy}
                   canRollback={canRollbackDeployments}
