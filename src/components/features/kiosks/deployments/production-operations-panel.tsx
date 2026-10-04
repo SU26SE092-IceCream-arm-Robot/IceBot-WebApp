@@ -36,6 +36,7 @@ import { useKioskDeployments } from "@/hooks/kiosks/use-kiosk-deployments";
 interface ProductionOperationsPanelProps {
   organizationId: string;
   kioskId: string;
+  kioskLabel?: string;
   initialReleaseId?: string | null;
   canDeploy: boolean;
   canRollback: boolean;
@@ -489,7 +490,7 @@ export function ProductionOperationsPanel(
           <dl className="grid gap-3 rounded-md border bg-muted/20 p-3 text-sm">
             <div>
               <dt className="text-xs text-muted-foreground">Kiosk</dt>
-              <dd className="font-mono">{props.kioskId}</dd>
+              <dd>{props.kioskLabel ?? props.kioskId}</dd>
             </div>
             <div>
               <dt className="text-xs text-muted-foreground">Phiên bản</dt>

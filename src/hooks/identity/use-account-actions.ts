@@ -3,12 +3,16 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { assignAccountRoles, getEffectiveAccess, requestAccountPasswordReset } from "@/lib/services/identity/accounts";
+import { getManagementKiosks } from "@/lib/services/kiosks/management";
 import { getRoleScopeOptions } from "@/lib/services/identity/roles";
+import { getManagementOrganizationById } from "@/lib/services/tenants/organizations";
+import { getManagementStores } from "@/lib/services/tenants/stores";
 import type { AccountRoleScopeRequest, EffectiveAccessResult, InternalAccountResult, RoleScopeOptionsResult } from "@/types/identity/accounts";
 
 export interface UseAccountActionsResult {
   // Effective Access
   effectiveAccess: EffectiveAccessResult | null;
+  effectiveScopeLabels: EffectiveScopeLabels;
   isEffectiveAccessLoading: boolean;
   effectiveAccessErrorMessage: string | null;
   loadEffectiveAccess: (accountId: string) => Promise<void>;
@@ -33,6 +37,26 @@ export interface UseAccountActionsResult {
   submitResetPassword: (account: InternalAccountResult) => Promise<boolean>;
 }
 
+export interface EffectiveScopeLabels {
+  organizations: Record<string, string>;
+  stores: Record<string, string>;
+  kiosks: Record<string, string>;
+}
+
+const EMPTY_EFFECTIVE_SCOPE_LABELS: EffectiveScopeLabels = {
+  organizations: {},
+  stores: {},
+  kiosks: {},
+};
+
+function formatScopeEntityLabel(
+  name: string | null | undefined,
+  code: string | null | undefined,
+  fallback: string,
+) {
+  return name?.trim() || code?.trim() || fallback;
+}
+
 export function useAccountActions(
   organizationId: string | null,
   onSuccess?: (message: string, account?: InternalAccountResult) => void
@@ -40,6 +64,8 @@ export function useAccountActions(
   const effectiveAccessAbortRef = useRef<AbortController | null>(null);
   const effectiveAccessRequestIdRef = useRef(0);
   const [effectiveAccess, setEffectiveAccess] = useState<EffectiveAccessResult | null>(null);
+  const [effectiveScopeLabels, setEffectiveScopeLabels] =
+    useState<EffectiveScopeLabels>(EMPTY_EFFECTIVE_SCOPE_LABELS);
   const [isEffectiveAccessLoading, setIsEffectiveAccessLoading] = useState(false);
   const [effectiveAccessErrorMessage, setEffectiveAccessErrorMessage] = useState<string | null>(null);
 
@@ -82,6 +108,49 @@ export function useAccountActions(
       ) {
         return;
       }
+      const organizationIds = result.effectiveScope.organizationIds;
+      const storeIds = result.effectiveScope.storeIds;
+      const kioskIds = result.effectiveScope.kioskIds;
+      const [organizationResults, storesResult, kiosksResult] = await Promise.all([
+        Promise.allSettled(
+          organizationIds.map((id) =>
+            getManagementOrganizationById(id, controller.signal),
+          ),
+        ),
+        getManagementStores({ organizationId }, controller.signal).catch(() => []),
+        getManagementKiosks({ organizationId }, controller.signal).catch(() => []),
+      ]);
+      if (
+        controller.signal.aborted ||
+        requestId !== effectiveAccessRequestIdRef.current
+      ) {
+        return;
+      }
+      const nextLabels: EffectiveScopeLabels = {
+        organizations: {},
+        stores: {},
+        kiosks: {},
+      };
+      organizationResults.forEach((item, index) => {
+        if (item.status === "fulfilled") {
+          nextLabels.organizations[organizationIds[index]] = formatScopeEntityLabel(
+            item.value.name,
+            item.value.code,
+            organizationIds[index],
+          );
+        }
+      });
+      storesResult.forEach((store) => {
+        if (storeIds.includes(store.id)) {
+          nextLabels.stores[store.id] = formatScopeEntityLabel(store.name, store.code, store.id);
+        }
+      });
+      kiosksResult.forEach((kiosk) => {
+        if (kioskIds.includes(kiosk.id)) {
+          nextLabels.kiosks[kiosk.id] = formatScopeEntityLabel(kiosk.name, kiosk.code, kiosk.id);
+        }
+      });
+      setEffectiveScopeLabels(nextLabels);
       setEffectiveAccess(result);
     } catch (error) {
       if (
@@ -104,6 +173,7 @@ export function useAccountActions(
     effectiveAccessAbortRef.current?.abort();
     effectiveAccessAbortRef.current = null;
     setEffectiveAccess(null);
+    setEffectiveScopeLabels(EMPTY_EFFECTIVE_SCOPE_LABELS);
     setIsEffectiveAccessLoading(false);
     setEffectiveAccessErrorMessage(null);
   }, []);
@@ -122,6 +192,7 @@ export function useAccountActions(
     effectiveAccessAbortRef.current = null;
     const timeoutId = window.setTimeout(() => {
       setEffectiveAccess(null);
+      setEffectiveScopeLabels(EMPTY_EFFECTIVE_SCOPE_LABELS);
       setEffectiveAccessErrorMessage(null);
       setIsEffectiveAccessLoading(false);
       setIsEditRolesOpen(false);
@@ -211,6 +282,7 @@ export function useAccountActions(
 
   return {
     effectiveAccess,
+    effectiveScopeLabels,
     isEffectiveAccessLoading,
     effectiveAccessErrorMessage,
     loadEffectiveAccess,
